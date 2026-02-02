@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verify Your Email - SmartSignDeck</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f4f4f5;
+      color: #18181b;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: #ffffff;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    .header {
+      background-color: #18181b;
+      padding: 24px;
+      text-align: center;
+    }
+
+    .header h1 {
+      margin: 0;
+      color: #ffffff;
+      font-size: 24px;
+      font-weight: 600;
+      letter-spacing: -0.025em;
+    }
+
+    .content {
+      padding: 40px 32px;
+      text-align: center;
+    }
+
+    .otp-box {
+      background-color: #f4f4f5;
+      border: 1px solid #e4e4e7;
+      border-radius: 8px;
+      padding: 24px;
+      margin: 32px 0;
+      font-size: 32px;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      color: #18181b;
+    }
+
+    .footer {
+      background-color: #18181b;
+      padding: 40px 32px;
+      color: #a1a1aa;
+      font-size: 14px;
+    }
+
+    .footer-links {
+      margin-bottom: 24px;
+    }
+
+    .footer-links a {
+      color: #d4d4d8;
+      text-decoration: none;
+      margin: 0 10px;
+      transition: color 0.2s;
+    }
+
+    .footer-links a:hover {
+      color: #ffffff;
+    }
+
+    .socials {
+      margin-bottom: 24px;
+    }
+
+    .socials a {
+      display: inline-block;
+      margin: 0 8px;
+      text-decoration: none;
+      color: #d4d4d8;
+    }
+
+    .disclaimer {
+      font-size: 12px;
+      line-height: 1.5;
+      color: #71717a;
+    }
+
+    .button {
+      display: inline-block;
+      padding: 12px 24px;
+      background-color: #000000;
+      color: #ffffff;
+      text-decoration: none;
+      border-radius: 6px;
+      font-weight: 500;
+      font-size: 16px;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+
+<body>
+  <div style="padding: 40px 0;">
+    <div class="container">
+      <!-- Header -->
+      <div class="header">
+        <h1>SmartSignDeck</h1>
+      </div>
+
+      <!-- Content -->
+      <div class="content">
+        <h2 style="margin-top: 0; font-size: 20px; font-weight: 600;">Verify Your Email Address</h2>
+        <p style="color: #52525b; line-height: 1.6; margin-bottom: 24px;">
+          Hi {{user_name}},<br>
+          Welcome to SmartSignDeck! Please use the following code to verify your email address and complete your
+          registration.
+        </p>
+
+        <div class="otp-box">
+          {{otp}}
+        </div>
+
+        <p style="font-size: 12px; color: #71717a;">
+          This code will expire in 10 minutes. If you didn't sign up for SmartSignDeck, you can safely ignore this
+          email.
+        </p>
+
+        <a href="{{email_verification_link}}" class="button">Verify Now</a>
+      </div>
+
+      <!-- Footer -->
+      <div class="footer">
+        <div class="footer-links">
+          <a href="#">Ad Scheduling</a>
+          <a href="#">Screen Management</a>
+          <a href="#">Analytics</a>
+          <a href="#">Templates</a>
+        </div>
+
+        <div class="socials">
+          <!-- Text based icons for simplicity in email, or could use images -->
+          <a href="#">Facebook</a> &bull;
+          <a href="#">Twitter</a> &bull;
+          <a href="#">Instagram</a> &bull;
+          <a href="#">LinkedIn</a>
+        </div>
+
+        <div class="disclaimer">
+          &copy; 2026 SmartSignDeck. All rights reserved.<br>
+          Intelligent Ad Scheduling & Display Platform.<br><br>
+          You are receiving this email because you signed up for an account.
+          <a href="#" style="color: #a1a1aa; text-decoration: underline;">Unsubscribe</a> |
+          <a href="#" style="color: #a1a1aa; text-decoration: underline;">Privacy Policy</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>

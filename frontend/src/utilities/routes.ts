@@ -1,0 +1,25 @@
+export const Routes = {
+  NOTIFICATION: '/notification',
+  SIGN_IN: '/sign-in',
+  SIGN_UP: '/sign-up',
+  FORGOT_PASSWORD: '/forgot-password',
+  OTP: '/otp',
+  GOOGLE_CALLBACK: '/google-callback',
+  DASHBOARD: '/dashboard',
+
+  USERS: '/users',
+  PROFILE: '/dashboard/profile',
+  TEMPLATES: '/dashboard/templates',
+  SCREENS: '/dashboard/screens',
+  ANALYTICS: '/dashboard/analytics',
+  COLLABORATION: '/dashboard/collaboration',
+  ADMIN_COMPANIES: '/dashboard/admin/companies',
+  PLAYER: '/player/:screenId',
+  RECYCLE_BIN: '/dashboard/recycle-bin',
+  ERROR: {
+    GENERAL: '/500',
+    NOT_FOUND: '/404',
+    MAINTENANCE: '/503',
+  },
+  FALLBACK: '*',
+}

@@ -1,0 +1,224 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Custom CSS Variables */
+    --header-height: 4rem;
+
+    /* CSS Variables for light theme */
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
+
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+  }
+
+  /* styles.css */
+  .collapsibleDropdown {
+    overflow: hidden;
+  }
+
+  .collapsibleDropdown[data-state='open'] {
+    animation: slideDown 200ms ease-out;
+  }
+
+  .collapsibleDropdown[data-state='closed'] {
+    animation: slideUp 200ms ease-out;
+  }
+
+  @keyframes slideDown {
+    from {
+      height: 0;
+    }
+
+    to {
+      height: var(--radix-collapsible-content-height);
+    }
+  }
+
+  @keyframes slideUp {
+    from {
+      height: var(--radix-collapsible-content-height);
+    }
+
+    to {
+      height: 0;
+    }
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply min-h-svh w-full bg-background text-foreground;
+  }
+
+  body>#root {
+    @apply h-svh;
+  }
+}
+
+@layer utilities {
+
+  /* Chrome, Safari, and Opera */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--primary) / 0.4);
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--primary) / 0.6);
+  }
+
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  /* Firefox */
+  @-moz-document url-prefix() {
+    * {
+      scrollbar-width: thin;
+      /* Set the scrollbar width */
+      scrollbar-color: hsl(var(--primary) / 0.4) transparent;
+      /* Thumb color and track color */
+    }
+  }
+
+  /* General adjustments for all browsers */
+  ::-webkit-scrollbar-thumb:horizontal {
+    width: 8px;
+  }
+
+  ::-webkit-scrollbar-thumb:vertical {
+    height: 8px;
+  }
+
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    /* IE and Edge */
+    scrollbar-width: none;
+    /* Firefox */
+  }
+
+  /* Custom Scrollbar Utility */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 10px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: hsl(var(--primary) / 0.1);
+    border-radius: 10px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: hsl(var(--primary) / 0.6);
+    border-radius: 10px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--primary) / 0.9);
+  }
+
+  .custom-scrollbar {
+    scrollbar-width: auto;
+    scrollbar-color: hsl(var(--primary) / 0.6) hsl(var(--primary) / 0.1);
+  }
+
+  .faded-bottom {
+    @apply after:pointer-events-none after:absolute after:bottom-0 after:left-0 after:hidden after:h-32 after:w-full after:md:block;
+
+    &::after {
+      background: linear-gradient(180deg, transparent 10%, hsl(var(--background)) 70%);
+    }
+  }
+
+  .animate-gradient {
+    background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+    background-size: 400% 400%;
+    animation: gradient 15s ease infinite;
+  }
+
+  @keyframes gradient {
+    0% {
+      background-position: 0% 50%;
+    }
+
+    50% {
+      background-position: 100% 50%;
+    }
+
+    100% {
+      background-position: 0% 50%;
+    }
+  }
+}
