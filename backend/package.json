@@ -56,7 +56,6 @@
     "prettier"
   ],
   "dependencies": {
-    "@aws-sdk/client-rekognition": "^3.978.0",
     "@aws-sdk/client-s3": "^3.600.0",
     "@aws-sdk/s3-request-presigner": "^3.600.0",
     "@types/express": "^4.17.21",

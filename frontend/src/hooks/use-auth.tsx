@@ -33,5 +33,32 @@ export const useAuth = () => {
     setIsLoggedIn(false)
   }
 
-  return { user, isLoggedIn, login, logout }
+  const refreshUser = async () => {
+    try {
+      const response = await authService.getUserInfo()
+      if (response?.data) {
+        // Map raw API data to standardized User model
+        const mappedUser = {
+          id: response.data.id?.toString() || response.data._id?.toString() || '',
+          email: response.data.email || '',
+          first_name: response.data.first_name || '',
+          last_name: response.data.last_name || '',
+          role: response.data.role ?? 'user',
+          is_email_verified: response.data.is_email_verified ?? false,
+          onboardingCompleted: response.data.onboardingCompleted ?? false,
+          companyId: response.data.companyId?._id || response.data.companyId?.id || response.data.companyId || undefined,
+          companyName: response.data.companyName || response.data.companyId?.name || undefined,
+          avatar: response.data.avatar,
+          gender: response.data.gender,
+          dob: response.data.dob,
+          language: response.data.language,
+        }
+        setUser(mappedUser as User)
+      }
+    } catch (error) {
+      console.error('Failed to refresh user:', error)
+    }
+  }
+
+  return { user, isLoggedIn, login, logout, refreshUser }
 }

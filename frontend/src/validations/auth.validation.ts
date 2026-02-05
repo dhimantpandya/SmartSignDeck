@@ -15,7 +15,7 @@ const passwordValidation = z
   .regex(SPECIAL_CHAR, {
     message: 'Password must include at least one special character',
   })
-  .max(20, { message: 'Password must be no longer than 20 characters' })
+  .max(32, { message: 'Password must be no longer than 32 characters' })
 
 export const loginSchema = z.object({
   email: z

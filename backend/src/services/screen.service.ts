@@ -1,6 +1,9 @@
+import mongoose from "mongoose";
 import httpStatus from "http-status";
-import { Screen, Template } from "../models";
+import logger from "../config/logger";
+import { Screen, Template, Playlist } from "../models";
 import ApiError from "../utils/ApiError";
+import crypto from "crypto";
 import { type CustomPaginateOptions } from "../models/plugins/paginate.plugin";
 import { type IUser } from "../models/user.model";
 
@@ -29,6 +32,7 @@ const createScreen = async (screenBody: any, user: IUser) => {
     ...screenBody,
     companyId: user.companyId,
     createdBy: user._id,
+    secretKey: crypto.randomBytes(16).toString("hex"),
   };
 
   return await Screen.create(payload);
@@ -42,35 +46,146 @@ const createScreen = async (screenBody: any, user: IUser) => {
  * @returns {Promise<QueryResult>}
  */
 const queryScreens = async (filter: any, options: CustomPaginateOptions, user: IUser) => {
-  const tenantFilter = user.role === "super_admin"
-    ? {}
-    : {
-      $or: [
-        { companyId: user.companyId },
-        { isPublic: true }
-      ]
-    };
+  // 1. Clean up filter
+  const finalFilter: any = { deletedAt: null, ...filter };
 
-  const finalFilter = { deletedAt: null, ...filter, ...tenantFilter };
+  Object.keys(finalFilter).forEach(key => {
+    if (finalFilter[key] === undefined || finalFilter[key] === null || finalFilter[key] === '' || finalFilter[key] === 'undefined' || finalFilter[key] === 'null') {
+      if (key !== 'deletedAt') delete finalFilter[key];
+    }
+  });
+
+  // 2. Apply security/tenant filtering
+  if (user.role !== "super_admin") {
+    // 🔒 Robust ID Check
+    const userIdStr = (user._id || (user as any).id || "").toString();
+    const companyIdStr = (user.companyId || "").toString();
+    const requestedCreatedBy = (filter.createdBy || "").toString();
+
+    const isQueryingOwn = requestedCreatedBy && userIdStr && requestedCreatedBy === userIdStr;
+    const isRecycleBinQuery = finalFilter.deletedAt !== null;
+
+    if (isRecycleBinQuery) {
+      // 🗑️ Recycle Bin Isolation: Strictly same company ONLY
+      if (companyIdStr && mongoose.Types.ObjectId.isValid(companyIdStr)) {
+        finalFilter.companyId = new mongoose.Types.ObjectId(companyIdStr);
+      } else {
+        // Fallback for users without company (shouldn't happen with ensureUserCompany)
+        finalFilter.createdBy = new mongoose.Types.ObjectId(userIdStr);
+      }
+    } else {
+      // 🔒 Account Isolation: Strictly same company ONLY (whether public or private)
+      if (companyIdStr && mongoose.Types.ObjectId.isValid(companyIdStr)) {
+        finalFilter.companyId = new mongoose.Types.ObjectId(companyIdStr);
+      } else if (userIdStr && mongoose.Types.ObjectId.isValid(userIdStr)) {
+        // Fallback to own content if no companyId
+        finalFilter.createdBy = new mongoose.Types.ObjectId(userIdStr);
+      }
+
+      // 👤 Strict User Isolation: Honor the 'createdBy' filter if provided by the frontend.
+      // This ensures the "My Screens" list is correctly isolated to the current account.
+      if (isQueryingOwn && userIdStr && mongoose.Types.ObjectId.isValid(userIdStr)) {
+        finalFilter.createdBy = new mongoose.Types.ObjectId(userIdStr);
+      }
+    }
+  }
+
 
   const screens = await Screen.paginate(finalFilter, {
     ...options,
-    populate: "templateId",
+    populate: [
+      { path: "templateId" },
+      { path: "createdBy", select: "id _id first_name last_name email avatar" }
+    ],
   });
+
   return screens;
 };
 
 /**
  * Get screen by id
  * @param {ObjectId} id
+ * @param {IUser} user
+ * @param {string} key - Optional secret key for playback
  * @returns {Promise<Screen>}
  */
-const getScreenById = async (id: string, user?: IUser) => {
-  const screen = await Screen.findById(id).populate("templateId");
+const getScreenById = async (id: string, user?: IUser, key?: string) => {
+  const screen = await Screen.findById(id).populate("templateId") as any;
 
-  if (screen && user && user.role !== "super_admin") {
-    if (!screen.isPublic && screen.companyId?.toString() !== user.companyId?.toString()) {
-      throw new ApiError(httpStatus.FORBIDDEN, "Forbidden");
+  if (!screen) return null;
+
+  // 🛡️ PERMISSION CHECK
+  // Allow if: Super Admin OR Owner OR Public OR Secret Key matches
+  console.log('[DEBUG_AUTH] ID:', id, 'Key provided:', key, 'Stored Key:', screen.secretKey);
+  let isAuthorized = false;
+
+  if (user) {
+    if (user.role === "super_admin") isAuthorized = true;
+    else if (screen.companyId?.toString() === user.companyId?.toString()) isAuthorized = true;
+  }
+
+  if (screen.isPublic) isAuthorized = true;
+  if (key && screen.secretKey === key) isAuthorized = true;
+
+  if (!isAuthorized) {
+    throw new ApiError(httpStatus.FORBIDDEN, `Forbidden: Access denied. Expected: '${screen.secretKey}', Received: '${key}'`);
+  }
+
+  if (screen) {
+    // Hydrate Shared Playlists
+    const playlistIds = new Set<string>();
+
+    // 1. Collect IDs from defaultContent
+    if (screen.defaultContent) {
+      Object.values(screen.defaultContent).forEach((content: any) => {
+        if (content.sourceType === 'playlist' && content.playlistId) {
+          playlistIds.add(content.playlistId.toString());
+        }
+      });
+    }
+
+    // 2. Collect IDs from schedules
+    if (screen.schedules) {
+      screen.schedules.forEach((schedule: any) => {
+        if (schedule.content) {
+          Object.values(schedule.content).forEach((content: any) => {
+            if (content.sourceType === 'playlist' && content.playlistId) {
+              playlistIds.add(content.playlistId.toString());
+            }
+          });
+        }
+      });
+    }
+
+    if (playlistIds.size > 0) {
+      const playlists = await Playlist.find({
+        _id: { $in: Array.from(playlistIds) },
+        companyId: screen.companyId // 🛡️ Strict Isolation: Only allow playlists from the SAME company
+      });
+      const playlistMap = new Map(playlists.map(p => [p.id, p]));
+
+      // Helper to hydration
+      const hydrateContent = (contentObj: any) => {
+        Object.keys(contentObj).forEach(key => {
+          const content = contentObj[key];
+          if (content.sourceType === 'playlist' && content.playlistId) {
+            const playlist = playlistMap.get(content.playlistId.toString());
+            if (playlist) {
+              // Inject items into the playlist array for the player/frontend to use directly
+              content.playlist = playlist.items;
+            }
+          }
+        });
+      };
+
+      const screenObj = screen.toObject();
+      if (screenObj.defaultContent) hydrateContent(screenObj.defaultContent);
+      if (screenObj.schedules) {
+        screenObj.schedules.forEach((s: any) => {
+          if (s.content) hydrateContent(s.content);
+        });
+      }
+      return screenObj;
     }
   }
 
@@ -185,6 +300,44 @@ const getScreensByTemplateId = async (templateId: string) => {
   return await Screen.find({ templateId });
 };
 
+import templateService from "./template.service";
+
+/**
+ * Clone a screen for the current user
+ * @param {ObjectId} screenId
+ * @param {IUser} user
+ * @returns {Promise<Screen>}
+ */
+const cloneScreen = async (screenId: string, user: IUser) => {
+  const originalScreen = await getScreenById(screenId, user);
+  if (!originalScreen) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Original screen not found");
+  }
+
+  let targetTemplateId = originalScreen.templateId;
+  const originalTemplate = originalScreen.templateId as any;
+
+  // Check if we need to clone the template too
+  // If the template belongs to another company, clone it so the user can edit it
+  if (originalTemplate.companyId?.toString() !== user.companyId?.toString()) {
+    const clonedTemplate = await templateService.cloneTemplate(originalTemplate._id.toString(), user);
+    targetTemplateId = clonedTemplate._id;
+  }
+
+  const payload = {
+    name: `Copy of ${originalScreen.name}`,
+    location: originalScreen.location,
+    templateId: targetTemplateId,
+    defaultContent: originalScreen.defaultContent,
+    schedules: originalScreen.schedules,
+    companyId: user.companyId,
+    createdBy: user._id,
+    isPublic: false,
+  };
+
+  return await Screen.create(payload);
+};
+
 export default {
   createScreen,
   queryScreens,
@@ -194,4 +347,5 @@ export default {
   restoreScreenById,
   permanentDeleteScreenById,
   getScreensByTemplateId,
+  cloneScreen,
 };

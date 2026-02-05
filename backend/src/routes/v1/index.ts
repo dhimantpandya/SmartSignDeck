@@ -8,15 +8,16 @@ import roleRoute from "./role.route";
 
 import userRoute from "./user.route";
 import templateRoute from "./template.route";
+import adminRequestRoute from "./adminRequest.route";
 import screenRoute from "./screen.route";
 import signageRoute from "./signage.route";
 import playbackLogRoute from "./playbackLog.route";
 import cloudinaryRoute from "./cloudinary.route";
 import healthRoute from "./health.route";
 import analyticsRoute from "./analytics.route";
-import audienceRoute from "./audience.route";
 import socialRoute from "./social.route";
 import companyRoute from "./company.route";
+import playlistRoute from "./playlist.route";
 // IMPORT ROUTE HERE
 
 const router: Router = express.Router();
@@ -36,7 +37,10 @@ const defaultRoutes: Route[] = [
     path: "/users",
     route: userRoute,
   },
-
+  {
+    path: "/admin-requests",
+    route: adminRequestRoute,
+  },
   { path: "/roles", route: roleRoute },
   { path: "/permissions", route: permissionRoute },
   { path: "/templates", route: templateRoute },
@@ -49,9 +53,9 @@ const defaultRoutes: Route[] = [
   { path: "/cloudinary", route: cloudinaryRoute },
   { path: "/health", route: healthRoute },
   { path: "/analytics", route: analyticsRoute },
-  { path: "/audience", route: audienceRoute },
   { path: "/social", route: socialRoute },
   { path: "/companies", route: companyRoute },
+  { path: "/playlists", route: playlistRoute },
   // ROUTE DECLARATION
 ];
 

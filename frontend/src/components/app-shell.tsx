@@ -1,4 +1,4 @@
-import { Outlet, Navigate } from 'react-router-dom'
+import { Outlet, Navigate, useLocation } from 'react-router-dom'
 import Sidebar from './sidebar'
 import useIsCollapsed from '@/hooks/use-is-collapsed'
 import { useAuth } from '@/hooks/use-auth'
@@ -12,6 +12,7 @@ import { useState } from 'react'
 export default function AppShell() {
   const [isCollapsed, setIsCollapsed] = useIsCollapsed()
   const [isChatOpen, setIsChatOpen] = useState(false)
+  const location = useLocation()
   const { isLoggedIn } = useAuth()
 
   // Check if we have a refresh token but aren't logged in yet (loading state)
@@ -36,6 +37,7 @@ export default function AppShell() {
         onCommand={(cmd) => {
           if (cmd === '#chat') setIsChatOpen(!isChatOpen)
         }}
+        currentPath={location.pathname}
       />
       <main
         id='content'

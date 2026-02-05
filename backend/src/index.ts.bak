@@ -1,0 +1,125 @@
+import http from "http";
+import type https from "https";
+import mongoose from "mongoose";
+import nodemailer from "nodemailer";
+import config from "./config/config";
+import app from "./app";
+import logger from "./config/logger";
+import { initSocket } from "./services/socket.service";
+import cleanupService from "./services/cleanup.service";
+
+let server: http.Server | https.Server;
+
+// Connect to MongoDB
+console.log(`Connecting to MongoDB at ${config.mongoose.url}...`);
+mongoose
+  .connect(config.mongoose.url, { dbName: config.mongoose.dbName })
+  .then(async () => {
+    console.log("SUCCESS: Connected to MongoDB");
+    logger.info("Connected to MongoDB");
+    console.log("Using database:", config.mongoose.dbName);
+    if (!mongoose.connection.db) {
+      console.log("CRITICAL: mongoose.connection.db is undefined!");
+    }
+
+    // --- MIGRATION: Drop unique company name index ---
+    try {
+      if (mongoose.connection.db) {
+        const collection = mongoose.connection.db.collection('companies');
+        const indexExists = await collection.indexExists('name_1');
+        if (indexExists) {
+          await collection.dropIndex('name_1');
+          logger.info("Dropped unique index 'name_1' from companies collection");
+        }
+      }
+    } catch (err: any) {
+      // Ignore if index doesn't exist
+      if (err.code !== 27) {
+        logger.error("Failed to drop name_1 index", err);
+      }
+    }
+    // -------------------------------------------------
+
+    // Start HTTP server
+    console.log("Creating HTTP server...");
+    const httpServer = http.createServer(app);
+
+    // Initialize Socket.io
+    initSocket(httpServer);
+
+    console.log(`Attempting to listen on port ${config.port}...`);
+    httpServer.listen(config.port, () => {
+      console.log(`SUCCESS: HTTP Server running on port ${config.port}`);
+      logger.info(`HTTP Server running on port ${config.port}`);
+      cleanupService.startCleanupJob();
+    });
+    server = httpServer;
+  })
+  .catch((error) => {
+    logger.error("Failed to connect to MongoDB", error);
+    process.exit(1);
+  });
+
+// Setup Nodemailer transporter
+const transporter = nodemailer.createTransport({
+  host: config.email.host,
+  port: config.email.port,
+  secure: true,
+  auth: {
+    user: config.email.user,
+    pass: config.email.pass,
+  },
+  tls: {
+    rejectUnauthorized: false,
+  },
+});
+
+/*
+transporter.verify((err, success) => {
+  if (err) console.error("Email server connection failed:", err);
+  else console.log("Email server is ready to send messages");
+});
+*/
+
+export { transporter };
+
+// Graceful shutdown
+const exitHandler = (): void => {
+  if (server) {
+    server.close(() => {
+      logger.info("Server closed");
+      mongoose.connection.close(false).then(() => {
+        logger.info("Mongoose connection closed");
+        process.exit(0);
+      });
+    });
+
+    // Force exit if graceful shutdown takes too long (e.g. 10s)
+    setTimeout(() => {
+      logger.error(
+        "Could not close connections in time, forcefully shutting down",
+      );
+      process.exit(1);
+    }, 10000);
+  } else {
+    process.exit(0);
+  }
+};
+
+const unexpectedErrorHandler = (error: Error): void => {
+  logger.error(error);
+  exitHandler();
+};
+
+process.on("uncaughtException", unexpectedErrorHandler);
+process.on("unhandledRejection", unexpectedErrorHandler);
+
+process.on("SIGTERM", () => {
+  logger.info("SIGTERM received");
+  exitHandler();
+});
+
+process.on("SIGINT", () => {
+  logger.info("SIGINT received");
+  exitHandler();
+});

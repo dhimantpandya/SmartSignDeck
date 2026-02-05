@@ -1,9 +1,10 @@
 import httpStatus from "http-status";
+import mongoose from "mongoose";
 import PlaybackLog from "../models/playbackLog.model";
 import ApiError from "../utils/ApiError";
 import { Parser } from "json2csv";
 import PDFDocument from "pdfkit";
-import { format } from "date-fns";
+import { format, eachDayOfInterval } from "date-fns";
 
 /**
  * Get playback statistics by screen
@@ -15,12 +16,14 @@ import { format } from "date-fns";
 const getPlaybackStatsByScreen = async (
     screenId: string,
     startDate: Date,
-    endDate: Date
+    endDate: Date,
+    companyId: string
 ) => {
     const stats = await PlaybackLog.aggregate([
         {
             $match: {
                 screenId,
+                companyId: new mongoose.Types.ObjectId(companyId),
                 startTime: { $gte: startDate, $lte: endDate },
             },
         },
@@ -49,12 +52,14 @@ const getPlaybackStatsByScreen = async (
 const getPlaybackStatsByTemplate = async (
     templateId: string,
     startDate: Date,
-    endDate: Date
+    endDate: Date,
+    companyId: string
 ) => {
     const stats = await PlaybackLog.aggregate([
         {
             $match: {
                 templateId,
+                companyId: new mongoose.Types.ObjectId(companyId),
                 startTime: { $gte: startDate, $lte: endDate },
             },
         },
@@ -92,11 +97,13 @@ const getPlaybackStatsByTemplate = async (
 const getContentPerformance = async (
     startDate: Date,
     endDate: Date,
-    limit: number = 10
+    limit: number = 10,
+    companyId: string
 ) => {
     const performance = await PlaybackLog.aggregate([
         {
             $match: {
+                companyId: new mongoose.Types.ObjectId(companyId),
                 startTime: { $gte: startDate, $lte: endDate },
             },
         },
@@ -139,10 +146,12 @@ const getContentPerformance = async (
 const getScreenUptime = async (
     screenId: string,
     startDate: Date,
-    endDate: Date
+    endDate: Date,
+    companyId: string
 ) => {
     const logs = await PlaybackLog.find({
         screenId,
+        companyId: new mongoose.Types.ObjectId(companyId),
         startTime: { $gte: startDate, $lte: endDate },
     }).sort({ startTime: 1 });
 
@@ -179,7 +188,8 @@ const getScreenUptime = async (
 const getPlaybackTimeline = async (
     startDate: Date,
     endDate: Date,
-    interval: string = "day"
+    interval: string = "day",
+    companyId: string
 ) => {
     let dateFormat: any;
 
@@ -197,6 +207,7 @@ const getPlaybackTimeline = async (
     const timeline = await PlaybackLog.aggregate([
         {
             $match: {
+                companyId: new mongoose.Types.ObjectId(companyId),
                 startTime: { $gte: startDate, $lte: endDate },
             },
         },
@@ -210,11 +221,39 @@ const getPlaybackTimeline = async (
         { $sort: { _id: 1 } },
     ]);
 
-    return timeline.map((item) => ({
-        period: item._id,
-        plays: item.plays,
-        duration: item.duration,
-    }));
+    // Fill missing dates with 0 (Timezone-safe UTC approach)
+    const timelineMap = new Map(timeline.map(item => [item._id, item]));
+    const result = [];
+
+    if (interval === "day") {
+        let current = new Date(startDate);
+        // Ensure current is at start of UTC day
+        current.setUTCHours(0, 0, 0, 0);
+
+        // Use a safety counter to avoid infinite loops if dates are messed up
+        let safety = 0;
+        while (current <= endDate && safety < 1000) {
+            const dateKey = current.toISOString().split('T')[0];
+            const existing = timelineMap.get(dateKey);
+
+            result.push({
+                period: dateKey,
+                plays: existing ? existing.plays : 0,
+                duration: existing ? existing.duration : 0,
+            });
+
+            current.setUTCDate(current.getUTCDate() + 1);
+            safety++;
+        }
+    } else {
+        return timeline.map((item) => ({
+            period: item._id,
+            plays: item.plays,
+            duration: item.duration,
+        }));
+    }
+
+    return result;
 };
 
 /**
@@ -223,12 +262,15 @@ const getPlaybackTimeline = async (
  * @param {Date} endDate
  * @returns {Promise<Object>}
  */
-const getAnalyticsSummary = async (startDate: Date, endDate: Date) => {
-    const summary = await PlaybackLog.aggregate([
+const getAnalyticsSummary = async (startDate: Date, endDate: Date, companyId: string) => {
+    const matchQuery = {
+        companyId: new mongoose.Types.ObjectId(companyId),
+        startTime: { $gte: startDate, $lte: endDate },
+    };
+
+    const summaryResults = await PlaybackLog.aggregate([
         {
-            $match: {
-                startTime: { $gte: startDate, $lte: endDate },
-            },
+            $match: matchQuery,
         },
         {
             $group: {
@@ -253,8 +295,9 @@ const getAnalyticsSummary = async (startDate: Date, endDate: Date) => {
         },
     ]);
 
-    return summary.length > 0
-        ? summary[0]
+
+    return summaryResults.length > 0
+        ? summaryResults[0]
         : {
             totalPlays: 0,
             totalDuration: 0,
@@ -271,10 +314,11 @@ const getAnalyticsSummary = async (startDate: Date, endDate: Date) => {
  * @param {Date} endDate
  * @returns {Promise<Array>}
  */
-const getAudienceSummary = async (startDate: Date, endDate: Date) => {
+const getAudienceSummary = async (startDate: Date, endDate: Date, companyId: string) => {
     const summary = await PlaybackLog.aggregate([
         {
             $match: {
+                companyId: new mongoose.Types.ObjectId(companyId),
                 startTime: { $gte: startDate, $lte: endDate },
                 "demographics.ageRange": { $exists: true },
             },
@@ -306,8 +350,9 @@ const getAudienceSummary = async (startDate: Date, endDate: Date) => {
  * @param {Date} endDate
  * @returns {Promise<Array>}
  */
-const getPlaybackLogs = async (startDate: Date, endDate: Date) => {
+const getPlaybackLogs = async (startDate: Date, endDate: Date, companyId: string) => {
     return PlaybackLog.find({
+        companyId: new mongoose.Types.ObjectId(companyId),
         startTime: { $gte: startDate, $lte: endDate },
     }).populate("screenId", "name location").populate("templateId", "name").sort({ startTime: -1 });
 };

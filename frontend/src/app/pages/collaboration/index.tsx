@@ -7,6 +7,8 @@ import { Button } from '@/components/custom/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
+import { UserProfileDialog } from '@/app/pages/users/components/user-profile-dialog'
 import { socialService } from '@/api/social.service'
 import { userService } from '@/api/user.service'
 import { useAuth } from '@/hooks/use-auth'
@@ -35,6 +37,11 @@ export default function Collaboration() {
     const [inputText, setInputText] = useState('')
     const [isSending, setIsSending] = useState(false)
     const [activeTab, setActiveTab] = useState('friends')
+    const [selectedFriend, setSelectedFriend] = useState<any>(null)
+    const [privateMessages, setPrivateMessages] = useState<any[]>([])
+    const [privateInputText, setPrivateInputText] = useState('')
+    const [selectedProfileUser, setSelectedProfileUser] = useState<any>(null)
+    const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false)
     const socketRef = useRef<Socket | null>(null)
     const messagesEndRef = useRef<HTMLDivElement | null>(null)
 
@@ -76,6 +83,16 @@ export default function Collaboration() {
                 loadData()
             })
 
+            socket.on('new_chat', (data) => {
+                console.log('New chat received:', data)
+                if (data.type === 'company') {
+                    setCompanyMessages(prev => [...prev, data])
+                } else if (data.type === 'private' && (selectedFriend?.id === data.senderId || selectedFriend?.id === data.recipientId || data.senderId === user?.id)) {
+                    // Only append if chat is open with this person
+                    setPrivateMessages(prev => [...prev, data])
+                }
+            })
+
             socket.on('disconnect', () => {
                 console.log('Socket disconnected')
             })
@@ -92,19 +109,19 @@ export default function Collaboration() {
         try {
             const friendsRes = await socialService.getFriends()
             if (Array.isArray(friendsRes)) {
-                setFriends(friendsRes)
+                setFriends(friendsRes.filter(Boolean))
             } else {
                 setFriends([])
             }
 
             const sentRes = await socialService.getSentRequests()
             if (Array.isArray(sentRes)) {
-                setSentRequests(sentRes);
+                setSentRequests(sentRes.filter(Boolean));
             }
 
             const receivedRes = await socialService.getReceivedRequests()
             if (Array.isArray(receivedRes)) {
-                setReceivedRequests(receivedRes);
+                setReceivedRequests(receivedRes.filter(Boolean));
             }
 
             // Load company board messages
@@ -112,7 +129,7 @@ export default function Collaboration() {
                 const messagesRes = await socialService.getCompanyBoard()
                 if (Array.isArray(messagesRes)) {
                     // Backend returns { created_at: -1 }, so we reverse for chronological
-                    setCompanyMessages(messagesRes.reverse())
+                    setCompanyMessages(messagesRes.filter(Boolean).reverse())
                 }
             }
         } catch (err) {
@@ -128,7 +145,7 @@ export default function Collaboration() {
         try {
             const res = await userService.getAllUsers({
                 pagination: { pageIndex: 0, pageSize: 15 }, // Increased pageSize slightly
-                filter: { search: query } // Removed empty role: []
+                filter: { search: query, role: [] }
             })
             // Safety check for user ID comparison
             const usersWithIds = (res.data.users || []).map((u: any) => ({
@@ -159,6 +176,51 @@ export default function Collaboration() {
             loadData()
         } catch (err: any) {
             toast({ title: 'Failed to send request', description: err.message, variant: 'destructive' })
+        }
+    }
+
+    const handleDM = async (friend: any) => {
+        setSelectedFriend(friend)
+        // Load messages
+        try {
+            if (user && friend) {
+                const msgs = await socialService.getChatHistory(friend.id)
+                setPrivateMessages(msgs.reverse())
+            }
+        } catch (err) {
+            console.error(err)
+        }
+    }
+
+    const handleSendPrivateMessage = async () => {
+        if (!privateInputText.trim() || !user || !selectedFriend || isSending) return
+
+        setIsSending(true)
+        const payload = {
+            text: privateInputText,
+            recipientId: selectedFriend.id,
+            senderName: `${user.first_name} ${user.last_name}`,
+            senderId: user.id,
+            avatar: user.avatar,
+            type: 'private'
+        }
+
+        try {
+            await socialService.sendMessage({
+                text: privateInputText,
+                recipientId: selectedFriend.id
+            })
+
+            socketRef.current?.emit('send_chat', payload)
+            setPrivateInputText('')
+        } catch (err: any) {
+            toast({
+                title: 'Failed to send message',
+                description: err.message,
+                variant: 'destructive'
+            })
+        } finally {
+            setIsSending(false)
         }
     }
 
@@ -282,11 +344,20 @@ export default function Collaboration() {
                                                     </div>
                                                 </div>
                                                 <div className="mt-6 flex gap-2">
-                                                    <Button variant="outline" size="sm" className="flex-1 gap-2 border-primary/20 hover:bg-primary/5">
+                                                    <Button variant="outline" size="sm" className="flex-1 gap-2 border-primary/20 hover:bg-primary/5" onClick={() => handleDM(friend)}>
                                                         <MessageSquare size={14} />
                                                         Message
                                                     </Button>
-                                                    <Button variant="outline" size="sm">Profile</Button>
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() => {
+                                                            setSelectedProfileUser(friend)
+                                                            setIsProfileDialogOpen(true)
+                                                        }}
+                                                    >
+                                                        Profile
+                                                    </Button>
                                                 </div>
                                             </CardContent>
                                         </Card>
@@ -303,7 +374,7 @@ export default function Collaboration() {
                                         {receivedRequests.length === 0 ? (
                                             <p className="text-muted-foreground text-sm italic">No pending incoming requests.</p>
                                         ) : (
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div className="grid grid-cols-1 gap-4">
                                                 {receivedRequests.map(req => (
                                                     <Card key={req.id || req._id} className="border-primary/10">
                                                         <CardContent className="p-4 flex items-center justify-between">
@@ -445,7 +516,8 @@ export default function Collaboration() {
                                                 <div className="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar relative z-10">
                                                     <div className="max-w-4xl mx-auto space-y-6">
                                                         {companyMessages.map((msg, i) => {
-                                                            const msgSenderId = typeof msg.senderId === 'string' ? msg.senderId : msg.senderId?._id || msg.senderId?.id;
+                                                            if (!msg) return null;
+                                                            const msgSenderId = msg.senderId?.id || msg.senderId?._id || msg.senderId;
                                                             const isOwnMessage = msgSenderId === user?.id;
 
                                                             const senderName = msg.senderName ||
@@ -480,6 +552,8 @@ export default function Collaboration() {
                                                                                 isOwnMessage ? "right-0" : "left-0"
                                                                             )}>
                                                                                 {messageDate ? new Date(messageDate).toLocaleString('en-IN', {
+                                                                                    month: 'short',
+                                                                                    day: 'numeric',
                                                                                     hour: '2-digit',
                                                                                     minute: '2-digit',
                                                                                     hour12: true
@@ -489,7 +563,9 @@ export default function Collaboration() {
 
                                                                         {/* Fixed Timestamp for non-group hover or mobile */}
                                                                         <span className="mt-1 px-1 text-[8px] text-muted-foreground/60 block group-hover:hidden">
-                                                                            {messageDate ? new Date(messageDate).toLocaleTimeString('en-IN', {
+                                                                            {messageDate ? new Date(messageDate).toLocaleString('en-IN', {
+                                                                                month: 'short',
+                                                                                day: 'numeric',
                                                                                 hour: '2-digit',
                                                                                 minute: '2-digit',
                                                                                 hour12: true
@@ -538,6 +614,75 @@ export default function Collaboration() {
                     </main>
                 </Layout.Body>
             </Layout>
+
+            <Dialog open={!!selectedFriend} onOpenChange={(open) => !open && setSelectedFriend(null)}>
+                <DialogContent className="sm:max-w-md h-[80vh] flex flex-col p-0 gap-0 overflow-hidden">
+                    <DialogHeader className="px-6 py-4 border-b">
+                        <DialogTitle className="flex items-center gap-2">
+                            <Avatar className="h-8 w-8">
+                                <AvatarImage src={selectedFriend?.avatar} />
+                                <AvatarFallback>{selectedFriend?.first_name?.[0]}</AvatarFallback>
+                            </Avatar>
+                            {selectedFriend?.first_name} {selectedFriend?.last_name}
+                        </DialogTitle>
+                        <DialogDescription>Private Conversation</DialogDescription>
+                    </DialogHeader>
+
+                    <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-muted/5">
+                        {privateMessages.length === 0 ? (
+                            <div className="text-center text-muted-foreground text-sm py-10">
+                                No messages yet. Say hi!
+                            </div>
+                        ) : (
+                            privateMessages.map((msg, i) => {
+                                if (!msg) return null;
+                                const msgSenderId = msg.senderId?.id || msg.senderId?._id || msg.senderId;
+                                const isOwn = msgSenderId === user?.id;
+                                return (
+                                    <div key={i} className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
+                                        <div className={`max-w-[70%] rounded-xl px-4 py-2 ${isOwn ? 'bg-primary text-primary-foreground rounded-tr-none' : 'bg-muted border rounded-tl-none'
+                                            }`}>
+                                            <p className="text-sm">{msg.text}</p>
+                                            <span className="text-[9px] opacity-70 block mt-1 text-right">
+                                                {msg.created_at ? new Date(msg.created_at).toLocaleString('en-IN', {
+                                                    month: 'short',
+                                                    day: 'numeric',
+                                                    hour: '2-digit',
+                                                    minute: '2-digit',
+                                                    hour12: true
+                                                }) : 'Just now'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                )
+                            })
+                        )}
+                    </div>
+
+                    <div className="p-4 border-t bg-background">
+                        <div className="flex gap-2">
+                            <Input
+                                placeholder="Type a message..."
+                                value={privateInputText}
+                                onChange={(e) => setPrivateInputText(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && handleSendPrivateMessage()}
+                            />
+                            <Button size="icon" onClick={handleSendPrivateMessage} disabled={!privateInputText.trim() || isSending}>
+                                <Send size={18} />
+                            </Button>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            <UserProfileDialog
+                isOpen={isProfileDialogOpen}
+                handleClose={() => {
+                    setIsProfileDialogOpen(false)
+                    setSelectedProfileUser(null)
+                }}
+                user={selectedProfileUser}
+            />
         </Tabs>
     )
 }

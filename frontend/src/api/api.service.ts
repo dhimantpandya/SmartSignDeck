@@ -50,7 +50,8 @@ class ApiService {
             'v1/auth/resend-otp',
             'v1/auth/verify-reset-otp',
             'v1/auth/refresh-tokens',
-            'v1/auth/change-password'
+            'v1/auth/change-password',
+            'v1/auth/firebase'
           ]
           const url = originalRequest.url || ''
           if (authEndpoints.some(endpoint => url.includes(endpoint))) {

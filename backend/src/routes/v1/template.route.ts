@@ -38,6 +38,13 @@ router
     templateController.deleteTemplate,
   );
 
+router
+  .route("/:templateId/clone")
+  .post(
+    auth("createTemplates"),
+    templateController.cloneTemplate
+  );
+
 export default router;
 
 router

@@ -26,6 +26,22 @@ export const loginUserWithEmailAndPassword = async (
     );
   }
 
+  // Check auth provider - prevent email/password login for Google users
+  if (user.authProvider === "google") {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      "This account was created with Google. Please sign in using Google.",
+    );
+  }
+
+  // Check if user has a password (Google users don't have passwords)
+  if (!user.password) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      "This account was created with Google. Please sign in using Google.",
+    );
+  }
+
   if (!(await user.isPasswordMatch(password))) {
     throw new ApiError(httpStatus.UNAUTHORIZED, "Incorrect password");
   }

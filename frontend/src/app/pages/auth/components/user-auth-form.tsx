@@ -13,6 +13,7 @@ import { User } from '@/models/user.model'
 import { cn } from '@/lib/utils'
 import { Routes } from '@/utilities/routes'
 import { toast } from '@/components/ui/use-toast'
+import { mapApiUserToUser } from '@/utilities/mappers/user.mapper'
 
 import {
   Form,
@@ -73,19 +74,7 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
     onSuccess: (response) => {
       const apiUser = response.user
 
-      // ✅ Map FULL User model to ensure data persistence
-      const user: User = {
-        id: apiUser.id.toString(),
-        email: apiUser.email,
-        first_name: apiUser.first_name,
-        last_name: apiUser.last_name,
-        role: (apiUser.role as User['role']) ?? 'user',
-        is_email_verified: apiUser.is_email_verified ?? false,
-        avatar: apiUser.avatar,
-        gender: apiUser.gender,
-        dob: apiUser.dob,
-        language: apiUser.language,
-      }
+      const user = mapApiUserToUser(apiUser)
 
       const refreshToken =
         !import.meta.env.VITE_COOKIE_BASED_AUTHENTICATION
@@ -104,8 +93,9 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
     onError: (error: any) => {
       setIsLoading(false)
 
+      const message = error?.message || '';
       const isUnregistered =
-        (error?.status === 401 && error?.message?.includes('not registered')) ||
+        (error?.status === 401 && message.toLowerCase().includes('not registered')) ||
         error?.status === 404
 
       if (isUnregistered) {
@@ -136,6 +126,16 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
           description: 'A new OTP has been sent to your email. Please verify your account.',
         })
         navigate(`/otp?email=${email}`)
+        return
+      }
+
+      if (error?.status === 400 && error?.message?.includes('This account was created with')) {
+        const isGoogleAccount = error.message.toLowerCase().includes('google');
+        toast({
+          variant: 'destructive',
+          title: 'Wrong Login Method',
+          description: error.message,
+        })
         return
       }
 
@@ -226,18 +226,7 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
 
                   // Handle success similar to standard login
                   const apiUser = response.user;
-                  const user: User = {
-                    id: apiUser.id.toString(),
-                    email: apiUser.email,
-                    first_name: apiUser.first_name,
-                    last_name: apiUser.last_name,
-                    role: (apiUser.role as User['role']) ?? 'user',
-                    is_email_verified: apiUser.is_email_verified ?? true,
-                    avatar: apiUser.avatar,
-                    gender: apiUser.gender,
-                    dob: apiUser.dob,
-                    language: apiUser.language,
-                  }
+                  const user = mapApiUserToUser(apiUser)
 
                   const refreshToken = !import.meta.env.VITE_COOKIE_BASED_AUTHENTICATION
                     ? response.tokens?.refresh?.token ?? null
@@ -298,6 +287,15 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
                       }
                     }, 2000)
                     return;
+                  }
+
+                  if (error?.status === 400 && error?.message?.includes('This account was created with')) {
+                    toast({
+                      variant: 'destructive',
+                      title: 'Wrong Login Method',
+                      description: error.message,
+                    })
+                    return
                   }
 
                   const errorMessage = error?.message || (typeof error === 'string' ? error : 'Google Sign-In failed');

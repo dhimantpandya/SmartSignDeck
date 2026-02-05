@@ -14,7 +14,7 @@ export interface Screen {
 }
 
 const getScreens = async (params?: any) => {
-    return apiService.get<{ results: Screen[] }>('/v1/screens', { params: { limit: 5, sortBy: 'created_at:desc', ...params } })
+    return apiService.get<{ results: Screen[] }>('/v1/screens', { params: { sortBy: 'created_at:desc', ...params } })
 }
 
 const deleteScreen = async (id: string) => {
@@ -22,11 +22,15 @@ const deleteScreen = async (id: string) => {
 }
 
 const restoreScreen = async (id: string) => {
-    return apiService.post(`/v1/screens/${id}/restore`)
+    return apiService.post(`/v1/screens/${id}/restore`, {})
 }
 
 const permanentDeleteScreen = async (id: string) => {
     return apiService.delete(`/v1/screens/${id}/permanent`)
+}
+
+const cloneScreen = async (id: string) => {
+    return apiService.post<Screen>(`/v1/screens/${id}/clone`, {})
 }
 
 export const screenService = {
@@ -34,4 +38,5 @@ export const screenService = {
     deleteScreen,
     restoreScreen,
     permanentDeleteScreen,
+    cloneScreen,
 }

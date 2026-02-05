@@ -6,7 +6,8 @@ interface RegisterBody {
   password: string;
   first_name: string;
   last_name: string;
-  companyName: string;
+  companyName?: string;
+  companyId?: string;
   confirmPassword: string;
 }
 
@@ -81,8 +82,8 @@ const verifyOtp: { body: ObjectSchema<VerifyOtpBody> } = {
   }),
 };
 
-const register: { body: ObjectSchema<RegisterBody> } = {
-  body: Joi.object<RegisterBody>().keys({
+const register: { body: ObjectSchema<RegisterBody & { companyId?: string }> } = {
+  body: Joi.object<RegisterBody & { companyId?: string }>().keys({
     email: Joi.string()
       .trim()
       .required()
@@ -103,7 +104,8 @@ const register: { body: ObjectSchema<RegisterBody> } = {
       .max(50)
       .label("First name"),
     last_name: Joi.string().trim().required().min(2).max(50).label("Last name"),
-    companyName: Joi.string().trim().required().label("Company Name"),
+    companyName: Joi.string().trim().allow("", null).label("Company Name"),
+    companyId: Joi.string().trim().allow("", null).label("Company ID"),
     confirmPassword: Joi.string()
       .required()
       .valid(Joi.ref("password"))
@@ -189,17 +191,17 @@ const changePassword: {
 };
 
 const verifyResetPasswordOtp: { body: ObjectSchema<VerifyForgetPasswordOtp> } =
-  {
-    body: Joi.object<VerifyForgetPasswordOtp>().keys({
-      email: Joi.string()
-        .trim()
-        .required()
-        .email()
-        .label("Email")
-        .custom(toLowerCase),
-      otp: Joi.string().trim().required().label("OTP"),
-    }),
-  };
+{
+  body: Joi.object<VerifyForgetPasswordOtp>().keys({
+    email: Joi.string()
+      .trim()
+      .required()
+      .email()
+      .label("Email")
+      .custom(toLowerCase),
+    otp: Joi.string().trim().required().label("OTP"),
+  }),
+};
 
 const updateProfile: { body: ObjectSchema } = {
   body: Joi.object()

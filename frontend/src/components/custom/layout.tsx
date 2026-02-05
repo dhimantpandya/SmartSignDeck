@@ -1,5 +1,7 @@
 import * as React from 'react'
 import { cn } from '@/lib/utils'
+import { useAuth } from '@/hooks/use-auth'
+import { CreateCompanyModal } from '@/app/pages/auth/components/create-company-modal'
 
 const LayoutContext = React.createContext<{
   offset: number
@@ -27,6 +29,9 @@ const Layout = ({ className, fixed = false, ...props }: LayoutProps) => {
     return () => div.removeEventListener('scroll', onScroll)
   }, [])
 
+  const { user } = useAuth()
+  const showModal = user && !user.companyId && !user.companyName && !user.onboardingCompleted
+
   return (
     <LayoutContext.Provider value={{ offset, fixed }}>
       <div
@@ -39,6 +44,7 @@ const Layout = ({ className, fixed = false, ...props }: LayoutProps) => {
         )}
         {...props}
       />
+      {showModal && <CreateCompanyModal isOpen={true} />}
     </LayoutContext.Provider>
   )
 }

@@ -30,6 +30,8 @@ const createTemplate = {
 const getTemplates = {
   query: Joi.object().keys({
     name: Joi.string(),
+    createdBy: Joi.string(),
+    isPublic: Joi.boolean(),
     sortBy: Joi.string(),
     limit: Joi.number().integer(),
     page: Joi.number().integer(),

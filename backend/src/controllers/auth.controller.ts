@@ -16,7 +16,8 @@ import ApiError from "../utils/ApiError";
 // ===== REGISTER =====
 export const register = async (req: Request, res: Response) => {
   try {
-    const { email, password, first_name, last_name, companyName } = req.body;
+    const { email, password, first_name, last_name, companyName, companyId } = req.body;
+    console.log(`[AuthDebug] Registration attempt for email: "${email}"`);
     const existingUser = await userService.getUserByEmail(email);
     if (existingUser) {
       if (!existingUser.is_email_verified) {
@@ -36,8 +37,10 @@ export const register = async (req: Request, res: Response) => {
       first_name,
       last_name,
       companyName,
-      role: "user",
+      companyId: companyId || undefined,
       is_email_verified: false,
+      authProvider: "local",
+      onboardingCompleted: true, // Manual registration includes companyName
     });
 
     // Generate OTP/Email verification token
@@ -53,9 +56,12 @@ export const register = async (req: Request, res: Response) => {
       "User registered successfully. OTP sent to email.",
       httpStatus.CREATED,
     );
-  } catch (err: unknown) {
-    console.error(err);
-    throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, "Server error");
+  } catch (err: any) {
+    console.error("[Register Error]", err);
+    res.status(err.statusCode || httpStatus.INTERNAL_SERVER_ERROR).json({
+      status: "error",
+      message: err.message || "Server error",
+    });
   }
 };
 
@@ -66,15 +72,43 @@ export const firebaseLogin = async (req: Request, res: Response) => {
     const { idToken, mode } = req.body;
 
     // Import admin dynamically or check if initialized
-    const { admin } = await import("../config/firebase");
+    const firebaseModule = await import("../config/firebase");
+    const admin = firebaseModule.admin;
+    const firebaseApp = firebaseModule.default;
 
-    if (!admin) {
-      return res
-        .status(httpStatus.INTERNAL_SERVER_ERROR)
-        .json({ status: "error", message: "Firebase Admin not initialized" });
+    let decodedToken: any;
+
+    if (!admin || !firebaseApp) {
+      // DEVELOPMENT BYPASS: Allow login without service-account.json in dev mode
+      if (config.env === "development") {
+        console.warn("[Auth] Firebase Admin not initialized. Bypassing verification for DEVELOPMENT mode.");
+        try {
+          const parts = idToken.split('.');
+          if (parts.length === 3) {
+            const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
+            decodedToken = {
+              email: payload.email,
+              name: payload.name,
+              picture: payload.picture,
+              uid: payload.sub,
+              displayName: payload.name,
+              ...payload
+            };
+          }
+        } catch (e) {
+          console.error("Failed to manual decode token in dev bypass", e);
+        }
+      }
+
+      if (!decodedToken) {
+        return res
+          .status(httpStatus.INTERNAL_SERVER_ERROR)
+          .json({ status: "error", message: "Firebase Admin not initialized. Please check service-account.json" });
+      }
+    } else {
+      decodedToken = await admin.auth().verifyIdToken(idToken);
     }
 
-    const decodedToken = await admin.auth().verifyIdToken(idToken);
     const { email } = decodedToken;
 
     if (!email) {
@@ -84,19 +118,56 @@ export const firebaseLogin = async (req: Request, res: Response) => {
     }
 
     const user = await userService.getUserByEmail(email);
+    console.log(`[AuthDebug] Firebase login attempt for email: "${email}", mode: "${mode}", userFound: ${!!user}`);
 
     if (!user) {
+      if (mode === "register") {
+        // Create new user for Google registration
+        const { displayName, picture } = decodedToken;
+        const [firstName, ...rest] = (displayName || "").split(" ");
+        const lastName = rest.join(" ");
+
+        const newUser = await userService.createUser({
+          email,
+          first_name: firstName || "Google",
+          last_name: lastName || "User",
+          role: "user",
+          is_email_verified: true, // Google accounts are verified
+          avatar: picture,
+          googleId: decodedToken.uid || decodedToken.sub,
+          authProvider: "google", // Set auth provider for Google registration
+        });
+
+        const tokens = await tokenService.generateAuthTokens(newUser);
+        clearLoginAttempts(email);
+        return successResponse(res, "Registration successful", httpStatus.CREATED, {
+          user: newUser,
+          tokens,
+        });
+      }
+
       // User not found. Frontend should catch this 404 and redirect to registration page.
       return res
         .status(httpStatus.NOT_FOUND)
         .json({ status: "fail", message: "User not found" });
     }
 
-    // CRITICAL: Prevent re-registration if mode is 'register' and user exists (though 404 handle above covers !user case)
+    // If user exists and mode is 'register', that's an error for new registration
     if (mode === "register") {
       return res
         .status(httpStatus.BAD_REQUEST)
         .json({ status: "fail", message: "Email already registered" });
+    }
+
+    // Check auth provider - prevent Google login for email/password users
+    if (user.authProvider === "local") {
+      return res
+        .status(httpStatus.BAD_REQUEST)
+        .json({
+          status: "fail",
+          message: "This account was created with email/password. Please sign in using email and password.",
+          authProvider: "local"
+        });
     }
 
     // Optional: Update user info if needed, e.g. verify email if not verified
@@ -114,7 +185,7 @@ export const firebaseLogin = async (req: Request, res: Response) => {
     console.error("Firebase Login Error:", err);
     res
       .status(httpStatus.UNAUTHORIZED)
-      .json({ status: "error", message: "Firebase authentication failed" });
+      .json({ status: "error", message: `Firebase authentication failed: ${err.message}` });
   }
 };
 
@@ -122,6 +193,7 @@ export const firebaseLogin = async (req: Request, res: Response) => {
 export const login = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
+    console.log(`[AuthDebug] Login attempt for email: "${email}"`);
     const user = await authService.loginUserWithEmailAndPassword(
       email,
       password,
@@ -306,8 +378,25 @@ export const resetPassword = async (req: Request, res: Response) => {
 // ===== GET PROFILE =====
 export const getUserProfile = async (req: Request, res: Response) => {
   try {
+    const user = req.user as any;
+    // Populate companyId to get company name
+    await user.populate('companyId');
+
+    // Use toJSON to get the proper serialized object
+    const userObj = user.toJSON ? user.toJSON() : user;
+
+    // Extract company name if companyId is populated
+    const companyName = userObj.companyId?.name || userObj.companyName || null;
+    const companyId = userObj.companyId?.id || userObj.companyId || null;
+
+    const result = {
+      ...userObj,
+      companyName,
+      companyId,
+    };
+
     successResponse(res, "Profile retrieved successfully", httpStatus.OK, {
-      user: req.user,
+      user: result,
     });
   } catch (err: any) {
     console.error(err);
@@ -321,12 +410,30 @@ export const getUserProfile = async (req: Request, res: Response) => {
 export const updateProfile = async (req: Request, res: Response) => {
   try {
     const user = req.user as any;
-    const updatedUser = await userService.updateUserById(user.id, req.body);
+    const updateBody = { ...req.body };
+
+    // If they provide a company name, consider onboarding completed
+    if (updateBody.companyName) {
+      updateBody.onboardingCompleted = true;
+    }
+
+    const updatedUser = await userService.updateUserById(user.id, updateBody);
+
+    // Populate for response consistency
+    await updatedUser.populate('companyId');
+    const userObj = updatedUser.toJSON ? updatedUser.toJSON() : updatedUser;
+
+    const result = {
+      ...userObj,
+      companyName: userObj.companyId?.name || userObj.companyName || null,
+      companyId: userObj.companyId?.id || userObj.companyId || null,
+    };
+
     successResponse(
       res,
       "Profile updated successfully",
       httpStatus.OK,
-      updatedUser,
+      result,
     );
   } catch (err: any) {
     console.error(err);

@@ -6,7 +6,22 @@ import successResponse from "../helpers/responses/successResponse";
 import ApiError from "../utils/ApiError";
 
 const createCompany = catchAsync(async (req: Request, res: Response) => {
-    const company = await Company.create(req.body);
+    const { User } = await import("../models"); // Dynamic import to avoid cycles if any
+
+    // 1. Create Company
+    const company = await Company.create({
+        ...req.body,
+        ownerId: (req.user as any).id
+    });
+
+    // 2. Link User to Company and make them Admin
+    await User.findByIdAndUpdate((req.user as any).id, {
+        companyId: company.id,
+        companyName: company.name,
+        role: "admin",
+        onboardingCompleted: true
+    });
+
     successResponse(res, "Company created", httpStatus.CREATED, company);
 });
 

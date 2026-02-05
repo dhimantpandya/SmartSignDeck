@@ -4,6 +4,7 @@ import screenValidation from "../../validations/screen.validation";
 import screenController from "../../controllers/screen.controller";
 
 import auth from "../../middleware/auth";
+import optionalAuth from "../../middleware/optionalAuth";
 
 const router = express.Router();
 
@@ -23,7 +24,7 @@ router
 router
   .route("/:screenId")
   .get(
-    auth("getScreens"),
+    optionalAuth(), // Allow anonymous access (permission check is done in service via key/isPublic)
     validate(screenValidation.getScreen),
     screenController.getScreen,
   )
@@ -44,7 +45,7 @@ router
   );
 
 router.post("/:screenId/ping", screenController.pingScreen);
-router.route("/:screenId/refresh").post(auth("admin"), screenController.refreshScreen);
+router.route("/:screenId/refresh").post(auth("manageScreens"), screenController.refreshScreen);
 
 router
   .route("/:screenId/restore")
@@ -60,6 +61,13 @@ router
     auth("manageScreens"),
     validate(screenValidation.deleteScreen),
     screenController.permanentDeleteScreen
+  );
+
+router
+  .route("/:screenId/clone")
+  .post(
+    auth("createScreens"),
+    screenController.cloneScreen
   );
 
 export default router;

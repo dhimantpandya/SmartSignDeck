@@ -17,15 +17,16 @@ import { PasswordInput } from '@/components/custom/password-input'
 import { useMutation } from '@tanstack/react-query'
 import { toast } from '@/components/ui/use-toast'
 import { authService } from '@/api'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Routes } from '@/utilities/routes'
 import { useAuth } from '@/hooks/use-auth'
 
 export function ChangePasswordForm() {
-  const { login } = useAuth()
+  const { user, login } = useAuth()
   const form = useForm<ChangePasswordRequest>({
     resolver: zodResolver(changePasswordSchema),
   })
+  const navigate = useNavigate()
   const { isPending, mutateAsync } = useMutation({
     mutationFn: async (data: ChangePasswordRequest) =>
       authService.changePassword(data),
@@ -36,15 +37,25 @@ export function ChangePasswordForm() {
         login({}, refresh?.token || null, access)
       }
       toast({
-        title: response.message,
+        title: 'Password updated successfully',
       })
     },
     onError: (error: any) => {
+      const isIncorrect = error?.status === 401 && error?.message?.toLowerCase().includes('incorrect')
+
       toast({
-        title: 'Update failed',
-        description: error?.message || 'Something went wrong',
+        title: isIncorrect ? 'Current password is wrong' : 'Update failed',
+        description: isIncorrect
+          ? 'Redirecting you to the forgot password page...'
+          : (error?.message || 'Something went wrong'),
         variant: 'destructive',
       })
+
+      if (isIncorrect) {
+        setTimeout(() => {
+          navigate(`${Routes.FORGOT_PASSWORD}?email=${encodeURIComponent(user?.email || '')}`)
+        }, 2000)
+      }
     },
   })
 
@@ -55,22 +66,14 @@ export function ChangePasswordForm() {
   return (
     <Form {...form}>
       <form className='mt-2' onSubmit={form.handleSubmit(onSubmit)}>
-        <div className='grid gap-2 '>
-          <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
+        <div className='grid gap-2'>
+          <div className='grid grid-cols-1 gap-4'>
             <FormField
               control={form.control}
               name='oldPassword'
               render={({ field }) => (
                 <FormItem>
-                  <div className='flex items-center justify-between'>
-                    <FormLabel>Old password*</FormLabel>
-                    <Link
-                      to={Routes.FORGOT_PASSWORD}
-                      className='text-sm font-medium text-primary hover:underline'
-                    >
-                      Forgot password?
-                    </Link>
-                  </div>
+                  <FormLabel>Old password*</FormLabel>
                   <FormControl {...field}>
                     <PasswordInput placeholder='Enter old password' />
                   </FormControl>
@@ -109,13 +112,21 @@ export function ChangePasswordForm() {
             />
           </div>
 
-          <Button
-            type='submit'
-            className='mr-auto mt-3  w-auto rounded-lg'
-            loading={isPending}
-          >
-            Update Password
-          </Button>
+          <div className='mt-3 flex items-center gap-6'>
+            <Button
+              type='submit'
+              className='w-auto rounded-lg'
+              loading={isPending}
+            >
+              Update Password
+            </Button>
+            <Link
+              to={`${Routes.FORGOT_PASSWORD}?email=${encodeURIComponent(user?.email || '')}`}
+              className='text-sm font-medium text-primary underline underline-offset-4 hover:text-primary/80 transition-colors'
+            >
+              Forgot password?
+            </Link>
+          </div>
         </div>
       </form>
     </Form>

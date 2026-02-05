@@ -3,8 +3,11 @@ import ThemeSwitch from '@/components/theme-switch'
 import { UserNav } from '@/components/user-nav'
 import { BreadcrumbNavigation } from '@/components/ui/breadcrumb-navigation'
 import { IconHome, IconChartBar, IconDownload, IconCalendar } from '@tabler/icons-react'
-import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useState, useEffect, useRef } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import html2canvas from 'html2canvas'
+import { io } from 'socket.io-client'
+import { useAuth } from '@/hooks/use-auth'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { toast } from '@/components/ui/use-toast'
 import Loader from '@/components/loader'
@@ -33,6 +36,54 @@ export default function Analytics() {
         startDate: format(subDays(new Date(), 7), 'yyyy-MM-dd'),
         endDate: format(new Date(), 'yyyy-MM-dd'),
     })
+
+    const { user } = useAuth()
+    const queryClient = useQueryClient()
+    const socketRef = useRef<any>(null)
+    const dashboardRef = useRef<HTMLDivElement>(null)
+
+    // Socket Integration for Real-time Analytics
+    useEffect(() => {
+        if (!user?.companyId) return
+
+        const socket = io(import.meta.env.VITE_APP_URL || 'http://localhost:3000')
+
+        socket.on('connect', () => {
+            console.log('Analytics connected to socket')
+            socket.emit('join_company', user.companyId)
+        })
+
+        socket.on('playback_update', (data) => {
+            console.log('Real-time playback update received')
+
+            // THROTTLE LOGIC:
+            // Only refresh analytics at most once every 30 seconds
+            // to prevent dashboard flickering and excessive reloads.
+            if (!socketRef.current?.isThrottled) {
+                socketRef.current.isThrottled = true
+
+                setTimeout(() => {
+                    console.log('Processing batch analytics update...')
+                    queryClient.invalidateQueries({ queryKey: ['analytics-summary'] })
+                    queryClient.invalidateQueries({ queryKey: ['analytics-timeline'] })
+                    queryClient.invalidateQueries({ queryKey: ['analytics-content'] })
+
+                    toast({
+                        title: "Analytics Updated",
+                        description: "New data available",
+                        duration: 3000
+                    })
+                    if (socketRef.current) socketRef.current.isThrottled = false
+                }, 30000) // 30 second delay/throttle
+            }
+        })
+
+        socketRef.current = socket
+
+        return () => {
+            socket.disconnect()
+        }
+    }, [user, queryClient])
 
     const breadcrumbItems = [
         { href: '/', icon: <IconHome size={18} /> },
@@ -71,6 +122,9 @@ export default function Analytics() {
         let start: Date
 
         switch (range) {
+            case '3days':
+                start = subDays(end, 3)
+                break
             case '7days':
                 start = subDays(end, 7)
                 break
@@ -90,9 +144,37 @@ export default function Analytics() {
         })
     }
 
-    const handleExport = async (type: 'csv' | 'pdf') => {
+    const handleExport = async (type: 'csv' | 'pdf' | 'screenshot') => {
         try {
-            toast({ title: `Generating ${type.toUpperCase()}...` })
+            toast({ title: `Generating ${type === 'screenshot' ? 'Screenshot' : type.toUpperCase()}...` })
+
+            if (type === 'screenshot') {
+                if (!dashboardRef.current) {
+                    toast({ title: 'Dashboard not ready for capture', variant: 'destructive' })
+                    return
+                }
+
+                const canvas = await html2canvas(dashboardRef.current, {
+                    scale: 2,
+                    useCORS: true,
+                    logging: false,
+                    backgroundColor: window.getComputedStyle(document.body).backgroundColor || '#ffffff'
+                })
+
+                const url = canvas.toDataURL('image/png')
+                const link = document.createElement('a')
+                link.href = url
+                link.setAttribute(
+                    'download',
+                    `analytics-screenshot-${dateRange.startDate}-${dateRange.endDate}.png`
+                )
+                document.body.appendChild(link)
+                link.click()
+                link.remove()
+                toast({ title: 'Screenshot capture successful' })
+                return
+            }
+
             const blob = await apiService.download(
                 `/v1/analytics/export/${type}?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`
             )
@@ -116,8 +198,11 @@ export default function Analytics() {
     const formatDuration = (seconds: number) => {
         const hours = Math.floor(seconds / 3600)
         const minutes = Math.floor((seconds % 3600) / 60)
+        const secs = Math.floor(seconds % 60)
+
         if (hours > 0) return `${hours}h ${minutes}m`
-        return `${minutes}m`
+        if (minutes > 0) return `${minutes}m ${secs}s`
+        return `${secs}s`
     }
 
     return (
@@ -149,12 +234,13 @@ export default function Analytics() {
                                 <SelectValue placeholder='Select range' />
                             </SelectTrigger>
                             <SelectContent>
+                                <SelectItem value='3days'>Last 3 days</SelectItem>
                                 <SelectItem value='7days'>Last 7 days</SelectItem>
                                 <SelectItem value='30days'>Last 30 days</SelectItem>
                                 <SelectItem value='90days'>Last 90 days</SelectItem>
                             </SelectContent>
                         </Select>
-                        <Select onValueChange={(val) => handleExport(val as 'csv' | 'pdf')}>
+                        <Select onValueChange={(val) => handleExport(val as 'csv' | 'pdf' | 'screenshot')}>
                             <SelectTrigger className='w-[140px]'>
                                 <IconDownload size={16} className='mr-2' />
                                 <SelectValue placeholder='Export' />
@@ -162,6 +248,7 @@ export default function Analytics() {
                             <SelectContent>
                                 <SelectItem value='csv'>CSV (Raw Logs)</SelectItem>
                                 <SelectItem value='pdf'>PDF (Report)</SelectItem>
+                                <SelectItem value='screenshot'>Screenshot (PNG)</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
@@ -172,7 +259,7 @@ export default function Analytics() {
                         <Loader />
                     </div>
                 ) : (
-                    <>
+                    <div ref={dashboardRef}>
                         {/* KPI Cards */}
                         <div className='mb-6 grid gap-4 md:grid-cols-2 lg:grid-cols-4'>
                             <Card>
@@ -318,7 +405,7 @@ export default function Analytics() {
                                 )}
                             </CardContent>
                         </Card>
-                    </>
+                    </div>
                 )}
             </Layout.Body>
         </Layout>

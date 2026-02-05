@@ -21,7 +21,7 @@ const transport: Transporter = nodemailer.createTransport({
 });
 
 // Verify transporter connection
-if (config.env !== "test") {
+if (config.env !== "test" && process.env.DISABLE_EMAIL !== "true") {
   transport
     .verify()
     .then(() => logger.info("Connected to email server"))

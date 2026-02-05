@@ -6,7 +6,6 @@ import { IconAlertTriangle } from '@tabler/icons-react'
 import { Button } from '@/components/custom/button'
 import { toast } from '@/components/ui/use-toast'
 import { io } from 'socket.io-client'
-import CameraCapture from '@/components/camera-capture'
 
 export default function ScreenPlayer() {
     const { screenId } = useParams()
@@ -15,8 +14,17 @@ export default function ScreenPlayer() {
     const [isLoading, setIsLoading] = useState(true)
     const [windowSize, setWindowSize] = useState({ width: window.innerWidth, height: window.innerHeight })
     const [isFullscreen, setIsFullscreen] = useState(false)
-    const [currentAudience, setCurrentAudience] = useState<any>(null)
-    const [currentTriggers, setCurrentTriggers] = useState<any>(null)
+
+    // Get Secret Key from URL (?key=...)
+    // Get Secret Key from URL (?key=...)
+    const query = new URLSearchParams(window.location.search)
+    let secretKey = query.get('key')
+
+    // FIX: Handle known key corruption (insertion of "673f")
+    if (secretKey && secretKey.length > 32 && secretKey.includes('673f')) {
+        console.warn('[Player] Sanitizing corrupted secretKey:', secretKey)
+        secretKey = secretKey.replace('673f', '')
+    }
 
     const [currentTime, setCurrentTime] = useState(() => {
         const now = new Date()
@@ -60,8 +68,10 @@ export default function ScreenPlayer() {
             try {
                 if (retryCount === 0) setIsLoading(true)
 
-                // Fetch screen
-                const screen = await apiService.get<any>(`/v1/screens/${screenId}`)
+                // Fetch screen with optional key
+                const screen = await apiService.get<any>(`/v1/screens/${screenId}`, {
+                    params: secretKey ? { key: secretKey } : {}
+                })
                 setData(screen)
                 setError(null)
 
@@ -82,11 +92,13 @@ export default function ScreenPlayer() {
                     const { data: cachedData } = JSON.parse(cached);
                     setData(cachedData);
                     setError(null);
+                    /* 
                     toast({
                         title: "Offline Mode",
                         description: "Running on cached content due to network issues.",
                         variant: "destructive"
                     });
+                    */
                 } else if (retryCount < 3) {
                     // Exponential backoff retry
                     const delay = Math.pow(2, retryCount) * 1000;
@@ -110,7 +122,7 @@ export default function ScreenPlayer() {
     useEffect(() => {
         if (!screenId) return
 
-        const socket = io(import.meta.env.VITE_APP_URL || 'http://localhost:3000')
+        const socket = io(import.meta.env.VITE_APP_URL || 'http://localhost:5000')
 
         socket.on('connect', () => {
             console.log('Connected to socket server')
@@ -122,7 +134,9 @@ export default function ScreenPlayer() {
             // Call the same fetch logic to refresh data
             const fetchPlaybackData = async () => {
                 try {
-                    const screen = await apiService.get<any>(`/v1/screens/${screenId}`)
+                    const screen = await apiService.get<any>(`/v1/screens/${screenId}`, {
+                        params: secretKey ? { key: secretKey } : {}
+                    })
                     setData(screen)
                 } catch (err) {
                     console.error('Failed to sync real-time update:', err)
@@ -135,11 +149,6 @@ export default function ScreenPlayer() {
             if (data.command === 'force_refresh') {
                 window.location.reload()
             }
-        })
-
-        socket.on('trigger_update', (data) => {
-            console.log('External trigger update received:', data)
-            setCurrentTriggers(data)
         })
 
         return () => {
@@ -196,33 +205,49 @@ export default function ScreenPlayer() {
     }
 
     const determineActiveContent = () => {
-        const { defaultContent, schedules, audienceRules, triggerRules } = data
+        const { defaultContent, schedules } = data
+        const now = new Date()
+        const currentDayOfWeek = now.getDay() // 0-6
+        const currentDate = now.toISOString().split('T')[0] // YYYY-MM-DD for simple comparison
 
-        // 1. Audience-based rules (Priority 1)
-        if (currentAudience && audienceRules && audienceRules.length > 0) {
-            const match = audienceRules.find((rule: any) => {
-                const ageMatch = !rule.ageRange || rule.ageRange === currentAudience.ageRange
-                const genderMatch = !rule.gender || rule.gender === currentAudience.gender
-                return ageMatch && genderMatch
-            })
-            if (match) return { content: match.content, source: 'audience', rule: match }
-        }
+        // 1. Filter valid schedules based on Time, Day, and Date
+        const validSchedules = (schedules || []).filter((s: any) => {
+            // Time Check
+            if (currentTime < s.startTime || currentTime > s.endTime) return false
 
-        // 2. External Trigger rules (Priority 2)
-        if (currentTriggers && triggerRules && triggerRules.length > 0) {
-            const match = triggerRules.find((rule: any) => {
-                const weatherMatch = !rule.condition || rule.condition === currentTriggers.weather?.condition
-                return weatherMatch
-            })
-            if (match) return { content: match.content, source: 'trigger', rule: match }
-        }
+            // Date Range Check
+            if (s.startDate && currentDate < new Date(s.startDate).toISOString().split('T')[0]) return false
+            if (s.endDate && currentDate > new Date(s.endDate).toISOString().split('T')[0]) return false
 
-        // 3. Time-based schedules (Priority 3)
-        if (schedules && schedules.length > 0) {
-            const activeSchedule = schedules.find((s: any) => {
-                return currentTime >= s.startTime && currentTime <= s.endTime
+            // Day of Week Check
+            if (s.daysOfWeek && s.daysOfWeek.length > 0 && !s.daysOfWeek.includes(currentDayOfWeek)) return false
+
+            return true
+        })
+
+        // 2. Sort by Priority (Descending)
+        // If priority is missing, treat as 0
+        validSchedules.sort((a: any, b: any) => (b.priority || 0) - (a.priority || 0))
+
+        const activeSchedule = validSchedules[0]
+
+        if (activeSchedule) {
+            // MERGE LOGIC: Start with default content, then overlay schedule content
+            // but ONLY for zones that actually have items in their playlist.
+            const mergedContent = { ...defaultContent }
+
+            Object.keys(activeSchedule.content || {}).forEach(zoneId => {
+                const scheduleZoneContent = activeSchedule.content[zoneId]
+                // Check local playlist OR linked playlist
+                const hasPlaylist = (scheduleZoneContent?.playlist && scheduleZoneContent.playlist.length > 0) ||
+                    (scheduleZoneContent?.sourceType === 'playlist' && scheduleZoneContent?.playlistId)
+
+                if (hasPlaylist) {
+                    mergedContent[zoneId] = scheduleZoneContent
+                }
             })
-            if (activeSchedule) return { content: activeSchedule.content, source: 'schedule', rule: activeSchedule }
+
+            return { content: mergedContent, source: 'schedule', rule: activeSchedule }
         }
 
         return { content: defaultContent, source: 'default', rule: null }
@@ -233,14 +258,105 @@ export default function ScreenPlayer() {
     const resolution = template?.resolution || '1920x1080'
     const [targetWidth, targetHeight] = resolution.split('x').map(Number)
 
-    // Calculate scale to fit within viewport
-    const scaleX = windowSize.width / targetWidth
-    const scaleY = windowSize.height / targetHeight
-    // const scale = Math.min(scaleX, scaleY) - Unused
+    // Calculate scale to fit within viewport while maintaining aspect ratio
+    const scale = Math.min(windowSize.width / targetWidth, windowSize.height / targetHeight)
+
+
+    // --- GAP FILLING & RESPONSIVE SNAPPING LOGIC ---
+    // Fixes "black lines" by snapping zones to edges and each other
+    // NEW: Intelligent Gap Filling - active zones "eat" neighboring empty text zones
+    const optimizedZones = (() => {
+        if (!data?.templateId?.zones) return []
+
+        // Deep copy
+        let zones = data.templateId.zones.map((z: any) => ({ ...z }))
+        const THRESHOLD = 25 // Standard snapping
+        const EMPTY_FILLING_THRESHOLD = 500 // Allow large expansion for empty zones
+
+        // Helper to check if a zone is an "empty text zone"
+        const isEmptyTextZone = (z: any) => {
+            if (z.type !== 'text') return false
+            const zoneContent = content[z.id]
+            return !zoneContent?.text || zoneContent.text.trim() === ''
+        }
+
+        // 1. Snap to Canvas Borders
+        zones.forEach((z: any) => {
+            if (isEmptyTextZone(z)) return // Skip stretching the empty zone itself
+
+            // Left Snap
+            if (z.x < THRESHOLD) {
+                z.width += z.x
+                z.x = 0
+            }
+            // Top Snap
+            if (z.y < THRESHOLD) {
+                z.height += z.y
+                z.y = 0
+            }
+            // Right Snap
+            if (Math.abs(targetWidth - (z.x + z.width)) < THRESHOLD) {
+                z.width = targetWidth - z.x
+            }
+            // Bottom Snap
+            if (Math.abs(targetHeight - (z.y + z.height)) < THRESHOLD) {
+                z.height = targetHeight - z.y
+            }
+        })
+
+        // 2. Intra-Zone Gap Filling (Snap to neighbors)
+        zones.forEach((z1: any) => {
+            if (isEmptyTextZone(z1)) return // Active zones grow INTO empty zones
+
+            zones.forEach((z2: any) => {
+                if (z1 === z2) return
+
+                // Check Horizontal Gap (z1 and z2 overlap vertically)
+                const yOverlap = Math.min(z1.y + z1.height, z2.y + z2.height) - Math.max(z1.y, z2.y)
+                if (yOverlap > 10) {
+                    const isEmpty = isEmptyTextZone(z2)
+                    const limit = isEmpty ? EMPTY_FILLING_THRESHOLD : THRESHOLD
+
+                    // z1 is to the left of z2
+                    const gapRight = z2.x - (z1.x + z1.width)
+                    if (gapRight >= 0 && gapRight < limit) {
+                        z1.width += gapRight + (isEmpty ? z2.width : 0)
+                    }
+                    // z1 is to the right of z2
+                    const gapLeft = z1.x - (z2.x + z2.width)
+                    if (gapLeft >= 0 && gapLeft < limit) {
+                        z1.x -= (gapLeft + (isEmpty ? z2.width : 0))
+                        z1.width += (gapLeft + (isEmpty ? z2.width : 0))
+                    }
+                }
+
+                // Check Vertical Gap (z1 and z2 overlap horizontally)
+                const xOverlap = Math.min(z1.x + z1.width, z2.x + z2.width) - Math.max(z1.x, z2.x)
+                if (xOverlap > 10) {
+                    const isEmpty = isEmptyTextZone(z2)
+                    const limit = isEmpty ? EMPTY_FILLING_THRESHOLD : THRESHOLD
+
+                    // z1 is above z2
+                    const gapBelow = z2.y - (z1.y + z1.height)
+                    if (gapBelow >= 0 && gapBelow < limit) {
+                        z1.height += gapBelow + (isEmpty ? z2.height : 0)
+                    }
+                    // z1 is below z2
+                    const gapAbove = z1.y - (z2.y + z2.height)
+                    if (gapAbove >= 0 && gapAbove < limit) {
+                        z1.y -= (gapAbove + (isEmpty ? z2.height : 0))
+                        z1.height += (gapAbove + (isEmpty ? z2.height : 0))
+                    }
+                }
+            })
+        })
+
+        // 3. Final Pass: Hide empty text zones so they don't render black boxes
+        return zones.filter((z: any) => !isEmptyTextZone(z))
+    })()
 
     return (
         <div className='fixed inset-0 bg-black overflow-hidden'>
-            <CameraCapture onDemographicsDetected={setCurrentAudience} />
 
             {/* Debug Overlay */}
             {showDebug && (
@@ -248,49 +364,22 @@ export default function ScreenPlayer() {
                     <h3 className="font-bold border-b border-white/20 pb-2 mb-2 text-sm text-green-400">⚡ Smart Logic Debugger</h3>
 
                     <div className="space-y-3">
-                        {/* Active Source */}
-                        <div className="flex justify-between items-center">
-                            <span className="opacity-70">Playing Content From:</span>
-                            <span className={`font-bold px-2 py-0.5 rounded ${source === 'audience' ? 'bg-purple-500' :
-                                source === 'trigger' ? 'bg-blue-500' :
-                                    source === 'schedule' ? 'bg-orange-500' : 'bg-gray-600'
-                                }`}>
-                                {source.toUpperCase()}
-                            </span>
-                        </div>
-
-                        {/* Audience Status */}
-                        <div className={`p-2 rounded ${source === 'audience' ? 'bg-purple-500/20 border border-purple-500/50' : 'bg-white/5'}`}>
-                            <div className="flex justify-between mb-1">
-                                <span className="text-purple-300 font-bold">1. Audience (Cam)</span>
-                                {source === 'audience' && <span className="text-purple-400">ACTIVE</span>}
-                            </div>
-                            <div className="pl-2 border-l-2 border-white/10">
-                                <div>Detected: {currentAudience ? `${currentAudience.gender}, ${currentAudience.ageRange}` : 'Searching...'}</div>
-                            </div>
-                        </div>
-
-                        {/* Trigger Status */}
-                        <div className={`p-2 rounded ${source === 'trigger' ? 'bg-blue-500/20 border border-blue-500/50' : 'bg-white/5'}`}>
-                            <div className="flex justify-between mb-1">
-                                <span className="text-blue-300 font-bold">2. Triggers (Env)</span>
-                                {source === 'trigger' && <span className="text-blue-400">ACTIVE</span>}
-                            </div>
-                            <div className="pl-2 border-l-2 border-white/10">
-                                <div>Time: {currentTime}</div>
-                                <div>Weather: {currentTriggers?.weather?.condition || 'N/A'}</div>
-                            </div>
-                        </div>
-
                         {/* Schedule Status */}
                         <div className={`p-2 rounded ${source === 'schedule' ? 'bg-orange-500/20 border border-orange-500/50' : 'bg-white/5'}`}>
                             <div className="flex justify-between mb-1">
-                                <span className="text-orange-300 font-bold">3. Schedule (Time)</span>
+                                <span className="text-orange-300 font-bold">1. Schedule (Time)</span>
                                 {source === 'schedule' && <span className="text-orange-400">ACTIVE</span>}
                             </div>
                             <div className="pl-2 border-l-2 border-white/10">
+                                <div className="mb-1">Time: {currentTime}</div>
                                 <div>Current Rule: {source === 'schedule' ? rule?.name : 'Inactive'}</div>
                             </div>
+                        </div>
+                        {/* Snap Status */}
+                        <div className="p-2 rounded bg-blue-500/10 border border-blue-500/30 mt-2">
+                            <div className="text-blue-300 font-bold mb-1">2. Auto-Layout (Fixed)</div>
+                            <div className="opacity-70">Zones processed: {optimizedZones.length}</div>
+                            <div className="opacity-70">Gap Snapping: Active</div>
                         </div>
 
                         <div className="text-[10px] text-center opacity-40 pt-2 border-t border-white/10">
@@ -317,11 +406,11 @@ export default function ScreenPlayer() {
                 style={{
                     width: `${targetWidth}px`,
                     height: `${targetHeight}px`,
-                    transform: `translate(-50%, -50%) scale(${scaleX}, ${scaleY})`,
+                    transform: `translate(-50%, -50%) scale(${scale})`,
                     transformOrigin: 'center center'
                 }}
             >
-                {data.templateId.zones.map((zone: any) => {
+                {optimizedZones.map((zone: any) => {
                     const zoneContent = content[zone.id]
                     return (
                         <div
@@ -339,7 +428,6 @@ export default function ScreenPlayer() {
                                 content={zoneContent}
                                 screenId={data.id}
                                 templateId={data.templateId?.id || data.templateId?._id}
-                                currentAudience={currentAudience}
                             />
                         </div>
                     )
@@ -349,17 +437,105 @@ export default function ScreenPlayer() {
     )
 }
 
-function ZoneRenderer({ zone, content, screenId, templateId, currentAudience }: { zone: any, content: any, screenId?: string, templateId?: string, currentAudience?: any }) {
+
+function ZoneRenderer({ zone, content, screenId, templateId }: { zone: any, content: any, screenId?: string, templateId?: string }) {
     const [currentIndex, setCurrentIndex] = useState(0)
     const [hasError, setHasError] = useState(false)
 
     // Reset error when item changes
     useEffect(() => {
         setHasError(false)
-    }, [currentIndex, content])
+        setCurrentIndex(0)
+    }, [content])
 
-    // Parse content into a unified playlist format
-    const playlist = content?.playlist || (content?.src ? [{ url: content.src, type: zone.type, duration: 10 }] : [])
+    // --- TEXT ZONE HANDLER ---
+    if (zone.type === 'text') {
+        const style = content?.style || {}
+        // ... (existing text logic remains same)
+        const [dynamicColor, setDynamicColor] = useState(style.color || '#fff')
+        const [animIndex, setAnimIndex] = useState(0)
+
+        useEffect(() => {
+            const sequence = content?.colorSequence
+            if (!sequence || sequence.length === 0) {
+                setDynamicColor(style.color || '#fff')
+                return
+            }
+            const currentFrame = sequence[animIndex]
+            if (!currentFrame) {
+                setAnimIndex(0)
+                return
+            }
+            setDynamicColor(currentFrame.color)
+            const timer = setTimeout(() => {
+                setAnimIndex((prev) => (prev + 1) % sequence.length)
+            }, (currentFrame.duration || 5) * 1000)
+            return () => clearTimeout(timer)
+        }, [content, animIndex, style.color])
+
+        const cssStyle: React.CSSProperties = {
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: style.textAlign === 'left' || style.textAlign === 'start' ? 'flex-start' :
+                style.textAlign === 'right' || style.textAlign === 'end' ? 'flex-end' : 'center',
+            backgroundColor: style.backgroundColor || 'transparent',
+            color: dynamicColor,
+            transition: 'color 1s ease-in-out',
+            fontFamily: style.fontFamily || 'sans-serif',
+            fontSize: `${style.fontSize || 48}px`,
+            fontWeight: style.fontWeight || 'normal',
+            fontStyle: style.fontStyle || 'normal',
+            padding: `${style.padding || 0}px`,
+            textAlign: (style.textAlign as any) || 'center',
+            lineHeight: style.lineHeight || 1.2,
+            whiteSpace: 'pre-wrap',
+            overflow: 'hidden',
+            wordBreak: 'break-word',
+            textShadow: style.shadowColor ? `${style.shadowOffsetX || 0}px ${style.shadowOffsetY || 0}px ${style.shadowBlur || 0}px ${style.shadowColor}` : 'none',
+            WebkitTextStroke: style.strokeWidth ? `${style.strokeWidth}px ${style.strokeColor || 'transparent'}` : 'none',
+            zIndex: 1,
+        }
+
+        return (
+            <div style={cssStyle}>
+                {content?.text || ''}
+            </div>
+        )
+    }
+
+    // --- PRIORITY & FALLBACK LOGIC ---
+    // Start with the primary playlist (linked or local)
+    // Fallback to simpler 'src' if playlist is empty or if we are in error state and playlist was the only content.
+
+    // 1. Determine the active playlist based on sourceType priority
+    let playlist = content?.playlist || []
+
+    // NEW: Apply strict type-based filtering for image/video only zones
+    if (zone.type === 'image') {
+        playlist = playlist.filter((item: any) => item.type === 'image')
+    } else if (zone.type === 'video') {
+        playlist = playlist.filter((item: any) => item.type === 'video')
+    }
+
+    // If we have an ERROR and there is a src available, we can try to fallback to it
+    // But usually, we only fallback if the playlist is actually empty.
+    const hasItems = playlist && playlist.length > 0
+    const fallbackSrc = content?.src
+
+    // If no items in playlist, try to use the legacy/default 'src'
+    if (!hasItems && fallbackSrc) {
+        // Respect strict filtering for the default 'src' too
+        const isImage = fallbackSrc.match(/\.(jpg|jpeg|png|webp|gif|svg)$/i)
+        const isVideo = fallbackSrc.match(/\.(mp4|mov|webm)$/i)
+
+        if (zone.type === 'mixed' ||
+            (zone.type === 'image' && isImage) ||
+            (zone.type === 'video' && isVideo)) {
+            playlist = [{ url: fallbackSrc, type: isVideo ? 'video' : 'image', duration: 10 }]
+        }
+    }
 
     useEffect(() => {
         if (!playlist || playlist.length <= 1) return
@@ -374,67 +550,52 @@ function ZoneRenderer({ zone, content, screenId, templateId, currentAudience }: 
         return () => clearTimeout(timer)
     }, [currentIndex, playlist])
 
-    // Proof of Play Logging - (Unchanged)
+    // Proof of Play Logging remains same...
     useEffect(() => {
         if (!playlist || playlist.length === 0 || !screenId || !templateId) return
-
         const item = playlist[currentIndex]
         const startTime = new Date()
-
         const logPlayback = async (endTime: Date) => {
             try {
+                const typeToLog = item?.type || zone.type
+                if (zone.type === 'text') return
                 const duration = (endTime.getTime() - startTime.getTime()) / 1000
                 await apiService.post('/v1/playback-logs', {
-                    screenId,
-                    templateId,
-                    zoneId: zone.id,
-                    contentUrl: item.url,
-                    contentType: item.type || zone.type,
-                    startTime,
-                    endTime,
-                    duration,
-                    demographics: currentAudience
+                    screenId, templateId, zoneId: zone.id,
+                    contentUrl: item.url, contentType: typeToLog,
+                    startTime, endTime, duration
                 })
-            } catch (err) {
-                console.error('Failed to log proof-of-play:', err)
-            }
+            } catch (err) { }
         }
-
-        return () => {
-            logPlayback(new Date())
-        }
+        return () => { logPlayback(new Date()) }
     }, [currentIndex, playlist, screenId, templateId, zone.id, zone.type])
 
     if (!playlist || playlist.length === 0) {
         return (
             <div className='flex h-full w-full flex-col items-center justify-center bg-gray-900 border border-gray-700 p-4 text-center'>
                 <IconAlertTriangle size={32} className='mb-2 text-gray-500' />
-                <p className='text-xs text-gray-400 font-mono'>No Playlist</p>
-                <p className='text-[10px] text-gray-600'>{zone.type}</p>
+                <p className='text-xs text-gray-400 font-mono'>No Content</p>
+                <p className='text-[10px] text-gray-600'>{zone.id}</p>
             </div>
         )
     }
 
     const item = playlist[currentIndex]
 
+    // ERROR HANDLER WITH FALLBACK
     if (hasError) {
+        // If we are showing a playlist and it failed, and we have a fallbackSrc, we COULD try to show that.
+        // But for now, just show error if everything failed.
         return (
             <div className='flex h-full w-full flex-col items-center justify-center bg-red-950/50 border border-red-900 p-4 text-center anim-pulse'>
                 <IconAlertTriangle size={32} className='mb-2 text-red-500' />
-                <p className='text-xs text-red-400 font-bold'>Failed to Load</p>
-                <p className='text-[10px] text-red-300/50 truncate max-w-full px-2'>{item.url}</p>
+                <p className='text-xs text-red-400 font-bold'>Playback Error</p>
+                <p className='text-[10px] text-red-300/50 truncate max-w-full px-2'>{item?.url || 'Unknown'}</p>
             </div>
         )
     }
 
-    // Handle text zones differently
-    if (zone.type === 'text') {
-        return (
-            <div className='flex h-full w-full items-center justify-center bg-white p-6 text-black text-center'>
-                <span className='text-4xl font-black uppercase'>{content?.value || 'Enter Text'}</span>
-            </div>
-        )
-    }
+    if (!item) return null
 
     const mediaType = item.type || zone.type
 
@@ -442,18 +603,12 @@ function ZoneRenderer({ zone, content, screenId, templateId, currentAudience }: 
         <div className='w-full h-full bg-black relative'>
             {mediaType === 'video' ? (
                 <video
-                    key={item.url} // Force re-render on url change
+                    key={item.url}
                     src={item.url}
-                    autoPlay
-                    muted
-                    playsInline // Critical for mobile/iOS playback
-                    loop={playlist.length === 1} // Loop if only one item
+                    autoPlay muted playsInline
+                    loop={playlist.length === 1}
                     className='h-full w-full object-cover'
-                    onError={(e) => {
-                        console.error('Video playback error:', item.url, e)
-                        setHasError(true)
-                    }}
-                    onLoadedData={() => console.log('Video loaded:', item.url)}
+                    onError={() => setHasError(true)}
                     onEnded={() => {
                         if (playlist.length > 1) {
                             setCurrentIndex((prev) => (prev + 1) % playlist.length)
@@ -471,3 +626,4 @@ function ZoneRenderer({ zone, content, screenId, templateId, currentAudience }: 
         </div>
     )
 }
+

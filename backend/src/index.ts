@@ -6,7 +6,6 @@ import config from "./config/config";
 import app from "./app";
 import logger from "./config/logger";
 import { initSocket } from "./services/socket.service";
-import triggerService from "./services/trigger.service";
 import cleanupService from "./services/cleanup.service";
 
 let server: http.Server | https.Server;
@@ -14,9 +13,27 @@ let server: http.Server | https.Server;
 // Connect to MongoDB
 mongoose
   .connect(config.mongoose.url, { dbName: config.mongoose.dbName })
-  .then(() => {
+  .then(async () => {
     logger.info("Connected to MongoDB");
     console.log("Using database:", mongoose.connection.db.databaseName);
+
+    // --- MIGRATION: Drop unique company name index ---
+    try {
+      if (mongoose.connection.db) {
+        const collection = mongoose.connection.db.collection('companies');
+        const indexExists = await collection.indexExists('name_1');
+        if (indexExists) {
+          await collection.dropIndex('name_1');
+          logger.info("Dropped unique index 'name_1' from companies collection");
+        }
+      }
+    } catch (err: any) {
+      // Ignore if index doesn't exist
+      if (err.code !== 27) {
+        logger.error("Failed to drop name_1 index", err);
+      }
+    }
+    // -------------------------------------------------
 
     // Start HTTP server
     const httpServer = http.createServer(app);
@@ -26,7 +43,6 @@ mongoose
 
     httpServer.listen(config.port, () => {
       logger.info(`HTTP Server running on port ${config.port}`);
-      triggerService.startPolling();
       cleanupService.startCleanupJob();
     });
     server = httpServer;
@@ -35,27 +51,6 @@ mongoose
     logger.error("Failed to connect to MongoDB", error);
     process.exit(1);
   });
-
-// Setup Nodemailer transporter
-const transporter = nodemailer.createTransport({
-  host: config.email.host,
-  port: config.email.port,
-  secure: true,
-  auth: {
-    user: config.email.user,
-    pass: config.email.pass,
-  },
-  tls: {
-    rejectUnauthorized: false,
-  },
-});
-
-transporter.verify((err, success) => {
-  if (err) console.error("Email server connection failed:", err);
-  else console.log("Email server is ready to send messages");
-});
-
-export { transporter };
 
 // Graceful shutdown
 const exitHandler = (): void => {

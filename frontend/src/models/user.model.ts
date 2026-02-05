@@ -1,6 +1,6 @@
 import { TableState } from '@/hooks/use-table-state'
 import { GenericResponse } from './generic'
-import { ProfileUpdateRequest, Roles } from '@/validations/user.validation'
+import { ProfileUpdateRequest, Roles, Gender, Language } from '@/validations/user.validation'
 
 export interface User {
   id: string
@@ -11,10 +11,11 @@ export interface User {
   companyId?: string
   companyName?: string
   avatar?: string
-  gender?: string
+  gender?: Gender
   dob?: string | Date
-  language?: string
+  language?: Language
   is_email_verified: boolean
+  onboardingCompleted: boolean
 }
 
 export type LoginResponse = GenericResponse<{

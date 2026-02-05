@@ -6,16 +6,18 @@ import { useAuth } from '@/hooks/use-auth'
 import { apiService, userService } from '@/api'
 import { toast } from '@/components/ui/use-toast'
 import { useMutation } from '@tanstack/react-query'
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
 
 export function ProfilePictureForm() {
   const { user, login } = useAuth()
   const [isProcessing, setIsProcessing] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
 
   const { mutateAsync: updateProfile } = useMutation({
     mutationFn: (avatar: string | null) => userService.updateProfile({ avatar } as any),
     onSuccess: (response) => {
-      if (response.data) {
-        login(response.data as any)
+      if (response) {
+        login(response as any)
       }
       toast({ title: response.message || 'Profile picture updated' })
     },
@@ -58,9 +60,8 @@ export function ProfilePictureForm() {
     }
   }
 
-  const handleDelete = async () => {
-    if (!window.confirm('Are you sure you want to remove your profile picture?')) return
-    await updateProfile(null)
+  const handleDelete = () => {
+    setConfirmDelete(true)
   }
 
   const avatarUrl = (user as any)?.avatar || ProfilePictureImg
@@ -81,9 +82,6 @@ export function ProfilePictureForm() {
       </div>
       <div>
         <h3 className='mb-1 text-xl font-bold'>Profile picture</h3>
-        <div className='mb-4 text-sm text-gray-500 dark:text-gray-400'>
-          JPG, GIF or PNG. Max size of 800K
-        </div>
         <div className='flex items-center gap-3'>
           <Button
             type='button'
@@ -106,6 +104,19 @@ export function ProfilePictureForm() {
           )}
         </div>
       </div>
+
+      <ConfirmationDialog
+        isOpen={confirmDelete}
+        title="Remove Profile Picture"
+        message="Are you sure you want to remove your profile picture? This will revert to the default avatar."
+        variant="destructive"
+        confirmBtnText="Remove Picture"
+        onConfirm={async () => {
+          await updateProfile(null)
+          setConfirmDelete(false)
+        }}
+        onClose={() => setConfirmDelete(false)}
+      />
     </div>
   )
 }

@@ -23,6 +23,7 @@ import { useNavigate, Link, useLocation } from 'react-router-dom'
 import { Routes } from '@/utilities/routes'
 import { toast } from '@/components/ui/use-toast'
 import { HTMLAttributes } from 'react'
+import { mapApiUserToUser } from '@/utilities/mappers/user.mapper'
 
 type SignupRequest = z.infer<typeof signupSchema>
 
@@ -82,7 +83,8 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
         return
       }
 
-      if (error?.message === 'Email already registered' || error?.status === 400) {
+      const message = error?.message || '';
+      if (message.includes('Email already registered') || message.includes('Email already taken')) {
         toast({
           title: 'Email is already registered',
           description: 'Redirecting you to the sign-in page...',
@@ -94,6 +96,16 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
         }, 2000)
         return
       }
+
+      if (error?.status === 400 && error?.message?.includes('This account was created with')) {
+        toast({
+          variant: 'destructive',
+          title: 'Already Registered',
+          description: error.message,
+        })
+        return
+      }
+
       toast({ title: error?.message ?? 'Registration failed' })
       form.reset()
     } finally {
@@ -232,14 +244,7 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
 
                   const response = await authService.firebaseLogin(idToken, 'register');
 
-                  const apiUser = response.user;
-                  const user: User = {
-                    id: Number(apiUser.id),
-                    email: apiUser.email,
-                    username: apiUser.username ?? apiUser.email,
-                    role: (apiUser.role as User['role']) ?? 'user',
-                    is_email_verified: apiUser.is_email_verified ?? true, // Google login auto-verifies
-                  }
+                  const user = mapApiUserToUser(response.user)
 
                   const refreshToken = !import.meta.env.VITE_COOKIE_BASED_AUTHENTICATION
                     ? response.tokens?.refresh?.token ?? null
@@ -284,6 +289,15 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
 
                       // Clear errors again after setting values to ensure no red highlights on filled fields
                       form.clearErrors();
+
+                      if (error?.status === 400 && error?.message?.includes('This account was created with')) {
+                        toast({
+                          variant: 'destructive',
+                          title: 'Wrong Signup Method',
+                          description: error.message,
+                        })
+                        return
+                      }
 
                       toast({ title: 'Please complete registration', description: 'Enter password and company name.' });
                       return;

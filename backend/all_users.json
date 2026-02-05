@@ -1,0 +1,28 @@
+[
+  {
+    "_id": "697cab5a3ce82fe00578806b",
+    "first_name": "Test",
+    "last_name": "User",
+    "email": "test1769778010834@example.com",
+    "companyName": "Test Company",
+    "password": "$2a$08$OFnBbYPFc7ihaJqON/UFLOOX3oCvQx.m/WxWQdQP2/mjZwnhqu/gW",
+    "role": "user",
+    "is_email_verified": false,
+    "created_at": "2026-01-30T13:00:10.984Z",
+    "updated_at": "2026-01-30T13:00:10.984Z",
+    "__v": 0
+  },
+  {
+    "_id": "697cab6e3ce82fe005788072",
+    "first_name": "Test",
+    "last_name": "User",
+    "email": "test1769778030800@example.com",
+    "companyName": "Test Company",
+    "password": "$2a$08$Lyg2zXBcdKPmh2QJMNggDuZcIQ6zP1H6KDU.oP/tYhuH5CVlzmaIW",
+    "role": "user",
+    "is_email_verified": false,
+    "created_at": "2026-01-30T13:00:30.899Z",
+    "updated_at": "2026-01-30T13:00:30.899Z",
+    "__v": 0
+  }
+]

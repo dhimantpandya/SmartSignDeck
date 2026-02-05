@@ -1,0 +1,8 @@
+authtoken: 39FIkPaaJWcajhXdC1jew9EQAxg_4hbBirAcjAzEdb3Cu7ot9
+tunnels:
+  backend:
+    proto: http
+    addr: 5000
+  frontend:
+    proto: http
+    addr: 5173

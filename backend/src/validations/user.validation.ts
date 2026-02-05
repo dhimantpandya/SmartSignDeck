@@ -88,6 +88,7 @@ const getUsers = {
     populate: Joi.string().label("Populate"),
     sort: Joi.string().label("Sort"),
     skip: Joi.number().integer().label("Skip"),
+    companyId: Joi.string().trim().label("Company ID"),
   }),
 };
 
@@ -117,6 +118,8 @@ const updateUser = {
         .min(2)
         .max(16)
         .label("Last name"),
+      role: Joi.string().trim().optional().label("Role"),
+      onboardingCompleted: Joi.boolean().optional().label("Onboarding Completed"),
     })
     .min(1),
 };

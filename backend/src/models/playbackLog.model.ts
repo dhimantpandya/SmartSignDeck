@@ -8,6 +8,7 @@ import {
 export interface IPlaybackLog extends Document {
     screenId: mongoose.Types.ObjectId;
     templateId: mongoose.Types.ObjectId;
+    companyId: mongoose.Types.ObjectId;
     zoneId: string;
     contentUrl: string;
     contentType: "image" | "video" | "text";
@@ -38,6 +39,12 @@ const playbackLogSchema = new Schema<IPlaybackLog, IPlaybackLogModel>(
             type: mongoose.Schema.Types.ObjectId,
             ref: "Template",
             required: true,
+        },
+        companyId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Company",
+            required: true,
+            index: true
         },
         zoneId: {
             type: String,

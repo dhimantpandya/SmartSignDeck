@@ -22,8 +22,14 @@ const getAnalyticsSummary = catchAsync(async (req: Request, res: Response) => {
 
     const start = new Date(startDate as string);
     const end = new Date(endDate as string);
+    end.setUTCHours(23, 59, 59, 999);
 
-    const summary = await analyticsService.getAnalyticsSummary(start, end);
+    console.log(`[DEBUG] Analytics Request:`);
+    console.log(`- User Company ID: ${req.user!.companyId}`);
+    console.log(`- Query Start Date: ${start.toISOString()} (${startDate})`);
+    console.log(`- Query End Date: ${end.toISOString()} (${endDate})`);
+
+    const summary = await analyticsService.getAnalyticsSummary(start, end, req.user!.companyId!.toString());
 
     successResponse(
         res,
@@ -51,13 +57,20 @@ const getScreenStats = catchAsync(async (req: Request, res: Response) => {
 
     const start = new Date(startDate as string);
     const end = new Date(endDate as string);
+    end.setUTCHours(23, 59, 59, 999);
 
     const stats = await analyticsService.getPlaybackStatsByScreen(
         screenId,
         start,
-        end
+        end,
+        req.user!.companyId!.toString()
     );
-    const uptime = await analyticsService.getScreenUptime(screenId, start, end);
+    const uptime = await analyticsService.getScreenUptime(
+        screenId,
+        start,
+        end,
+        req.user!.companyId!.toString()
+    );
 
     successResponse(
         res,
@@ -85,11 +98,13 @@ const getTemplateStats = catchAsync(async (req: Request, res: Response) => {
 
     const start = new Date(startDate as string);
     const end = new Date(endDate as string);
+    end.setUTCHours(23, 59, 59, 999);
 
     const stats = await analyticsService.getPlaybackStatsByTemplate(
         templateId,
         start,
-        end
+        end,
+        req.user!.companyId!.toString()
     );
 
     successResponse(
@@ -118,12 +133,14 @@ const getContentPerformance = catchAsync(
 
         const start = new Date(startDate as string);
         const end = new Date(endDate as string);
+        end.setUTCHours(23, 59, 59, 999);
         const limitNum = limit ? parseInt(limit as string, 10) : 10;
 
         const performance = await analyticsService.getContentPerformance(
             start,
             end,
-            limitNum
+            limitNum,
+            req.user!.companyId!.toString()
         );
 
         successResponse(
@@ -152,12 +169,14 @@ const getPlaybackTimeline = catchAsync(async (req: Request, res: Response) => {
 
     const start = new Date(startDate as string);
     const end = new Date(endDate as string);
+    end.setUTCHours(23, 59, 59, 999);
     const intervalStr = (interval as string) || "day";
 
     const timeline = await analyticsService.getPlaybackTimeline(
         start,
         end,
-        intervalStr
+        intervalStr,
+        req.user!.companyId!.toString()
     );
 
     successResponse(
@@ -185,8 +204,9 @@ const getAudienceSummary = catchAsync(async (req: Request, res: Response) => {
 
     const start = new Date(startDate as string);
     const end = new Date(endDate as string);
+    end.setUTCHours(23, 59, 59, 999);
 
-    const summary = await analyticsService.getAudienceSummary(start, end);
+    const summary = await analyticsService.getAudienceSummary(start, end, req.user!.companyId!.toString());
 
     successResponse(
         res,
@@ -213,8 +233,9 @@ const exportCSV = catchAsync(async (req: Request, res: Response) => {
 
     const start = new Date(startDate as string);
     const end = new Date(endDate as string);
+    end.setUTCHours(23, 59, 59, 999);
 
-    const logs = await analyticsService.getPlaybackLogs(start, end);
+    const logs = await analyticsService.getPlaybackLogs(start, end, req.user!.companyId!.toString());
     const csv = analyticsService.exportLogsToCSV(logs);
 
     res.setHeader("Content-Type", "text/csv");
@@ -242,9 +263,10 @@ const exportPDF = catchAsync(async (req: Request, res: Response) => {
 
     const start = new Date(startDate as string);
     const end = new Date(endDate as string);
+    end.setUTCHours(23, 59, 59, 999);
 
-    const summary = await analyticsService.getAnalyticsSummary(start, end);
-    const performance = await analyticsService.getContentPerformance(start, end);
+    const summary = await analyticsService.getAnalyticsSummary(start, end, req.user!.companyId!.toString());
+    const performance = await analyticsService.getContentPerformance(start, end, 10, req.user!.companyId!.toString());
     const pdfBuffer = await analyticsService.generatePDFReport(
         summary,
         performance,

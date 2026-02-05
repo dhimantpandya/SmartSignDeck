@@ -91,4 +91,10 @@ const emitToUser = (userId: string, event: string, data: any) => {
     }
 }
 
-export { initSocket, getIO, emitToScreen, emitToUser };
+const emitToCompany = (companyId: string, event: string, data: any) => {
+    if (io) {
+        io.to(`company_${companyId}`).emit(event, data);
+    }
+}
+
+export { initSocket, getIO, emitToScreen, emitToUser, emitToCompany };

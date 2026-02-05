@@ -1,18 +1,17 @@
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { Screen } from '@/api/screen.service'
 import { Skeleton } from '@/components/ui/skeleton'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
-import { IconDeviceTv } from '@tabler/icons-react'
+import { IconDeviceTv, IconLayout } from '@tabler/icons-react'
 
 dayjs.extend(relativeTime)
 
 interface RecentActivityProps {
-  screens?: Screen[]
+  items?: any[]
   isLoading?: boolean
 }
 
-export function RecentActivity({ screens = [], isLoading }: RecentActivityProps) {
+export function RecentActivity({ items = [], isLoading }: RecentActivityProps) {
   if (isLoading) {
     return (
       <div className='space-y-8'>
@@ -30,7 +29,7 @@ export function RecentActivity({ screens = [], isLoading }: RecentActivityProps)
     )
   }
 
-  if (screens.length === 0) {
+  if (items.length === 0) {
     return (
       <div className='flex h-[300px] flex-col items-center justify-center space-y-3 text-center'>
         <div className='flex h-12 w-12 items-center justify-center rounded-full bg-muted'>
@@ -39,7 +38,7 @@ export function RecentActivity({ screens = [], isLoading }: RecentActivityProps)
         <div className='space-y-1'>
           <p className='text-sm font-medium text-foreground'>No recent activity</p>
           <p className='text-xs text-muted-foreground'>
-            No screens have been added yet.
+            No recent templates or screens added.
           </p>
         </div>
       </div>
@@ -48,24 +47,25 @@ export function RecentActivity({ screens = [], isLoading }: RecentActivityProps)
 
   return (
     <div className='space-y-8'>
-      {screens.map((screen, index) => (
+      {items.map((item, index) => (
         <div key={index} className='flex items-center'>
           <Avatar className='h-9 w-9'>
             <AvatarFallback className='bg-primary/10 text-primary'>
-              <IconDeviceTv size={18} />
+              {item.type === 'template' ? <IconLayout size={18} /> : <IconDeviceTv size={18} />}
             </AvatarFallback>
           </Avatar>
           <div className='ml-4 space-y-1'>
-            <p className='text-sm font-medium leading-none'>{screen.name}</p>
+            <p className='text-sm font-medium leading-none'>{item.name}</p>
             <p className='text-xs text-muted-foreground'>
-              Added {dayjs(screen.created_at).fromNow()}
+              Added {dayjs(item.created_at).fromNow()}
             </p>
           </div>
-          <div className={`ml-auto text-xs font-semibold px-2 py-1 rounded-full ${screen.status === 'online' ? 'bg-green-100 text-green-700' :
-            screen.status === 'maintenance' ? 'bg-yellow-100 text-yellow-700' :
-              'bg-gray-100 text-gray-700'
+          <div className={`ml-auto text-xs font-semibold px-2 py-1 rounded-full ${item.type === 'template' ? 'bg-blue-100 text-blue-700' :
+            (item.status as any) === 'online' ? 'bg-green-100 text-green-700' :
+              (item.status as any) === 'offline' ? 'bg-red-100 text-red-700' :
+                'bg-gray-100 text-gray-700'
             }`}>
-            {screen.status.toUpperCase()}
+            {item.type === 'template' ? 'TEMPLATE' : (item.status || 'OFFLINE').toUpperCase()}
           </div>
         </div>
       ))}

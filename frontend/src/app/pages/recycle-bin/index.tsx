@@ -12,10 +12,12 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/componen
 import { toast } from '@/components/ui/use-toast'
 import Loader from '@/components/loader'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
 import { Badge } from '@/components/ui/badge'
 
 export default function RecycleBin() {
     const [, setActiveTab] = useState('screens')
+    const [confirmDelete, setConfirmDelete] = useState<{ id: string, type: 'screen' | 'template' } | null>(null)
     const queryClient = useQueryClient()
 
     const { data: screensData, isLoading: isScreensLoading } = useQuery({
@@ -131,9 +133,7 @@ export default function RecycleBin() {
                                                     <IconRefresh size={16} className="mr-1" /> Restore
                                                 </Button>
                                                 <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10" onClick={() => {
-                                                    if (window.confirm('Permanently delete this screen? This action cannot be undone.')) {
-                                                        permanentDeleteScreenMutation.mutate(screen.id)
-                                                    }
+                                                    setConfirmDelete({ id: screen.id, type: 'screen' })
                                                 }}>
                                                     <IconTrashX size={16} className="mr-1" /> Purge
                                                 </Button>
@@ -177,9 +177,7 @@ export default function RecycleBin() {
                                                     <IconRefresh size={16} className="mr-1" /> Restore
                                                 </Button>
                                                 <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10" onClick={() => {
-                                                    if (window.confirm('Permanently delete this template? This action cannot be undone.')) {
-                                                        permanentDeleteTemplateMutation.mutate(template.id)
-                                                    }
+                                                    setConfirmDelete({ id: template.id, type: 'template' })
                                                 }}>
                                                     <IconTrashX size={16} className="mr-1" /> Purge
                                                 </Button>
@@ -195,6 +193,23 @@ export default function RecycleBin() {
                         )}
                     </TabsContent>
                 </Tabs>
+
+                <ConfirmationDialog
+                    isOpen={!!confirmDelete}
+                    title="Permanent Delete"
+                    message={`Are you sure you want to permanently delete this ${confirmDelete?.type}? This action cannot be undone.`}
+                    variant="destructive"
+                    confirmBtnText="Delete Permanently"
+                    onConfirm={() => {
+                        if (confirmDelete?.type === 'screen') {
+                            permanentDeleteScreenMutation.mutate(confirmDelete.id)
+                        } else if (confirmDelete?.type === 'template') {
+                            permanentDeleteTemplateMutation.mutate(confirmDelete.id)
+                        }
+                        setConfirmDelete(null)
+                    }}
+                    onClose={() => setConfirmDelete(null)}
+                />
             </Layout.Body>
         </Layout>
     )

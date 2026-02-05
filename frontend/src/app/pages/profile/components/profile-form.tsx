@@ -1,11 +1,11 @@
 import { useEffect } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { CalendarIcon, CaretSortIcon, CheckIcon } from '@radix-ui/react-icons'
+import { CaretSortIcon, CheckIcon } from '@radix-ui/react-icons'
 import { useForm } from 'react-hook-form'
 import dayjs from 'dayjs'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/custom/button'
-import { Calendar } from '@/components/ui/calendar'
+
 import {
   Command,
   CommandEmpty,
@@ -45,9 +45,9 @@ export function ProfileForm() {
     first_name: user?.first_name || '',
     last_name: user?.last_name || '',
     email: user?.email || '',
-    gender: user?.gender || '',
+    gender: user?.gender || undefined,
     dob: user?.dob ? new Date(user.dob) : undefined,
-    language: user?.language || '',
+    language: user?.language || undefined,
   }
 
   const form = useForm<ProfileUpdateRequest>({
@@ -62,9 +62,9 @@ export function ProfileForm() {
         first_name: user.first_name || '',
         last_name: user.last_name || '',
         email: user.email || '',
-        gender: user.gender || '',
+        gender: user.gender || undefined,
         dob: user.dob ? new Date(user.dob) : undefined,
-        language: user.language || '',
+        language: user.language || undefined,
       } as any)
     }
   }, [user, form])
@@ -74,15 +74,11 @@ export function ProfileForm() {
       userService.updateProfile(data),
     onSuccess: (response) => {
       // Update local auth state with new user data
-      if (response.data) {
-        // We need to merge existing tokens or handle login call properly
-        // For now, let's assume login() can take Partial user or we get full user back
-        // The backend returns updated user in successResponse(res, ..., updatedUser)
-        // successResponse(res, message, status, data) -> response.data is the user
-        login(response.data as any)
+      if (response) {
+        login(response as any)
       }
       toast({
-        title: response.message,
+        title: 'Profile updated successfully',
       })
     },
     onError: (error: any) => {

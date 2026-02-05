@@ -6,34 +6,35 @@ const router = express.Router();
 
 router
     .route("/summary")
-    .get(auth("admin"), analyticsController.getAnalyticsSummary);
+    .get(auth("getAnalytics"), analyticsController.getAnalyticsSummary);
 
 router
     .route("/screens/:screenId")
-    .get(auth("admin"), analyticsController.getScreenStats);
+    .get(auth("getAnalytics"), analyticsController.getScreenStats);
 
 router
     .route("/templates/:templateId")
-    .get(auth("admin"), analyticsController.getTemplateStats);
+    .get(auth("getAnalytics"), analyticsController.getTemplateStats);
 
 router
     .route("/content")
-    .get(auth("admin"), analyticsController.getContentPerformance);
+    .get(auth("getAnalytics"), analyticsController.getContentPerformance);
 
 router
     .route("/timeline")
-    .get(auth("admin"), analyticsController.getPlaybackTimeline);
+    .get(auth("getAnalytics"), analyticsController.getPlaybackTimeline);
 
 router
     .route("/audience")
-    .get(auth("admin"), analyticsController.getAudienceSummary);
+    .get(auth("getAnalytics"), analyticsController.getAudienceSummary);
 
 router
     .route("/export/csv")
-    .get(auth("admin"), analyticsController.exportCSV);
+    .get(auth("manageAnalytics"), analyticsController.exportCSV);
 
 router
     .route("/export/pdf")
-    .get(auth("admin"), analyticsController.exportPDF);
+    .get(auth("manageAnalytics"), analyticsController.exportPDF);
 
 export default router;
+

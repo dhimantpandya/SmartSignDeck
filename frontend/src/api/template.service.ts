@@ -7,10 +7,12 @@ export interface Zone {
     y: number
     width: number
     height: number
+    name?: string
 }
 
 export interface Template {
     id: string
+    _id?: string
     name: string
     resolution: string
     zones: Zone[]
@@ -44,11 +46,15 @@ const deleteTemplate = async (id: string) => {
 }
 
 const restoreTemplate = async (id: string) => {
-    return apiService.post(`/v1/templates/${id}/restore`)
+    return apiService.post(`/v1/templates/${id}/restore`, {})
 }
 
 const permanentDeleteTemplate = async (id: string) => {
     return apiService.delete(`/v1/templates/${id}/permanent`)
+}
+
+const cloneTemplate = async (id: string) => {
+    return apiService.post<Template>(`/v1/templates/${id}/clone`, {})
 }
 
 export const templateService = {
@@ -59,4 +65,5 @@ export const templateService = {
     deleteTemplate,
     restoreTemplate,
     permanentDeleteTemplate,
+    cloneTemplate,
 }

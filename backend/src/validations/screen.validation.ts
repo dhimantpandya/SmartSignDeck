@@ -5,6 +5,16 @@ const contentSchema = Joi.object().pattern(
   Joi.string(),
   Joi.object().keys({
     type: Joi.string().valid("video", "image", "text", "mixed").required(),
+    sourceType: Joi.string().valid("local", "playlist").optional(),
+    playlistId: Joi.string().allow('').optional(),
+    text: Joi.string().allow('').optional(),
+    style: Joi.object().unknown(true).optional(),
+    colorSequence: Joi.array().items(
+      Joi.object().keys({
+        color: Joi.string().required(),
+        duration: Joi.number().min(1).required()
+      })
+    ).optional(),
     playlist: Joi.array()
       .items(
         Joi.object().keys({
@@ -35,7 +45,7 @@ const contentSchema = Joi.object().pattern(
           type: Joi.string().valid("video", "image").required(),
         }),
       )
-      .required(),
+      .optional(),
   }),
 );
 
@@ -57,6 +67,7 @@ const createScreen = {
     schedules: Joi.array()
       .items(
         Joi.object().keys({
+          _id: Joi.string().optional(),
           name: Joi.string().required(),
           startTime: Joi.string()
             .required()
@@ -64,24 +75,6 @@ const createScreen = {
           endTime: Joi.string()
             .required()
             .regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/),
-          content: contentSchema.required(),
-        }),
-      )
-      .default([]),
-    audienceRules: Joi.array()
-      .items(
-        Joi.object().keys({
-          ageRange: Joi.string(),
-          gender: Joi.string(),
-          content: contentSchema.required(),
-        }),
-      )
-      .default([]),
-    triggerRules: Joi.array()
-      .items(
-        Joi.object().keys({
-          type: Joi.string().valid("weather", "api", "daypart").required(),
-          condition: Joi.string().required(),
           content: contentSchema.required(),
         }),
       )
@@ -94,6 +87,8 @@ const getScreens = {
   query: Joi.object().keys({
     name: Joi.string(),
     templateId: Joi.string(),
+    createdBy: Joi.string(),
+    isPublic: Joi.boolean(),
     status: Joi.string().valid("online", "offline", "maintenance"),
     sortBy: Joi.string(),
     limit: Joi.number().integer(),
@@ -143,6 +138,7 @@ const updateScreen = {
       defaultContent: contentSchema,
       schedules: Joi.array().items(
         Joi.object().keys({
+          _id: Joi.string().optional(),
           name: Joi.string().required(),
           startTime: Joi.string()
             .required()
@@ -150,20 +146,6 @@ const updateScreen = {
           endTime: Joi.string()
             .required()
             .regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/),
-          content: contentSchema.required(),
-        }),
-      ),
-      audienceRules: Joi.array().items(
-        Joi.object().keys({
-          ageRange: Joi.string(),
-          gender: Joi.string(),
-          content: contentSchema.required(),
-        }),
-      ),
-      triggerRules: Joi.array().items(
-        Joi.object().keys({
-          type: Joi.string().valid("weather", "api", "daypart").required(),
-          condition: Joi.string().required(),
           content: contentSchema.required(),
         }),
       ),

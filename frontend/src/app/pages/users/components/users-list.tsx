@@ -1,13 +1,13 @@
 import { ChangeEvent, useState } from 'react'
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
 import { useReactTable, getCoreRowModel } from '@tanstack/react-table'
-import { userService } from '@/api'
+import { userService, adminRequestService } from '@/api'
 import { useAuth } from '@/hooks/use-auth'
 import { useUserListTableColumns } from '../hooks/use-users-list-table-columns'
 import { User, UserListFilter } from '@/models/user.model'
 import { Button } from '@/components/custom/button'
 import { Search } from '@/components/search'
-import { IconEdit, IconTrash, IconUserPlus } from '@tabler/icons-react'
+import { IconEdit, IconTrash, IconUserPlus, IconUserShare } from '@tabler/icons-react'
 import { useTableState } from '@/hooks/use-table-state'
 import DataTable from '@/components/ui/data-table'
 import { DataTableRowActions } from '@/components/ui/data-table-row-actions'
@@ -18,6 +18,7 @@ import { DataTableFilter } from '@/components/ui/data-table-filter'
 import { Cross2Icon } from '@radix-ui/react-icons'
 import { roleOptions } from '@/data/options'
 import { UserForm } from './user-form'
+import { UserProfileDialog } from './user-profile-dialog'
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
 import { toast } from '@/components/ui/use-toast'
 import { Roles } from '@/validations/user.validation'
@@ -73,19 +74,59 @@ export const UsersList = () => {
     queryFn: () => userService.getAllUsers(tableState),
   })
 
-  const getActionItems = (user: User) => {
+  const getActionItems = (targetUser: User) => {
+    const isSuperAdmin = user?.role === 'super_admin'
+    const isAdmin = user?.role === 'admin'
+
+    // 1. Hide 3-dots for current user row
+    if (targetUser.id === user?.id) return null
+
+    // 2. Hide for advertisers (Advertiser should not see user details/profile)
+    if (user?.role === 'advertiser') return null
+
+    // 3. Super Admin sees actions for everyone
+    // 4. Admin only sees actions for same company
+    const getCompId = (c: any) => {
+      if (!c) return null
+      if (typeof c === 'object') return (c?._id || c?.id || '').toString()
+      return c.toString()
+    }
+    const currentUserCompId = getCompId(user?.companyId)
+    const targetUserCompId = getCompId(targetUser.companyId)
+
+    const sameCompany =
+      (currentUserCompId && targetUserCompId && currentUserCompId === targetUserCompId) ||
+      (user?.companyName && targetUser.companyName && user.companyName.toLowerCase() === targetUser.companyName.toLowerCase())
+
+    const canManage = isSuperAdmin || (isAdmin && sameCompany)
+
+    // For public profile, we don't necessarily need "management" rights
+    // but let's see. The user said "when i click on profile button", 
+    // implying it should probably be visible to everyone or at least admins.
+    // Let's make it visible to anyone who can see the user list.
+
     const actionItems = [
       {
-        label: 'Edit',
-        icon: <IconEdit className='mr-2' />,
-        onClick: () => handleUserFormOpen(user),
+        label: 'Profile',
+        icon: <IconUserShare className='mr-2' />,
+        onClick: () => {
+          setSelectedProfileUser(targetUser)
+          setIsProfileOpen(true)
+        },
       },
-      {
-        label: 'Delete',
-        icon: <IconTrash className='mr-2' />,
-        onClick: () => !isPending && handleDeleteUser(user),
-        className: 'text-red focus:text-red',
-      },
+      ...(canManage ? [
+        {
+          label: 'Edit',
+          icon: <IconEdit className='mr-2' />,
+          onClick: () => handleUserFormOpen(targetUser),
+        },
+        {
+          label: 'Delete',
+          icon: <IconTrash className='mr-2' />,
+          onClick: () => !isPending && handleDeleteUser(targetUser),
+          className: 'text-red focus:text-red',
+        },
+      ] : [])
     ]
     return <DataTableRowActions items={actionItems} />
   }
@@ -110,6 +151,9 @@ export const UsersList = () => {
     manualSorting: true,
   })
 
+  const [selectedProfileUser, setSelectedProfileUser] = useState<User | undefined>()
+  const [isProfileOpen, setIsProfileOpen] = useState(false)
+
   const handleUserFormOpen = (user?: User) => {
     setUserForm({ isOpen: true, user })
   }
@@ -125,9 +169,35 @@ export const UsersList = () => {
     setConfirmDelete({ isOpen: true, user })
   }
 
+  const { mutate: requestAction } = useMutation({
+    mutationFn: (data: { targetUserId: string, type: 'DELETE' | 'ROLE_UPDATE', details?: any }) =>
+      adminRequestService.createRequest(data),
+    onSuccess: (response) => {
+      toast({
+        title: response.message || 'Request submitted successfully',
+        description: 'Super Admin will review your request.',
+      })
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Failed to submit request',
+        description: error?.response?.data?.message || error?.message,
+        variant: 'destructive'
+      })
+    }
+  })
+
   const confirmDeleteUser = () => {
     if (confirmDelete.user) {
-      deleteUser(confirmDelete.user.id)
+      const targetUserId = confirmDelete.user.id || (confirmDelete.user as any)._id
+      if (user?.role === 'admin') {
+        requestAction({
+          targetUserId,
+          type: 'DELETE'
+        })
+      } else {
+        deleteUser(targetUserId)
+      }
     }
     setConfirmDelete({ isOpen: false })
   }
@@ -172,9 +242,16 @@ export const UsersList = () => {
               ]}
               selectedValues={tableState.filter.companyId ? ['company'] : ['all']}
               onChange={(values) => {
+                const getCompId = (c: any) => {
+                  if (!c) return undefined
+                  if (typeof c === 'object') return (c?._id || c?.id || '').toString()
+                  return c.toString()
+                }
+                const companyId = values.includes('company') ? getCompId(user?.companyId) : undefined
+                console.log('[DEBUG] Setting company filter:', companyId)
                 handleFilterChange({
                   ...tableState.filter,
-                  companyId: values.includes('company') ? user?.companyId : undefined,
+                  companyId,
                 })
               }}
             />
@@ -204,14 +281,16 @@ export const UsersList = () => {
           >
             Copy Invite Link
           </Button>
-          <Button
-            variant='default'
-            onClick={() => handleUserFormOpen()}
-            className='h-9 px-4 font-semibold shadow-sm transition-all hover:shadow-md'
-          >
-            <IconUserPlus className='mr-2 h-4 w-4' />
-            Create User
-          </Button>
+          {user?.role === 'super_admin' && (
+            <Button
+              variant='default'
+              onClick={() => handleUserFormOpen()}
+              className='h-9 px-4 font-semibold shadow-sm transition-all hover:shadow-md'
+            >
+              <IconUserPlus className='mr-2 h-4 w-4' />
+              Create User
+            </Button>
+          )}
         </div>
       </div>
 
@@ -233,12 +312,24 @@ export const UsersList = () => {
         initialData={userForm.user}
         handleClose={handleUserFormClose}
       />
+      <UserProfileDialog
+        isOpen={isProfileOpen}
+        handleClose={() => {
+          setIsProfileOpen(false)
+          setSelectedProfileUser(undefined)
+        }}
+        user={selectedProfileUser}
+      />
       <ConfirmationDialog
         isOpen={confirmDelete.isOpen}
-        message={`Are you sure you want to delete ${confirmDelete.user?.first_name} ${confirmDelete.user?.last_name}?`}
+        title="Delete User"
+        message={user?.role === 'admin'
+          ? `Send request to delete ${confirmDelete.user?.first_name} ${confirmDelete.user?.last_name}? (Requires Super Admin approval)`
+          : `Are you sure you want to delete ${confirmDelete.user?.first_name} ${confirmDelete.user?.last_name}?`}
+        variant="destructive"
         onConfirm={confirmDeleteUser}
-        confirmBtnText='Delete'
-        closeBtnText='No'
+        confirmBtnText={user?.role === 'admin' ? 'Send Request' : 'Delete'}
+        cancelBtnText='No'
         onClose={() => setConfirmDelete({ isOpen: false })}
       />
     </>

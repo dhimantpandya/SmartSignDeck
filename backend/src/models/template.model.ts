@@ -17,6 +17,10 @@ export interface IZone {
   y: number;
   width: number;
   height: number;
+  name?: string;
+  media?: any[];
+  mediaType?: "image" | "video" | "both";
+  lockedMediaType?: "image" | "video" | "both" | null;
 }
 
 export interface ITemplate extends Document {
@@ -50,6 +54,18 @@ const zoneSchema = new Schema<IZone>({
   y: { type: Number, required: true },
   width: { type: Number, required: true },
   height: { type: Number, required: true },
+  name: { type: String },
+  media: { type: Array, default: [] },
+  mediaType: {
+    type: String,
+    enum: ["image", "video", "both"],
+    default: "both",
+  },
+  lockedMediaType: {
+    type: String,
+    enum: ["image", "video", "both", null],
+    default: null,
+  },
 });
 
 const templateSchema = new Schema<ITemplate, ITemplateModel>(

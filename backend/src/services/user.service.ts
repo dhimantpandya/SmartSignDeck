@@ -12,25 +12,39 @@ import config from "../config/config";
 
 // ===== FIXED createUser to accept Partial<IUser> =====
 const createUser = async (userBody: Partial<IUser>): Promise<IUser> => {
+  console.log(`[UserDebug] createUser for email: "${userBody.email}"`);
   const userData = { ...userBody };
 
-  if (!userData.email) {
-    throw new ApiError(httpStatus.BAD_REQUEST, "Email is required");
-  }
-  if (await User.isEmailTaken(userData.email)) {
-    throw new ApiError(httpStatus.BAD_REQUEST, AuthConstants.EMAIL_TAKEN);
+  // Clean up empty strings for ObjectId fields to avoid BSONError
+  if ((userData as any).companyId === "" || userData.companyId === null) {
+    delete userData.companyId;
   }
 
-  if (!("role" in userData)) {
-    const roles = await filterRoles({ name: "user" });
-    if (roles.length > 0) {
-      userData.role = roles[0].name as IUser["role"];
+  try {
+    if (!userData.email) {
+      throw new ApiError(httpStatus.BAD_REQUEST, "Email is required");
     }
-  }
+    // Normalize email
+    userData.email = userData.email.toLowerCase();
 
-  // Mongoose will create the full IUser document
-  const user = await User.create(userData);
-  return user;
+    if (await User.isEmailTaken(userData.email)) {
+      throw new ApiError(httpStatus.BAD_REQUEST, AuthConstants.EMAIL_TAKEN);
+    }
+
+    if (!("role" in userData)) {
+      const roles = await filterRoles({ name: "user" });
+      if (roles.length > 0) {
+        userData.role = roles[0].name as IUser["role"];
+      }
+    }
+
+    const user = await User.create(userData);
+    console.log(`[UserDebug] User created successfully: ${user._id}`);
+    return user;
+  } catch (err) {
+    console.error(`[UserDebug] Error creating user:`, err);
+    throw err;
+  }
 };
 
 const queryUsers = async (
@@ -41,7 +55,9 @@ const queryUsers = async (
 };
 
 const getUserByEmail = async (email: string): Promise<IUser | null> => {
-  return await User.findOne({ email });
+  const user = await User.findOne({ email: email.toLowerCase() });
+  console.log(`[UserDebug] getUserByEmail("${email}") -> found: ${!!user}`);
+  return user;
 };
 
 const getUserById = async (id: string): Promise<IUser | null> => {
@@ -56,15 +72,20 @@ const updateUserById = async (
   if (!user) {
     throw new ApiError(httpStatus.NOT_FOUND, "User not found");
   }
-  if (
-    updateBody.email != null &&
-    (await User.isEmailTaken(
-      updateBody.email,
-      new mongoose.Types.ObjectId(userId),
-    ))
-  ) {
-    throw new ApiError(httpStatus.BAD_REQUEST, "Email already taken");
+
+  if (updateBody.email) {
+    updateBody.email = updateBody.email.toLowerCase();
+
+    if (
+      await User.isEmailTaken(
+        updateBody.email,
+        new mongoose.Types.ObjectId(userId),
+      )
+    ) {
+      throw new ApiError(httpStatus.BAD_REQUEST, "Email already taken");
+    }
   }
+
   Object.assign(user, updateBody);
   await user.save();
   return user;

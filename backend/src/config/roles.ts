@@ -1,19 +1,28 @@
 const allRoles: Record<string, string[]> = {
   user: [
+    "getUsers",
     "getTemplates",
-    "manageTemplates",
+    "createTemplates", // Explicitly added creation rights
+    "manageTemplates", // Assuming manage covers edit/delete of own
     "getScreens",
+    "createScreens",
     "manageScreens",
     "getMedia",
     "manageMedia",
+    "getAnalytics",
+  ],
+  advertiser: [
+    "getScreens",
     "getAnalytics",
   ],
   admin: [
     "getUsers",
     "manageUsers",
     "getTemplates",
+    "createTemplates",
     "manageTemplates",
     "getScreens",
+    "createScreens",
     "manageScreens",
     "getMedia",
     "manageMedia",
@@ -23,7 +32,8 @@ const allRoles: Record<string, string[]> = {
   ],
   super_admin: [
     "getUsers",
-    "manageUsers",
+    "manageUsers", // Can delete any user
+    "deleteUsers", // explicit
     "getTemplates",
     "manageTemplates",
     "getScreens",

@@ -22,10 +22,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
 
 export default function AdminCompanies() {
     const [isDialogOpen, setIsDialogOpen] = useState(false)
     const [editingCompany, setEditingCompany] = useState<Partial<Company> | null>(null)
+    const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
 
     const queryClient = useQueryClient()
 
@@ -152,11 +154,7 @@ export default function AdminCompanies() {
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
-                                                    onClick={() => {
-                                                        if (window.confirm('Delete company? All data will be isolated or orphaned.')) {
-                                                            deleteMutation.mutate(company.id)
-                                                        }
-                                                    }}
+                                                    onClick={() => setConfirmDelete(company.id)}
                                                 >
                                                     <Trash size={16} className="text-destructive" />
                                                 </Button>
@@ -213,6 +211,21 @@ export default function AdminCompanies() {
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>
+
+                <ConfirmationDialog
+                    isOpen={!!confirmDelete}
+                    title="Delete Organization"
+                    message="Are you sure you want to delete this company? All data will be isolated or orphaned. This action cannot be undone."
+                    variant="destructive"
+                    confirmBtnText="Delete Organization"
+                    onConfirm={() => {
+                        if (confirmDelete) {
+                            deleteMutation.mutate(confirmDelete)
+                        }
+                        setConfirmDelete(null)
+                    }}
+                    onClose={() => setConfirmDelete(null)}
+                />
             </Layout.Body>
         </Layout>
     )

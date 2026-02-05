@@ -65,7 +65,7 @@ export const signupSchema = z
       .regex(/\d/, 'Password must contain at least 1 digit')
       .regex(/[!@#$%^&*(),.?":{}|<>]/, 'Password must contain at least 1 special character'),
     confirmPassword: z.string().min(6, 'Confirm Password must be at least 6 characters'),
-    companyName: z.string().optional(),
+    companyName: z.string().min(1, 'Company Name is required'),
     companyId: z.string().optional(),
   })
   .refine((data) => data.password === data.confirmPassword, {

@@ -11,45 +11,45 @@ interface SidebarProps extends React.HTMLAttributes<HTMLElement> {
   isCollapsed: boolean
   setIsCollapsed: React.Dispatch<React.SetStateAction<boolean>>
   onCommand?: (command: string) => void
+  currentPath?: string
 }
 
 export default function Sidebar({
   className,
   isCollapsed,
   setIsCollapsed,
-  onCommand
+  onCommand,
+  currentPath
 }: SidebarProps) {
   const [navOpened, setNavOpened] = useState(false)
   const [requestCount, setRequestCount] = useState(0)
+  const [adminRequestCount, setAdminRequestCount] = useState(0)
   const { user } = useAuth()
 
   useEffect(() => {
     if (user) {
-      const fetchRequestCount = async () => {
+      const fetchCounts = async () => {
         try {
+          // Social requests
           const { socialService } = await import('@/api/social.service')
           const requests = await socialService.getReceivedRequests()
           setRequestCount(requests.length)
+
+          // Admin requests (for super_admin)
+          if (user.role === 'super_admin') {
+            const { adminRequestService } = await import('@/api/admin-request.service')
+            const response = await adminRequestService.getAllRequests()
+            const pendingRequests = (response.data || []).filter((r: any) => r.status === 'PENDING')
+            setAdminRequestCount(pendingRequests.length)
+          }
         } catch (err) {
-          console.error('Failed to fetch request count', err)
+          console.error('Failed to fetch counts', err)
         }
       }
 
-      fetchRequestCount()
-
-      // Set up real-time listener if socket is available globally or somehow
-      // For now, simple polling or just trust initial load + manual refresh
+      fetchCounts()
     }
   }, [user])
-
-  const filteredLinks = sidelinks.map(link => {
-    if (link.title === 'Collaboration' && requestCount > 0) {
-      return { ...link, label: requestCount.toString() }
-    }
-    return link
-  }).filter(link =>
-    !link.requiredRole || link.requiredRole === user?.role
-  )
 
   /* Make body not scrollable when navBar is opened */
   useEffect(() => {
@@ -59,6 +59,18 @@ export default function Sidebar({
       document.body.classList.remove('overflow-hidden')
     }
   }, [navOpened])
+
+  const filteredLinks = sidelinks.map(link => {
+    if (link.title === 'Collaboration' && requestCount > 0 && !currentPath?.includes('/collaboration')) {
+      return { ...link, label: requestCount.toString() }
+    }
+    if (link.title === 'Requests' && adminRequestCount > 0 && !currentPath?.includes('/admin/requests')) {
+      return { ...link, label: adminRequestCount.toString() }
+    }
+    return link
+  }).filter(link =>
+    !link.requiredRoles || (user?.role && link.requiredRoles.includes(user.role))
+  )
 
   return (
     <aside

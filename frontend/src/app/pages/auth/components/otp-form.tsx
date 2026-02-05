@@ -124,6 +124,9 @@ export default function OtpForm({ className, ...props }: OtpFormProps) {
         return
       }
 
+      // Clear OTP field for better UX when verification fails
+      form.reset()
+
       toast({
         title: error?.message || 'OTP verification failed',
         description: 'Please check your code and try again.',

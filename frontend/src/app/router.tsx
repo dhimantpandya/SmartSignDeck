@@ -5,7 +5,7 @@ import { useCrossTabSync } from '@/hooks/use-cross-tab-sync'
 import { Routes } from '@/utilities/routes'
 import { useQuery } from '@tanstack/react-query'
 import { FC, useMemo } from 'react'
-import { RouterProvider, createBrowserRouter, redirect } from 'react-router-dom'
+import { RouterProvider, createBrowserRouter, redirect, Navigate } from 'react-router-dom'
 import GeneralError from './pages/errors/general-error'
 import MaintenanceError from './pages/errors/maintenance-error'
 import NotFoundError from './pages/errors/not-found-error'
@@ -101,6 +101,14 @@ const Setup = () => {
           errorElement: <GeneralError />,
           children: [
             {
+              path: '/dashboard/templates',
+              element: <Navigate to={Routes.TEMPLATES} replace />,
+            },
+            {
+              path: '/dashboard/screens',
+              element: <Navigate to={Routes.SCREENS} replace />,
+            },
+            {
               path: Routes.DASHBOARD,
               lazy: async () => ({
                 Component: (await import('./pages/dashboard')).default,
@@ -137,15 +145,21 @@ const Setup = () => {
               }),
             },
             {
+              path: Routes.PLAYLISTS,
+              lazy: async () => ({
+                Component: (await import('./pages/playlists')).default,
+              }),
+            },
+            {
               path: Routes.COLLABORATION,
               lazy: async () => ({
                 Component: (await import('./pages/collaboration')).default,
               }),
             },
             {
-              path: Routes.ADMIN_COMPANIES,
+              path: Routes.ADMIN_REQUESTS,
               lazy: async () => ({
-                Component: (await import('./pages/admin/companies')).default,
+                Component: (await import('./pages/admin-requests')).default,
               }),
             },
             {

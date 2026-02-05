@@ -1,5 +1,4 @@
 import { apiService } from './api.service'
-import { GenericResponse } from '@/models/generic'
 
 export interface SignageStats {
     totalTemplates: number

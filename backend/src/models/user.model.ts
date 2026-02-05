@@ -8,7 +8,7 @@ import {
   type CustomPaginateResult,
 } from "./plugins/paginate.plugin";
 
-export type RoleType = "user" | "admin" | "super_admin";
+export type RoleType = "user" | "admin" | "super_admin" | "advertiser";
 
 export interface IUser extends Document {
   first_name: string;
@@ -17,6 +17,7 @@ export interface IUser extends Document {
   companyId?: mongoose.Schema.Types.ObjectId;
   companyName?: string;
   googleId?: string;
+  authProvider: "local" | "google";
   password: string;
   role: RoleType;
   avatar?: string;
@@ -24,6 +25,7 @@ export interface IUser extends Document {
   dob?: Date;
   language?: string;
   is_email_verified: boolean;
+  onboardingCompleted: boolean;
   isPasswordMatch: (password: string) => Promise<boolean>;
 }
 
@@ -62,6 +64,12 @@ const userSchema = new Schema<IUser, IUserModel>(
       trim: true
     },
     googleId: { type: String, unique: true, sparse: true }, // <-- added googleId
+    authProvider: {
+      type: String,
+      enum: ["local", "google"],
+      default: "local",
+      required: true,
+    },
     password: {
       type: String,
       required: function () {
@@ -80,7 +88,7 @@ const userSchema = new Schema<IUser, IUserModel>(
     },
     role: {
       type: String,
-      enum: ["user", "admin", "super_admin"],
+      enum: ["user", "admin", "super_admin", "advertiser"],
       default: "user",
       required: true,
       index: true,
@@ -90,6 +98,7 @@ const userSchema = new Schema<IUser, IUserModel>(
     dob: { type: Date },
     language: { type: String, enum: ["english", "french", "germen"] },
     is_email_verified: { type: Boolean, default: false },
+    onboardingCompleted: { type: Boolean, default: false },
   },
   { timestamps: { createdAt: "created_at", updatedAt: "updated_at" } },
 );

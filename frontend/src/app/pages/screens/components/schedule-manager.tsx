@@ -3,12 +3,18 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { IconTrash, IconPlus } from '@tabler/icons-react'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
+import { useState } from 'react'
 
 interface Schedule {
     name: string
     startTime: string
     endTime: string
     content: any
+    daysOfWeek?: number[] // 0=Sun, 1=Mon...
+    startDate?: string
+    endDate?: string
+    priority?: number
 }
 
 interface ScheduleManagerProps {
@@ -16,7 +22,7 @@ interface ScheduleManagerProps {
     activeTab: string
     onAddSchedule: () => void
     onRemoveSchedule: (index: number) => void
-    onUpdateSchedule: (index: number, field: keyof Schedule, value: string) => void
+    onUpdateSchedule: (index: number, field: keyof Schedule, value: any) => void
     onTabChange: (value: string) => void
 }
 
@@ -28,6 +34,7 @@ export default function ScheduleManager({
     onUpdateSchedule,
     onTabChange
 }: ScheduleManagerProps) {
+    const [confirmDelete, setConfirmDelete] = useState(false)
     const currentScheduleIndex = activeTab === 'default' ? -1 : parseInt(activeTab.split('-')[1])
 
     return (
@@ -76,16 +83,91 @@ export default function ScheduleManager({
                             onChange={(e) => onUpdateSchedule(currentScheduleIndex, 'endTime', e.target.value)}
                         />
                     </div>
+
+                    {/* Advanced Rules */}
+                    <div className='grid gap-1'>
+                        <Label className="text-xs">Start Date (Optional)</Label>
+                        <Input
+                            type="date"
+                            value={schedules[currentScheduleIndex].startDate ? new Date(schedules[currentScheduleIndex].startDate).toISOString().split('T')[0] : ''}
+                            onChange={(e) => onUpdateSchedule(currentScheduleIndex, 'startDate', e.target.value)}
+                        />
+                    </div>
+                    <div className='grid gap-1'>
+                        <Label className="text-xs">End Date (Optional)</Label>
+                        <Input
+                            type="date"
+                            value={schedules[currentScheduleIndex].endDate ? new Date(schedules[currentScheduleIndex].endDate).toISOString().split('T')[0] : ''}
+                            onChange={(e) => onUpdateSchedule(currentScheduleIndex, 'endDate', e.target.value)}
+                        />
+                    </div>
+                    <div className='grid gap-1'>
+                        <Label className="text-xs">Priority (Higher wins)</Label>
+                        <Input
+                            type="number"
+                            min="0"
+                            placeholder="0"
+                            value={schedules[currentScheduleIndex].priority || 0}
+                            onChange={(e) => onUpdateSchedule(currentScheduleIndex, 'priority', parseInt(e.target.value) || 0)}
+                        />
+                    </div>
+
+                    <div className='grid gap-1 sm:col-span-3'>
+                        <Label className="text-xs">Active Days</Label>
+                        <div className="flex flex-wrap gap-2">
+                            {[
+                                { val: 1, label: 'Mon' },
+                                { val: 2, label: 'Tue' },
+                                { val: 3, label: 'Wed' },
+                                { val: 4, label: 'Thu' },
+                                { val: 5, label: 'Fri' },
+                                { val: 6, label: 'Sat' },
+                                { val: 0, label: 'Sun' }
+                            ].map((day) => {
+                                const isSelected = (schedules[currentScheduleIndex].daysOfWeek || []).includes(day.val)
+                                return (
+                                    <Button
+                                        key={day.val}
+                                        size="sm"
+                                        variant={isSelected ? "default" : "outline"}
+                                        className={`h-7 w-9 p-0 text-[10px] uppercase ${isSelected ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}
+                                        onClick={() => {
+                                            const currentDays = schedules[currentScheduleIndex].daysOfWeek || []
+                                            const newDays = isSelected
+                                                ? currentDays.filter(d => d !== day.val)
+                                                : [...currentDays, day.val]
+                                            onUpdateSchedule(currentScheduleIndex, 'daysOfWeek', newDays)
+                                        }}
+                                    >
+                                        {day.label}
+                                    </Button>
+                                )
+                            })}
+                        </div>
+                    </div>
                     <Button
                         variant="destructive"
                         size="sm"
-                        className='sm:col-span-3 w-fit'
-                        onClick={() => onRemoveSchedule(currentScheduleIndex)}
+                        className='sm:col-span-3 w-fit mt-2'
+                        onClick={() => setConfirmDelete(true)}
                     >
                         <IconTrash size={16} className='mr-2' /> Delete Slot
                     </Button>
                 </div>
             )}
+
+            <ConfirmationDialog
+                isOpen={confirmDelete}
+                title="Delete Schedule Slot"
+                message="Are you sure you want to delete this time slot? This content will no longer be scheduled for playback."
+                variant="destructive"
+                confirmBtnText="Delete Slot"
+                onConfirm={() => {
+                    onRemoveSchedule(currentScheduleIndex)
+                    setConfirmDelete(false)
+                }}
+                onClose={() => setConfirmDelete(false)}
+            />
         </div>
     )
 }

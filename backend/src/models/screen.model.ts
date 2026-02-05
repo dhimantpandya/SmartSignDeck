@@ -14,6 +14,8 @@ export type IScreenContent = Record<
   string,
   {
     type: "video" | "image" | "text" | "mixed";
+    sourceType?: "local" | "playlist"; // New field: define source
+    playlistId?: string; // New field: if source is playlist
     playlist: Array<{
       url: string;
       duration: number;
@@ -26,20 +28,14 @@ export interface ISchedule {
   name: string;
   startTime: string; // HH:mm format
   endTime: string; // HH:mm format
+  daysOfWeek?: number[]; // [0-6] 0=Sun
+  startDate?: Date;
+  endDate?: Date;
+  priority?: number; // Higher overrides lower
   content: IScreenContent;
 }
 
-export interface IAudienceRule {
-  ageRange?: string;
-  gender?: string;
-  content: IScreenContent;
-}
 
-export interface ITriggerRule {
-  type: "weather" | "api" | "daypart";
-  condition: string;
-  content: IScreenContent;
-}
 
 export interface IScreen extends Document {
   name: string;
@@ -47,11 +43,10 @@ export interface IScreen extends Document {
   templateId: mongoose.Schema.Types.ObjectId;
   defaultContent: IScreenContent;
   schedules: ISchedule[];
-  audienceRules: IAudienceRule[];
-  triggerRules: ITriggerRule[];
   companyId: mongoose.Schema.Types.ObjectId;
   createdBy: mongoose.Schema.Types.ObjectId;
   isPublic: boolean;
+  secretKey?: string;
   status: "online" | "offline" | "syncing";
   lastPing: Date;
   created_at: Date;
@@ -93,20 +88,10 @@ const screenSchema = new Schema<IScreen, IScreenModel>(
         name: { type: String, required: true },
         startTime: { type: String, required: true },
         endTime: { type: String, required: true },
-        content: { type: Schema.Types.Mixed, required: true },
-      },
-    ],
-    audienceRules: [
-      {
-        ageRange: String,
-        gender: String,
-        content: { type: Schema.Types.Mixed, required: true },
-      },
-    ],
-    triggerRules: [
-      {
-        type: { type: String, enum: ["weather", "api", "daypart"], required: true },
-        condition: { type: String, required: true },
+        daysOfWeek: { type: [Number], default: [0, 1, 2, 3, 4, 5, 6] },
+        startDate: { type: Date },
+        endDate: { type: Date },
+        priority: { type: Number, default: 0 },
         content: { type: Schema.Types.Mixed, required: true },
       },
     ],
@@ -125,6 +110,11 @@ const screenSchema = new Schema<IScreen, IScreenModel>(
       type: Boolean,
       default: false,
       index: true,
+    },
+    secretKey: {
+      type: String,
+      unique: true,
+      sparse: true,
     },
     status: {
       type: String,

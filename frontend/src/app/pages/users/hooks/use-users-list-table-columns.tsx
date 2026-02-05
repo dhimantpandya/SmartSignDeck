@@ -48,6 +48,12 @@ const useUserListTableColumns = ({
         enableSorting: true,
       },
       {
+        accessorKey: 'companyName',
+        cell: (info) => info.getValue() || <span className="text-gray-400 italic">Global / None</span>,
+        header: 'Company',
+        enableSorting: true,
+      },
+      {
         accessorKey: 'role',
         cell: (info) => info.getValue(),
         header: 'Role',

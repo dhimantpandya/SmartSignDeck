@@ -1,8 +1,15 @@
 import { useState } from 'react'
 import { Button } from '@/components/custom/button'
-import { IconPlus, IconTrash, IconPhoto, IconMovie } from '@tabler/icons-react'
+import { IconPlus, IconTrash, IconPhoto, IconMovie, IconTrashX, IconPlayerPlay, IconArrowsSort, IconExternalLink } from '@tabler/icons-react'
 import { toast } from '@/components/ui/use-toast'
 import { apiService } from '@/api'
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip"
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
 
 interface PlaylistItem {
     url: string
@@ -19,6 +26,7 @@ interface PlaylistEditorProps {
 export default function PlaylistEditor({ zone, items, onChange }: PlaylistEditorProps) {
     const [mediaTypeLock, setMediaTypeLock] = useState<'image' | 'video' | 'both'>('both')
     const [isProcessing, setIsProcessing] = useState(false)
+    const [confirmAction, setConfirmAction] = useState<{ type: 'remove' | 'clear', index?: number } | null>(null)
     const safeItems = items || []
 
     const handleAddItems = (assets: any[]) => {
@@ -30,10 +38,21 @@ export default function PlaylistEditor({ zone, items, onChange }: PlaylistEditor
             const url = asset.secure_url;
             if (!url) return;
 
-            // Auto-detect type
+            // Robust type detection
             let type: 'video' | 'image' = 'image';
-            if (url.match(/\.(mp4|webm|ogg|quicktime)$/i)) type = 'video';
-            if (asset.resource_type === 'video') type = 'video'; // Cloudinary metadata fallback
+
+            // Priority 1: Cloudinary resource_type
+            if (asset.resource_type === 'video') {
+                type = 'video';
+            }
+            // Priority 2: Extension check
+            else if (url.match(/\.(mp4|webm|ogg|quicktime|mov|m4v)$/i)) {
+                type = 'video';
+            }
+            // Priority 3: Cloudinary specific URL patterns for video
+            else if (url.includes('/video/upload/')) {
+                type = 'video';
+            }
 
             // Validation check against Zone Type
             if (zone.type !== 'mixed' && zone.type !== type) {
@@ -49,21 +68,25 @@ export default function PlaylistEditor({ zone, items, onChange }: PlaylistEditor
                 return;
             }
 
+            // Add with smart duration
             validItems.push({
                 url,
-                duration: type === 'video' ? (Number(asset.duration) || 10) : 10,
+                duration: type === 'video' ? (Math.round(Number(asset.duration)) || 10) : 10,
                 type
             });
         });
 
         if (validItems.length > 0) {
             onChange([...safeItems, ...validItems]);
-            toast({ title: `${validItems.length} media item(s) added!` });
+            toast({
+                title: "Media Added",
+                description: `Successfully added ${validItems.length} item(s) to the playlist.`
+            });
         }
 
         if (rejectedCount > 0) {
             toast({
-                title: `${rejectedCount} item(s) not added`,
+                title: `${rejectedCount} item(s) skipped`,
                 description: rejectReason,
                 variant: "destructive"
             });
@@ -71,8 +94,7 @@ export default function PlaylistEditor({ zone, items, onChange }: PlaylistEditor
     }
 
     const removeItem = (idx: number) => {
-        if (!window.confirm("Delete this item?")) return
-        onChange(safeItems.filter((_, i) => i !== idx))
+        setConfirmAction({ type: 'remove', index: idx })
     }
 
     const moveItem = (idx: number, dir: 'up' | 'down') => {
@@ -85,8 +107,12 @@ export default function PlaylistEditor({ zone, items, onChange }: PlaylistEditor
 
     const updateDuration = (idx: number, newDuration: number) => {
         const newItems = [...safeItems]
-        newItems[idx].duration = newDuration
+        newItems[idx] = { ...newItems[idx], duration: Math.max(1, newDuration) }
         onChange(newItems)
+    }
+
+    const clearAll = () => {
+        setConfirmAction({ type: 'clear' })
     }
 
     const handleOpenCloudinaryWidget = async () => {
@@ -113,7 +139,7 @@ export default function PlaylistEditor({ zone, items, onChange }: PlaylistEditor
                 signature: signature,
                 button_class: 'hidden',
                 multiple: true,
-                max_files: 10,
+                max_files: 15,
                 inline_container: null, // Ensure modal
                 z_index: 9999
             }, {
@@ -135,110 +161,229 @@ export default function PlaylistEditor({ zone, items, onChange }: PlaylistEditor
     }
 
     return (
-        <div className='space-y-4'>
-            {/* Controls */}
-            <div className='flex flex-col gap-3 p-3 bg-muted/40 rounded-md border'>
-                {/* Type Lock for Mixed Zones */}
-                {zone.type === 'mixed' && (
-                    <div className='flex items-center justify-between text-sm mb-4'>
-                        <span className='font-medium text-muted-foreground'>Content Type Lock:</span>
-                        <select
-                            className="h-8 rounded-md border border-input bg-background px-3 py-1 text-xs"
-                            value={mediaTypeLock}
-                            onChange={(e) => setMediaTypeLock(e.target.value as any)}
-                        >
-                            <option value="both">Allow Both</option>
-                            <option value="image">Images Only</option>
-                            <option value="video">Videos Only</option>
-                        </select>
+        <TooltipProvider>
+            <div className='space-y-4'>
+                {/* Header/Controls */}
+                <div className='flex flex-col gap-3 p-4 bg-muted/30 rounded-lg border border-border/50 backdrop-blur-sm'>
+                    <div className='flex items-center justify-between'>
+                        <div className='flex items-center gap-2'>
+                            <div className='w-2 h-2 rounded-full bg-primary animate-pulse' />
+                            <span className='text-xs font-semibold uppercase tracking-wider text-muted-foreground'>Playlist Controls</span>
+                        </div>
+                        {safeItems.length > 0 && (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className='h-7 text-[10px] text-destructive hover:bg-destructive/10 hover:text-destructive transition-colors'
+                                onClick={clearAll}
+                            >
+                                <IconTrashX size={14} className='mr-1' />
+                                Clear All
+                            </Button>
+                        )}
                     </div>
-                )}
 
-                <div className="pt-2 space-y-2">
-                    <Button
-                        type="button"
-                        variant="default"
-                        className="w-full h-10 shadow-sm relative overflow-hidden"
-                        disabled={isProcessing}
-                        onClick={handleOpenCloudinaryWidget}
-                    >
-                        <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent pointer-events-none" />
-                        <IconPlus className='mr-2' size={20} />
-                        {isProcessing ? 'Opening...' : 'Add Media from Cloudinary'}
-                    </Button>
-                    <p className="text-[10px] text-muted-foreground text-center px-2">
-                        Click the button above to insert media. <br />
-                        <span className="opacity-75">Use the link below only for managing files.</span>
-                    </p>
-                    <div className="flex justify-center items-center text-[10px] text-muted-foreground px-1 pt-1 border-t border-border/50">
-                        <a
-                            href="https://console.cloudinary.com/console/media_library/folders/all"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-primary hover:underline cursor-pointer flex items-center gap-1 opacity-80 hover:opacity-100"
+                    {/* Type Lock for Mixed Zones */}
+                    {zone.type === 'mixed' && (
+                        <div className='flex items-center justify-between p-2 rounded bg-background/40 border border-border/40'>
+                            <div className='flex items-center gap-2'>
+                                <IconArrowsSort size={14} className='text-muted-foreground' />
+                                <span className='text-[11px] font-medium'>Content Type Filter:</span>
+                            </div>
+                            <select
+                                className="h-7 rounded border border-input bg-background px-2 py-0 text-xs focus:ring-1 focus:ring-primary outline-none transition-shadow"
+                                value={mediaTypeLock}
+                                onChange={(e) => setMediaTypeLock(e.target.value as any)}
+                            >
+                                <option value="both">Allow Both</option>
+                                <option value="image">Images Only</option>
+                                <option value="video">Videos Only</option>
+                            </select>
+                        </div>
+                    )}
+
+                    <div className="pt-1 space-y-3">
+                        <Button
+                            type="button"
+                            variant="default"
+                            className="w-full h-11 shadow-sm relative overflow-hidden group border-b-2 border-primary-foreground/10 active:border-b-0 active:translate-y-[1px] transition-all"
+                            disabled={isProcessing}
+                            onClick={handleOpenCloudinaryWidget}
                         >
-                            Manage Files (External) <IconMovie size={10} />
-                        </a>
+                            <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-transparent to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                            <IconPlus className='mr-2 group-hover:scale-110 transition-transform' size={20} />
+                            <span className='font-medium'>{isProcessing ? 'Initializing Widget...' : 'Add from Cloudinary'}</span>
+                        </Button>
+
+                        <div className="flex flex-col items-center gap-2">
+                            <p className="text-[10px] text-muted-foreground/80 italic text-center leading-relaxed">
+                                Select assets from your Media Library to add to this zone.
+                            </p>
+                            <a
+                                href="https://console.cloudinary.com/console/media_library/folders/all"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-[10px] text-muted-foreground flex items-center gap-1 hover:text-primary transition-colors py-1 px-2 rounded hover:bg-primary/5 border border-transparent hover:border-primary/10"
+                            >
+                                <IconExternalLink size={12} />
+                                Manage Files Externally
+                            </a>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            {/* List */}
-            <div className='space-y-2 max-h-[400px] overflow-y-auto pr-1'>
-                {safeItems.map((item, i) => (
-                    <div key={i} className='flex items-center gap-3 p-2 border rounded-md bg-card hover:bg-muted/50 transition-colors group'>
-
-                        {/* Thumbnail */}
+                {/* Playlist List */}
+                <div className='space-y-3 max-h-[450px] overflow-y-auto pr-2 custom-scrollbar'>
+                    {safeItems.map((item, i) => (
                         <div
-                            className='w-16 h-10 bg-black rounded overflow-hidden flex-shrink-0 border border-gray-800 relative group-hover:border-primary/50 transition-colors cursor-pointer'
-                            onClick={() => window.open(item.url, '_blank')}
-                            title="Open in new tab"
+                            key={i}
+                            className='flex items-center gap-3 p-2.5 border rounded-lg bg-card/60 hover:bg-muted/40 transition-all group relative border-border/40 hover:border-primary/20 shadow-sm hover:shadow-md'
                         >
-                            {item.type === 'video' ? (
-                                <video src={item.url} className="w-full h-full object-cover opacity-80" muted />
-                            ) : (
-                                <img src={item.url} className="w-full h-full object-cover opacity-80" alt="" />
-                            )}
-                            <div className='absolute inset-0 flex items-center justify-center'>
-                                {item.type === 'video' ? <IconMovie size={14} className="text-white drop-shadow-md" /> : <IconPhoto size={14} className="text-white drop-shadow-md" />}
+                            <div className='absolute left-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-30 transition-opacity cursor-grab text-muted-foreground hidden sm:block'>
+                                <IconArrowsSort size={12} />
                             </div>
-                        </div>
 
-                        {/* Details */}
-                        <div className='flex-1 min-w-0 flex flex-col justify-center gap-1'>
-                            <div className='truncate text-[10px] font-mono text-muted-foreground'>{item.url.split('/').pop()}</div>
-                            <div className='flex items-center gap-2'>
-                                <span className='text-[10px] text-muted-foreground'>Duration:</span>
-                                <div className="flex items-center">
-                                    <input
-                                        type="number"
-                                        className="h-5 w-12 text-[10px] text-center border rounded bg-background px-1 disabled:opacity-50 disabled:cursor-not-allowed"
-                                        value={item.duration}
-                                        min={1}
-                                        disabled={item.type === 'video'}
-                                        onChange={(e) => updateDuration(i, parseInt(e.target.value) || 1)}
-                                    />
-                                    <span className='text-[10px] ml-1 text-muted-foreground'>s</span>
-                                    {item.type === 'video' && <span className="text-[8px] ml-1 text-blue-500">(Video Length)</span>}
+                            {/* Thumbnail Container */}
+                            <div
+                                className='w-20 h-12 bg-black/90 rounded-md overflow-hidden flex-shrink-0 border border-border/80 relative transition-transform active:scale-95 cursor-zoom-in'
+                                onClick={() => window.open(item.url, '_blank')}
+                                title="Click to view full size"
+                            >
+                                {item.type === 'video' ? (
+                                    <video src={item.url} className="w-full h-full object-cover opacity-90" muted />
+                                ) : (
+                                    <img src={item.url} className="w-full h-full object-cover opacity-90" alt="" />
+                                )}
+                                <div className='absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-transparent transition-colors'>
+                                    {item.type === 'video' ?
+                                        <IconMovie size={16} className="text-white drop-shadow-lg" /> :
+                                        <IconPhoto size={16} className="text-white drop-shadow-lg" />
+                                    }
+                                </div>
+                                <div className='absolute bottom-0 right-0 p-0.5 bg-black/60 rounded-tl flex items-center justify-center'>
+                                    <IconPlayerPlay size={8} className='text-white' />
                                 </div>
                             </div>
-                        </div>
 
-                        {/* Actions */}
-                        <div className='flex gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity'>
-                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => moveItem(i, 'up')}>↑</Button>
-                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => moveItem(i, 'down')}>↓</Button>
-                            <Button variant="destructive" size="icon" className="h-6 w-6" onClick={() => removeItem(i)}><IconTrash size={14} /></Button>
+                            {/* Details Segment */}
+                            <div className='flex-1 min-w-0 flex flex-col justify-center gap-1.5'>
+                                <div className='flex items-center gap-2'>
+                                    <span className='truncate text-[10px] font-mono font-medium text-foreground/80 tracking-tight'>
+                                        {item.url.split('/').pop()?.split('?')[0] || 'Media Item'}
+                                    </span>
+                                    <span className={`text-[8px] px-1 rounded uppercase font-bold tracking-tighter ${item.type === 'video' ? 'bg-blue-500/10 text-blue-500' : 'bg-green-500/10 text-green-500'
+                                        }`}>
+                                        {item.type}
+                                    </span>
+                                </div>
+
+                                <div className='flex items-center gap-3'>
+                                    <div className='flex items-center gap-2 bg-muted/60 px-2 py-0.5 rounded border border-border/20'>
+                                        <span className='text-[10px] text-muted-foreground font-medium'>Duration:</span>
+                                        <div className="flex items-center">
+                                            <input
+                                                type="number"
+                                                className="h-5 w-14 text-[10px] text-center border-none bg-transparent font-bold focus:ring-0 p-0 disabled:opacity-50"
+                                                value={item.duration}
+                                                min={1}
+                                                disabled={item.type === 'video'}
+                                                onChange={(e) => updateDuration(i, parseInt(e.target.value) || 1)}
+                                            />
+                                            <span className='text-[10px] text-muted-foreground/60 ml-0.5'>sec</span>
+                                        </div>
+                                    </div>
+                                    {item.type === 'video' && (
+                                        <span className="text-[9px] text-blue-500/80 font-medium flex items-center gap-1">
+                                            <div className='w-1 h-1 rounded-full bg-blue-500 animate-pulse' />
+                                            Native
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Actions Group */}
+                            <div className='flex flex-col sm:flex-row gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0 pr-1'>
+                                <div className='flex sm:flex-col gap-1'>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <Button
+                                                variant="outline"
+                                                size="icon"
+                                                className={`h-7 w-7 rounded-md ${i === 0 ? 'opacity-30 cursor-not-allowed' : 'hover:bg-primary/10 hover:text-primary transition-colors'}`}
+                                                onClick={() => moveItem(i, 'up')}
+                                                disabled={i === 0}
+                                            >
+                                                ↑
+                                            </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent side="left"><p className='text-xs'>Move Up</p></TooltipContent>
+                                    </Tooltip>
+
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <Button
+                                                variant="outline"
+                                                size="icon"
+                                                className={`h-7 w-7 rounded-md ${i === safeItems.length - 1 ? 'opacity-30 cursor-not-allowed' : 'hover:bg-primary/10 hover:text-primary transition-colors'}`}
+                                                onClick={() => moveItem(i, 'down')}
+                                                disabled={i === safeItems.length - 1}
+                                            >
+                                                ↓
+                                            </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent side="left"><p className='text-xs'>Move Down</p></TooltipContent>
+                                    </Tooltip>
+                                </div>
+
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button
+                                            variant="destructive"
+                                            size="icon"
+                                            className="h-full sm:h-auto sm:w-7 rounded-md shadow-sm hover:shadow-md transition-all active:scale-90"
+                                            onClick={() => removeItem(i)}
+                                        >
+                                            <IconTrash size={15} />
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="left"><p className='text-xs'>Remove Item</p></TooltipContent>
+                                </Tooltip>
+                            </div>
                         </div>
-                    </div>
-                ))}
-                {safeItems.length === 0 && (
-                    <div className='text-center py-8 text-muted-foreground border-2 border-dashed rounded-lg bg-muted/10'>
-                        <p className='text-sm'>Playlist is empty</p>
-                        <p className='text-xs opacity-50'>Use Cloudinary to add content</p>
-                    </div>
-                )}
+                    ))}
+
+                    {safeItems.length === 0 && (
+                        <div className='flex flex-col items-center justify-center py-12 px-4 text-muted-foreground border-2 border-dashed rounded-xl bg-muted/5 border-border/40 group/empty hover:bg-muted/10 transition-colors'>
+                            <div className='w-16 h-16 rounded-full bg-muted/40 flex items-center justify-center mb-4 group-hover/empty:scale-110 transition-transform'>
+                                <IconPlus className='text-muted-foreground/40' size={32} />
+                            </div>
+                            <p className='text-sm font-semibold'>Empty Playlist</p>
+                            <p className='text-[11px] opacity-60 text-center max-w-[200px] mt-1'>
+                                Add your first media item from Cloudinary to get started.
+                            </p>
+                        </div>
+                    )}
+                </div>
+
+                <ConfirmationDialog
+                    isOpen={!!confirmAction}
+                    title={confirmAction?.type === 'clear' ? "Clear Playlist" : "Remove Item"}
+                    message={confirmAction?.type === 'clear'
+                        ? "Are you sure you want to clear the entire playlist? This cannot be undone."
+                        : "Are you sure you want to remove this item from the playlist?"}
+                    variant="destructive"
+                    confirmBtnText={confirmAction?.type === 'clear' ? "Clear All" : "Remove"}
+                    onConfirm={() => {
+                        if (confirmAction?.type === 'clear') {
+                            onChange([])
+                        } else if (confirmAction?.type === 'remove' && confirmAction.index !== undefined) {
+                            onChange(safeItems.filter((_, i) => i !== confirmAction.index))
+                        }
+                        setConfirmAction(null)
+                    }}
+                    onClose={() => setConfirmAction(null)}
+                />
             </div>
-        </div>
+        </TooltipProvider>
     )
 }

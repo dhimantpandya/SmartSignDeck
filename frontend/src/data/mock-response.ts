@@ -1,4 +1,5 @@
 import { User, UserListRequest } from '@/models/user.model'
+/* eslint-disable */
 import {
   ProfileUpdateRequest,
   Roles,
@@ -6,11 +7,13 @@ import {
 } from '@/validations/user.validation'
 
 export const mockUser = {
-  id: 1,
-  username: 'John Doe',
+  id: '1',
+  first_name: 'John',
+  last_name: 'Doe',
   email: 'test@test.com',
   role: Roles.USER,
   is_email_verified: true,
+  onboardingCompleted: false,
 }
 
 export const mockGenerateNewTokenResponse = {
@@ -35,167 +38,213 @@ export const mockLoginResponse = {
   status: 200,
 }
 const mockUsers: User[] = [
-  { id: 1, username: 'john doe', email: 'john.doe@example.com', role: Roles.ADMIN, is_email_verified: true },
+  { id: '1', first_name: 'John', last_name: 'Doe', email: 'john.doe@example.com', role: Roles.ADMIN, is_email_verified: true, onboardingCompleted: true },
   {
-    id: 2,
-    username: 'jane smith',
+    id: '2',
+    first_name: 'Jane',
+    last_name: 'Smith',
     email: 'jane.smith@example.com',
     role: Roles.USER,
     is_email_verified: true,
+    onboardingCompleted: true,
   },
   {
-    id: 3,
-    username: 'alice johnson',
+    id: '3',
+    first_name: 'Alice',
+    last_name: 'Johnson',
     email: 'alice.johnson@example.com',
-    role: Roles.MODERATOR,
+    role: Roles.USER,
     is_email_verified: true,
+    onboardingCompleted: true,
   },
   {
-    id: 4,
-    username: 'bob brown',
+    id: '4',
+    first_name: 'Bob',
+    last_name: 'Brown',
     email: 'bob.brown@example.com',
     role: Roles.ADMIN,
     is_email_verified: true,
+    onboardingCompleted: true,
   },
   {
-    id: 5,
-    username: 'lisa white',
+    id: '5',
+    first_name: 'Lisa',
+    last_name: 'White',
     email: 'lisa.white@example.com',
     role: Roles.USER,
     is_email_verified: true,
+    onboardingCompleted: true,
   },
   {
-    id: 6,
-    username: 'mike jones',
+    id: '6',
+    first_name: 'Mike',
+    last_name: 'Jones',
     email: 'mike.jones@example.com',
-    role: Roles.GUEST,
+    role: Roles.USER,
     is_email_verified: false,
+    onboardingCompleted: false,
   },
   {
-    id: 7,
-    username: 'carlos davis',
+    id: '7',
+    first_name: 'Carlos',
+    last_name: 'Davis',
     email: 'carlos.davis@example.com',
-    role: Roles.MODERATOR,
+    role: Roles.USER,
     is_email_verified: true,
+    onboardingCompleted: true,
   },
   {
-    id: 8,
-    username: 'david miller',
+    id: '8',
+    first_name: 'David',
+    last_name: 'Miller',
     email: 'david.miller@example.com',
     role: Roles.USER,
     is_email_verified: true,
+    onboardingCompleted: true,
   },
   {
-    id: 9,
-    username: 'susan wilson',
+    id: '9',
+    first_name: 'Susan',
+    last_name: 'Wilson',
     email: 'susan.wilson@example.com',
-    role: Roles.GUEST,
+    role: Roles.USER,
     is_email_verified: false,
+    onboardingCompleted: false,
   },
   {
-    id: 10,
-    username: 'chris lee',
+    id: '10',
+    first_name: 'Chris',
+    last_name: 'Lee',
     email: 'chris.lee@example.com',
     role: Roles.ADMIN,
     is_email_verified: true,
+    onboardingCompleted: true,
   },
   {
-    id: 11,
-    username: 'nancy kim',
+    id: '11',
+    first_name: 'Nancy',
+    last_name: 'Kim',
     email: 'nancy.kim@example.com',
     role: Roles.USER,
     is_email_verified: true,
+    onboardingCompleted: true,
   },
   {
-    id: 12,
-    username: 'steve clark',
+    id: '12',
+    first_name: 'Steve',
+    last_name: 'Clark',
     email: 'steve.clark@example.com',
-    role: Roles.MODERATOR,
+    role: Roles.USER,
     is_email_verified: true,
+    onboardingCompleted: true,
   },
   {
-    id: 13,
-    username: 'angela brown',
+    id: '13',
+    first_name: 'Angela',
+    last_name: 'Brown',
     email: 'angela.brown@example.com',
     role: Roles.USER,
     is_email_verified: true,
+    onboardingCompleted: true,
   },
   {
-    id: 14,
-    username: 'tom scott',
+    id: '14',
+    first_name: 'Tom',
+    last_name: 'Scott',
     email: 'tom.scott@example.com',
-    role: Roles.GUEST,
+    role: Roles.USER,
     is_email_verified: false,
+    onboardingCompleted: false,
   },
   {
-    id: 15,
-    username: 'linda taylor',
+    id: '15',
+    first_name: 'Linda',
+    last_name: 'Taylor',
     email: 'linda.taylor@example.com',
     role: Roles.ADMIN,
     is_email_verified: true,
+    onboardingCompleted: true,
   },
   {
-    id: 16,
-    username: 'paul martinez',
+    id: '16',
+    first_name: 'Paul',
+    last_name: 'Martinez',
     email: 'paul.martinez@example.com',
-    role: Roles.MODERATOR,
+    role: Roles.USER,
     is_email_verified: true,
+    onboardingCompleted: true,
   },
   {
-    id: 17,
-    username: 'emma johnson',
+    id: '17',
+    first_name: 'Emma',
+    last_name: 'Johnson',
     email: 'emma.johnson@example.com',
     role: Roles.USER,
     is_email_verified: true,
+    onboardingCompleted: true,
   },
   {
-    id: 18,
-    username: 'gregory wilson',
+    id: '18',
+    first_name: 'Gregory',
+    last_name: 'Wilson',
     email: 'gregory.wilson@example.com',
-    role: Roles.GUEST,
+    role: Roles.USER,
     is_email_verified: false,
+    onboardingCompleted: false,
   },
   {
-    id: 19,
-    username: 'kate green',
+    id: '19',
+    first_name: 'Kate',
+    last_name: 'Green',
     email: 'kate.green@example.com',
     role: Roles.USER,
     is_email_verified: true,
+    onboardingCompleted: true,
   },
   {
-    id: 20,
-    username: 'jason adams',
+    id: '20',
+    first_name: 'Jason',
+    last_name: 'Adams',
     email: 'jason.adams@example.com',
     role: Roles.ADMIN,
     is_email_verified: true,
+    onboardingCompleted: true,
   },
   {
-    id: 21,
-    username: 'olivia king',
+    id: '21',
+    first_name: 'Olivia',
+    last_name: 'King',
     email: 'olivia.king@example.com',
-    role: Roles.GUEST,
+    role: Roles.USER,
     is_email_verified: false,
+    onboardingCompleted: false,
   },
   {
-    id: 22,
-    username: 'matthew young',
+    id: '22',
+    first_name: 'Matthew',
+    last_name: 'Young',
     email: 'matthew.young@example.com',
     role: Roles.USER,
     is_email_verified: true,
+    onboardingCompleted: true,
   },
   {
-    id: 23,
-    username: 'isabella mitchell',
+    id: '23',
+    first_name: 'Isabella',
+    last_name: 'Mitchell',
     email: 'isabella.mitchell@example.com',
-    role: Roles.MODERATOR,
+    role: Roles.USER,
     is_email_verified: true,
+    onboardingCompleted: true,
   },
   {
-    id: 24,
-    username: 'noah cooper',
+    id: '24',
+    first_name: 'Noah',
+    last_name: 'Cooper',
     email: 'noah.cooper@example.com',
-    role: Roles.GUEST,
+    role: Roles.USER,
     is_email_verified: false,
+    onboardingCompleted: false,
   },
 ]
 
@@ -207,7 +256,7 @@ const filterAndSortUsers = (request: UserListRequest) => {
   if (filter?.search) {
     filteredUsers = filteredUsers.filter(
       (user) =>
-        user.username.toLowerCase().includes(filter?.search.toLowerCase()) ||
+        `${user.first_name} ${user.last_name}`.toLowerCase().includes(filter?.search.toLowerCase()) ||
         user.email.toLowerCase().includes(filter?.search.toLowerCase())
     )
   }
@@ -222,19 +271,15 @@ const filterAndSortUsers = (request: UserListRequest) => {
   // Sorting
   if (sorting?.field && sorting.order) {
     const sortField =
-      sorting.field === 'name' ? 'username' : (sorting.field as keyof User)
+      sorting.field === 'name' ? 'first_name' : (sorting.field as keyof User)
 
     const sortOrder = sorting.order
     filteredUsers.sort((a, b) => {
-      if (sortField === 'id') {
-        return sortOrder === 'desc' ? b.id - a.id : a.id - b.id
-      } else {
-        const valA = String(a[sortField]);
-        const valB = String(b[sortField]);
-        return sortOrder === 'desc'
-          ? valB.localeCompare(valA)
-          : valA.localeCompare(valB)
-      }
+      const valA = String(a[sortField]);
+      const valB = String(b[sortField]);
+      return sortOrder === 'desc'
+        ? valB.localeCompare(valA)
+        : valA.localeCompare(valB)
     })
   }
 
@@ -256,11 +301,10 @@ export const mockUsersResponse = (request: UserListRequest) => ({
 })
 
 export const mockUserAddResponse = (data: UserAddOrUpdateRequest) => {
-  const nextId = mockUsers.length
-    ? Math.max(...mockUsers.map((user) => user.id)) + 1
-    : 1
-  const newUser = { ...data, id: nextId, is_email_verified: false }
-  mockUsers.push(newUser)
+  const existingIds = mockUsers.map((user) => parseInt(user.id))
+  const nextId = existingIds.length > 0 ? Math.max(...existingIds) + 1 : 1
+  const newUser = { ...data, id: String(nextId), is_email_verified: false, onboardingCompleted: false }
+  mockUsers.push(newUser as User)
 
   return {
     status: 200,
@@ -270,7 +314,7 @@ export const mockUserAddResponse = (data: UserAddOrUpdateRequest) => {
 }
 
 export const mockUserUpdateResponse = (
-  id: number,
+  id: string,
   data: UserAddOrUpdateRequest
 ) => {
   // Find the user to update
@@ -285,7 +329,7 @@ export const mockUserUpdateResponse = (
   }
 }
 
-export const mockUserDeletionResponse = (id: number) => {
+export const mockUserDeletionResponse = (id: string) => {
   const userIndex = mockUsers.findIndex((user) => user.id === id)
   mockUsers.splice(userIndex, 1)
   return {

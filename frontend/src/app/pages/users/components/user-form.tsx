@@ -7,6 +7,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/custom/button'
+import { useAuth } from '@/hooks/use-auth'
 import { useForm } from 'react-hook-form'
 import {
   Form,
@@ -31,7 +32,7 @@ import {
 } from '@/validations/user.validation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from '@/components/ui/use-toast'
-import { userService } from '@/api'
+import { userService, adminRequestService } from '@/api'
 import { User } from '@/models/user.model'
 import { roleOptions } from '@/data/options'
 
@@ -60,9 +61,15 @@ export const UserForm: FC<UserFormProps> = ({
 
   const mutation = useMutation({
     mutationFn: (data: UserAddOrUpdateRequest) => {
-      return initialData
-        ? userService.updateUser(initialData.id, data)
-        : userService.addUser(data)
+      if (initialData) {
+        const userId = initialData.id || (initialData as any)._id;
+        console.log('[DEBUG] Updating user with ID:', userId, 'Data:', data);
+        if (!userId) {
+          console.error('[ERROR] User ID is undefined!', initialData);
+        }
+        return userService.updateUser(userId, data);
+      }
+      return userService.addUser(data);
     },
     onSuccess: (response) => {
       toast({
@@ -71,9 +78,12 @@ export const UserForm: FC<UserFormProps> = ({
       resetForm()
       handleClose(true)
     },
-    onError: () => {
+    onError: (error: any) => {
+      console.error('User update error:', error);
       toast({
         title: 'Something went wrong!',
+        description: error?.response?.data?.message || error?.message || 'Failed to update user',
+        variant: 'destructive',
       })
     },
   })
@@ -89,8 +99,54 @@ export const UserForm: FC<UserFormProps> = ({
     }
   }, [form, initialData])
 
+  const { user: currentUser } = useAuth()
+
+  const { mutate: requestAction } = useMutation({
+    mutationFn: (data: { targetUserId: string, type: 'DELETE' | 'ROLE_UPDATE', details?: any }) =>
+      adminRequestService.createRequest(data),
+    onSuccess: (response) => {
+      toast({
+        title: response.message || 'Request submitted successfully',
+        description: 'Super Admin will review your role update request.',
+      })
+      handleClose(false)
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Failed to submit request',
+        description: error?.response?.data?.message || error?.message,
+        variant: 'destructive'
+      })
+    }
+  })
+
   const onSubmit = (data: UserAddOrUpdateRequest) => {
-    mutation.mutate(data)
+    // When editing, if admin, send request
+    if (initialData && currentUser?.role === 'admin') {
+      if (initialData.role !== data.role) {
+        const targetUserId = initialData.id || (initialData as any)._id
+        if (!targetUserId) {
+          toast({ title: 'Error', description: 'User ID not found', variant: 'destructive' })
+          return
+        }
+        requestAction({
+          targetUserId,
+          type: 'ROLE_UPDATE',
+          details: { proposedRole: data.role }
+        })
+      } else {
+        toast({ title: 'No changes detected' })
+        handleClose(false)
+      }
+      return
+    }
+
+    // When editing (Super Admin), only send the role field
+    const payload = initialData
+      ? { role: data.role }
+      : data;
+
+    mutation.mutate(payload as UserAddOrUpdateRequest);
   }
 
   const resetForm = () => form.reset(defaultValues)
@@ -129,7 +185,13 @@ export const UserForm: FC<UserFormProps> = ({
                       <FormItem className='space-y-1'>
                         <FormLabel>First Name</FormLabel>
                         <FormControl>
-                          <Input placeholder='John' {...field} />
+                          <Input
+                            placeholder='John'
+                            {...field}
+                            disabled={!!initialData}
+                            readOnly={!!initialData}
+                            className={initialData ? 'bg-muted cursor-not-allowed' : ''}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -142,7 +204,13 @@ export const UserForm: FC<UserFormProps> = ({
                       <FormItem className='space-y-1'>
                         <FormLabel>Last Name</FormLabel>
                         <FormControl>
-                          <Input placeholder='Doe' {...field} />
+                          <Input
+                            placeholder='Doe'
+                            {...field}
+                            disabled={!!initialData}
+                            readOnly={!!initialData}
+                            className={initialData ? 'bg-muted cursor-not-allowed' : ''}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -156,12 +224,24 @@ export const UserForm: FC<UserFormProps> = ({
                     <FormItem className='space-y-1'>
                       <FormLabel>Email</FormLabel>
                       <FormControl>
-                        <Input placeholder='email@example.com' {...field} />
+                        <Input
+                          placeholder='email@example.com'
+                          {...field}
+                          disabled={!!initialData}
+                          readOnly={!!initialData}
+                          className={initialData ? 'bg-muted cursor-not-allowed' : ''}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+                {initialData?.companyName && (
+                  <div className="space-y-1">
+                    <FormLabel>Company</FormLabel>
+                    <Input value={initialData.companyName} disabled readOnly className="bg-muted cursor-not-allowed" />
+                  </div>
+                )}
                 <FormField
                   control={form.control}
                   name='role'

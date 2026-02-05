@@ -17,7 +17,16 @@ import { toast } from '@/components/ui/use-toast'
 import { templateService } from '@/api/template.service'
 import { useQueryClient } from '@tanstack/react-query'
 import { Switch } from '@/components/ui/switch'
-import { Globe, Lock } from 'lucide-react'
+import { Globe, Lock, Eye } from 'lucide-react'
+import { PreviewModal } from '@/components/preview-modal'
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select'
+import { Badge } from '@/components/ui/badge'
 
 interface Zone {
     id: string
@@ -48,15 +57,25 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
     const [selectedZoneId, setSelectedZoneId] = useState<string | null>(null)
     const [clipboard, setClipboard] = useState<Zone | null>(null)
     const [isSaving, setIsSaving] = useState(false)
+    const [resolution, setResolution] = useState(initialData?.resolution || '1920x1080')
+    const [isPreviewOpen, setIsPreviewOpen] = useState(false)
 
     const queryClient = useQueryClient()
 
-    // Constants
-    const SCREEN_WIDTH = 1920
-    const SCREEN_HEIGHT = 1080
-    const SCALE_FACTOR = 0.35
-    const CANVAS_WIDTH = SCREEN_WIDTH * SCALE_FACTOR
-    const CANVAS_HEIGHT = SCREEN_HEIGHT * SCALE_FACTOR
+    // Constants & Derived Values
+    const RESOLUTIONS = [
+        { label: 'Landscape TV', value: '1920x1080', icon: '🖥️' },
+        { label: 'Portrait TV / Vertical', value: '1080x1920', icon: '📱' },
+        { label: '4K Landscape', value: '3840x2160', icon: '🌟' },
+        { label: '4K Portrait', value: '2160x3840', icon: '🌟' },
+        { label: 'Standard HD', value: '1280x720', icon: '📺' },
+        { label: 'Square', value: '1080x1080', icon: '📐' },
+    ]
+
+    const [screenWidth, screenHeight] = resolution.split('x').map(Number)
+    const SCALE_FACTOR = screenWidth > screenHeight ? 0.35 : 0.25
+    const CANVAS_WIDTH = screenWidth * SCALE_FACTOR
+    const CANVAS_HEIGHT = screenHeight * SCALE_FACTOR
     const GRID_SIZE = 10 * SCALE_FACTOR
 
     const selectedZone = zones.find(z => z.id === selectedZoneId)
@@ -79,12 +98,14 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
             height: zone.height * SCALE_FACTOR,
             fill: getZoneColor(zone.type, '44'),
             stroke: getZoneColor(zone.type),
-            strokeWidth: 2, // Thicker stroke for visibility
-            strokeUniform: true, // Ensure stroke doesn't scale
+            strokeWidth: 2,
+            strokeUniform: true,
             cornerColor: '#fff',
             cornerSize: 10,
             cornerStyle: 'rect',
             transparentCorners: false,
+            originX: 'left',
+            originY: 'top',
             // @ts-ignore
             id: zone.id,
             // @ts-ignore
@@ -221,8 +242,8 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
             id: `zone-${Date.now()}`,
             name: `${type} region`,
             type,
-            x: (SCREEN_WIDTH - zoneWidth) / 2, // Center horizontally
-            y: (SCREEN_HEIGHT - zoneHeight) / 2, // Center vertically
+            x: (screenWidth - zoneWidth) / 2, // Center horizontally
+            y: (screenHeight - zoneHeight) / 2, // Center vertically
             width: zoneWidth,
             height: zoneHeight,
             media: [],
@@ -281,8 +302,8 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
             toast({ title: 'Add at least one zone', variant: 'destructive' })
             return
         }
-        if (!templateName.trim()) {
-            toast({ title: 'Please give your template a name', variant: 'destructive' })
+        if (!templateName.trim() || templateName === 'New Template') {
+            toast({ title: 'Please provide a unique, descriptive name for your template', variant: 'destructive' })
             return
         }
 
@@ -290,7 +311,7 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
         try {
             const payload = {
                 name: templateName,
-                resolution: `${SCREEN_WIDTH}x${SCREEN_HEIGHT}`,
+                resolution,
                 zones,
                 isPublic,
             }
@@ -317,6 +338,8 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
         let canvas: fabric.Canvas
 
         try {
+            // 🧹 Clean up previous canvas to prevent "ghost" canvases
+            canvasContainerRef.current.innerHTML = ''
             const el = document.createElement('canvas')
             canvasContainerRef.current.appendChild(el)
 
@@ -330,9 +353,11 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
 
             canvasRef.current = canvas
 
-            // Load initial zones
+            // Load initial zones & Enforce boundaries for current resolution
             zones.forEach(zone => {
-                addZoneToCanvas(canvas, zone)
+                const rect = addZoneToCanvas(canvas, zone)
+                constrainObject(rect) // Snap to current resolution bounds
+                syncToState(rect)
             })
 
             // Event Listeners
@@ -368,7 +393,7 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
             }
             canvasRef.current = null
         }
-    }, [])
+    }, [resolution]) // Re-init on resolution change
 
     // ================= KEYBOARD SHORTCUTS =================
     useEffect(() => {
@@ -441,7 +466,29 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
         <div className='flex h-[calc(100vh-200px)] gap-6'>
             <Card className='flex w-72 flex-col p-4 shadow-lg h-full overflow-hidden'>
                 <div className='flex flex-1 flex-col overflow-y-auto pr-2 custom-scrollbar'>
-                    <h3 className='mb-4 text-lg font-bold'>Tools</h3>
+                    <h3 className='mb-4 text-xs font-bold uppercase tracking-widest text-muted-foreground'>Resolution Preset</h3>
+                    <div className='mb-6'>
+                        <Select value={resolution} onValueChange={setResolution}>
+                            <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Select ratio" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {RESOLUTIONS.map((res) => (
+                                    <SelectItem key={res.value} value={res.value}>
+                                        <div className="flex items-center gap-2">
+                                            <span>{res.icon}</span>
+                                            <div className="flex flex-col">
+                                                <span className="text-xs font-bold">{res.label}</span>
+                                                <span className="text-[10px] opacity-60">{res.value}</span>
+                                            </div>
+                                        </div>
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <h3 className='mb-4 text-xs font-bold uppercase tracking-widest text-muted-foreground'>Toolbox</h3>
                     <div className='flex flex-col gap-2'>
                         <Button variant='outline' className='justify-start' onClick={() => addZone('image')}>
                             <IconSquare className='mr-2' size={18} />
@@ -563,30 +610,39 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                     </div>
                     <div className='flex gap-2 text-xs text-muted-foreground'>
                         <Button
-                            variant="ghost"
+                            variant="secondary"
                             size="sm"
-                            className="h-6 px-2 text-xs"
-                            onClick={() => {
-                                if (initialData?.id || initialData?._id) {
-                                    window.open(`${window.location.origin}/preview/${initialData.id || initialData._id}`, '_blank')
-                                } else {
-                                    toast({ title: 'Save template first to preview' })
-                                }
-                            }}
+                            className="h-8 gap-2 border shadow-sm px-3"
+                            onClick={() => setIsPreviewOpen(true)}
                         >
-                            <IconDeviceDesktop size={14} className="mr-1" /> Preview
+                            <Eye size={14} /> Live Preview
                         </Button>
-                        <span className='flex items-center gap-1'><IconDeviceTv size={14} /> 1920x1080</span>
+                        <Badge variant="outline" className='flex items-center gap-1.5 h-8 bg-background'>
+                            <IconDeviceTv size={14} className="text-primary" />
+                            <span className="font-mono text-[11px] font-bold">{resolution}</span>
+                        </Badge>
                     </div>
                 </div>
 
-                <div
-                    className='inline-block rounded-lg shadow-2xl overflow-hidden'
-                    style={{ width: CANVAS_WIDTH, height: CANVAS_HEIGHT, backgroundColor: '#111' }}
-                    ref={canvasContainerRef}
-                >
-                    {/* Fabric Canvas injected here */}
+                <div className='flex-1 flex items-center justify-center bg-zinc-950/20 rounded-xl border border-dashed border-primary/10 overflow-auto p-8'>
+                    <div
+                        className='bg-zinc-900 shadow-2xl overflow-hidden ring-1 ring-white/10 relative transition-all duration-300 ease-in-out'
+                        style={{ width: CANVAS_WIDTH, height: CANVAS_HEIGHT, backgroundColor: '#111' }}
+                        ref={canvasContainerRef}
+                    >
+                        {/* Fabric Canvas injected here */}
+                    </div>
                 </div>
+
+                <PreviewModal
+                    isOpen={isPreviewOpen}
+                    onClose={() => setIsPreviewOpen(null)}
+                    template={{
+                        name: templateName,
+                        resolution,
+                        zones
+                    }}
+                />
 
                 <p className='mt-4 text-center text-sm text-muted-foreground italic'>
                     Shortcuts: ⌫ Delete | ^C Copy | ^V Paste | Arrow Keys to Nudge

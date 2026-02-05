@@ -32,7 +32,6 @@ const companySchema = new Schema<ICompany, ICompanyModel>(
         name: {
             type: String,
             required: true,
-            unique: true,
             trim: true,
             index: true,
         },
