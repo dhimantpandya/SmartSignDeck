@@ -158,7 +158,6 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
                     const content = activeContent?.[zone.id]
                     if (content?.playlist?.length > 1) {
                         const currentIndex = prev[zone.id] || 0
-                        const currentItem = content.playlist[currentIndex]
                         // Simple logic: assume 5s preview or use item duration
                         // Real player uses detailed timing, here we just cycle every 3s for preview?
                         // Or we can rely on checks. 

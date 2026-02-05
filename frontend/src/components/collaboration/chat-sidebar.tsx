@@ -6,7 +6,6 @@ import {
     MessageCircle,
     X,
     Send,
-    Users,
     Building2,
     Search,
     ChevronLeft,

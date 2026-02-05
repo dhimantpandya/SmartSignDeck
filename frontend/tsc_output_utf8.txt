@@ -1,0 +1,2 @@
+﻿src/app/pages/screens/components/text-zone-editor.tsx(73,42): error TS6133: 'zone' is declared but its value is never read.
+src/app/pages/templates/index.tsx(21,1): error TS6133: 'VisualMap' is declared but its value is never read.

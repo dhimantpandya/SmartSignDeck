@@ -70,7 +70,7 @@ const DEFAULT_STYLE: TextZoneStyle = {
     lineHeight: 1.2
 }
 
-export default function TextZoneEditor({ zone, content, onChange }: TextZoneEditorProps) {
+export default function TextZoneEditor({ content, onChange }: TextZoneEditorProps) {
     // Merge provided content with defaults to ensure all fields exist
     const [localContent, setLocalContent] = useState<TextZoneContent>({
         type: 'text',

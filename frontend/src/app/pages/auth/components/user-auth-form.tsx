@@ -130,7 +130,6 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
       }
 
       if (error?.status === 400 && error?.message?.includes('This account was created with')) {
-        const isGoogleAccount = error.message.toLowerCase().includes('google');
         toast({
           variant: 'destructive',
           title: 'Wrong Login Method',

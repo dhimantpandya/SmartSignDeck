@@ -18,15 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useSearchParams } from 'react-router-dom'
 import { useEffect } from 'react'
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog'
-import { VisualMap } from '@/components/visual-map'
 import { PreviewModal } from '@/components/preview-modal'
-import { IconArrowLeft } from '@tabler/icons-react'
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
 
 

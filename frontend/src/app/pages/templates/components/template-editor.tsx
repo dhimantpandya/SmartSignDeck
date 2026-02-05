@@ -9,7 +9,6 @@ import {
     IconVideo,
     IconLetterT,
     IconDeviceTv,
-    IconDeviceDesktop,
     IconTrash,
     IconDeviceFloppy
 } from '@tabler/icons-react'
@@ -636,7 +635,7 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
 
                 <PreviewModal
                     isOpen={isPreviewOpen}
-                    onClose={() => setIsPreviewOpen(null)}
+                    onClose={() => setIsPreviewOpen(false)}
                     template={{
                         name: templateName,
                         resolution,

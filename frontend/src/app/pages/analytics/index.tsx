@@ -53,7 +53,7 @@ export default function Analytics() {
             socket.emit('join_company', user.companyId)
         })
 
-        socket.on('playback_update', (data) => {
+        socket.on('playback_update', () => {
             console.log('Real-time playback update received')
 
             // THROTTLE LOGIC:

@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { authService, signupSchema } from '@/api/auth.service'
 import { useAuth } from '@/hooks/use-auth'
-import { User } from '@/models/user.model'
+
 import { Button } from '@/components/custom/button'
 import { PasswordInput } from '@/components/custom/password-input'
 import { PasswordStrengthIndicator } from '@/components/custom/password-strength-indicator'
