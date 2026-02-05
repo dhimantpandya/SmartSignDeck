@@ -10,6 +10,15 @@ const firebaseConfig = {
     appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
+// Debug log to confirm environment variables are present in production
+if (import.meta.env.PROD) {
+    console.log('Firebase Init Check:', {
+        hasApiKey: !!firebaseConfig.apiKey,
+        apiKeyLength: firebaseConfig.apiKey?.length,
+        authDomain: firebaseConfig.authDomain
+    });
+}
+
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
