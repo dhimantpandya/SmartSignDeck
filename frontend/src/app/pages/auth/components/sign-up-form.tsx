@@ -30,7 +30,6 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
   const [isLoading, setIsLoading] = useState(false)
   const navigate = useNavigate()
   const location = useLocation()
-  const { login } = useAuth()
 
   const queryParams = new URLSearchParams(location.search)
   const inviteCompanyId = queryParams.get('companyId')
