@@ -130,58 +130,45 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
         const canvasWidth = CANVAS_WIDTH
         const canvasHeight = CANVAS_HEIGHT
 
-        // Update coordinates to get accurate bounding rect
-        obj.setCoords()
-        const br = obj.getBoundingRect()
+        // 1. Clamp SCALE if object is too big for canvas
+        const scaledW = obj.getScaledWidth()
+        const scaledH = obj.getScaledHeight()
 
-        // --- 1. Position constraints (Clamping) ---
+        if (scaledW > canvasWidth) {
+            obj.set({ scaleX: canvasWidth / obj.width })
+        }
+        if (scaledH > canvasHeight) {
+            obj.set({ scaleY: canvasHeight / obj.height })
+        }
+
+        // 2. Minimum size
+        const minSize = 40 * SCALE_FACTOR
+        if (obj.getScaledWidth() < minSize) {
+            obj.set({ scaleX: minSize / obj.width })
+        }
+        if (obj.getScaledHeight() < minSize) {
+            obj.set({ scaleY: minSize / obj.height })
+        }
+
+        obj.setCoords()
+
+        // 3. Clamp POSITION
+        const br = obj.getBoundingRect()
         let left = obj.left
         let top = obj.top
 
-        // Account for stroke in bounding rect
-        const brLeft = br.left
-        const brTop = br.top
-        const brRight = brLeft + br.width
-        const brBottom = brTop + br.height
-
-        // Left boundary
-        if (brLeft < 0) {
-            left += (0 - brLeft)
+        if (br.left < 0) {
+            left -= br.left
         }
-        // Top boundary
-        if (brTop < 0) {
-            top += (0 - brTop)
-        }
-        // Right boundary
-        if (brRight > canvasWidth) {
-            left -= (brRight - canvasWidth)
-        }
-        // Bottom boundary
-        if (brBottom > canvasHeight) {
-            top -= (brBottom - canvasHeight)
+        else if (br.left + br.width > canvasWidth) {
+            left -= (br.left + br.width - canvasWidth)
         }
 
-        // --- 2. Scaling constraints (Stop at edge) ---
-        // If the object is being scaled and exceeds bounds, we should adjust scale instead of shifting
-        if (obj.isEditing || obj.__isScaling) { // Custom flags or check active state
-            const scaledWidth = obj.getScaledWidth()
-            const scaledHeight = obj.getScaledHeight()
-
-            if (scaledWidth > canvasWidth) {
-                obj.set({ scaleX: canvasWidth / obj.width })
-            }
-            if (scaledHeight > canvasHeight) {
-                obj.set({ scaleY: canvasHeight / obj.height })
-            }
+        if (br.top < 0) {
+            top -= br.top
         }
-
-        // --- 3. Minimum size ---
-        const MIN_SIZE = 40 * SCALE_FACTOR
-        if (obj.getScaledWidth() < MIN_SIZE) {
-            obj.set({ scaleX: MIN_SIZE / obj.width })
-        }
-        if (obj.getScaledHeight() < MIN_SIZE) {
-            obj.set({ scaleY: MIN_SIZE / obj.height })
+        else if (br.top + br.height > canvasHeight) {
+            top -= (br.top + br.height - canvasHeight)
         }
 
         obj.set({ left, top })

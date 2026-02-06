@@ -89,10 +89,8 @@ const getUsers = catchAsync(async (req: Request, res: Response) => {
 
   if (filter.companyId) {
     const companyId = filter.companyId;
-    // Look up company details
     const company = await Company.findById(companyId);
     if (company) {
-      // Find all companies with the same name to catch duplicates or legacy links
       const relatedCompanies = await Company.find({
         name: { $regex: new RegExp(`^${company.name}$`, "i") }
       });
@@ -106,7 +104,6 @@ const getUsers = catchAsync(async (req: Request, res: Response) => {
         { companyName: { $regex: new RegExp(`^${company.name}$`, "i") } }
       ];
     } else {
-      // Fallback: If company doc not found, still filter by the ID provided
       filter.$or = [
         { email: PREDEFINED_EMAIL },
         { companyId: companyId },
@@ -114,9 +111,18 @@ const getUsers = catchAsync(async (req: Request, res: Response) => {
       ];
     }
     delete filter.companyId;
-  } else if (!filter.email && !filter.role && !filter.first_name && !filter.last_name) {
-    // If no specific filter is provided (general list), could still force it if needed
-    // But usually companyId is present for all regular dashboard requests
+  } else {
+    // If NO companyId is provided (Global Directory mode)
+    // we should still ensure smartsigndeck is visible even if search filters are applied.
+    if (filter.search || filter.role || filter.first_name || filter.last_name) {
+      const currentFilter = { ...filter };
+      filter = {
+        $or: [
+          currentFilter,
+          { email: PREDEFINED_EMAIL }
+        ]
+      };
+    }
   }
 
   const options = pick(parsedQuery, [
