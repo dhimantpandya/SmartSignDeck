@@ -251,22 +251,15 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
                   // Call backend API with mode 'register'
                   const response = await authService.firebaseLogin(idToken, 'register');
 
-                  // Trigger OTP email
-                  try {
-                    await authService.resendOtp(response.user.email);
-                  } catch (e) {
-                    console.error("Failed to send OTP for Google user", e);
-                  }
-
                   const expiresIn = 600; // 10 minutes
                   localStorage.setItem('otp_expires_at', (Date.now() + expiresIn * 1000).toString());
 
                   toast({
-                    title: 'Google registration successful!',
-                    description: 'Please check your email for OTP verification.'
+                    title: 'Google authentication successful',
+                    description: 'Directing you to verification page...'
                   });
 
-                  navigate(`/otp?email=${response.user.email}`);
+                  navigate(`/otp?email=${response.user?.email || email}`);
                 } catch (error: any) {
                   // Check if user closed the popup without selecting an account
                   const isPopupClosed =

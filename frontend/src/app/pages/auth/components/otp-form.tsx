@@ -22,6 +22,7 @@ const formSchema = z.object({
 
 export default function OtpForm({ className, ...props }: OtpFormProps) {
   const [isLoading, setIsLoading] = useState(false)
+  const [isResending, setIsResending] = useState(false)
   const [disabledBtn, setDisabledBtn] = useState(true)
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
@@ -138,6 +139,7 @@ export default function OtpForm({ className, ...props }: OtpFormProps) {
   }
 
   const handleResendOtp = async () => {
+    setIsResending(true)
     try {
       await authService.resendOtp(email)
       toast({ title: 'OTP resent successfully! Check your email.' })
@@ -162,7 +164,9 @@ export default function OtpForm({ className, ...props }: OtpFormProps) {
         }, 2000)
         return
       }
-      toast({ title: error?.message ?? 'Failed to resend OTP' })
+      toast({ title: error?.message ?? 'Failed to resend OTP', variant: 'destructive' })
+    } finally {
+      setIsResending(false)
     }
   }
 
@@ -208,9 +212,10 @@ export default function OtpForm({ className, ...props }: OtpFormProps) {
             <Button
               type="button"
               variant="ghost"
-              disabled={!canResend || resendCooldown > 0}
+              disabled={!canResend || resendCooldown > 0 || isResending}
               onClick={handleResendOtp}
               className="text-sm"
+              loading={isResending}
             >
               {resendCooldown > 0
                 ? `Resend OTP in ${resendCooldown}s`

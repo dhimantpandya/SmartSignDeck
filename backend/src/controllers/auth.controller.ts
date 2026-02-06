@@ -6,56 +6,58 @@ import * as tokenService from "../services/token.service";
 import * as userService from "../services/user.service";
 import * as emailService from "../services/email.service";
 import * as constants from "../utils/constants/email.constants";
+import * as pendingSignupService from "../services/pendingSignup.service";
 import config from "../config/config";
 import {
   clearLoginAttempts,
   clearOtpAttempts,
 } from "../middleware/rateLimiter";
 import ApiError from "../utils/ApiError";
+import Company from "../models/company.model";
 
 // ===== REGISTER =====
 export const register = async (req: Request, res: Response) => {
   try {
     const { email, password, first_name, last_name, companyName, companyId } = req.body;
     console.log(`[AuthDebug] Registration attempt for email: "${email}"`);
+
+    // Check if user already exists in DB
     const existingUser = await userService.getUserByEmail(email);
     if (existingUser) {
-      if (!existingUser.is_email_verified) {
-        return res.status(httpStatus.BAD_REQUEST).json({
-          status: "fail",
-          message: "Email already registered but not verified",
-        });
-      }
-      return res
-        .status(httpStatus.BAD_REQUEST)
-        .json({ status: "fail", message: "Email already registered" });
+      return res.status(httpStatus.BAD_REQUEST).json({
+        status: "fail",
+        message: "Email already registered",
+      });
     }
 
-    const user = await userService.createUser({
+    // Generate OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    // Store pending signup
+    pendingSignupService.savePendingSignup({
       email,
       password,
       first_name,
       last_name,
-      companyName,
-      companyId: companyId || undefined,
-      role: "user", // Explicitly set role to user
-      is_email_verified: false,
+      companyName: companyName || "My Workspace",
       authProvider: "local",
-      onboardingCompleted: true, // Manual registration includes companyName
+      otp,
+      otpExpires,
+      createdAt: new Date(),
     });
 
-    // Generate OTP/Email verification token
-    const { otp } = await tokenService.generateVerifyEmailOtp(user);
+    // Send OTP email
     await emailService.sendMail(constants.USER_EMAIL_VERIFICATION_TEMPLATE, {
-      email: user.email,
-      name: `${user.first_name} ${user.last_name}`,
+      email,
+      name: `${first_name} ${last_name}`,
       otp,
     });
 
     successResponse(
       res,
-      "User registered successfully. OTP sent to email.",
-      httpStatus.CREATED,
+      "OTP sent to email. Please verify to complete registration.",
+      httpStatus.OK,
     );
   } catch (err: any) {
     console.error("[Register Error]", err);
@@ -151,24 +153,34 @@ export const firebaseLogin = async (req: Request, res: Response) => {
         // Fallback
         if (!firstName) firstName = "User";
 
-        console.log(`[AuthDebug] Creating new user via Google: ${email}, Name: ${firstName} ${lastName}`);
+        // Store pending Google signup
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
-        const newUser = await User.create({
+        console.log(`[AuthDebug] Storing pending Google signup for: ${email}, Name: ${firstName} ${lastName}`);
+
+        pendingSignupService.savePendingSignup({
           email,
           first_name: firstName,
           last_name: lastName,
-          role: "user", // Explicitly set role to user
-          is_email_verified: true, // Google accounts are verified by Firebase
-          avatar: picture,
+          password: "", // No password for Google users
+          companyName: "My Workspace",
+          authProvider: "google",
           googleId: decodedToken.uid || decodedToken.sub,
-          authProvider: "google", // Set auth provider for Google registration
+          otp,
+          otpExpires,
+          createdAt: new Date(),
         });
 
-        const tokens = await tokenService.generateAuthTokens(newUser);
-        clearLoginAttempts(email);
-        return successResponse(res, "Registration successful", httpStatus.CREATED, {
-          user: newUser,
-          tokens,
+        // Send OTP email
+        await emailService.sendMail(constants.USER_EMAIL_VERIFICATION_TEMPLATE, {
+          email,
+          name: `${firstName} ${lastName}`,
+          otp,
+        });
+
+        return successResponse(res, "Google registration pending. OTP sent to email.", httpStatus.OK, {
+          email,
         });
       }
 
@@ -291,7 +303,61 @@ export const verifyOtp = async (req: Request, res: Response) => {
   try {
     const { email, otp } = req.body;
 
-    // Verify OTP
+    // 1. Check if it's a pending signup
+    const pendingSignup = pendingSignupService.getPendingSignup(email);
+
+    if (pendingSignup) {
+      // Verify OTP for pending signup
+      if (pendingSignup.otp !== otp) {
+        throw new ApiError(httpStatus.UNAUTHORIZED, "Invalid OTP");
+      }
+
+      if (new Date() > pendingSignup.otpExpires) {
+        throw new ApiError(httpStatus.UNAUTHORIZED, "OTP has expired. Please request a new one.");
+      }
+
+      // Create the user in database
+      const user = await userService.createUser({
+        email: pendingSignup.email,
+        password: pendingSignup.password,
+        first_name: pendingSignup.first_name,
+        last_name: pendingSignup.last_name,
+        companyName: pendingSignup.companyName,
+        authProvider: pendingSignup.authProvider,
+        googleId: pendingSignup.googleId,
+        role: "user",
+        is_email_verified: true,
+        onboardingCompleted: true,
+      });
+
+      // Handle Company generation/linking
+      if (pendingSignup.companyName) {
+        const company = await Company.create({
+          name: pendingSignup.companyName,
+          ownerId: user._id,
+        });
+
+        // Update user with companyId
+        const { default: User } = await import("../models/user.model");
+        if (User) {
+          await User.findByIdAndUpdate(user._id, { companyId: company._id });
+          (user as any).companyId = company._id;
+        }
+      }
+
+      // Cleanup
+      pendingSignupService.deletePendingSignup(email);
+      clearOtpAttempts(email);
+
+      const tokens = await tokenService.generateAuthTokens(user);
+
+      return successResponse(res, "Email verified and account created successfully", httpStatus.CREATED, {
+        user,
+        tokens,
+      });
+    }
+
+    // 2. Fallback to existing user verification (e.g. for already created users or other flows)
     const user = await authService.verifyEmailOtp(email, otp);
     const tokens = await tokenService.generateAuthTokens(user);
 
@@ -313,12 +379,33 @@ export const verifyOtp = async (req: Request, res: Response) => {
 export const resendOtp = async (req: Request, res: Response) => {
   try {
     const { email } = req.body;
+
+    // 1. Check pending signup service first
+    const pendingSignup = pendingSignupService.getPendingSignup(email);
+
+    if (pendingSignup) {
+      // Generate new OTP for pending signup
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      pendingSignup.otp = otp;
+      pendingSignup.otpExpires = new Date(Date.now() + 10 * 60 * 1000);
+      pendingSignupService.savePendingSignup(pendingSignup);
+
+      await emailService.sendMail(constants.USER_EMAIL_VERIFICATION_TEMPLATE, {
+        email: pendingSignup.email,
+        name: `${pendingSignup.first_name} ${pendingSignup.last_name}`,
+        otp,
+      });
+
+      return successResponse(res, "OTP resent successfully (pending signup)", httpStatus.OK);
+    }
+
+    // 2. Fallback to existing user (e.g. for forgot password or other verification flows)
     const user = await userService.getUserByEmail(email);
     if (!user) {
       throw new ApiError(httpStatus.NOT_FOUND, "User not found");
     }
 
-    // Generate new OTP for email verification
+    // Generate new OTP for email verification using existing tokenService logic
     const { otp } = await tokenService.generateVerifyEmailOtp(user);
     await emailService.sendMail(constants.USER_EMAIL_VERIFICATION_TEMPLATE, {
       email: user.email,
@@ -328,7 +415,7 @@ export const resendOtp = async (req: Request, res: Response) => {
 
     successResponse(res, "OTP resent successfully", httpStatus.OK);
   } catch (err: any) {
-    console.error(err);
+    console.error("[ResendOtp Error]", err);
     const status = err.statusCode || httpStatus.INTERNAL_SERVER_ERROR;
     const message = err.message || "Failed to resend OTP";
     res.status(status).json({ status: "error", message });

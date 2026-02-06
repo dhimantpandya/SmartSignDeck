@@ -219,8 +219,8 @@ export const resendOtpRateLimiter = (
 
   const key = `resend:${email.toLowerCase()}`;
   const now = Date.now();
-  const maxAttempts = 3;
-  const windowMs = 15 * 60 * 1000; // 15 minutes
+  const maxAttempts = 5;
+  const windowMs = 5 * 60 * 1000; // 5 minutes instead of 15
 
   if (!resendOtpAttempts[key]) {
     resendOtpAttempts[key] = {
