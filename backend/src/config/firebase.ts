@@ -3,7 +3,7 @@ import config from "./config";
 import fs from "fs";
 import path from "path";
 
-let firebaseApp: admin.app.App | undefined;
+let firebaseApp: admin.app.App | null | undefined;
 
 try {
   if (config.firebase.serviceAccountPath) {
