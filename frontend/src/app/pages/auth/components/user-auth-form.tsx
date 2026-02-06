@@ -218,6 +218,16 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
                   form.clearErrors();
 
                   console.log('Starting Google Sign-In...');
+                  const { isFirebaseConfigured } = await import('@/lib/firebase');
+                  if (!isFirebaseConfigured()) {
+                    toast({
+                      variant: 'destructive',
+                      title: 'Configuration Error',
+                      description: 'Google Sign-In is not correctly configured. Please check your Firebase API keys.'
+                    });
+                    return;
+                  }
+
                   const result = await signInWithPopup(auth, googleProvider);
                   const idToken = await result.user.getIdToken();
 

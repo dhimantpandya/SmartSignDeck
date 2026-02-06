@@ -30,7 +30,10 @@ const Layout = ({ className, fixed = false, ...props }: LayoutProps) => {
   }, [])
 
   const { user } = useAuth()
-  const showModal = user && !user.companyId && !user.companyName && !user.onboardingCompleted
+  // Show onboarding modal only until the user has completed onboarding.
+  // Once `onboardingCompleted` is true (after creating or skipping workspace),
+  // the modal will no longer appear, even if company info is later edited.
+  const showModal = !!user && !user.onboardingCompleted
 
   return (
     <LayoutContext.Provider value={{ offset, fixed }}>

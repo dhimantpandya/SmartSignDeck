@@ -19,11 +19,10 @@ if (import.meta.env.PROD) {
     });
 }
 
-let app;
-let auth: any;
-let googleProvider: any;
-
 try {
+    if (!firebaseConfig.apiKey || firebaseConfig.apiKey === 'undefined') {
+        throw new Error('Firebase API Key is missing or invalid');
+    }
     app = initializeApp(firebaseConfig);
     auth = getAuth(app);
 
@@ -36,15 +35,11 @@ try {
     });
 } catch (error) {
     console.error('Firebase initialization failed:', error);
-    // Provide a mock auth object to prevent the entire app from crashing on import
-    auth = {
-        currentUser: null,
-        onAuthStateChanged: () => () => { },
-        signOut: async () => { },
-    };
-    googleProvider = {
-        setCustomParameters: () => { }
-    };
+    // Setting to null allows the UI to check for existence before calling methods
+    auth = null;
+    googleProvider = null;
 }
+
+export const isFirebaseConfigured = () => !!auth && !!googleProvider;
 
 export { auth, googleProvider };

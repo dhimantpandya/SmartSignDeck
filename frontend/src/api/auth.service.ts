@@ -124,6 +124,11 @@ const logout = async (refreshToken: string) => {
   return apiService.post('/v1/auth/logout', { refreshToken })
 }
 
+/* ================= DELETE ACCOUNT (SELF) ================= */
+const deleteAccount = async () => {
+  return apiService.delete<void>('/v1/auth/account')
+}
+
 // ===== EXPORT SINGLE OBJECT =====
 export const authService = {
   register,
@@ -139,4 +144,5 @@ export const authService = {
   verifyResetOtp,
   resetPassword,
   changePassword,
+  deleteAccount,
 }

@@ -480,3 +480,29 @@ export const changePassword = async (req: Request, res: Response) => {
     res.status(status).json({ status: "error", message });
   }
 };
+
+// ===== DELETE ACCOUNT (SELF-SERVICE) =====
+export const deleteAccount = async (req: Request, res: Response) => {
+  try {
+    const currentUser = req.user as any;
+
+    if (!currentUser?.id && !currentUser?._id) {
+      return res
+        .status(httpStatus.UNAUTHORIZED)
+        .json({ status: "error", message: "Unauthorized" });
+    }
+
+    const userId = currentUser.id || currentUser._id.toString();
+
+    await userService.deleteUserById(userId);
+
+    // Optionally, additional cleanup (tokens, related data) can be done here.
+
+    return res.status(httpStatus.NO_CONTENT).send();
+  } catch (err: any) {
+    console.error("[DeleteAccount Error]", err);
+    const status = err.statusCode || httpStatus.INTERNAL_SERVER_ERROR;
+    const message = err.message || "Failed to delete account";
+    res.status(status).json({ status: "error", message });
+  }
+};
