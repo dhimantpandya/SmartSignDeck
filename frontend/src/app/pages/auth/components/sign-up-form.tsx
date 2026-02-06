@@ -230,7 +230,7 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
               onClick={async () => {
                 try {
                   setIsLoading(true);
-                  form.clearErrors(); // Clear any pre-existing validation errors
+                  form.clearErrors();
 
                   const { signInWithPopup } = await import('firebase/auth');
                   const { auth, googleProvider, isFirebaseConfigured } = await import('@/lib/firebase');
@@ -241,26 +241,32 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
                       title: 'Configuration Error',
                       description: 'Google Sign-Up is not correctly configured. Please check your Firebase API keys.'
                     });
+                    setIsLoading(false);
                     return;
                   }
 
                   const result = await signInWithPopup(auth, googleProvider);
-                  const googleUser = result.user;
+                  const idToken = await result.user.getIdToken();
 
-                  const displayName = googleUser.displayName || '';
-                  const [firstName, ...rest] = displayName.split(' ');
-                  const lastName = rest.join(' ');
+                  // Call backend API with mode 'register'
+                  const response = await authService.firebaseLogin(idToken, 'register');
 
-                  form.setValue('email', googleUser.email || '');
-                  form.setValue('first_name', firstName || '');
-                  form.setValue('last_name', lastName || '');
+                  // Trigger OTP email
+                  try {
+                    await authService.resendOtp(response.user.email);
+                  } catch (e) {
+                    console.error("Failed to send OTP for Google user", e);
+                  }
 
-                  form.clearErrors();
+                  const expiresIn = 600; // 10 minutes
+                  localStorage.setItem('otp_expires_at', (Date.now() + expiresIn * 1000).toString());
 
                   toast({
-                    title: 'Google details filled',
-                    description: 'Please complete registration and verify OTP sent to your email.',
+                    title: 'Google registration successful!',
+                    description: 'Please check your email for OTP verification.'
                   });
+
+                  navigate(`/otp?email=${response.user.email}`);
                 } catch (error: any) {
                   // Check if user closed the popup without selecting an account
                   const isPopupClosed =
@@ -270,67 +276,33 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
                     error?.message?.includes('closed');
 
                   if (isPopupClosed) {
-                    // User cancelled the popup - just close silently without showing error
                     console.log('Google Sign-Up popup closed by user');
-                    return; // Exit early, don't show error toast
+                    setIsLoading(false);
+                    return;
                   }
 
-                  // The API service throws error.response.data, so we might receive { message: 'User not found' }
-                  // We also check error.response?.status just in case the API service behavior changes or we get a raw error.
-                  const isUserNotFound =
-                    error?.message === 'User not found' ||
-                    error?.response?.status === 404
-
-                  if (isUserNotFound) {
-                    const { auth } = await import('@/lib/firebase');
-                    const currentUser = auth?.currentUser;
-                    if (currentUser) {
-                      const displayName = currentUser.displayName || '';
-                      const [firstName, ...rest] = displayName.split(' ');
-                      const lastName = rest.join(' ');
-
-                      form.setValue('email', currentUser.email || '');
-                      form.setValue('first_name', firstName || '');
-                      form.setValue('last_name', lastName || '');
-
-                      // Clear errors again after setting values to ensure no red highlights on filled fields
-                      form.clearErrors();
-
-                      if (error?.status === 400 && error?.message?.includes('This account was created with')) {
-                        toast({
-                          variant: 'destructive',
-                          title: 'Wrong Signup Method',
-                          description: error.message,
-                        })
-                        return
-                      }
-
-                      toast({ title: 'Please complete registration', description: 'Enter password and company name.' });
-                      return;
-                    }
-                  } else if (
-                    (error?.status === 400 || error?.response?.status === 400) &&
-                    error?.message === 'Email already registered'
-                  ) {
-                    // Set the error on the email field specifically
-                    form.setError('email', {
-                      type: 'manual',
-                      message: 'Email already registered'
-                    });
-
+                  if (error?.status === 400 && error?.message === 'Email already registered') {
                     toast({
                       title: 'Email is already registered',
                       description: 'Redirecting you to the sign-in page...',
                     });
 
-                    // Wait 2 seconds so the user can read the message
                     setTimeout(() => {
                       navigate('/sign-in', {
-                        state: {
-                          email: form.getValues('email')
-                        }
+                        state: { email: error.email || form.getValues('email') } // Use error.email if available, otherwise form value
                       });
-                    }, 2000)
+                    }, 2000);
+                    setIsLoading(false);
+                    return;
+                  }
+
+                  if (error?.status === 400 && error?.message?.includes('This account was created with')) {
+                    toast({
+                      variant: 'destructive',
+                      title: 'Wrong Signup Method',
+                      description: error.message,
+                    });
+                    setIsLoading(false);
                     return;
                   }
 
