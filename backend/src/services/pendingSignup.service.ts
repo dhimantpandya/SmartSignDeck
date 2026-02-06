@@ -5,7 +5,7 @@ export interface PendingSignup {
     first_name: string;
     last_name: string;
     password: string;
-    companyName: string;
+    companyName?: string;
     authProvider: "local" | "google";
     googleId?: string;
     otp: string;
