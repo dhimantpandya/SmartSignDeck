@@ -83,6 +83,15 @@ class TokenService {
   }
 
   /**
+   * Clears the refresh status forcefully. 
+   * Use this during app bootstrap to clear stuck locks.
+   */
+  public forceClearRefreshStatus(): void {
+    localStorage.removeItem('isRefreshing')
+    window.dispatchEvent(new Event('storage'))
+  }
+
+  /**
    * Wait for another tab to finish refreshing.
    * Resolves to true if refresh finished, false if timed out.
    */

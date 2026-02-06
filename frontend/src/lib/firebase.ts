@@ -42,7 +42,9 @@ try {
         onAuthStateChanged: () => () => { },
         signOut: async () => { },
     };
-    googleProvider = {};
+    googleProvider = {
+        setCustomParameters: () => { }
+    };
 }
 
 export { auth, googleProvider };

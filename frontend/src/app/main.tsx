@@ -6,6 +6,10 @@ import { ThemeProvider } from '@/components/theme-provider'
 import '@/app/index.css'
 import Router from './router'
 import ErrorBoundary from '@/components/error-boundary'
+import { tokenStore } from '@/store/token'
+
+// Clear any stuck refresh status from previous sessions
+tokenStore.forceClearRefreshStatus();
 
 const queryClient = new QueryClient()
 ReactDOM.createRoot(document.getElementById('root')!).render(

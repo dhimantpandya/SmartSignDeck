@@ -14,6 +14,8 @@ import { cn } from '@/lib/utils'
 import { Routes } from '@/utilities/routes'
 import { toast } from '@/components/ui/use-toast'
 import { mapApiUserToUser } from '@/utilities/mappers/user.mapper'
+import { signInWithPopup } from 'firebase/auth'
+import { auth, googleProvider } from '@/lib/firebase'
 
 import {
   Form,
@@ -213,11 +215,9 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
               onClick={async () => {
                 try {
                   setIsLoading(true);
-                  form.clearErrors(); // Clear any pre-existing validation errors
-                  // Dynamic import to avoid SSR/build issues if needed, though standard import is fine
-                  const { signInWithPopup } = await import('firebase/auth');
-                  const { auth, googleProvider } = await import('@/lib/firebase'); // Import from our init file
+                  form.clearErrors();
 
+                  console.log('Starting Google Sign-In...');
                   const result = await signInWithPopup(auth, googleProvider);
                   const idToken = await result.user.getIdToken();
 
@@ -264,7 +264,6 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
                       description: 'Redirecting you to the sign-up page...',
                     })
 
-                    const { auth } = await import('@/lib/firebase');
                     const currentUser = auth.currentUser;
 
                     // Wait 2 seconds so the user can read the message
