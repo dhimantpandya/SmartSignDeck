@@ -88,13 +88,6 @@ router.post(
   authController.changePassword,
 );
 
-// ===== DELETE ACCOUNT (SELF) =====
-router.delete(
-  "/account",
-  auth(),
-  authController.deleteAccount,
-);
-
 // ===== GOOGLE OAUTH =====
 // ===== FIREBASE AUTH =====
 router.post("/firebase", authController.firebaseLogin);
