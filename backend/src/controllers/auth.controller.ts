@@ -103,7 +103,7 @@ export const firebaseLogin = async (req: Request, res: Response) => {
       if (!decodedToken) {
         return res
           .status(httpStatus.INTERNAL_SERVER_ERROR)
-          .json({ status: "error", message: "Firebase Admin not initialized. Please check service-account.json" });
+          .json({ status: "error", message: "Google Authentication is not configured on this server. Please contact the administrator." });
       }
     } else {
       decodedToken = await admin.auth().verifyIdToken(idToken);
@@ -117,8 +117,16 @@ export const firebaseLogin = async (req: Request, res: Response) => {
         .json({ status: "fail", message: "Email not found in Firebase token" });
     }
 
-    const user = await userService.getUserByEmail(email);
-    console.log(`[AuthDebug] Firebase login attempt for email: "${email}", mode: "${mode}", userFound: ${!!user}`);
+    // Use importing from MODELS directly to avoid circular dependency via index
+    const { default: User } = await import("../models/user.model");
+
+    if (!User) {
+      console.error('[AuthContoller] User model is undefined!');
+      throw new Error("Internal server error: User model not found");
+    }
+
+    const user = await User.findOne({ email: email.toLowerCase() });
+    console.log(`[AuthDebug] Firebase login for email: "${email}", mode: "${mode}", userFound: ${!!user}`);
 
     if (!user) {
       if (mode === "register") {
@@ -127,7 +135,8 @@ export const firebaseLogin = async (req: Request, res: Response) => {
         const [firstName, ...rest] = (displayName || "").split(" ");
         const lastName = rest.join(" ");
 
-        const newUser = await userService.createUser({
+        console.log(`[AuthDebug] Creating new user via Google: ${email}`);
+        const newUser = await User.create({
           email,
           first_name: firstName || "Google",
           last_name: lastName || "User",
@@ -172,7 +181,8 @@ export const firebaseLogin = async (req: Request, res: Response) => {
 
     // Optional: Update user info if needed, e.g. verify email if not verified
     if (!user.is_email_verified) {
-      await userService.updateUserById(user.id, { is_email_verified: true });
+      user.is_email_verified = true;
+      await user.save();
     }
 
     const tokens = await tokenService.generateAuthTokens(user);
@@ -182,10 +192,16 @@ export const firebaseLogin = async (req: Request, res: Response) => {
 
     successResponse(res, "Login successful", httpStatus.OK, { user, tokens });
   } catch (err: any) {
-    console.error("Firebase Login Error:", err);
+    console.error("Firebase Login Detailed Error:", err);
+    if (err.stack) console.error(err.stack);
+
     res
       .status(httpStatus.UNAUTHORIZED)
-      .json({ status: "error", message: `Firebase authentication failed: ${err.message}` });
+      .json({
+        status: "error",
+        message: `Firebase authentication failed: ${err.message}`,
+        stack: config.env === 'development' ? err.stack : undefined
+      });
   }
 };
 
