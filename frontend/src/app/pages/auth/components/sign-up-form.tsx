@@ -259,7 +259,7 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
                     description: 'Directing you to verification page...'
                   });
 
-                  navigate(`/otp?email=${response.user?.email || email}`);
+                  navigate(`/otp?email=${response.user?.email || result.user.email}`);
                 } catch (error: any) {
                   // Check if user closed the popup without selecting an account
                   const isPopupClosed =
