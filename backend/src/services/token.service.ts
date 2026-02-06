@@ -4,7 +4,7 @@ import moment from "moment";
 import { v4 as uuidv4 } from "uuid";
 import config from "../config/config";
 import { tokenTypes } from "../config/tokens";
-import { Token } from "../models";
+import Token from "../models/token.model";
 import { type IToken } from "../models/token.model";
 import { type IUser } from "../models/user.model";
 import ApiError from "../utils/ApiError";

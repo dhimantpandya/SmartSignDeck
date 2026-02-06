@@ -14,10 +14,15 @@ try {
         fs.readFileSync(serviceAccountPath, "utf8"),
       );
 
-      firebaseApp = admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount),
-      });
-      console.log("Firebase Admin initialized successfully");
+      if (admin.apps.length === 0) {
+        firebaseApp = admin.initializeApp({
+          credential: admin.credential.cert(serviceAccount),
+        });
+        console.log("Firebase Admin initialized successfully");
+      } else {
+        firebaseApp = admin.apps[0];
+        console.log("Using existing Firebase Admin app");
+      }
     } else {
       console.warn(
         `Firebase service account file not found at: ${serviceAccountPath}`,

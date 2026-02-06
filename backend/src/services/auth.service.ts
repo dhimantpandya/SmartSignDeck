@@ -10,6 +10,7 @@ import * as emailConstants from "../utils/constants/email.constants";
 import * as emailService from "./email.service";
 import * as tokenService from "./token.service";
 import * as userService from "./user.service";
+import Company from "../models/company.model";
 
 /* ================= LOGIN ================= */
 
@@ -238,7 +239,6 @@ export const verifyEmailOtp = async (
   let updateBody: any = { is_email_verified: true };
   if (!user.companyId && user.companyName) {
     // Create new company if they registered with a name but no ID (new organization)
-    const { Company } = await import("../models");
     const company = await Company.create({
       name: user.companyName,
       ownerId: user._id

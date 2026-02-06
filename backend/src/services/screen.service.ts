@@ -1,7 +1,9 @@
 import mongoose from "mongoose";
 import httpStatus from "http-status";
 import logger from "../config/logger";
-import { Screen, Template, Playlist } from "../models";
+import Screen from "../models/screen.model";
+import Template from "../models/template.model";
+import Playlist from "../models/playlist.model";
 import ApiError from "../utils/ApiError";
 import crypto from "crypto";
 import { type CustomPaginateOptions } from "../models/plugins/paginate.plugin";

@@ -1,4 +1,5 @@
-import { Screen, Template } from "../models";
+import Screen from "../models/screen.model";
+import Template from "../models/template.model";
 import logger from "../config/logger";
 
 /**

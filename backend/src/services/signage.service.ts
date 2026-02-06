@@ -1,4 +1,5 @@
-import { Template, Screen } from "../models";
+import Template from "../models/template.model";
+import Screen from "../models/screen.model";
 import mongoose from 'mongoose';
 
 /**

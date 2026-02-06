@@ -1,6 +1,6 @@
 import httpStatus from "http-status";
 import mongoose, { type FilterQuery, type QueryOptions } from "mongoose";
-import { Role } from "../models";
+import Role from "../models/role.model";
 import { type CustomPaginateResult } from "../models/plugins/paginate.plugin";
 import { type IRole, type IRolePermissions } from "../models/role.model";
 import ApiError from "../utils/ApiError";

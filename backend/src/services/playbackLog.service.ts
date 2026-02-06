@@ -1,4 +1,4 @@
-import { PlaybackLog } from "../models";
+import PlaybackLog from "../models/playbackLog.model";
 
 /**
  * Create a playback log

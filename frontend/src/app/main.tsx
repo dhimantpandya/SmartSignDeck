@@ -22,6 +22,14 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     </QueryClientProvider>
   </ThemeProvider>
 )
+
+// Remove loading overlay after app start
+const overlay = document.getElementById('app-loading-overlay');
+if (overlay) {
+  overlay.style.opacity = '0';
+  overlay.style.transition = 'opacity 0.5s ease';
+  setTimeout(() => overlay.remove(), 500);
+}
 // Register service worker
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {

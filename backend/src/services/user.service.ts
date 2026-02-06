@@ -2,7 +2,7 @@ import { type Request } from "express";
 import httpStatus from "http-status";
 import { type DeleteResult } from "mongodb";
 import mongoose, { type FilterQuery, type QueryOptions } from "mongoose";
-import { User } from "../models";
+import User from "../models/user.model";
 import { type CustomPaginateResult } from "../models/plugins/paginate.plugin";
 import { type IUser } from "../models/user.model";
 import ApiError from "../utils/ApiError";

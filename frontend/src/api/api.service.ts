@@ -15,13 +15,30 @@ class ApiService {
     const baseURL = import.meta.env.PROD
       ? (import.meta.env.VITE_APP_URL && import.meta.env.VITE_APP_URL !== '/'
         ? import.meta.env.VITE_APP_URL
-        : 'https://smart-sign-deck-backend.vercel.app')
+        : '') // In production, default to relative paths for unified deployment
       : import.meta.env.VITE_APP_URL || '';
 
-    this.api = axios.create({
-      baseURL,
-      headers: { 'Content-Type': 'application/json' },
-    })
+    if (!axios || typeof axios.create !== 'function') {
+      console.error('[ApiService] Axios is not properly imported or .create is missing!', axios);
+      // Fallback for some weird bundling issues
+      const anyAxios = axios as any;
+      if (anyAxios.default && typeof anyAxios.default.create === 'function') {
+        console.log('[ApiService] Using axios.default.create fallback');
+        this.api = anyAxios.default.create({
+          baseURL,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      } else {
+        throw new Error('Axios initialization failed: .create is not a function');
+      }
+    } else {
+      console.log(`[ApiService] Initializing with baseURL: ${baseURL}`);
+      this.api = axios.create({
+        baseURL,
+        timeout: 30000, // 30 second timeout to prevent infinite hang
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
 
     // Request interceptor to attach access token automatically
     this.api.interceptors.request.use((config: InternalAxiosRequestConfig) => {

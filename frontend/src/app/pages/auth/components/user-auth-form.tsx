@@ -296,6 +296,7 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
                     return
                   }
 
+                  console.error('[UserAuthForm] Google Sign-In Error:', error);
                   const errorMessage = error?.message || (typeof error === 'string' ? error : 'Google Sign-In failed');
                   toast({ variant: 'destructive', title: 'Sign-In Failed', description: errorMessage });
                 } finally {

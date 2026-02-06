@@ -1,7 +1,12 @@
 import mongoose from "mongoose";
 import httpStatus from "http-status";
 import logger from "../config/logger";
-import { Template, Company, User } from "../models";
+import mongoose from "mongoose";
+import httpStatus from "http-status";
+import logger from "../config/logger";
+import Template from "../models/template.model";
+import Company from "../models/company.model";
+import User from "../models/user.model";
 import ApiError from "../utils/ApiError";
 import { type CustomPaginateOptions } from "../models/plugins/paginate.plugin";
 import { type IUser } from "../models/user.model";
