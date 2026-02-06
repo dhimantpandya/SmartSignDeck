@@ -237,7 +237,16 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
                   form.clearErrors(); // Clear any pre-existing validation errors
 
                   const { signInWithPopup } = await import('firebase/auth');
-                  const { auth, googleProvider } = await import('@/lib/firebase');
+                  const { auth, googleProvider, isFirebaseConfigured } = await import('@/lib/firebase');
+
+                  if (!isFirebaseConfigured() || !auth || !googleProvider) {
+                    toast({
+                      variant: 'destructive',
+                      title: 'Configuration Error',
+                      description: 'Google Sign-Up is not correctly configured. Please check your Firebase API keys.'
+                    });
+                    return;
+                  }
 
                   const result = await signInWithPopup(auth, googleProvider);
                   const idToken = await result.user.getIdToken();
@@ -277,7 +286,7 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
 
                   if (isUserNotFound) {
                     const { auth } = await import('@/lib/firebase');
-                    const currentUser = auth.currentUser;
+                    const currentUser = auth?.currentUser;
                     if (currentUser) {
                       const displayName = currentUser.displayName || '';
                       const [firstName, ...rest] = displayName.split(' ');

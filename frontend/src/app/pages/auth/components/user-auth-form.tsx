@@ -14,8 +14,6 @@ import { cn } from '@/lib/utils'
 import { Routes } from '@/utilities/routes'
 import { toast } from '@/components/ui/use-toast'
 import { mapApiUserToUser } from '@/utilities/mappers/user.mapper'
-import { signInWithPopup } from 'firebase/auth'
-import { auth, googleProvider } from '@/lib/firebase'
 
 import {
   Form,
@@ -218,8 +216,10 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
                   form.clearErrors();
 
                   console.log('Starting Google Sign-In...');
-                  const { isFirebaseConfigured } = await import('@/lib/firebase');
-                  if (!isFirebaseConfigured()) {
+                  const { signInWithPopup } = await import('firebase/auth');
+                  const { auth, googleProvider, isFirebaseConfigured } = await import('@/lib/firebase');
+
+                  if (!isFirebaseConfigured() || !auth || !googleProvider) {
                     toast({
                       variant: 'destructive',
                       title: 'Configuration Error',
@@ -274,7 +274,8 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
                       description: 'Redirecting you to the sign-up page...',
                     })
 
-                    const currentUser = auth.currentUser;
+                    const { auth } = await import('@/lib/firebase');
+                    const currentUser = auth?.currentUser;
 
                     // Wait 2 seconds so the user can read the message
                     setTimeout(() => {
