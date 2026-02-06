@@ -6,6 +6,9 @@ import { playlistService } from "../services";
 import { type Request, type Response } from "express";
 
 const createPlaylist = catchAsync(async (req: Request, res: Response) => {
+    if (!req.user) {
+        throw new ApiError(httpStatus.UNAUTHORIZED, "Please authenticate");
+    }
     const user = req.user as any;
     const playlist = await playlistService.createPlaylist({
         ...req.body,
@@ -16,6 +19,9 @@ const createPlaylist = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getPlaylists = catchAsync(async (req: Request, res: Response) => {
+    if (!req.user) {
+        throw new ApiError(httpStatus.UNAUTHORIZED, "Please authenticate");
+    }
     const user = req.user as any;
     const filter = pick(req.query, ["name"]);
     // Enforce company isolation
@@ -27,6 +33,9 @@ const getPlaylists = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getPlaylist = catchAsync(async (req: Request, res: Response) => {
+    if (!req.user) {
+        throw new ApiError(httpStatus.UNAUTHORIZED, "Please authenticate");
+    }
     const user = req.user as any;
     const playlist = await playlistService.getPlaylistById(req.params.playlistId);
     if (!playlist) {
@@ -40,6 +49,9 @@ const getPlaylist = catchAsync(async (req: Request, res: Response) => {
 });
 
 const updatePlaylist = catchAsync(async (req: Request, res: Response) => {
+    if (!req.user) {
+        throw new ApiError(httpStatus.UNAUTHORIZED, "Please authenticate");
+    }
     const user = req.user as any;
     const playlist = await playlistService.updatePlaylistById(
         req.params.playlistId,
@@ -50,6 +62,9 @@ const updatePlaylist = catchAsync(async (req: Request, res: Response) => {
 });
 
 const deletePlaylist = catchAsync(async (req: Request, res: Response) => {
+    if (!req.user) {
+        throw new ApiError(httpStatus.UNAUTHORIZED, "Please authenticate");
+    }
     const user = req.user as any;
     await playlistService.deletePlaylistById(req.params.playlistId, user.companyId.toString());
     res.status(httpStatus.NO_CONTENT).send();
