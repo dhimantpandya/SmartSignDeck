@@ -14,11 +14,11 @@ const createCompany = catchAsync(async (req: Request, res: Response) => {
         ownerId: (req.user as any).id
     });
 
-    // 2. Link User to Company and make them Admin
+    // 2. Link User to Company and complete onboarding
     await User.findByIdAndUpdate((req.user as any).id, {
         companyId: company.id,
         companyName: company.name,
-        role: "admin",
+        role: "user",
         onboardingCompleted: true
     });
 

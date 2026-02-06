@@ -249,21 +249,22 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
                   }
 
                   const result = await signInWithPopup(auth, googleProvider);
-                  const idToken = await result.user.getIdToken();
+                  const googleUser = result.user;
 
-                  const response = await authService.firebaseLogin(idToken, 'register');
+                  const displayName = googleUser.displayName || '';
+                  const [firstName, ...rest] = displayName.split(' ');
+                  const lastName = rest.join(' ');
 
-                  const user = mapApiUserToUser(response.user)
+                  form.setValue('email', googleUser.email || '');
+                  form.setValue('first_name', firstName || '');
+                  form.setValue('last_name', lastName || '');
 
-                  const refreshToken = !import.meta.env.VITE_COOKIE_BASED_AUTHENTICATION
-                    ? response.tokens?.refresh?.token ?? null
-                    : null;
-                  const accessToken = response.tokens?.access ?? null
+                  form.clearErrors();
 
-                  login(user, refreshToken, accessToken);
-
-                  toast({ title: 'Registration successful! Logged in with Google.' });
-                  navigate(Routes.DASHBOARD);
+                  toast({
+                    title: 'Google details filled',
+                    description: 'Please complete registration and verify OTP sent to your email.',
+                  });
                 } catch (error: any) {
                   // Check if user closed the popup without selecting an account
                   const isPopupClosed =

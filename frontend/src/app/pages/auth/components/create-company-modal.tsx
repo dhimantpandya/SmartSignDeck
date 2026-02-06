@@ -32,23 +32,6 @@ export function CreateCompanyModal({ isOpen }: CreateCompanyModalProps) {
         },
     });
 
-    const handleSkip = async () => {
-        if (user?.id) {
-            try {
-                setIsLoading(true);
-                await userService.updateUser(user.id, { onboardingCompleted: true } as any);
-                await refreshUser();
-                setIsVisible(false);
-                toast({ title: 'Onboarding skipped', description: 'You can create a workspace later from your profile.' });
-            } catch (err) {
-                console.error('Failed to skip onboarding', err);
-                toast({ title: 'Error skipping onboarding', variant: 'destructive' });
-            } finally {
-                setIsLoading(false);
-            }
-        }
-    };
-
     const onSubmit = async (data: CreateCompanyFormValues) => {
         setIsLoading(true);
         try {
@@ -102,10 +85,7 @@ export function CreateCompanyModal({ isOpen }: CreateCompanyModalProps) {
                             )}
                         />
 
-                        <DialogFooter className="gap-2 sm:gap-0">
-                            <Button type="button" variant="ghost" onClick={handleSkip} disabled={isLoading}>
-                                Skip for now
-                            </Button>
+                        <DialogFooter className="sm:justify-end">
                             <Button type="submit" loading={isLoading}>
                                 Create Workspace
                             </Button>

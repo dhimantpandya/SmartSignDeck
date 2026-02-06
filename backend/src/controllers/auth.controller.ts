@@ -131,17 +131,20 @@ export const firebaseLogin = async (req: Request, res: Response) => {
     if (!user) {
       if (mode === "register") {
         // Create new user for Google registration
-        const { displayName, picture } = decodedToken;
-        const [firstName, ...rest] = (displayName || "").split(" ");
-        const lastName = rest.join(" ");
+        const { displayName, picture, given_name, family_name } = decodedToken as any;
+        const [nameFirst, ...rest] = (displayName || "").split(" ");
+        const parsedLast = rest.join(" ");
+
+        const firstName = given_name || nameFirst || "";
+        const lastName = family_name || parsedLast || "";
 
         console.log(`[AuthDebug] Creating new user via Google: ${email}`);
         const newUser = await User.create({
           email,
-          first_name: firstName || "Google",
-          last_name: lastName || "User",
+          first_name: firstName,
+          last_name: lastName,
           role: "user",
-          is_email_verified: true, // Google accounts are verified
+          is_email_verified: true, // Google accounts are verified by Firebase
           avatar: picture,
           googleId: decodedToken.uid || decodedToken.sub,
           authProvider: "google", // Set auth provider for Google registration
