@@ -28,6 +28,9 @@ interface EnvVars {
   GOOGLE_CLIENT_SECRET: string;
   GOOGLE_CALLBACK_URL: string;
   FIREBASE_SERVICE_ACCOUNT_PATH: string;
+  FIREBASE_PROJECT_ID: string;
+  FIREBASE_PRIVATE_KEY: string;
+  FIREBASE_CLIENT_EMAIL: string;
   CLOUDINARY_CLOUD_NAME: string;
   CLOUDINARY_API_KEY: string;
   CLOUDINARY_API_SECRET: string;
@@ -62,7 +65,10 @@ const envVarsSchema = Joi.object<EnvVars>()
     GOOGLE_CALLBACK_URL: Joi.string().default(
       "http://localhost:5000/v1/auth/google/callback",
     ),
-    FIREBASE_SERVICE_ACCOUNT_PATH: Joi.string().optional(), // Optional for now to avoid breaking existing setup immediately
+    FIREBASE_SERVICE_ACCOUNT_PATH: Joi.string().optional(),
+    FIREBASE_PROJECT_ID: Joi.string().optional(),
+    FIREBASE_PRIVATE_KEY: Joi.string().optional(),
+    FIREBASE_CLIENT_EMAIL: Joi.string().optional(),
     CLOUDINARY_CLOUD_NAME: Joi.string().required(),
     CLOUDINARY_API_KEY: Joi.string().required(),
     CLOUDINARY_API_SECRET: Joi.string().required(),
@@ -126,6 +132,11 @@ const config = {
   },
   firebase: {
     serviceAccountPath: envVars.FIREBASE_SERVICE_ACCOUNT_PATH,
+    projectId: envVars.FIREBASE_PROJECT_ID,
+    privateKey: envVars.FIREBASE_PRIVATE_KEY
+      ? envVars.FIREBASE_PRIVATE_KEY.replace(/\\n/g, "\n")
+      : undefined,
+    clientEmail: envVars.FIREBASE_CLIENT_EMAIL,
   },
   cloudinary: {
     cloudName: envVars.CLOUDINARY_CLOUD_NAME,
