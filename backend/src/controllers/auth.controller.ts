@@ -134,14 +134,16 @@ export const firebaseLogin = async (req: Request, res: Response) => {
     if (!user) {
       if (mode === "register") {
         // Create new user for Google registration
-        const { displayName, picture, given_name, family_name } = decodedToken as any;
+        const { displayName, name, picture, given_name, family_name } = decodedToken as any;
 
         // Better name parsing logic
         let firstName = given_name || "";
         let lastName = family_name || "";
 
-        if (!firstName && displayName) {
-          const parts = displayName.trim().split(" ");
+        // Try standard name field if given_name is missing
+        if (!firstName && (name || displayName)) {
+          const fullName = name || displayName;
+          const parts = fullName.trim().split(" ");
           if (parts.length > 0) {
             firstName = parts[0];
             if (parts.length > 1) {
@@ -150,8 +152,11 @@ export const firebaseLogin = async (req: Request, res: Response) => {
           }
         }
 
-        // Fallback
-        if (!firstName) firstName = "User";
+        // Final fallback to email prefix if name is still missing or generic
+        if (!firstName || firstName.toLowerCase() === "user") {
+          firstName = email.split("@")[0].split(".")[0];
+          firstName = firstName.charAt(0).toUpperCase() + firstName.slice(1);
+        }
 
         // Store pending Google signup
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
@@ -164,7 +169,7 @@ export const firebaseLogin = async (req: Request, res: Response) => {
           first_name: firstName,
           last_name: lastName,
           password: "", // No password for Google users
-          companyName: "My Workspace",
+          companyName: undefined, // Google users need to create workspace later
           authProvider: "google",
           googleId: decodedToken.uid || decodedToken.sub,
           otp,
@@ -327,7 +332,7 @@ export const verifyOtp = async (req: Request, res: Response) => {
         googleId: pendingSignup.googleId,
         role: "user",
         is_email_verified: true,
-        onboardingCompleted: true,
+        onboardingCompleted: !!pendingSignup.companyName, // Completed only if company was provided
       });
 
       // Handle Company generation/linking

@@ -39,11 +39,18 @@ export function CreateCompanyModal({ isOpen }: CreateCompanyModalProps) {
             toast({ title: 'Workspace created successfully!' });
 
             if (user) {
+                // Manually update local user state for immediate UI response
+                const updatedUser = {
+                    ...user,
+                    companyId: (response as any).id,
+                    companyName: (response as any).name,
+                    onboardingCompleted: true
+                };
+                login(updatedUser as any);
                 await refreshUser();
             } else if (response && (response as any).id) {
-                // Fallback for edge cases where refreshUser isn't enough
-                const baseUser = user || {} as any;
-                login({ ...baseUser, companyId: (response as any).id, companyName: (response as any).name } as any);
+                // Fallback for edge cases
+                login({ companyId: (response as any).id, companyName: (response as any).name, onboardingCompleted: true } as any);
             }
             setIsVisible(false);
         } catch (error: any) {
