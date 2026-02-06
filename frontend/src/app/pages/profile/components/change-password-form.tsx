@@ -20,9 +20,13 @@ import { authService } from '@/api'
 import { Link, useNavigate } from 'react-router-dom'
 import { Routes } from '@/utilities/routes'
 import { useAuth } from '@/hooks/use-auth'
+import { useState } from 'react'
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
 
 export function ChangePasswordForm() {
-  const { user, login } = useAuth()
+  const { user, login, logout } = useAuth()
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
   const form = useForm<ChangePasswordRequest>({
     resolver: zodResolver(changePasswordSchema),
   })
@@ -61,6 +65,26 @@ export function ChangePasswordForm() {
 
   async function onSubmit(data: ChangePasswordRequest) {
     mutateAsync(data)
+  }
+
+  const handleConfirmDelete = async () => {
+    try {
+      setIsDeleting(true)
+      await authService.deleteAccount()
+      toast({
+        title: 'Account deleted',
+        description: 'Your account has been deleted successfully.',
+      })
+      await logout()
+    } catch (error: any) {
+      toast({
+        title: error?.message || 'Failed to delete account',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsDeleting(false)
+      setIsDeleteOpen(false)
+    }
   }
 
   return (
@@ -112,22 +136,53 @@ export function ChangePasswordForm() {
             />
           </div>
 
-          <div className='mt-3 flex items-center gap-6'>
-            <Button
-              type='submit'
-              className='w-auto rounded-lg'
-              loading={isPending}
-            >
-              Update Password
-            </Button>
-            <Link
-              to={`${Routes.FORGOT_PASSWORD}?email=${encodeURIComponent(user?.email || '')}`}
-              className='text-sm font-medium text-primary underline underline-offset-4 hover:text-primary/80 transition-colors'
-            >
-              Forgot password?
-            </Link>
+          <div className='mt-3 flex flex-col gap-4'>
+            <div className='flex items-center gap-6'>
+              <Button
+                type='submit'
+                className='w-auto rounded-lg'
+                loading={isPending}
+              >
+                Update Password
+              </Button>
+              <Link
+                to={`${Routes.FORGOT_PASSWORD}?email=${encodeURIComponent(user?.email || '')}`}
+                className='text-sm font-medium text-primary underline underline-offset-4 hover:text-primary/80 transition-colors'
+              >
+                Forgot password?
+              </Link>
+            </div>
+
+            <div className='mt-4 rounded-md border border-destructive/40 bg-destructive/5 p-4'>
+              <h4 className='text-sm font-semibold text-destructive'>
+                Delete account
+              </h4>
+              <p className='mt-1 text-xs text-muted-foreground'>
+                This will permanently delete your SmartSignDeck account and related data. This action cannot be undone.
+              </p>
+              <Button
+                type='button'
+                variant='destructive'
+                className='mt-3 w-fit'
+                onClick={() => setIsDeleteOpen(true)}
+              >
+                Delete my account
+              </Button>
+            </div>
           </div>
         </div>
+
+        <ConfirmationDialog
+          isOpen={isDeleteOpen}
+          onClose={() => setIsDeleteOpen(false)}
+          onConfirm={handleConfirmDelete}
+          title='Delete account?'
+          message='This will permanently delete your SmartSignDeck account and related data. This action cannot be undone.'
+          confirmBtnText='Yes, delete my account'
+          cancelBtnText='Cancel'
+          variant='destructive'
+          isLoading={isDeleting}
+        />
       </form>
     </Form>
   )
