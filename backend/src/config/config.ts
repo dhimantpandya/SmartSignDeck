@@ -135,7 +135,7 @@ const config = {
   cors: {
     origin: envVars.ALLOWED_ORIGINS
       ? envVars.ALLOWED_ORIGINS.split(",").map((origin) => origin.trim())
-      : ["http://localhost:5173"],
+      : ["http://localhost:5173", "https://smart-sign-deck.vercel.app"],
   },
   appUrl: envVars.WEB_APP_URL,
 };
