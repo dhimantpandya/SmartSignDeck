@@ -4,7 +4,6 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { authService, signupSchema } from '@/api/auth.service'
-import { useAuth } from '@/hooks/use-auth'
 
 import { Button } from '@/components/custom/button'
 import { PasswordInput } from '@/components/custom/password-input'
@@ -20,10 +19,8 @@ import {
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { useNavigate, Link, useLocation } from 'react-router-dom'
-import { Routes } from '@/utilities/routes'
 import { toast } from '@/components/ui/use-toast'
 import { HTMLAttributes } from 'react'
-import { mapApiUserToUser } from '@/utilities/mappers/user.mapper'
 
 type SignupRequest = z.infer<typeof signupSchema>
 

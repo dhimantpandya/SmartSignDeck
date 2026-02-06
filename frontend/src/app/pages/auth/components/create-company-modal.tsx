@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from '@/components/custom/button';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { companyService, userService } from '@/api';
+import { companyService } from '@/api';
 import { useAuth } from '@/hooks/use-auth';
 import { toast } from '@/components/ui/use-toast';
 
