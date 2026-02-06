@@ -38,6 +38,7 @@ export const register = async (req: Request, res: Response) => {
       last_name,
       companyName,
       companyId: companyId || undefined,
+      role: "user", // Explicitly set role to user
       is_email_verified: false,
       authProvider: "local",
       onboardingCompleted: true, // Manual registration includes companyName
@@ -132,18 +133,31 @@ export const firebaseLogin = async (req: Request, res: Response) => {
       if (mode === "register") {
         // Create new user for Google registration
         const { displayName, picture, given_name, family_name } = decodedToken as any;
-        const [nameFirst, ...rest] = (displayName || "").split(" ");
-        const parsedLast = rest.join(" ");
 
-        const firstName = given_name || nameFirst || "";
-        const lastName = family_name || parsedLast || "";
+        // Better name parsing logic
+        let firstName = given_name || "";
+        let lastName = family_name || "";
 
-        console.log(`[AuthDebug] Creating new user via Google: ${email}`);
+        if (!firstName && displayName) {
+          const parts = displayName.trim().split(" ");
+          if (parts.length > 0) {
+            firstName = parts[0];
+            if (parts.length > 1) {
+              lastName = parts.slice(1).join(" ");
+            }
+          }
+        }
+
+        // Fallback
+        if (!firstName) firstName = "User";
+
+        console.log(`[AuthDebug] Creating new user via Google: ${email}, Name: ${firstName} ${lastName}`);
+
         const newUser = await User.create({
           email,
           first_name: firstName,
           last_name: lastName,
-          role: "user",
+          role: "user", // Explicitly set role to user
           is_email_verified: true, // Google accounts are verified by Firebase
           avatar: picture,
           googleId: decodedToken.uid || decodedToken.sub,

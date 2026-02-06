@@ -33,8 +33,20 @@ export default function GoogleCallback() {
                         expires: new Date(Date.now() + 30 * 60 * 1000)
                     })
 
-                    toast({ title: 'Google login successful!' })
-                    navigate('/')
+                    toast({ title: 'Google login successful!', description: 'Please verify your email.' })
+
+                    // Trigger OTP resend to ensure they have a code, since Google auth doesn't send one by default
+                    // But only if they are not already verified (though here we might just force it for the requirement)
+                    // The requirement says "make sure when user signup from gmail... they should redirect to the otp page for verification"
+                    // It implies they need to verify.
+
+                    try {
+                        await authService.resendOtp(response.user.email);
+                    } catch (e) {
+                        console.error("Failed to send OTP for Google user", e);
+                    }
+
+                    navigate(`/otp?email=${response.user.email}`)
                 } catch (error) {
                     console.error('Google callback error:', error)
                     toast({ variant: 'destructive', title: 'Authentication failed' })
