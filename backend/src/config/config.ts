@@ -50,7 +50,7 @@ const envVarsSchema = Joi.object<EnvVars>()
     EMAIL_USER: Joi.string().required(),
     EMAIL_PASS: Joi.string().required(),
     EMAIL_FROM: Joi.string().required(),
-    WEB_APP_URL: Joi.string().required(),
+    WEB_APP_URL: Joi.string().default("http://localhost:5173"),
     API_DOC_USER_NAME: Joi.string().required(),
     API_DOC_PASSWORD: Joi.string().required(),
     AWS_ACCESS_KEY_ID: Joi.string().required(),
