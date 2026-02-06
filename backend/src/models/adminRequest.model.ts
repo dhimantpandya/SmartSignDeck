@@ -42,6 +42,22 @@ const adminRequestSchema = new mongoose.Schema(
 adminRequestSchema.plugin(toJSON);
 adminRequestSchema.plugin(paginate);
 
-const AdminRequest = mongoose.model('AdminRequest', adminRequestSchema);
+
+export interface IAdminRequest extends mongoose.Document {
+    requesterId: mongoose.Types.ObjectId;
+    targetUserId: mongoose.Types.ObjectId;
+    companyId: mongoose.Types.ObjectId;
+    type: 'DELETE' | 'ROLE_UPDATE';
+    details: {
+        proposedRole?: string;
+        reason?: string;
+    };
+    status: 'PENDING' | 'APPROVED' | 'REJECTED';
+    adminComment?: string;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+const AdminRequest = mongoose.model<IAdminRequest>('AdminRequest', adminRequestSchema);
 
 export default AdminRequest;
