@@ -19,15 +19,30 @@ if (import.meta.env.PROD) {
     });
 }
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
+let app;
+let auth: any;
+let googleProvider: any;
 
-// Configure Google Provider to show account picker
-const googleProvider = new GoogleAuthProvider();
+try {
+    app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
 
-// Force account selection screen (shows all logged-in Google accounts)
-googleProvider.setCustomParameters({
-    prompt: 'select_account'
-});
+    // Configure Google Provider to show account picker
+    googleProvider = new GoogleAuthProvider();
+
+    // Force account selection screen (shows all logged-in Google accounts)
+    googleProvider.setCustomParameters({
+        prompt: 'select_account'
+    });
+} catch (error) {
+    console.error('Firebase initialization failed:', error);
+    // Provide a mock auth object to prevent the entire app from crashing on import
+    auth = {
+        currentUser: null,
+        onAuthStateChanged: () => () => { },
+        signOut: async () => { },
+    };
+    googleProvider = {};
+}
 
 export { auth, googleProvider };

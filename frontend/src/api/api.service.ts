@@ -13,7 +13,11 @@ class ApiService {
 
   constructor() {
     this.api = axios.create({
-      baseURL: import.meta.env.VITE_APP_URL || '',
+      baseURL: import.meta.env.PROD
+        ? (import.meta.env.VITE_APP_URL && import.meta.env.VITE_APP_URL !== '/'
+          ? import.meta.env.VITE_APP_URL
+          : 'https://smart-sign-deck-backend.vercel.app') // Fallback to likely backend name or same domain
+        : import.meta.env.VITE_APP_URL || '',
       headers: new AxiosHeaders({ 'Content-Type': 'application/json' }),
     })
 
