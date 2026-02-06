@@ -244,7 +244,8 @@ export const verifyEmailOtp = async (
       ownerId: user._id
     });
     updateBody.companyId = company._id;
-    updateBody.role = 'admin'; // First user in a new company is the Admin
+    // Default role should be regular user; super_admin is seeded separately
+    updateBody.role = 'user';
     updateBody.companyName = undefined; // Clear the temporary field
   }
 
