@@ -24,10 +24,37 @@
 
   <meta name="theme-color" content="#fff" />
   <script src="https://media-library.cloudinary.com/global/all.js" type="text/javascript"></script>
+  <script type="text/javascript">
+    // Diagnostic script to catch silent crashes
+    window.addEventListener('error', function(event) {
+      console.error('Global Error caught:', event.error);
+      const root = document.getElementById('root');
+      if (root && (!root.children.length || root.innerHTML.includes('Loading application'))) {
+        root.innerHTML = '<div style="padding: 20px; font-family: sans-serif; color: #ff4d4d; border: 2px solid #ff4d4d; border-radius: 8px; margin: 20px; background: #fff;">' +
+                         '<h3>SmartSignDeck Initialization Failed</h3>' +
+                         '<p>Error: ' + event.message + '</p>' +
+                         '<p>Please check the browser console (F12) for details.</p>' +
+                         '<button onclick="window.location.reload()" style="padding: 8px 16px; cursor: pointer;">Reload Application</button>' +
+                         '</div>';
+      }
+    });
+    console.log('SmartSignDeck: HTML Diagnostic Initialized');
+  </script>
 </head>
 
 <body>
-  <div id="root"></div>
+  <div id="root">
+    <div style="display: flex; height: 100vh; width: 100vw; align-items: center; justify-content: center; font-family: sans-serif; background: #fff;">
+      <div style="text-align: center;">
+        <h2 style="margin-bottom: 10px;">SmartSignDeck</h2>
+        <div style="display: inline-block; width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; animation: spin 2s linear infinite;"></div>
+        <p style="margin-top: 15px; color: #666;">Loading application...</p>
+      </div>
+    </div>
+  </div>
+  <style>
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+  </style>
   <script type="module" src="/src/app/main.tsx"></script>
 </body>
 

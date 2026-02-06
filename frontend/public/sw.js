@@ -1,4 +1,4 @@
-const CACHE_NAME = 'smart-sign-deck-v1';
+const CACHE_NAME = 'smart-sign-deck-v2';
 const MEDIA_CACHE_NAME = 'smart-sign-media-v1';
 
 // Assets to cache immediately
@@ -12,7 +12,7 @@ self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(CACHE_NAME)
             .then((cache) => cache.addAll(PRECACHE_ASSETS))
-            .then(self.skipWaiting())
+            .then(() => self.skipWaiting())
     );
 });
 
@@ -20,10 +20,13 @@ self.addEventListener('activate', (event) => {
     event.waitUntil(
         caches.keys().then((cacheNames) => {
             return Promise.all(
-                cacheNames.filter((cacheName) => cacheName !== CACHE_NAME && cacheName !== MEDIA_CACHE_NAME)
-                    .map((cacheName) => caches.delete(cacheName))
+                cacheNames.map((cacheName) => {
+                    if (cacheName !== CACHE_NAME && cacheName !== MEDIA_CACHE_NAME) {
+                        return caches.delete(cacheName);
+                    }
+                })
             );
-        })
+        }).then(() => self.clients.claim())
     );
 });
 
@@ -31,7 +34,7 @@ self.addEventListener('fetch', (event) => {
     const { request } = event;
     const url = new URL(request.url);
 
-    // Special handling for media (images/videos)
+    // Special handling for media (images/videos) - Cache First
     if (url.origin.includes('cloudinary.com') || request.destination === 'image' || request.destination === 'video') {
         event.respondWith(
             caches.open(MEDIA_CACHE_NAME).then((cache) => {
@@ -46,10 +49,20 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // Default stale-while-revalidate for application files
+    // Network First for application files (index.html, JS, CSS)
+    // This ensures we always get the latest version if online, 
+    // but fall back to cache if offline.
     event.respondWith(
-        caches.match(request).then((response) => {
-            return response || fetch(request);
-        })
+        fetch(request)
+            .then((networkResponse) => {
+                const responseClone = networkResponse.clone();
+                caches.open(CACHE_NAME).then((cache) => {
+                    cache.put(request, responseClone);
+                });
+                return networkResponse;
+            })
+            .catch(() => {
+                return caches.match(request);
+            })
     );
 });
