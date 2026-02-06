@@ -125,65 +125,58 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
     }
 
     const constrainObject = (obj: any) => {
-        if (!obj) return
+        if (!obj || !canvasRef.current) return
 
         const canvasWidth = CANVAS_WIDTH
         const canvasHeight = CANVAS_HEIGHT
 
-        // Get strict bounding box (accounts for stroke, rotation, etc)
-        // Get strict bounding box (accounts for stroke, rotation, etc)
-        // Guard against missing method (in case of weird object types or versions)
-        if (typeof obj.getBoundingRect !== 'function') return
+        // Update coordinates to get accurate bounding rect
+        obj.setCoords()
+        const br = obj.getBoundingRect()
 
-        const br = obj.getBoundingRect(true) // true = absolute coordinates
-
-        const width = br.width
-        const height = br.height
-
+        // --- 1. Position constraints (Clamping) ---
         let left = obj.left
         let top = obj.top
 
-        // --- 1. Clamp Position ---
-        // Calculate how much we are overflowing
-        // Left overflow
-        if (br.left < 0) {
-            left += (0 - br.left)
+        // Account for stroke in bounding rect
+        const brLeft = br.left
+        const brTop = br.top
+        const brRight = brLeft + br.width
+        const brBottom = brTop + br.height
+
+        // Left boundary
+        if (brLeft < 0) {
+            left += (0 - brLeft)
         }
-        // Top overflow
-        if (br.top < 0) {
-            top += (0 - br.top)
+        // Top boundary
+        if (brTop < 0) {
+            top += (0 - brTop)
         }
-        // Right overflow
-        if (br.left + width > canvasWidth) {
-            left -= (br.left + width - canvasWidth)
+        // Right boundary
+        if (brRight > canvasWidth) {
+            left -= (brRight - canvasWidth)
         }
-        // Bottom overflow
-        if (br.top + height > canvasHeight) {
-            top -= (br.top + height - canvasHeight)
+        // Bottom boundary
+        if (brBottom > canvasHeight) {
+            top -= (brBottom - canvasHeight)
         }
 
-        // --- 2. Clamp Scale (Resize) ---
-        // If the object ITSELF is larger than the canvas, scale it down.
-        // We use the raw object dimensions vs canvas dimensions.
+        // --- 2. Scaling constraints (Stop at edge) ---
+        // If the object is being scaled and exceeds bounds, we should adjust scale instead of shifting
+        if (obj.isEditing || obj.__isScaling) { // Custom flags or check active state
+            const scaledWidth = obj.getScaledWidth()
+            const scaledHeight = obj.getScaledHeight()
 
-        // Note: getBoundingRect includes stroke. 
-        // If width > canvasWidth, we need to reduce scale.
-        // We can approximate the logic by checking scaled sizes vs canvas size minus stroke.
-
-        const strokeW = (obj.strokeWidth || 0) * (obj.strokeUniform ? 1 : obj.scaleX)
-        const maxW = canvasWidth - strokeW
-        const maxH = canvasHeight - strokeW
-
-        if (obj.getScaledWidth() > maxW) {
-            obj.set({ scaleX: maxW / obj.width })
-        }
-        if (obj.getScaledHeight() > maxH) {
-            obj.set({ scaleY: maxH / obj.height })
+            if (scaledWidth > canvasWidth) {
+                obj.set({ scaleX: canvasWidth / obj.width })
+            }
+            if (scaledHeight > canvasHeight) {
+                obj.set({ scaleY: canvasHeight / obj.height })
+            }
         }
 
-        // --- 3. Clamp Minimum Size ---
-        // Prevent scaling down to nothing
-        const MIN_SIZE = 50 * SCALE_FACTOR
+        // --- 3. Minimum size ---
+        const MIN_SIZE = 40 * SCALE_FACTOR
         if (obj.getScaledWidth() < MIN_SIZE) {
             obj.set({ scaleX: MIN_SIZE / obj.width })
         }

@@ -85,6 +85,8 @@ const getUsers = catchAsync(async (req: Request, res: Response) => {
   }
 
   // Multi-tenancy isolation logic refinement
+  const PREDEFINED_EMAIL = "smartsigndeck@gmail.com";
+
   if (filter.companyId) {
     const companyId = filter.companyId;
     // Look up company details
@@ -98,6 +100,7 @@ const getUsers = catchAsync(async (req: Request, res: Response) => {
       const companyNames = relatedCompanies.map(c => c.name);
 
       filter.$or = [
+        { email: PREDEFINED_EMAIL },
         { companyId: { $in: companyIds } },
         { companyName: { $in: companyNames } },
         { companyName: { $regex: new RegExp(`^${company.name}$`, "i") } }
@@ -105,11 +108,15 @@ const getUsers = catchAsync(async (req: Request, res: Response) => {
     } else {
       // Fallback: If company doc not found, still filter by the ID provided
       filter.$or = [
+        { email: PREDEFINED_EMAIL },
         { companyId: companyId },
         { companyName: companyId }
       ];
     }
     delete filter.companyId;
+  } else if (!filter.email && !filter.role && !filter.first_name && !filter.last_name) {
+    // If no specific filter is provided (general list), could still force it if needed
+    // But usually companyId is present for all regular dashboard requests
   }
 
   const options = pick(parsedQuery, [
