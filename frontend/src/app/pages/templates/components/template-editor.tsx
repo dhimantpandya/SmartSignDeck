@@ -152,26 +152,27 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
 
         obj.setCoords()
 
-        // 3. Clamp POSITION
+        // 3. Clamp POSITION using bounding rect math
         const br = obj.getBoundingRect()
-        let left = obj.left
-        let top = obj.top
+        let curLeft = obj.left
+        let curTop = obj.top
 
+        // Clamping logic: push back into viewport if any edge is outside
         if (br.left < 0) {
-            left -= br.left
+            curLeft = curLeft - br.left
         }
         else if (br.left + br.width > canvasWidth) {
-            left -= (br.left + br.width - canvasWidth)
+            curLeft = curLeft - (br.left + br.width - canvasWidth)
         }
 
         if (br.top < 0) {
-            top -= br.top
+            curTop = curTop - br.top
         }
         else if (br.top + br.height > canvasHeight) {
-            top -= (br.top + br.height - canvasHeight)
+            curTop = curTop - (br.top + br.height - canvasHeight)
         }
 
-        obj.set({ left, top })
+        obj.set({ left: curLeft, top: curTop })
         obj.setCoords()
     }
 
