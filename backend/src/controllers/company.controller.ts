@@ -1,12 +1,12 @@
 import httpStatus from "http-status";
 import { Request, Response } from "express";
 import catchAsync from "../utils/catchAsync";
-import { Company } from "../models";
+import Company from "../models/company.model";
 import successResponse from "../helpers/responses/successResponse";
 import ApiError from "../utils/ApiError";
 
 const createCompany = catchAsync(async (req: Request, res: Response) => {
-    const { User } = await import("../models"); // Dynamic import to avoid cycles if any
+    const User = (await import("../models/user.model")).default; // Dynamic import to avoid cycles if any
 
     // 1. Create Company
     const company = await Company.create({

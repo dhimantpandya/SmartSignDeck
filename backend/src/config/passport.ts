@@ -4,7 +4,7 @@ import {
   type VerifiedCallback,
   type StrategyOptions,
 } from "passport-jwt";
-import { User } from "../models";
+import User from "../models/user.model";
 import config from "./config";
 import { tokenTypes } from "./tokens";
 

@@ -1,6 +1,7 @@
 import { type Request, type Response } from "express";
 import httpStatus from "http-status";
-import { AdminRequest, User } from "../models";
+import AdminRequest from "../models/adminRequest.model";
+import User from "../models/user.model";
 import { userService } from "../services";
 import catchAsync from "../utils/catchAsync";
 import successResponse from "../helpers/responses/successResponse";

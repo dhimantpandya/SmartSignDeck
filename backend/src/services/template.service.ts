@@ -177,7 +177,7 @@ const deleteTemplateById = async (templateId: string, user: IUser) => {
   }
 
   // Check for dependent screens
-  const { Screen } = await import("../models");
+  const { default: Screen } = await import("../models/screen.model");
   const screensUsingTemplate = await Screen.find({ templateId });
 
   if (screensUsingTemplate.length > 0) {

@@ -3,7 +3,7 @@ import httpStatus from "http-status";
 import { MongooseQueryParser } from "mongoose-query-parser";
 import successResponse from "../helpers/responses/successResponse";
 import { type IUser } from "../models/user.model";
-import { Company } from "../models";
+import Company from "../models/company.model";
 import { emailService, userService } from "../services";
 import catchAsync from "../utils/catchAsync";
 import * as constants from "../utils/constants/constants";
