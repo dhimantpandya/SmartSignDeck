@@ -15,8 +15,8 @@ class ApiService {
     const baseURL = import.meta.env.PROD
       ? (import.meta.env.VITE_APP_URL && import.meta.env.VITE_APP_URL !== '/'
         ? import.meta.env.VITE_APP_URL
-        : '') // In production, default to relative paths for unified deployment
-      : import.meta.env.VITE_APP_URL || '';
+        : 'https://smart-sign-deck.onrender.com') // Default to live backend if not specified
+      : import.meta.env.VITE_APP_URL || 'http://localhost:3000';
 
     if (!axios || typeof axios.create !== 'function') {
       console.error('[ApiService] Axios is not properly imported or .create is missing!', axios);
