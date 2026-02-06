@@ -213,9 +213,42 @@ export const firebaseLogin = async (req: Request, res: Response) => {
         });
     }
 
-    // Optional: Update user info if needed, e.g. verify email if not verified
+    // Auto-correct generic name for existing users if it's still "User"
+    let userUpdated = false;
+    if (!user.first_name || user.first_name.toLowerCase() === "user") {
+      const { displayName, name, given_name, family_name } = decodedToken as any;
+
+      let firstName = given_name || "";
+      let lastName = family_name || user.last_name || "";
+
+      if (!firstName && (name || displayName)) {
+        const fullName = name || displayName;
+        const parts = fullName.trim().split(" ");
+        if (parts.length > 0) {
+          firstName = parts[0];
+          if (parts.length > 1 && !lastName) {
+            lastName = parts.slice(1).join(" ");
+          }
+        }
+      }
+
+      if (!firstName || firstName.toLowerCase() === "user") {
+        firstName = email.split("@")[0].split(".")[0];
+        firstName = firstName.charAt(0).toUpperCase() + firstName.slice(1);
+      }
+
+      user.first_name = firstName;
+      if (lastName) user.last_name = lastName;
+      userUpdated = true;
+      console.log(`[AuthDebug] Auto-corrected name for existing user ${email} to ${firstName} ${lastName}`);
+    }
+
     if (!user.is_email_verified) {
       user.is_email_verified = true;
+      userUpdated = true;
+    }
+
+    if (userUpdated) {
       await user.save();
     }
 
@@ -364,6 +397,16 @@ export const verifyOtp = async (req: Request, res: Response) => {
 
     // 2. Fallback to existing user verification (e.g. for already created users or other flows)
     const user = await authService.verifyEmailOtp(email, otp);
+
+    // Auto-correct generic name for existing users if it's still "User"
+    if (!user.first_name || user.first_name.toLowerCase() === "user") {
+      let firstName = email.split("@")[0].split(".")[0];
+      firstName = firstName.charAt(0).toUpperCase() + firstName.slice(1);
+      user.first_name = firstName;
+      await user.save();
+      console.log(`[AuthDebug] Auto-corrected name for existing user ${email} during fallback verification`);
+    }
+
     const tokens = await tokenService.generateAuthTokens(user);
 
     // Clear OTP attempts on successful verification
