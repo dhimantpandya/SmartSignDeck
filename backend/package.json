@@ -114,7 +114,9 @@
     "uuid": "^9.0.1",
     "validator": "^13.11.0",
     "winston": "^3.12.0",
-    "xss-clean": "^0.1.4"
+    "xss-clean": "^0.1.4",
+    "typescript": "^5.4.2",
+    "cpx": "^1.5.0"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.2.0",
@@ -141,7 +143,7 @@
     "@typescript-eslint/eslint-plugin": "^6.4.0",
     "@typescript-eslint/parser": "^7.12.0",
     "coveralls": "^3.1.1",
-    "cpx": "^1.5.0",
+    "eslint-config-prettier": "^9.1.0",
     "define-data-property": "^1.1.4",
     "eslint": "^8.0.1",
     "eslint-config-prettier": "^9.1.0",
@@ -160,8 +162,7 @@
     "prettier": "^3.2.5",
     "supertest": "^6.3.4",
     "ts-jest": "^29.1.2",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.4.2"
+    "ts-node": "^10.9.2"
   },
   "peerDependencies": {
     "openapi-types": "^12.1.0"
