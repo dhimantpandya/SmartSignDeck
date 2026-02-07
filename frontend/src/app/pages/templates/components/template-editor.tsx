@@ -400,14 +400,6 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                 selection: true,
             })
 
-            // Visual containment failsafe
-            canvas.clipPath = new fabric.Rect({
-                left: 0,
-                top: 0,
-                width: CANVAS_WIDTH,
-                height: CANVAS_HEIGHT,
-                absolutePositioned: true
-            })
 
             canvasRef.current = canvas
 
@@ -692,17 +684,19 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
 
                 <div className='flex-1 flex items-center justify-center bg-zinc-950 overflow-hidden relative rounded-xl border border-white/5 shadow-2xl'>
                     {/* Visual Border Container - Screen Mockup */}
-                    <div className="p-1 px-[2px] bg-zinc-800 rounded-xl shadow-[0_0_100px_rgba(0,0,0,0.9)] border border-white/10 relative overflow-hidden transition-all duration-700 hover:shadow-primary/5">
-                        {/* Dot Grid Background Overlay */}
+                    <div className="p-1 px-[2px] bg-zinc-800 rounded-xl shadow-[0_0_100px_rgba(0,0,0,0.9)] border border-white/10 relative transition-all duration-700 hover:shadow-primary/5">
+
+                        {/* Dot Grid Background Overlay - Now BEHIND the canvas */}
                         <div
-                            className="absolute inset-0 opacity-20 pointer-events-none"
+                            className="absolute inset-0 opacity-20 pointer-events-none z-0"
                             style={{
                                 backgroundImage: `radial-gradient(circle, #fff 1px, transparent 1px)`,
                                 backgroundSize: '15px 15px'
                             }}
                         />
+
                         <div
-                            className='bg-black relative border border-white/5 overflow-hidden transition-all'
+                            className='bg-black relative border border-white/5 transition-all z-10'
                             style={{
                                 width: CANVAS_WIDTH,
                                 height: CANVAS_HEIGHT,
