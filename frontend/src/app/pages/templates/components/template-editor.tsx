@@ -72,7 +72,15 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
     ]
 
     const [screenWidth, screenHeight] = resolution.split('x').map(Number)
-    const SCALE_FACTOR = screenWidth > screenHeight ? 0.35 : 0.25
+
+    // Adaptive SCALE_FACTOR: 4K needs a smaller scale to fit the screen without squashing
+    const isHighRes = screenWidth > 2000 || screenHeight > 2000
+    const isPortrait = screenHeight > screenWidth
+
+    const SCALE_FACTOR = isHighRes
+        ? (isPortrait ? 0.15 : 0.2) // 4K: smaller scale
+        : (isPortrait ? 0.35 : 0.4) // HD/Standard: larger scale
+
     const CANVAS_WIDTH = screenWidth * SCALE_FACTOR
     const CANVAS_HEIGHT = screenHeight * SCALE_FACTOR
     const GRID_SIZE = 10 * SCALE_FACTOR
@@ -341,9 +349,18 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
             canvas = new fabric.Canvas(el, {
                 width: CANVAS_WIDTH,
                 height: CANVAS_HEIGHT,
-                backgroundColor: '#111',
+                backgroundColor: '#000',
                 preserveObjectStacking: true,
                 selection: true,
+            })
+
+            // Visual Clip Path to guarantee nothing ever shows outside the black area
+            canvas.clipPath = new fabric.Rect({
+                left: 0,
+                top: 0,
+                width: CANVAS_WIDTH,
+                height: CANVAS_HEIGHT,
+                absolutePositioned: true
             })
 
             canvasRef.current = canvas
@@ -623,10 +640,12 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                     {/* Visual Border Container to prevent canvas overlap */}
                     <div className="p-[2px] bg-zinc-700 rounded-sm shadow-2xl">
                         <div
-                            className='bg-black overflow-hidden relative transition-all duration-300 ease-in-out'
+                            className='bg-black overflow-hidden relative transition-all duration-300 ease-in-out border border-white/20'
                             style={{
                                 width: CANVAS_WIDTH,
                                 height: CANVAS_HEIGHT,
+                                minWidth: CANVAS_WIDTH, // CRITICAL: Stop the layout from squeezing the 4K canvas
+                                minHeight: CANVAS_HEIGHT
                             }}
                             ref={canvasContainerRef}
                         >
