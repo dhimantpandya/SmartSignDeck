@@ -89,14 +89,6 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
 
 
     // ================= HELPERS =================
-    const getZoneColor = (type: string, alpha = 'ff') => {
-        let color = '#f59e0b'
-        if (type === 'video') color = '#3b82f6'
-        if (type === 'image') color = '#10b981'
-        if (type === 'mixed') color = '#8b5cf6'
-        return color + (alpha === 'ff' ? '' : alpha)
-    }
-
     const addZoneToCanvas = (canvas: fabric.Canvas, zone: Zone) => {
         const rect = new fabric.Rect({
             left: zone.x * SCALE_FACTOR,
