@@ -1,6 +1,11 @@
 import * as fabric from 'fabric'
 
 /**
+ * Consistent scaling factor for previews and editor
+ */
+export const GLOBAL_SCALE = 0.25
+
+/**
  * Initialize the Fabric Canvas with default settings
  */
 export const initFabricCanvas = (
@@ -14,7 +19,7 @@ export const initFabricCanvas = (
         height,
         backgroundColor,
         selection: true,
-        preserveObjectStacking: true, // Selected object stays in place (doesn't jump to top)
+        preserveObjectStacking: true,
     })
 
     return canvas
@@ -33,7 +38,7 @@ export const createFabricZone = (
         width: number
         height: number
     },
-    scaleFactor = 1
+    scaleFactor = GLOBAL_SCALE
 ) => {
     let fillColor = '#f59e0b'
     if (zone.type === 'video') fillColor = '#3b82f6'
@@ -45,23 +50,18 @@ export const createFabricZone = (
         top: zone.y * scaleFactor,
         width: zone.width * scaleFactor,
         height: zone.height * scaleFactor,
-        fill: fillColor + '44', // 25% opacity
+        fill: fillColor + '44',
         stroke: fillColor,
-        strokeWidth: 1,
+        strokeWidth: 2,
         strokeUniform: true,
         cornerColor: '#ffffff',
-        cornerStrokeColor: '#000000',
-        borderColor: '#ffffff',
+        cornerStrokeColor: fillColor,
+        borderColor: fillColor,
         transparentCorners: false,
-        cornerSize: 8,
-        data: { ...zone }, // Custom data property to store metadata
+        cornerSize: 10,
+        cornerStyle: 'circle',
+        data: { ...zone },
     } as any)
-
-    // Add a text label to the group
-    // Note: Grouping text with rect makes resizing complex in Fabric. 
-    // For V1, we'll just use the Rect and maybe overlay text if needed, 
-    // or use a simple visual cue.
-    // Alternatively, we can subclass fabric.Rect to draw text.
 
     return rect
 }

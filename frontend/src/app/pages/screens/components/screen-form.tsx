@@ -21,6 +21,7 @@ import {
     SelectValue,
 } from '@/components/ui/select'
 import ScheduleManager from './schedule-manager'
+import { GLOBAL_SCALE } from '@/utilities/fabric-utils'
 
 interface ScreenFormProps {
     initialData?: any
@@ -184,7 +185,7 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
         // Resolution & Scale setup
         const resolution = selectedTemplate.resolution || '1920x1080'
         const [targetWidth, targetHeight] = resolution.split('x').map(Number)
-        const SCALE = 0.25
+        const SCALE = GLOBAL_SCALE
         canvas.width = targetWidth * SCALE
         canvas.height = targetHeight * SCALE
 
@@ -368,7 +369,7 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
                 ctx.shadowColor = 'rgba(0,0,0,0.8)'
                 ctx.shadowBlur = 4
                 ctx.fillStyle = '#fff'
-                ctx.fillText(zone.type.toUpperCase(), scaledX + 4, scaledY + 12)
+                ctx.fillText(zone.type.toUpperCase(), scaledX + 6, scaledY + 14) // Slightly adjusted position
                 ctx.shadowBlur = 0
             })
         }
@@ -468,7 +469,7 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
         const x = (e.clientX - rect.left) * scaleX
         const y = (e.clientY - rect.top) * scaleY
 
-        const SCALE = 0.25
+        const SCALE = GLOBAL_SCALE
 
         const clickedZone = selectedTemplate.zones.find((z: any) => {
             const zx = z.x * SCALE

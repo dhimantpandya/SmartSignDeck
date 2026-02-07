@@ -26,6 +26,7 @@ import {
     SelectValue,
 } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
+import { GLOBAL_SCALE } from '@/utilities/fabric-utils'
 
 interface Zone {
     id: string
@@ -73,17 +74,10 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
 
     const [screenWidth, screenHeight] = resolution.split('x').map(Number)
 
-    // Adaptive SCALE_FACTOR: 4K needs a smaller scale to fit the screen without squashing
-    const isHighRes = screenWidth > 2000 || screenHeight > 2000
-    const isPortrait = screenHeight > screenWidth
-
-    const SCALE_FACTOR = isHighRes
-        ? (isPortrait ? 0.15 : 0.2) // 4K: smaller scale
-        : (isPortrait ? 0.35 : 0.4) // HD/Standard: larger scale
-
-    const CANVAS_WIDTH = screenWidth * SCALE_FACTOR
-    const CANVAS_HEIGHT = screenHeight * SCALE_FACTOR
-    const GRID_SIZE = 10 * SCALE_FACTOR
+    const SCALE = GLOBAL_SCALE
+    const CANVAS_WIDTH = screenWidth * SCALE
+    const CANVAS_HEIGHT = screenHeight * SCALE
+    const GRID_SIZE = 20 * SCALE // Increased for better alignment
 
     const selectedZone = zones.find(z => z.id === selectedZoneId)
 
@@ -104,13 +98,13 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
         const borderColor = getZoneColor(zone.type, '80').replace('0.8', '1')
 
         const rect = new fabric.Rect({
-            left: zone.x * SCALE_FACTOR,
-            top: zone.y * SCALE_FACTOR,
-            width: zone.width * SCALE_FACTOR,
-            height: zone.height * SCALE_FACTOR,
+            left: zone.x * SCALE,
+            top: zone.y * SCALE,
+            width: zone.width * SCALE,
+            height: zone.height * SCALE,
             fill: color,
             stroke: borderColor,
-            strokeWidth: 3,
+            strokeWidth: 2,
             strokeUniform: true,
             cornerColor: '#ffffff',
             cornerStrokeColor: borderColor,
@@ -146,44 +140,63 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
 
         obj.setCoords()
 
-        // 1. Strict Internal Margin (15px)
-        const MARGIN = 15
+        // 1. Minimum Size (50px in real pixels)
+        const MIN_SIZE = 50 * SCALE
 
-        // Scale Clamping
-        const maxW = cw - (MARGIN * 2)
-        const maxH = ch - (MARGIN * 2)
-
-        if (obj.getScaledWidth() > maxW) {
-            obj.set({ scaleX: maxW / obj.width })
+        if (obj.getScaledWidth() < MIN_SIZE) {
+            obj.set({ scaleX: MIN_SIZE / obj.width })
         }
-        if (obj.getScaledHeight() > maxH) {
-            obj.set({ scaleY: maxH / obj.height })
+        if (obj.getScaledHeight() < MIN_SIZE) {
+            obj.set({ scaleY: MIN_SIZE / obj.height })
         }
 
         obj.setCoords()
 
-        // Position Clamping
+        // 2. Boundary Clamping (Zero Margin)
         let l = obj.left
         let t = obj.top
 
         const br = obj.getBoundingRect()
 
-        if (br.left < MARGIN) {
-            l = l + (MARGIN - br.left)
+        if (br.left < 0) {
+            l = 0
         }
-        else if (br.left + br.width > cw - MARGIN) {
-            l = l - (br.left + br.width - (cw - MARGIN))
+        else if (br.left + br.width > cw) {
+            l = cw - br.width
         }
 
-        if (br.top < MARGIN) {
-            t = t + (MARGIN - br.top)
+        if (br.top < 0) {
+            t = 0
         }
-        else if (br.top + br.height > ch - MARGIN) {
-            t = t - (br.top + br.height - (ch - MARGIN))
+        else if (br.top + br.height > ch) {
+            t = ch - br.height
         }
 
         obj.set({ left: l, top: t })
         obj.setCoords()
+
+        // 3. Overlap Check
+        checkOverlaps(obj)
+    }
+
+    const checkOverlaps = (activeObj: any) => {
+        if (!canvasRef.current) return
+        const objects = canvasRef.current.getObjects()
+        let hasOverlap = false
+
+        objects.forEach((obj: any) => {
+            if (obj === activeObj || obj.type === 'guide') return
+
+            if (activeObj.intersectsWithObject(obj)) {
+                hasOverlap = true
+                // Visual feedback: make both slightly more red or add a shadow
+                obj.set({ shadow: new fabric.Shadow({ color: 'rgba(255,0,0,0.5)', blur: 20 }) })
+            } else {
+                obj.set({ shadow: null })
+            }
+        })
+
+        activeObj.set({ shadow: hasOverlap ? new fabric.Shadow({ color: 'rgba(255,0,0,0.8)', blur: 25 }) : null })
     }
 
     const handleRealtimeUpdate = (obj: any) => {
@@ -199,10 +212,10 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
             if (z.id !== id) return z
             return {
                 ...z,
-                x: Math.round(obj.left / SCALE_FACTOR),
-                y: Math.round(obj.top / SCALE_FACTOR),
-                width: Math.round(obj.getScaledWidth() / SCALE_FACTOR),
-                height: Math.round(obj.getScaledHeight() / SCALE_FACTOR),
+                x: Math.round(obj.left / SCALE),
+                y: Math.round(obj.top / SCALE),
+                width: Math.round(obj.getScaledWidth() / SCALE),
+                height: Math.round(obj.getScaledHeight() / SCALE),
             }
         }))
     }
@@ -255,8 +268,8 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
             ...template,
             id: `zone-${Date.now()}`,
             name: `${template.name} (Copy)`,
-            x: Math.min(CANVAS_WIDTH / SCALE_FACTOR - template.width - offset, Math.max(0, template.x + offset)),
-            y: Math.min(CANVAS_HEIGHT / SCALE_FACTOR - template.height - offset, Math.max(0, template.y + offset)),
+            x: Math.min(CANVAS_WIDTH / SCALE - template.width - offset, Math.max(0, template.x + offset)),
+            y: Math.min(CANVAS_HEIGHT / SCALE - template.height - offset, Math.max(0, template.y + offset)),
         }
 
         setZones(prev => [...prev, newZone])
@@ -625,11 +638,19 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                     </div>
                 </div>
 
-                <div className='flex-1 flex items-center justify-center bg-zinc-900 overflow-auto p-12'>
-                    {/* Visual Border Container */}
-                    <div className="p-[20px] bg-zinc-600 rounded-lg shadow-[0_0_60px_rgba(0,0,0,0.5)]">
+                <div className='flex-1 flex items-center justify-center bg-zinc-950 overflow-auto p-12 transition-all duration-500'>
+                    {/* Visual Border Container - Screen Mockup */}
+                    <div className="p-1 px-[2px] bg-zinc-800 rounded-xl shadow-[0_0_80px_rgba(0,0,0,0.8)] border border-white/10 relative overflow-hidden">
+                        {/* Dot Grid Background Overlay */}
                         <div
-                            className='bg-black relative border border-white/5'
+                            className="absolute inset-0 opacity-10 pointer-events-none"
+                            style={{
+                                backgroundImage: `radial-gradient(circle, #fff 1px, transparent 1px)`,
+                                backgroundSize: '15px 15px'
+                            }}
+                        />
+                        <div
+                            className='bg-black relative border border-white/5 overflow-hidden transition-all'
                             style={{
                                 width: CANVAS_WIDTH,
                                 height: CANVAS_HEIGHT,

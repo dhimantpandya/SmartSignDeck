@@ -270,8 +270,8 @@ export default function ScreenPlayer() {
 
         // Deep copy
         let zones = data.templateId.zones.map((z: any) => ({ ...z }))
-        const THRESHOLD = 25 // Standard snapping
-        const EMPTY_FILLING_THRESHOLD = 500 // Allow large expansion for empty zones
+        const THRESHOLD = 5 // Reduced from 25 to respect intentional gaps
+        const EMPTY_FILLING_THRESHOLD = 10 // Reduced from 500 to prevent aggressive expansion
 
         // Helper to check if a zone is an "empty text zone"
         const isEmptyTextZone = (z: any) => {
