@@ -103,13 +103,14 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
             top: zone.y * SCALE_FACTOR,
             width: zone.width * SCALE_FACTOR,
             height: zone.height * SCALE_FACTOR,
-            fill: getZoneColor(zone.type, '88'), // Higher opacity for better visibility
-            stroke: '#ffffff', // White stroke for high contrast on black
+            fill: 'rgba(59, 130, 246, 0.4)', // Clear semi-transparent blue
+            stroke: '#3b82f6', // Bright blue border
             strokeWidth: 2,
             strokeUniform: true,
-            cornerColor: '#3b82f6',
+            cornerColor: '#ffffff',
+            cornerStrokeColor: '#3b82f6',
             cornerSize: 8,
-            cornerStyle: 'circle', // Modern look
+            cornerStyle: 'circle',
             transparentCorners: false,
             originX: 'left',
             originY: 'top',
@@ -119,12 +120,6 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
             zoneType: zone.type,
             lockRotation: true,
             hasRotatingPoint: false,
-            shadow: new fabric.Shadow({
-                color: 'rgba(0,0,0,0.5)',
-                blur: 10,
-                offsetX: 0,
-                offsetY: 2
-            })
         })
 
         // Enable all 8 resize handles
@@ -143,46 +138,44 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
 
         const cw = canvasRef.current.getWidth()
         const ch = canvasRef.current.getHeight()
-        const sw = obj.strokeWidth || 2
 
         obj.setCoords()
 
-        // 1. Force scale to fit (Visual size must be <= Canvas size - 4px safety)
-        const MARGIN = 4
-        const maxAllowedW = cw - MARGIN
-        const maxAllowedH = ch - MARGIN
+        // 1. Strict Internal Margin (5px)
+        // This ensures the 2px border and handles are ALWAYS visible
+        const MARGIN = 5
 
-        if (obj.getScaledWidth() + sw > maxAllowedW) {
-            obj.set({ scaleX: (maxAllowedW - sw) / obj.width })
+        // Scale Clamping
+        const maxW = cw - (MARGIN * 2)
+        const maxH = ch - (MARGIN * 2)
+
+        if (obj.getScaledWidth() > maxW) {
+            obj.set({ scaleX: maxW / obj.width })
         }
-        if (obj.getScaledHeight() + sw > maxAllowedH) {
-            obj.set({ scaleY: (maxAllowedH - sw) / obj.height })
+        if (obj.getScaledHeight() > maxH) {
+            obj.set({ scaleY: maxH / obj.height })
         }
 
         obj.setCoords()
 
-        // 2. Force position to fit (Strict absolute clamping)
+        // Position Clamping
         let l = obj.left
         let t = obj.top
 
-        // Visual Left = l - sw/2. Must be >= 0.
-        // Visual Right = l + scaledW + sw/2. Must be <= cw.
-        const halfStroke = sw / 2
-        const curW = obj.getScaledWidth()
-        const curH = obj.getScaledHeight()
+        const br = obj.getBoundingRect()
 
-        if (l - halfStroke < 0) {
-            l = halfStroke
+        if (br.left < MARGIN) {
+            l = l + (MARGIN - br.left)
         }
-        else if (l + curW + halfStroke > cw) {
-            l = cw - curW - halfStroke
+        else if (br.left + br.width > cw - MARGIN) {
+            l = l - (br.left + br.width - (cw - MARGIN))
         }
 
-        if (t - halfStroke < 0) {
-            t = halfStroke
+        if (br.top < MARGIN) {
+            t = t + (MARGIN - br.top)
         }
-        else if (t + curH + halfStroke > ch) {
-            t = ch - curH - halfStroke
+        else if (br.top + br.height > ch - MARGIN) {
+            t = t - (br.top + br.height - (ch - MARGIN))
         }
 
         obj.set({ left: l, top: t })
@@ -626,15 +619,15 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                     </div>
                 </div>
 
-                <div className='flex-1 flex items-center justify-center bg-zinc-950/20 rounded-xl border border-dashed border-primary/10 overflow-auto p-12'>
-                    {/* Visual Border Container to prevent canvas overlap */}
-                    <div className="p-[2px] bg-zinc-700 rounded-sm shadow-2xl">
+                <div className='flex-1 flex items-center justify-center bg-zinc-900 overflow-auto p-12'>
+                    {/* Visual Border Container */}
+                    <div className="p-[4px] bg-zinc-500 rounded-lg shadow-[0_0_50px_rgba(0,0,0,0.3)]">
                         <div
-                            className='bg-black overflow-hidden relative transition-all duration-300 ease-in-out border border-white/20'
+                            className='bg-black overflow-hidden relative border border-white/5'
                             style={{
                                 width: CANVAS_WIDTH,
                                 height: CANVAS_HEIGHT,
-                                minWidth: CANVAS_WIDTH, // CRITICAL: Stop the layout from squeezing the 4K canvas
+                                minWidth: CANVAS_WIDTH,
                                 minHeight: CANVAS_HEIGHT
                             }}
                             ref={canvasContainerRef}
