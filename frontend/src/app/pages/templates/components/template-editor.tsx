@@ -127,55 +127,71 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
     const constrainObject = (obj: any) => {
         if (!obj || !canvasRef.current) return
 
-        const canvasWidth = CANVAS_WIDTH
-        const canvasHeight = CANVAS_HEIGHT
-        const strokeWidth = obj.strokeWidth || 0
-        const buffer = strokeWidth // Account for stroke in scale clamping
+        const canvas = canvasRef.current
+        const cw = canvas.getWidth()
+        const ch = canvas.getHeight()
 
-        // 1. First, ensure the object is not wider/taller than the canvas itself (including stroke)
-        let scaledW = obj.getScaledWidth()
-        let scaledH = obj.getScaledHeight()
+        // 1. Refresh coordinates
+        obj.setCoords()
 
-        if (scaledW + buffer > canvasWidth) {
-            obj.set({ scaleX: (canvasWidth - buffer) / obj.width })
+        // 2. Scale clamping (ensure object is never wider/taller than canvas)
+        // We use bounding rect to account for stroke and other visuals
+        let br = obj.getBoundingRect()
+
+        const EPSILON = 2 // Small buffer for stroke and rounding
+
+        if (br.width > cw) {
+            const currentTotalW = br.width
+            const scaledOnlyW = obj.getScaledWidth()
+            const strokeW = currentTotalW - scaledOnlyW
+            const maxAllowedScaledW = cw - strokeW - EPSILON
+            obj.set({ scaleX: Math.max(0.01, maxAllowedScaledW / obj.width) })
             obj.setCoords()
-        }
-        if (scaledH + buffer > canvasHeight) {
-            obj.set({ scaleY: (canvasHeight - buffer) / obj.height })
-            obj.setCoords()
+            br = obj.getBoundingRect()
         }
 
-        // 2. Minimum size check
+        if (br.height > ch) {
+            const currentTotalH = br.height
+            const scaledOnlyH = obj.getScaledHeight()
+            const strokeH = currentTotalH - scaledOnlyH
+            const maxAllowedScaledH = ch - strokeH - EPSILON
+            obj.set({ scaleY: Math.max(0.01, maxAllowedScaledH / obj.height) })
+            obj.setCoords()
+            br = obj.getBoundingRect()
+        }
+
+        // 3. Minimum size check
         const minSize = 40 * SCALE_FACTOR
         if (obj.getScaledWidth() < minSize) {
             obj.set({ scaleX: minSize / obj.width })
             obj.setCoords()
+            br = obj.getBoundingRect()
         }
         if (obj.getScaledHeight() < minSize) {
             obj.set({ scaleY: minSize / obj.height })
             obj.setCoords()
+            br = obj.getBoundingRect()
         }
 
-        // 3. Clamp Position strictly using bounding rect
-        const br = obj.getBoundingRect()
-        let curLeft = obj.left
-        let curTop = obj.top
+        // 4. Position clamping (Strict boundaries)
+        let l = obj.left
+        let t = obj.top
 
-        // Horizontal Clamping
+        // br.left is the visual left edge. originX is 'left', so obj.left is also the left edge.
+        // But br.left includes stroke offset.
         if (br.left < 0) {
-            curLeft = curLeft - br.left
-        } else if (br.left + br.width > canvasWidth) {
-            curLeft = curLeft - (br.left + br.width - canvasWidth)
+            l = l - br.left // Push right by the amount it's over
+        } else if (br.left + br.width > cw) {
+            l = l - (br.left + br.width - cw) // Push left by the amount it's over
         }
 
-        // Vertical Clamping
         if (br.top < 0) {
-            curTop = curTop - br.top
-        } else if (br.top + br.height > canvasHeight) {
-            curTop = curTop - (br.top + br.height - canvasHeight)
+            t = t - br.top
+        } else if (br.top + br.height > ch) {
+            t = t - (br.top + br.height - ch)
         }
 
-        obj.set({ left: curLeft, top: curTop })
+        obj.set({ left: l, top: t })
         obj.setCoords()
     }
 
