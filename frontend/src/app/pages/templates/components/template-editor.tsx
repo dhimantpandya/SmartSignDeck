@@ -134,21 +134,26 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
         // 1. Refresh coordinates
         obj.setCoords()
 
-        // 2. Scale clamping (ensure object is never wider/taller than canvas)
-        // We use bounding rect to account for stroke and other visuals
+        // 2. Scale clamping (Ensure visual width <= canvas width)
         let br = obj.getBoundingRect()
 
-
-        const strokeW = (obj.strokeWidth || 0) * SCALE_FACTOR
-
+        // If object is wider than canvas, scale it down to fit exactly
         if (br.width > cw) {
-            obj.set({ scaleX: Math.max(0.01, (cw - strokeW - 2) / obj.width) })
+            const currentTotalW = br.width
+            const scaledOnlyW = obj.getScaledWidth()
+            const strokeW = currentTotalW - scaledOnlyW
+            const maxAllowedScaledW = cw - strokeW - 1 // 1px safety
+            obj.set({ scaleX: Math.max(0.1, maxAllowedScaledW / obj.width) })
             obj.setCoords()
             br = obj.getBoundingRect()
         }
 
         if (br.height > ch) {
-            obj.set({ scaleY: Math.max(0.01, (ch - strokeW - 2) / obj.height) })
+            const currentTotalH = br.height
+            const scaledOnlyH = obj.getScaledHeight()
+            const strokeH = currentTotalH - scaledOnlyH
+            const maxAllowedScaledH = ch - strokeH - 1 // 1px safety
+            obj.set({ scaleY: Math.max(0.1, maxAllowedScaledH / obj.height) })
             obj.setCoords()
             br = obj.getBoundingRect()
         }
@@ -160,17 +165,13 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
             obj.setCoords()
             br = obj.getBoundingRect()
         }
-        if (obj.getScaledHeight() < minSize) {
-            obj.set({ scaleY: minSize / obj.height })
-            obj.setCoords()
-            br = obj.getBoundingRect()
-        }
 
-        // 4. Position clamping (Strict boundaries)
+        // 4. Position clamping (Absolute force)
         let l = obj.left
         let t = obj.top
 
         // Clamping logic: push back into viewport if any edge is outside
+        // Horizontal
         if (br.left < 0) {
             l = l - br.left
         }
@@ -178,6 +179,7 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
             l = l - (br.left + br.width - cw)
         }
 
+        // Vertical
         if (br.top < 0) {
             t = t - br.top
         }
@@ -617,18 +619,19 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                     </div>
                 </div>
 
-                <div className='flex-1 flex items-center justify-center bg-zinc-950/20 rounded-xl border border-dashed border-primary/10 overflow-auto p-8'>
-                    <div
-                        className='bg-zinc-900 shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden ring-2 ring-primary/20 relative transition-all duration-300 ease-in-out'
-                        style={{
-                            width: CANVAS_WIDTH,
-                            height: CANVAS_HEIGHT,
-                            backgroundColor: '#000',
-                            border: '1px solid #333'
-                        }}
-                        ref={canvasContainerRef}
-                    >
-                        {/* Fabric Canvas injected here */}
+                <div className='flex-1 flex items-center justify-center bg-zinc-950/20 rounded-xl border border-dashed border-primary/10 overflow-auto p-12'>
+                    {/* Visual Border Container to prevent canvas overlap */}
+                    <div className="p-[2px] bg-zinc-700 rounded-sm shadow-2xl">
+                        <div
+                            className='bg-black overflow-hidden relative transition-all duration-300 ease-in-out'
+                            style={{
+                                width: CANVAS_WIDTH,
+                                height: CANVAS_HEIGHT,
+                            }}
+                            ref={canvasContainerRef}
+                        >
+                            {/* Fabric Canvas injected here */}
+                        </div>
                     </div>
                 </div>
 
