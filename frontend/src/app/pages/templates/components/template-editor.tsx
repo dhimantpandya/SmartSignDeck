@@ -619,8 +619,13 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
 
                 <div className='flex-1 flex items-center justify-center bg-zinc-950/20 rounded-xl border border-dashed border-primary/10 overflow-auto p-8'>
                     <div
-                        className='bg-zinc-900 shadow-2xl overflow-hidden ring-1 ring-white/10 relative transition-all duration-300 ease-in-out'
-                        style={{ width: CANVAS_WIDTH, height: CANVAS_HEIGHT, backgroundColor: '#111' }}
+                        className='bg-zinc-900 shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden ring-2 ring-primary/20 relative transition-all duration-300 ease-in-out'
+                        style={{
+                            width: CANVAS_WIDTH,
+                            height: CANVAS_HEIGHT,
+                            backgroundColor: '#000',
+                            border: '1px solid #333'
+                        }}
                         ref={canvasContainerRef}
                     >
                         {/* Fabric Canvas injected here */}
