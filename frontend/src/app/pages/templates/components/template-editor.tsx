@@ -88,20 +88,33 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
     const selectedZone = zones.find(z => z.id === selectedZoneId)
 
 
-    // ================= HELPERS =================
+    const getZoneColor = (type: string, alpha: string = '40') => {
+        const opacity = alpha === '40' ? 0.4 : 0.8
+        switch (type) {
+            case 'image': return `rgba(34, 197, 94, ${opacity})` // green
+            case 'video': return `rgba(59, 130, 246, ${opacity})` // blue
+            case 'text': return `rgba(168, 85, 247, ${opacity})` // purple
+            case 'mixed': return `rgba(234, 179, 8, ${opacity})` // yellow
+            default: return `rgba(100, 116, 139, ${opacity})`
+        }
+    }
+
     const addZoneToCanvas = (canvas: fabric.Canvas, zone: Zone) => {
+        const color = getZoneColor(zone.type, '40')
+        const borderColor = getZoneColor(zone.type, '80').replace('0.8', '1')
+
         const rect = new fabric.Rect({
             left: zone.x * SCALE_FACTOR,
             top: zone.y * SCALE_FACTOR,
             width: zone.width * SCALE_FACTOR,
             height: zone.height * SCALE_FACTOR,
-            fill: 'rgba(59, 130, 246, 0.4)', // Clear semi-transparent blue
-            stroke: '#3b82f6', // Bright blue border
-            strokeWidth: 2,
+            fill: color,
+            stroke: borderColor,
+            strokeWidth: 3,
             strokeUniform: true,
             cornerColor: '#ffffff',
-            cornerStrokeColor: '#3b82f6',
-            cornerSize: 8,
+            cornerStrokeColor: borderColor,
+            cornerSize: 10,
             cornerStyle: 'circle',
             transparentCorners: false,
             originX: 'left',
@@ -133,9 +146,8 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
 
         obj.setCoords()
 
-        // 1. Strict Internal Margin (5px)
-        // This ensures the 2px border and handles are ALWAYS visible
-        const MARGIN = 5
+        // 1. Strict Internal Margin (15px)
+        const MARGIN = 15
 
         // Scale Clamping
         const maxW = cw - (MARGIN * 2)
