@@ -257,8 +257,10 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
         setZones([...zones, newZone])
         if (canvasRef.current) {
             const rect = addZoneToCanvas(canvasRef.current, newZone)
+                ; (rect as any).bringToFront()
             canvasRef.current.setActiveObject(rect)
             setSelectedZoneId(newZone.id)
+            canvasRef.current.requestRenderAll()
         }
     }
 
@@ -275,6 +277,7 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
         setZones(prev => [...prev, newZone])
         if (canvasRef.current) {
             const rect = addZoneToCanvas(canvasRef.current, newZone)
+                ; (rect as any).bringToFront()
             canvasRef.current.setActiveObject(rect)
             setSelectedZoneId(newZone.id)
             canvasRef.current.requestRenderAll()
@@ -312,10 +315,19 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
 
         setIsSaving(true)
         try {
+            // Sync order from canvas to preserve stacking (z-index)
+            let orderedZones = zones
+            if (canvasRef.current) {
+                const objects = canvasRef.current.getObjects()
+                orderedZones = objects
+                    .map((obj: any) => zones.find(z => z.id === obj.id))
+                    .filter(Boolean) as Zone[]
+            }
+
             const payload = {
                 name: templateName,
                 resolution,
-                zones,
+                zones: orderedZones,
                 isPublic,
             }
 
@@ -601,7 +613,7 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                 </div>
             </Card>
 
-            <div className='relative flex-1 overflow-auto rounded-lg bg-muted/30 p-8'>
+            <div className='relative flex-1 flex flex-col overflow-hidden rounded-lg bg-muted/30 p-8'>
                 <div className='mb-4 flex items-center gap-4'>
                     <div className='flex-1'>
                         <Input
