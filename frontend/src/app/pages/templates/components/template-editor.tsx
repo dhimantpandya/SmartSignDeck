@@ -141,62 +141,48 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
     const constrainObject = (obj: any) => {
         if (!obj || !canvasRef.current) return
 
-        const canvas = canvasRef.current
-        const cw = canvas.getWidth()
-        const ch = canvas.getHeight()
+        const cw = canvasRef.current.getWidth()
+        const ch = canvasRef.current.getHeight()
+        const sw = obj.strokeWidth || 2
 
-        // 1. Refresh coordinates
         obj.setCoords()
 
-        // 2. Scale clamping (Ensure visual width <= canvas width)
-        let br = obj.getBoundingRect()
+        // 1. Force scale to fit (Visual size must be <= Canvas size - 4px safety)
+        const MARGIN = 4
+        const maxAllowedW = cw - MARGIN
+        const maxAllowedH = ch - MARGIN
 
-        const MARGIN = 2 // Safety margin to keep borders fully visible
-
-        if (br.width > cw - (MARGIN * 2)) {
-            const maxW = cw - (MARGIN * 2)
-            const currentTotalW = br.width
-            const scaledOnlyW = obj.getScaledWidth()
-            const chromeW = currentTotalW - scaledOnlyW // Stroke + whatever else
-            obj.set({ scaleX: Math.max(0.1, (maxW - chromeW) / obj.width) })
-            obj.setCoords()
-            br = obj.getBoundingRect()
+        if (obj.getScaledWidth() + sw > maxAllowedW) {
+            obj.set({ scaleX: (maxAllowedW - sw) / obj.width })
+        }
+        if (obj.getScaledHeight() + sw > maxAllowedH) {
+            obj.set({ scaleY: (maxAllowedH - sw) / obj.height })
         }
 
-        if (br.height > ch - (MARGIN * 2)) {
-            const maxH = ch - (MARGIN * 2)
-            const currentTotalH = br.height
-            const scaledOnlyH = obj.getScaledHeight()
-            const chromeH = currentTotalH - scaledOnlyH
-            obj.set({ scaleY: Math.max(0.1, (maxH - chromeH) / obj.height) })
-            obj.setCoords()
-            br = obj.getBoundingRect()
-        }
+        obj.setCoords()
 
-        // 3. Minimum size check
-        const minSize = 40 * SCALE_FACTOR
-        if (obj.getScaledWidth() < minSize) {
-            obj.set({ scaleX: minSize / obj.width })
-            obj.setCoords()
-            br = obj.getBoundingRect()
-        }
-
-        // 4. Position clamping (Absolute force with MARGIN)
+        // 2. Force position to fit (Strict absolute clamping)
         let l = obj.left
         let t = obj.top
 
-        if (br.left < MARGIN) {
-            l = l + (MARGIN - br.left)
+        // Visual Left = l - sw/2. Must be >= 0.
+        // Visual Right = l + scaledW + sw/2. Must be <= cw.
+        const halfStroke = sw / 2
+        const curW = obj.getScaledWidth()
+        const curH = obj.getScaledHeight()
+
+        if (l - halfStroke < 0) {
+            l = halfStroke
         }
-        else if (br.left + br.width > cw - MARGIN) {
-            l = l - (br.left + br.width - (cw - MARGIN))
+        else if (l + curW + halfStroke > cw) {
+            l = cw - curW - halfStroke
         }
 
-        if (br.top < MARGIN) {
-            t = t + (MARGIN - br.top)
+        if (t - halfStroke < 0) {
+            t = halfStroke
         }
-        else if (br.top + br.height > ch - MARGIN) {
-            t = t - (br.top + br.height - (ch - MARGIN))
+        else if (t + curH + halfStroke > ch) {
+            t = ch - curH - halfStroke
         }
 
         obj.set({ left: l, top: t })
@@ -356,6 +342,15 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                 backgroundColor: '#000',
                 preserveObjectStacking: true,
                 selection: true,
+            })
+
+            // Visual containment failsafe
+            canvas.clipPath = new fabric.Rect({
+                left: 0,
+                top: 0,
+                width: CANVAS_WIDTH,
+                height: CANVAS_HEIGHT,
+                absolutePositioned: true
             })
 
             canvasRef.current = canvas
