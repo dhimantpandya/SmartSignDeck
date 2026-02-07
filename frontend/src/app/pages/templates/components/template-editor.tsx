@@ -395,7 +395,7 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
             canvas = new fabric.Canvas(el, {
                 width: CANVAS_WIDTH,
                 height: CANVAS_HEIGHT,
-                backgroundColor: '#000',
+                backgroundColor: 'transparent',
                 preserveObjectStacking: true,
                 selection: true,
             })
@@ -682,7 +682,7 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                     </div>
                 </div>
 
-                <div className='flex-1 flex items-center justify-center bg-zinc-950 overflow-hidden relative rounded-xl border border-white/5 shadow-2xl'>
+                <div className='flex-1 flex items-center justify-center bg-zinc-950 relative rounded-xl border border-white/5 shadow-2xl'>
                     {/* Visual Border Container - Screen Mockup */}
                     <div className="p-1 px-[2px] bg-zinc-800 rounded-xl shadow-[0_0_100px_rgba(0,0,0,0.9)] border border-white/10 relative transition-all duration-700 hover:shadow-primary/5">
 
@@ -696,7 +696,7 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                         />
 
                         <div
-                            className='bg-black relative border border-white/5 transition-all z-10'
+                            className='relative border border-white/5 transition-all z-10'
                             style={{
                                 width: CANVAS_WIDTH,
                                 height: CANVAS_HEIGHT,
