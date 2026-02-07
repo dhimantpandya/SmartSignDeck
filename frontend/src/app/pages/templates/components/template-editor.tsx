@@ -129,6 +129,11 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
         })
 
         canvas.add(rect)
+        // Set initial valid position
+        // @ts-ignore
+        rect._lastValidLeft = rect.left
+        // @ts-ignore
+        rect._lastValidTop = rect.top
         return rect
     }
 
@@ -180,7 +185,7 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
     }
 
     const checkOverlaps = (activeObj: any) => {
-        if (!canvasRef.current) return
+        if (!canvasRef.current) return false
         const objects = canvasRef.current.getObjects()
         let hasOverlap = false
 
@@ -189,14 +194,21 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
 
             if (activeObj.intersectsWithObject(obj)) {
                 hasOverlap = true
-                // Visual feedback: make both slightly more red or add a shadow
-                obj.set({ shadow: new fabric.Shadow({ color: 'rgba(255,0,0,0.5)', blur: 20 }) })
+                // Visual feedback: red shadow for the other object
+                obj.set({ shadow: new fabric.Shadow({ color: 'rgba(239, 68, 68, 0.4)', blur: 15 }) })
             } else {
                 obj.set({ shadow: null })
             }
         })
 
-        activeObj.set({ shadow: hasOverlap ? new fabric.Shadow({ color: 'rgba(255,0,0,0.8)', blur: 25 }) : null })
+        // Visual feedback for active object
+        activeObj.set({
+            shadow: hasOverlap
+                ? new fabric.Shadow({ color: 'rgba(239, 68, 68, 0.8)', blur: 20 })
+                : null
+        })
+
+        return hasOverlap
     }
 
     const handleRealtimeUpdate = (obj: any) => {
@@ -223,13 +235,31 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
     const handleObjectModified = (obj: any) => {
         if (!obj) return
 
-        // Snap to grid
+        // 1. Snap to grid
         let left = Math.round(obj.left / GRID_SIZE) * GRID_SIZE
         let top = Math.round(obj.top / GRID_SIZE) * GRID_SIZE
         obj.set({ left, top })
 
-        // Then constrain strictly
+        // 2. Then constrain strictly (boundaries)
         constrainObject(obj)
+
+        // 3. Overlap Check & Snapback
+        if (checkOverlaps(obj)) {
+            toast({
+                title: 'Zones cannot overlap',
+                description: 'Reverting position to prevent collision.',
+                variant: 'destructive'
+            })
+            obj.set({
+                left: obj._lastValidLeft !== undefined ? obj._lastValidLeft : obj.left,
+                top: obj._lastValidTop !== undefined ? obj._lastValidTop : obj.top
+            })
+            obj.setCoords()
+            checkOverlaps(obj) // Clear visual warnings
+        } else {
+            obj._lastValidLeft = obj.left
+            obj._lastValidTop = obj.top
+        }
 
         if (canvasRef.current) canvasRef.current.requestRenderAll()
         syncToState(obj)
@@ -391,6 +421,8 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
             canvas.on('selection:created', (e) => {
                 const obj = e.selected?.[0] as any
                 if (obj) {
+                    obj._lastValidLeft = obj.left
+                    obj._lastValidTop = obj.top
                     obj.bringToFront()
                     constrainObject(obj)
                     canvas.requestRenderAll()
@@ -400,6 +432,8 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
             canvas.on('selection:updated', (e) => {
                 const obj = e.selected?.[0] as any
                 if (obj) {
+                    obj._lastValidLeft = obj.left
+                    obj._lastValidTop = obj.top
                     obj.bringToFront()
                     constrainObject(obj)
                     canvas.requestRenderAll()
@@ -489,8 +523,8 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
 
 
     return (
-        <div className='flex h-[calc(100vh-200px)] gap-6'>
-            <Card className='flex w-72 flex-col p-4 shadow-lg h-full overflow-hidden'>
+        <div className='flex h-[calc(100vh-200px)] gap-6 overflow-hidden'>
+            <Card className='flex w-72 flex-col p-4 shadow-lg h-full overflow-hidden flex-shrink-0'>
                 <div className='flex flex-1 flex-col overflow-y-auto pr-2 custom-scrollbar'>
                     <h3 className='mb-4 text-xs font-bold uppercase tracking-widest text-muted-foreground'>Resolution Preset</h3>
                     <div className='mb-6'>
@@ -614,23 +648,23 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
             </Card>
 
             <div className='relative flex-1 flex flex-col overflow-hidden rounded-lg bg-muted/30 p-8'>
-                <div className='mb-4 flex items-center gap-4'>
-                    <div className='flex-1'>
+                <div className='mb-4 flex flex-col items-start gap-4 lg:flex-row lg:items-center'>
+                    <div className='flex flex-1 items-center gap-4 w-full'>
                         <Input
                             value={templateName}
                             onChange={(e) => setTemplateName(e.target.value)}
-                            className='max-w-xs text-lg font-bold'
+                            className='max-w-xs text-lg font-bold bg-background'
                         />
-                        <div className='flex items-center gap-2 ml-4 bg-background px-3 py-1 rounded-full border border-primary/20 shadow-sm'>
+                        <div className='flex items-center gap-2 bg-background px-3 py-1.5 rounded-full border border-primary/20 shadow-sm shrink-0'>
                             {isPublic ? <Globe size={14} className="text-primary" /> : <Lock size={14} className="text-muted-foreground" />}
-                            <Label htmlFor='is-public' className='text-xs font-semibold cursor-pointer'>
+                            <Label htmlFor='is-public' className='text-xs font-bold cursor-pointer whitespace-nowrap'>
                                 {isPublic ? 'Public Layout' : 'Private'}
                             </Label>
                             <Switch
                                 id='is-public'
                                 checked={isPublic}
                                 onCheckedChange={setIsPublic}
-                                className='data-[state=checked]:bg-primary'
+                                className='data-[state=checked]:bg-primary h-5 w-9'
                             />
                         </div>
                     </div>
