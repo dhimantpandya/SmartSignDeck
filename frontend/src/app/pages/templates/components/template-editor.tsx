@@ -354,6 +354,7 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
             canvas.on('selection:created', (e) => {
                 const obj = e.selected?.[0] as any
                 if (obj) {
+                    obj.bringToFront()
                     constrainObject(obj)
                     canvas.requestRenderAll()
                     if (obj.id) setSelectedZoneId(obj.id)
@@ -362,6 +363,7 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
             canvas.on('selection:updated', (e) => {
                 const obj = e.selected?.[0] as any
                 if (obj) {
+                    obj.bringToFront()
                     constrainObject(obj)
                     canvas.requestRenderAll()
                     if (obj.id) setSelectedZoneId(obj.id)
@@ -613,9 +615,9 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
 
                 <div className='flex-1 flex items-center justify-center bg-zinc-900 overflow-auto p-12'>
                     {/* Visual Border Container */}
-                    <div className="p-[4px] bg-zinc-500 rounded-lg shadow-[0_0_50px_rgba(0,0,0,0.3)]">
+                    <div className="p-[20px] bg-zinc-600 rounded-lg shadow-[0_0_60px_rgba(0,0,0,0.5)]">
                         <div
-                            className='bg-black overflow-hidden relative border border-white/5'
+                            className='bg-black relative border border-white/5'
                             style={{
                                 width: CANVAS_WIDTH,
                                 height: CANVAS_HEIGHT,
