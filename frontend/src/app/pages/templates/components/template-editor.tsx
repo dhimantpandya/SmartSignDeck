@@ -138,24 +138,17 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
         // We use bounding rect to account for stroke and other visuals
         let br = obj.getBoundingRect()
 
-        const EPSILON = 2 // Small buffer for stroke and rounding
+
+        const strokeW = (obj.strokeWidth || 0) * SCALE_FACTOR
 
         if (br.width > cw) {
-            const currentTotalW = br.width
-            const scaledOnlyW = obj.getScaledWidth()
-            const strokeW = currentTotalW - scaledOnlyW
-            const maxAllowedScaledW = cw - strokeW - EPSILON
-            obj.set({ scaleX: Math.max(0.01, maxAllowedScaledW / obj.width) })
+            obj.set({ scaleX: Math.max(0.01, (cw - strokeW - 2) / obj.width) })
             obj.setCoords()
             br = obj.getBoundingRect()
         }
 
         if (br.height > ch) {
-            const currentTotalH = br.height
-            const scaledOnlyH = obj.getScaledHeight()
-            const strokeH = currentTotalH - scaledOnlyH
-            const maxAllowedScaledH = ch - strokeH - EPSILON
-            obj.set({ scaleY: Math.max(0.01, maxAllowedScaledH / obj.height) })
+            obj.set({ scaleY: Math.max(0.01, (ch - strokeW - 2) / obj.height) })
             obj.setCoords()
             br = obj.getBoundingRect()
         }
@@ -177,17 +170,18 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
         let l = obj.left
         let t = obj.top
 
-        // br.left is the visual left edge. originX is 'left', so obj.left is also the left edge.
-        // But br.left includes stroke offset.
+        // Clamping logic: push back into viewport if any edge is outside
         if (br.left < 0) {
-            l = l - br.left // Push right by the amount it's over
-        } else if (br.left + br.width > cw) {
-            l = l - (br.left + br.width - cw) // Push left by the amount it's over
+            l = l - br.left
+        }
+        else if (br.left + br.width > cw) {
+            l = l - (br.left + br.width - cw)
         }
 
         if (br.top < 0) {
             t = t - br.top
-        } else if (br.top + br.height > ch) {
+        }
+        else if (br.top + br.height > ch) {
             t = t - (br.top + br.height - ch)
         }
 
