@@ -144,37 +144,42 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
         const ch = canvasRef.current.getHeight()
 
         obj.setCoords()
+        const br = obj.getBoundingRect()
 
-        // 1. Minimum Size (50px in real pixels)
-        const MIN_SIZE = 50 * SCALE
+        // 1. Minimum Size
+        const MIN_SIZE = Math.max(50 * SCALE, 20)
+        let sX = obj.scaleX
+        let sY = obj.scaleY
 
         if (obj.getScaledWidth() < MIN_SIZE) {
-            obj.set({ scaleX: MIN_SIZE / obj.width })
+            sX = MIN_SIZE / obj.width
         }
         if (obj.getScaledHeight() < MIN_SIZE) {
-            obj.set({ scaleY: MIN_SIZE / obj.height })
+            sY = MIN_SIZE / obj.height
         }
 
+        // 2. Scale clamping
+        if (obj.width * sX > cw) sX = cw / obj.width
+        if (obj.height * sY > ch) sY = ch / obj.height
+
+        obj.set({ scaleX: sX, scaleY: sY })
         obj.setCoords()
 
-        // 2. Boundary Clamping (Zero Margin)
+        // 3. Position Clamping
+        const finalBr = obj.getBoundingRect()
         let l = obj.left
         let t = obj.top
 
-        const br = obj.getBoundingRect()
-
-        if (br.left < 0) {
+        if (finalBr.left < 0) {
             l = 0
-        }
-        else if (br.left + br.width > cw) {
-            l = cw - br.width
+        } else if (finalBr.left + finalBr.width > cw) {
+            l = cw - finalBr.width
         }
 
-        if (br.top < 0) {
+        if (finalBr.top < 0) {
             t = 0
-        }
-        else if (br.top + br.height > ch) {
-            t = ch - br.height
+        } else if (finalBr.top + finalBr.height > ch) {
+            t = ch - finalBr.height
         }
 
         obj.set({ left: l, top: t })
@@ -647,49 +652,51 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                 </div>
             </Card>
 
-            <div className='relative flex-1 flex flex-col overflow-hidden rounded-lg bg-muted/30 p-8'>
-                <div className='mb-4 flex flex-col items-start gap-4 lg:flex-row lg:items-center'>
+            <div className='relative flex-1 flex flex-col overflow-hidden rounded-lg bg-muted/20 p-4 lg:p-8'>
+                <div className='mb-6 flex flex-col items-start gap-4 lg:flex-row lg:items-center bg-background/50 p-4 rounded-xl border border-primary/10 shadow-sm'>
                     <div className='flex flex-1 items-center gap-4 w-full'>
+                        <div className="bg-primary/10 p-2 rounded-lg">
+                            <IconDeviceTv className="text-primary" size={20} />
+                        </div>
                         <Input
                             value={templateName}
                             onChange={(e) => setTemplateName(e.target.value)}
-                            className='max-w-xs text-lg font-bold bg-background'
+                            className='max-w-xs text-lg font-bold bg-background border-none shadow-none focus-visible:ring-1 focus-visible:ring-primary/20 p-0'
                         />
-                        <div className='flex items-center gap-2 bg-background px-3 py-1.5 rounded-full border border-primary/20 shadow-sm shrink-0'>
-                            {isPublic ? <Globe size={14} className="text-primary" /> : <Lock size={14} className="text-muted-foreground" />}
-                            <Label htmlFor='is-public' className='text-xs font-bold cursor-pointer whitespace-nowrap'>
-                                {isPublic ? 'Public Layout' : 'Private'}
+                        <div className='flex items-center gap-3 bg-background px-4 py-2 rounded-full border border-primary/20 shadow-md transition-all hover:border-primary/40'>
+                            {isPublic ? <Globe size={14} className="text-primary animate-pulse" /> : <Lock size={14} className="text-muted-foreground" />}
+                            <Label htmlFor='is-public' className='text-[10px] font-black uppercase tracking-tighter cursor-pointer whitespace-nowrap text-primary/80'>
+                                {isPublic ? 'Public' : 'Private'}
                             </Label>
                             <Switch
                                 id='is-public'
                                 checked={isPublic}
                                 onCheckedChange={setIsPublic}
-                                className='data-[state=checked]:bg-primary h-5 w-9'
+                                className='data-[state=checked]:bg-primary h-4 w-8'
                             />
                         </div>
                     </div>
-                    <div className='flex gap-2 text-xs text-muted-foreground'>
+                    <div className='flex items-center gap-3 w-full lg:w-auto mt-2 lg:mt-0'>
                         <Button
-                            variant="secondary"
+                            variant="outline"
                             size="sm"
-                            className="h-8 gap-2 border shadow-sm px-3"
+                            className="h-9 gap-2 bg-background border-primary/20 hover:bg-primary/5 shadow-sm px-4 font-bold text-xs"
                             onClick={() => setIsPreviewOpen(true)}
                         >
-                            <Eye size={14} /> Live Preview
+                            <Eye size={16} className="text-primary" /> Preview
                         </Button>
-                        <Badge variant="outline" className='flex items-center gap-1.5 h-8 bg-background'>
-                            <IconDeviceTv size={14} className="text-primary" />
-                            <span className="font-mono text-[11px] font-bold">{resolution}</span>
+                        <Badge variant="outline" className='flex items-center gap-1.5 h-9 bg-background border-primary/10 px-4'>
+                            <span className="font-mono text-xs font-black text-muted-foreground">{resolution}</span>
                         </Badge>
                     </div>
                 </div>
 
-                <div className='flex-1 flex items-center justify-center bg-zinc-950 overflow-auto p-12 transition-all duration-500'>
+                <div className='flex-1 flex items-center justify-center bg-zinc-950 overflow-hidden relative rounded-xl border border-white/5 shadow-2xl'>
                     {/* Visual Border Container - Screen Mockup */}
-                    <div className="p-1 px-[2px] bg-zinc-800 rounded-xl shadow-[0_0_80px_rgba(0,0,0,0.8)] border border-white/10 relative overflow-hidden">
+                    <div className="p-1 px-[2px] bg-zinc-800 rounded-xl shadow-[0_0_100px_rgba(0,0,0,0.9)] border border-white/10 relative overflow-hidden transition-all duration-700 hover:shadow-primary/5">
                         {/* Dot Grid Background Overlay */}
                         <div
-                            className="absolute inset-0 opacity-10 pointer-events-none"
+                            className="absolute inset-0 opacity-20 pointer-events-none"
                             style={{
                                 backgroundImage: `radial-gradient(circle, #fff 1px, transparent 1px)`,
                                 backgroundSize: '15px 15px'
