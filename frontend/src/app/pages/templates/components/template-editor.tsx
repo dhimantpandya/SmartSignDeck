@@ -144,7 +144,6 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
         const ch = canvasRef.current.getHeight()
 
         obj.setCoords()
-        const br = obj.getBoundingRect()
 
         // 1. Minimum Size
         const MIN_SIZE = Math.max(50 * SCALE, 20)
