@@ -129,46 +129,49 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
 
         const canvasWidth = CANVAS_WIDTH
         const canvasHeight = CANVAS_HEIGHT
+        const strokeWidth = obj.strokeWidth || 0
+        const buffer = strokeWidth // Account for stroke in scale clamping
 
-        // 1. Clamp SCALE if object is too big for canvas
-        const scaledW = obj.getScaledWidth()
-        const scaledH = obj.getScaledHeight()
+        // 1. First, ensure the object is not wider/taller than the canvas itself (including stroke)
+        let scaledW = obj.getScaledWidth()
+        let scaledH = obj.getScaledHeight()
 
-        if (scaledW > canvasWidth) {
-            obj.set({ scaleX: canvasWidth / obj.width })
+        if (scaledW + buffer > canvasWidth) {
+            obj.set({ scaleX: (canvasWidth - buffer) / obj.width })
+            obj.setCoords()
         }
-        if (scaledH > canvasHeight) {
-            obj.set({ scaleY: canvasHeight / obj.height })
+        if (scaledH + buffer > canvasHeight) {
+            obj.set({ scaleY: (canvasHeight - buffer) / obj.height })
+            obj.setCoords()
         }
 
-        // 2. Minimum size
+        // 2. Minimum size check
         const minSize = 40 * SCALE_FACTOR
         if (obj.getScaledWidth() < minSize) {
             obj.set({ scaleX: minSize / obj.width })
+            obj.setCoords()
         }
         if (obj.getScaledHeight() < minSize) {
             obj.set({ scaleY: minSize / obj.height })
+            obj.setCoords()
         }
 
-        obj.setCoords()
-
-        // 3. Clamp POSITION using bounding rect math
+        // 3. Clamp Position strictly using bounding rect
         const br = obj.getBoundingRect()
         let curLeft = obj.left
         let curTop = obj.top
 
-        // Clamping logic: push back into viewport if any edge is outside
+        // Horizontal Clamping
         if (br.left < 0) {
             curLeft = curLeft - br.left
-        }
-        else if (br.left + br.width > canvasWidth) {
+        } else if (br.left + br.width > canvasWidth) {
             curLeft = curLeft - (br.left + br.width - canvasWidth)
         }
 
+        // Vertical Clamping
         if (br.top < 0) {
             curTop = curTop - br.top
-        }
-        else if (br.top + br.height > canvasHeight) {
+        } else if (br.top + br.height > canvasHeight) {
             curTop = curTop - (br.top + br.height - canvasHeight)
         }
 
