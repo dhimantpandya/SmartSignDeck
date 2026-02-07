@@ -103,13 +103,13 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
             top: zone.y * SCALE_FACTOR,
             width: zone.width * SCALE_FACTOR,
             height: zone.height * SCALE_FACTOR,
-            fill: getZoneColor(zone.type, '44'),
-            stroke: getZoneColor(zone.type),
+            fill: getZoneColor(zone.type, '88'), // Higher opacity for better visibility
+            stroke: '#ffffff', // White stroke for high contrast on black
             strokeWidth: 2,
             strokeUniform: true,
-            cornerColor: '#fff',
-            cornerSize: 10,
-            cornerStyle: 'rect',
+            cornerColor: '#3b82f6',
+            cornerSize: 8,
+            cornerStyle: 'circle', // Modern look
             transparentCorners: false,
             originX: 'left',
             originY: 'top',
@@ -119,6 +119,12 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
             zoneType: zone.type,
             lockRotation: true,
             hasRotatingPoint: false,
+            shadow: new fabric.Shadow({
+                color: 'rgba(0,0,0,0.5)',
+                blur: 10,
+                offsetX: 0,
+                offsetY: 2
+            })
         })
 
         // Enable all 8 resize handles
@@ -145,23 +151,24 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
         // 2. Scale clamping (Ensure visual width <= canvas width)
         let br = obj.getBoundingRect()
 
-        // If object is wider than canvas, scale it down to fit exactly
-        if (br.width > cw) {
+        const MARGIN = 2 // Safety margin to keep borders fully visible
+
+        if (br.width > cw - (MARGIN * 2)) {
+            const maxW = cw - (MARGIN * 2)
             const currentTotalW = br.width
             const scaledOnlyW = obj.getScaledWidth()
-            const strokeW = currentTotalW - scaledOnlyW
-            const maxAllowedScaledW = cw - strokeW - 1 // 1px safety
-            obj.set({ scaleX: Math.max(0.1, maxAllowedScaledW / obj.width) })
+            const chromeW = currentTotalW - scaledOnlyW // Stroke + whatever else
+            obj.set({ scaleX: Math.max(0.1, (maxW - chromeW) / obj.width) })
             obj.setCoords()
             br = obj.getBoundingRect()
         }
 
-        if (br.height > ch) {
+        if (br.height > ch - (MARGIN * 2)) {
+            const maxH = ch - (MARGIN * 2)
             const currentTotalH = br.height
             const scaledOnlyH = obj.getScaledHeight()
-            const strokeH = currentTotalH - scaledOnlyH
-            const maxAllowedScaledH = ch - strokeH - 1 // 1px safety
-            obj.set({ scaleY: Math.max(0.1, maxAllowedScaledH / obj.height) })
+            const chromeH = currentTotalH - scaledOnlyH
+            obj.set({ scaleY: Math.max(0.1, (maxH - chromeH) / obj.height) })
             obj.setCoords()
             br = obj.getBoundingRect()
         }
@@ -174,25 +181,22 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
             br = obj.getBoundingRect()
         }
 
-        // 4. Position clamping (Absolute force)
+        // 4. Position clamping (Absolute force with MARGIN)
         let l = obj.left
         let t = obj.top
 
-        // Clamping logic: push back into viewport if any edge is outside
-        // Horizontal
-        if (br.left < 0) {
-            l = l - br.left
+        if (br.left < MARGIN) {
+            l = l + (MARGIN - br.left)
         }
-        else if (br.left + br.width > cw) {
-            l = l - (br.left + br.width - cw)
+        else if (br.left + br.width > cw - MARGIN) {
+            l = l - (br.left + br.width - (cw - MARGIN))
         }
 
-        // Vertical
-        if (br.top < 0) {
-            t = t - br.top
+        if (br.top < MARGIN) {
+            t = t + (MARGIN - br.top)
         }
-        else if (br.top + br.height > ch) {
-            t = t - (br.top + br.height - ch)
+        else if (br.top + br.height > ch - MARGIN) {
+            t = t - (br.top + br.height - (ch - MARGIN))
         }
 
         obj.set({ left: l, top: t })
@@ -352,15 +356,6 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                 backgroundColor: '#000',
                 preserveObjectStacking: true,
                 selection: true,
-            })
-
-            // Visual Clip Path to guarantee nothing ever shows outside the black area
-            canvas.clipPath = new fabric.Rect({
-                left: 0,
-                top: 0,
-                width: CANVAS_WIDTH,
-                height: CANVAS_HEIGHT,
-                absolutePositioned: true
             })
 
             canvasRef.current = canvas
