@@ -231,9 +231,9 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
                         </TabsTrigger>
                     </TabsList>
 
-                    <div className="flex-1 overflow-hidden relative flex flex-col mt-0 p-0">
+                    <div className="flex-1 overflow-hidden relative flex flex-col mt-0 p-0 justify-start">
                         {/* Company Board */}
-                        <TabsContent value="company" className="flex-1 m-0 p-0 flex flex-col overflow-hidden">
+                        <TabsContent value="company" className="flex-1 m-0 p-0 flex flex-col overflow-hidden !mt-0 !pt-0 data-[state=inactive]:hidden">
                             <div className="flex-1 overflow-y-auto p-3 flex flex-col justify-end custom-scrollbar">
                                 <div className="space-y-2">
                                     {boardMessages.length === 0 && (
@@ -291,7 +291,7 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
                         </TabsContent>
 
                         {/* Private Chat */}
-                        <TabsContent value="private" className="flex-1 m-0 p-0 flex flex-col overflow-hidden">
+                        <TabsContent value="private" className="flex-1 m-0 p-0 flex flex-col overflow-hidden !mt-0 !pt-0 data-[state=inactive]:hidden">
                             {!selectedFriend ? (
                                 <div className="flex-1 flex flex-col overflow-hidden">
                                     <div className="px-3 pb-2 pt-0 border-b bg-muted/30">
@@ -401,7 +401,7 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
                         </TabsContent>
 
                         {/* Requests List */}
-                        <TabsContent value="requests" className="flex-1 m-0 p-0 flex flex-col overflow-hidden">
+                        <TabsContent value="requests" className="flex-1 m-0 p-0 flex flex-col overflow-hidden !mt-0 !pt-0 data-[state=inactive]:hidden">
                             <div className="flex-1 overflow-y-auto p-2 custom-scrollbar">
                                 {receivedRequests.length === 0 ? (
                                     <div className="text-center text-xs text-muted-foreground mt-10">
@@ -433,7 +433,7 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
                         </TabsContent>
 
                         {/* Find People tab in sidebar */}
-                        <TabsContent value="find" className="flex-1 m-0 p-0 flex flex-col overflow-hidden">
+                        <TabsContent value="find" className="flex-1 m-0 p-0 flex flex-col overflow-hidden !mt-0 !pt-0 data-[state=inactive]:hidden">
                             <div className="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-4">
                                 <div className="p-4 bg-primary/5 rounded-full">
                                     <UserPlus size={32} className="text-primary" />
