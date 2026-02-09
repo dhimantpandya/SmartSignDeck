@@ -424,10 +424,11 @@ export default function ScreenPlayer() {
                             }}
                         >
                             <ZoneRenderer
-                                zone={zone}
                                 content={zoneContent}
+                                zone={zone}
                                 screenId={data.id}
                                 templateId={data.templateId?.id || data.templateId?._id}
+                                secretKey={secretKey || undefined}
                             />
                         </div>
                     )
@@ -438,7 +439,7 @@ export default function ScreenPlayer() {
 }
 
 
-function ZoneRenderer({ zone, content, screenId, templateId }: { zone: any, content: any, screenId?: string, templateId?: string }) {
+function ZoneRenderer({ zone, content, screenId, templateId, secretKey }: { zone: any, content: any, screenId?: string, templateId?: string, secretKey?: string }) {
     const [currentIndex, setCurrentIndex] = useState(0)
     const [hasError, setHasError] = useState(false)
 
