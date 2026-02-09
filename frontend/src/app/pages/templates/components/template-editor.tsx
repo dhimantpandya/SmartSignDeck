@@ -184,8 +184,8 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
         obj.set({ left: l, top: t })
         obj.setCoords()
 
-        // 3. Overlap Check
-        checkOverlaps(obj)
+        // 3. Overlap Check (Disabled)
+        // checkOverlaps(obj)
     }
 
     const checkOverlaps = (activeObj: any) => {
@@ -247,23 +247,9 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
         // 2. Then constrain strictly (boundaries)
         constrainObject(obj)
 
-        // 3. Overlap Check & Snapback
-        if (checkOverlaps(obj)) {
-            toast({
-                title: 'Zones cannot overlap',
-                description: 'Reverting position to prevent collision.',
-                variant: 'destructive'
-            })
-            obj.set({
-                left: obj._lastValidLeft !== undefined ? obj._lastValidLeft : obj.left,
-                top: obj._lastValidTop !== undefined ? obj._lastValidTop : obj.top
-            })
-            obj.setCoords()
-            checkOverlaps(obj) // Clear visual warnings
-        } else {
-            obj._lastValidLeft = obj.left
-            obj._lastValidTop = obj.top
-        }
+        // 3. Last valid position tracking (optional now, but good for other bounds)
+        obj._lastValidLeft = obj.left
+        obj._lastValidTop = obj.top
 
         if (canvasRef.current) canvasRef.current.requestRenderAll()
         syncToState(obj)
