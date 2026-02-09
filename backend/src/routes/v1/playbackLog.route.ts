@@ -7,7 +7,7 @@ const router = express.Router();
 
 router
     .route("/")
-    .post(auth(), playbackLogController.createPlaybackLog)
+    .post(playbackLogController.createPlaybackLog)
     .get(auth("getAnalytics"), playbackLogController.getPlaybackLogs);
 
 export default router;

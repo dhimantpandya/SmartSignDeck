@@ -8,11 +8,14 @@ import { emitToCompany } from "../services/socket.service";
 import pick from "../utils/pick";
 
 const createPlaybackLog = catchAsync(async (req: Request, res: Response) => {
-    // Get screen first to find companyId
-    const screen = await screenService.getScreenById(req.body.screenId);
+    // 1. Validate Secret Key (Allow public access if key matches)
+    const { screenId, secretKey } = req.body;
+
+    // Pass secretKey to service for validation
+    const screen = await screenService.getScreenById(screenId, undefined, secretKey);
 
     if (!screen) {
-        throw new Error("Screen not found");
+        throw new Error("Screen not found or invalid key");
     }
 
     const payload = {

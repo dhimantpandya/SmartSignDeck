@@ -563,7 +563,8 @@ function ZoneRenderer({ zone, content, screenId, templateId }: { zone: any, cont
                 await apiService.post('/v1/playback-logs', {
                     screenId, templateId, zoneId: zone.id,
                     contentUrl: item.url, contentType: typeToLog,
-                    startTime, endTime, duration
+                    startTime, endTime, duration,
+                    secretKey // Pass key for auth
                 })
             } catch (err) { }
         }
