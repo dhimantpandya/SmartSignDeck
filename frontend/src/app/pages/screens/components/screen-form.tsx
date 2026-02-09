@@ -568,7 +568,8 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
                                         )}
                                         {zone.type !== 'text' && (
                                             <>
-                                                {zoneContent?.sourceType === 'playlist' ? (
+                                                {/* Only hide button for linked playlists in DEFAULT tab */}
+                                                {activeTab === 'default' && zoneContent?.sourceType === 'playlist' && zoneContent?.playlistId ? (
                                                     <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-500`}>
                                                         LINKED
                                                     </span>
