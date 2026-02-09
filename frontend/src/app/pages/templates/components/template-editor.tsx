@@ -518,13 +518,39 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
     }, [zones, clipboard, deleteSelected]) // Access latest zones/clipboard
 
 
+    // Customize your own resolution support
+    const checkPreset = (res: string) => {
+        const found = RESOLUTIONS.find(r => r.value === res)
+        return found ? res : 'custom'
+    }
+
+    const [selectedPreset, setSelectedPreset] = useState<string>(checkPreset(initialData?.resolution || '1920x1080'))
+
+    // Sync external resolution changes if needed, but mainly we drive it.
+
+    const handlePresetChange = (val: string) => {
+        setSelectedPreset(val)
+        if (val !== 'custom') {
+            setResolution(val)
+        }
+    }
+
+    const handleCustomDimensionChange = (dim: 'w' | 'h', val: string) => {
+        const num = parseInt(val) || 0
+        if (dim === 'w') {
+            setResolution(`${num}x${screenHeight}`)
+        } else {
+            setResolution(`${screenWidth}x${num}`)
+        }
+    }
+
     return (
         <div className='flex h-[calc(100vh-200px)] gap-6 overflow-hidden'>
             <Card className='flex w-72 flex-col p-4 shadow-lg h-full overflow-hidden flex-shrink-0'>
                 <div className='flex flex-1 flex-col overflow-y-auto pr-2 custom-scrollbar'>
                     <h3 className='mb-4 text-xs font-bold uppercase tracking-widest text-muted-foreground'>Resolution Preset</h3>
-                    <div className='mb-6'>
-                        <Select value={resolution} onValueChange={setResolution}>
+                    <div className='mb-6 space-y-3'>
+                        <Select value={selectedPreset} onValueChange={handlePresetChange}>
                             <SelectTrigger className="w-full">
                                 <SelectValue placeholder="Select ratio" />
                             </SelectTrigger>
@@ -540,8 +566,44 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                                         </div>
                                     </SelectItem>
                                 ))}
+                                <SelectItem value="custom">
+                                    <div className="flex items-center gap-2">
+                                        <span>✏️</span>
+                                        <div className="flex flex-col">
+                                            <span className="text-xs font-bold">Custom</span>
+                                            <span className="text-[10px] opacity-60">Define your own</span>
+                                        </div>
+                                    </div>
+                                </SelectItem>
                             </SelectContent>
                         </Select>
+
+                        {selectedPreset === 'custom' && (
+                            <div className="grid grid-cols-2 gap-2 animate-in fade-in slide-in-from-top-2">
+                                <div className="space-y-1">
+                                    <Label className="text-[10px] uppercase text-muted-foreground">Width</Label>
+                                    <Input
+                                        type="number"
+                                        value={screenWidth}
+                                        onChange={(e) => handleCustomDimensionChange('w', e.target.value)}
+                                        className="h-8 text-xs"
+                                        min={100}
+                                        max={7680}
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <Label className="text-[10px] uppercase text-muted-foreground">Height</Label>
+                                    <Input
+                                        type="number"
+                                        value={screenHeight}
+                                        onChange={(e) => handleCustomDimensionChange('h', e.target.value)}
+                                        className="h-8 text-xs"
+                                        min={100}
+                                        max={7680}
+                                    />
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     <h3 className='mb-4 text-xs font-bold uppercase tracking-widest text-muted-foreground'>Toolbox</h3>
