@@ -193,10 +193,13 @@ export default function Templates() {
 
 
 
-                <div className='mb-2 flex items-center justify-between space-y-2'>
+                <div className='mb-1 flex items-center justify-between space-y-2'>
                     <div>
-                        <h1 className='text-2xl font-bold tracking-tight'>Templates</h1>
-                        <p className='text-muted-foreground'>
+                        <div className='flex items-center gap-2'>
+                            <IconLayout size={24} className='text-primary' />
+                            <h1 className='text-2xl font-bold tracking-tight'>Templates</h1>
+                        </div>
+                        <p className='text-muted-foreground text-sm'>
                             Design your signage layouts using zones.
                         </p>
                     </div>

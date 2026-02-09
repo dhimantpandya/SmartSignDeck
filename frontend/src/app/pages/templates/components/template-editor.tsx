@@ -515,7 +515,7 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
     const resetZoom = () => setZoomLevel(1)
 
     return (
-        <div className='flex h-[calc(100vh-200px)] gap-6 overflow-hidden'>
+        <div className='flex h-[calc(100vh-140px)] gap-6 overflow-hidden'>
             <Card className='flex w-72 flex-col p-4 shadow-lg h-full overflow-hidden flex-shrink-0'>
                 {/* ... Sidebar content remains ... */}
                 <div className='flex flex-1 flex-col overflow-y-auto pr-2 custom-scrollbar'>
