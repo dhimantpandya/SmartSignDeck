@@ -212,8 +212,8 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
                 <Tabs value={activeTab} onValueChange={(val) => {
                     setActiveTab(val)
                     if (val === 'company') setSelectedFriend(null)
-                }} className="flex-1 flex flex-col overflow-hidden">
-                    <TabsList className="grid w-full grid-cols-4 rounded-none bg-muted/50 p-0 h-10">
+                }} className="flex-1 flex flex-col overflow-hidden gap-0">
+                    <TabsList className="grid w-full grid-cols-4 rounded-none bg-muted/50 p-0 h-10 m-0">
                         <TabsTrigger value="company" className="rounded-none data-[state=active]:bg-background border-b-2 border-transparent data-[state=active]:border-primary transition-all text-[10px] px-1">
                             Board
                         </TabsTrigger>
@@ -231,7 +231,7 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
                         </TabsTrigger>
                     </TabsList>
 
-                    <div className="flex-1 overflow-hidden relative flex flex-col mt-0">
+                    <div className="flex-1 overflow-hidden relative flex flex-col mt-0 p-0">
                         {/* Company Board */}
                         <TabsContent value="company" className="flex-1 m-0 p-0 flex flex-col overflow-hidden">
                             <div className="flex-1 overflow-y-auto p-3 flex flex-col justify-end custom-scrollbar">
@@ -351,7 +351,7 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
                                         </div>
                                     </div>
                                     {/* Private Messages */}
-                                    <div className="flex-1 overflow-y-auto px-3 py-1 flex flex-col custom-scrollbar">
+                                    <div className="flex-1 overflow-y-auto px-3 py-1 flex flex-col custom-scrollbar min-h-0">
                                         <div className="space-y-2">
                                             {privateMessages.length === 0 && (
                                                 <div className="flex flex-col items-center justify-center h-full text-muted-foreground opacity-50">
