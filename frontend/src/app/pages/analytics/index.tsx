@@ -74,7 +74,7 @@ export default function Analytics() {
                         duration: 3000
                     })
                     if (socketRef.current) socketRef.current.isThrottled = false
-                }, 30000) // 30 second delay/throttle
+                }, 5000) // 5 second delay/throttle
             }
         })
 

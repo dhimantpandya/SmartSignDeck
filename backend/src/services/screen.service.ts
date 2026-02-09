@@ -101,6 +101,25 @@ const queryScreens = async (filter: any, options: CustomPaginateOptions, user: I
     ],
   });
 
+  // 🕒 DYNAMIC STATUS CALCULATION
+  // A screen is 'online' ONLY if it has pinged within the last 2 minutes
+  const TWO_MINUTES_AGO = new Date(Date.now() - 2 * 60 * 1000);
+
+  if (screens.results) {
+    screens.results = screens.results.map((screen: any) => {
+      const screenObj = screen.toObject ? screen.toObject() : screen;
+      const lastPing = screenObj.lastPing ? new Date(screenObj.lastPing) : null;
+
+      if (lastPing && lastPing > TWO_MINUTES_AGO) {
+        screenObj.status = "online";
+      } else {
+        screenObj.status = "offline";
+      }
+
+      return screenObj;
+    });
+  }
+
   return screens;
 };
 
@@ -134,6 +153,17 @@ const getScreenById = async (id: string, user?: IUser, key?: string) => {
   }
 
   if (screen) {
+    // 🕒 DYNAMIC STATUS CALCULATION
+    const TWO_MINUTES_AGO = new Date(Date.now() - 2 * 60 * 1000);
+    const screenObj = screen.toObject ? screen.toObject() : screen;
+    const lastPing = screenObj.lastPing ? new Date(screenObj.lastPing) : null;
+
+    if (lastPing && lastPing > TWO_MINUTES_AGO) {
+      screenObj.status = "online";
+    } else {
+      screenObj.status = "offline";
+    }
+
     // Hydrate Shared Playlists
     const playlistIds = new Set<string>();
 

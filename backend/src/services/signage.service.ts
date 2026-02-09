@@ -19,10 +19,15 @@ const getSignageStats = async (companyId: string, userId?: string) => {
 
   console.log('[DEBUG] SignageStats Query Filter:', JSON.stringify(filter));
 
+  const TWO_MINUTES_AGO = new Date(Date.now() - 2 * 60 * 1000);
+
   const [totalTemplates, totalScreens, onlineScreens] = await Promise.all([
     Template.countDocuments(filter).catch(e => (console.error('Template count error:', e), 0)),
     Screen.countDocuments(filter).catch(e => (console.error('Screen count error:', e), 0)),
-    Screen.countDocuments({ ...filter, status: "online" }).catch(e => (console.error('Screen online count error:', e), 0)),
+    Screen.countDocuments({
+      ...filter,
+      lastPing: { $gt: TWO_MINUTES_AGO }
+    }).catch(e => (console.error('Screen online count error:', e), 0)),
   ]);
 
   console.log('[DEBUG] SignageStats Result:', { totalTemplates, totalScreens, onlineScreens });

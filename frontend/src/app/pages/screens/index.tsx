@@ -154,7 +154,6 @@ export default function Screens() {
                     <span>Template: {screen.templateId?.name || 'Unknown'}</span>
                     <span>Default Zones: {Object.keys(screen.defaultContent || {}).length}</span>
                     <span>Time Slots: {screen.schedules?.length || 0}</span>
-                    <span>Last Ping: {screen.lastPing ? new Date(screen.lastPing).toLocaleString() : 'Never'}</span>
                     {screen.createdBy && (
                         <div className="flex items-center gap-2 mt-2 pt-2 border-t">
                             <Avatar className="h-6 w-6">
