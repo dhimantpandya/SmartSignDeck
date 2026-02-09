@@ -69,9 +69,10 @@ export default function ScreenPlayer() {
             setIsLoading(false)
         }, 15000)
 
-        const fetchPlaybackData = async (retryCount = 0) => {
+        const fetchPlaybackData = async (retryCount = 0, isBackground = false) => {
             try {
-                if (retryCount === 0) setIsLoading(true)
+                // Only show loader on first load, not background refreshes
+                if (retryCount === 0 && !isBackground && !data) setIsLoading(true)
 
                 // Fetch screen with optional key
                 const screen = await apiService.get<any>(`/v1/screens/${screenId}`, {
@@ -101,10 +102,10 @@ export default function ScreenPlayer() {
                 } else if (retryCount < 3) {
                     // Exponential backoff retry
                     const delay = Math.pow(2, retryCount) * 1000;
-                    setTimeout(() => fetchPlaybackData(retryCount + 1), delay);
+                    setTimeout(() => fetchPlaybackData(retryCount + 1, isBackground), delay);
                     return; // Return so we don't turn off loading until retries done
                 } else {
-                    setError(err.message || 'Failed to load screen data')
+                    if (!isBackground) setError(err.message || 'Failed to load screen data')
                 }
             } finally {
                 // Only turn off loading if we are not retrying or if we failed
@@ -117,8 +118,8 @@ export default function ScreenPlayer() {
 
         fetchPlaybackData()
 
-        // 5-minute auto-refresh and ping (backup)
-        const interval = setInterval(() => fetchPlaybackData(), 5 * 60 * 1000)
+        // 5-minute auto-refresh and ping (backup) - Pass true for background
+        const interval = setInterval(() => fetchPlaybackData(0, true), 5 * 60 * 1000)
         return () => {
             clearInterval(interval)
             clearTimeout(safetyTimer)
@@ -604,25 +605,22 @@ function ZoneRenderer({ zone, content, screenId, templateId, secretKey }: { zone
 
     const item = playlist[currentIndex]
 
-    // ERROR HANDLER WITH FALLBACK
-    if (hasError) {
-        // If error, force advance after 5 seconds to avoid getting stuck
-        // But only if we have multiple items
-        if (playlist.length > 1) {
-            setTimeout(() => {
+    // ERROR HANDLER: AUTO-SKIP
+    // If we have an error, we immediately try to go to next item
+    useEffect(() => {
+        if (hasError && playlist.length > 0) {
+            console.warn('Media playback error, skipping to next:', item?.url)
+            // Short timeout to prevent rapid-fire loops if everything fails
+            const timer = setTimeout(() => {
                 setHasError(false)
-                setCurrentIndex((prev) => (prev + 1) % playlist.length)
-            }, 5000)
+                if (playlist.length > 1) {
+                    setCurrentIndex((prev) => (prev + 1) % playlist.length)
+                }
+            }, 500) // 500ms delay before skip
+            return () => clearTimeout(timer)
         }
+    }, [hasError, playlist.length, item])
 
-        return (
-            <div className='flex h-full w-full flex-col items-center justify-center bg-red-950/50 border border-red-900 p-4 text-center anim-pulse'>
-                <IconAlertTriangle size={32} className='mb-2 text-red-500' />
-                <p className='text-xs text-red-400 font-bold'>Playback Error</p>
-                <p className='text-[10px] text-red-300/50 truncate max-w-full px-2'>{item?.url || 'Unknown'}</p>
-            </div>
-        )
-    }
 
     if (!item) return null
 

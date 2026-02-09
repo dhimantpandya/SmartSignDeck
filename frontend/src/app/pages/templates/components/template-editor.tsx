@@ -677,17 +677,25 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
             </Card>
 
             <div className='relative flex-1 flex flex-col overflow-hidden rounded-lg bg-muted/20 p-4 lg:p-8'>
-                <div className='mb-6 flex flex-col items-start gap-4 lg:flex-row lg:items-center bg-background/50 p-4 rounded-xl border border-primary/10 shadow-sm'>
-                    <div className='flex flex-1 items-center gap-4 w-full'>
-                        <div className="bg-primary/10 p-2 rounded-lg">
+                <div className='mb-6 flex flex-col gap-4 bg-background/50 p-4 rounded-xl border border-primary/10 shadow-sm'>
+                    {/* Top Row: Title ONLY */}
+                    <div className='flex items-center gap-4 w-full'>
+                        <div className="bg-primary/10 p-2 rounded-lg shrink-0">
                             <IconDeviceTv className="text-primary" size={20} />
                         </div>
                         <Input
                             value={templateName}
                             onChange={(e) => setTemplateName(e.target.value)}
-                            className='max-w-xs text-lg font-bold bg-background border-none shadow-none focus-visible:ring-1 focus-visible:ring-primary/20 p-0'
+                            className='max-w-lg text-lg font-bold bg-background border-none shadow-none focus-visible:ring-1 focus-visible:ring-primary/20 p-0 text-foreground'
+                            placeholder="Template Name"
                         />
-                        <div className='flex items-center gap-3 bg-background px-4 py-2 rounded-full border border-primary/20 shadow-md transition-all hover:border-primary/40'>
+                    </div>
+
+                    {/* Bottom Row: All Controls */}
+                    <div className='flex flex-wrap items-center justify-between gap-4 w-full border-t border-primary/5 pt-4'>
+
+                        {/* Left Group: Public Toggle */}
+                        <div className='flex items-center gap-3 bg-background px-4 py-2 rounded-full border border-primary/20 shadow-sm hover:border-primary/40'>
                             {isPublic ? <Globe size={14} className="text-primary animate-pulse" /> : <Lock size={14} className="text-muted-foreground" />}
                             <Label htmlFor='is-public' className='text-[10px] font-black uppercase tracking-tighter cursor-pointer whitespace-nowrap text-primary/80'>
                                 {isPublic ? 'Public' : 'Private'}
@@ -699,33 +707,35 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                                 className='data-[state=checked]:bg-primary h-4 w-8'
                             />
                         </div>
-                    </div>
-                    <div className='flex items-center gap-3 w-full lg:w-auto mt-2 lg:mt-0'>
-                        {/* ZOOM CONTROLS */}
-                        <div className="flex items-center gap-1 bg-background border rounded-md mr-2">
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleZoom(-0.1)}>
-                                -
-                            </Button>
-                            <span className="text-xs w-12 text-center font-mono">{(zoomLevel * 100).toFixed(0)}%</span>
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleZoom(0.1)}>
-                                +
-                            </Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-xs" onClick={resetZoom} title="Reset Zoom">
-                                ↺
-                            </Button>
-                        </div>
 
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-9 gap-2 bg-background border-primary/20 hover:bg-primary/5 shadow-sm px-4 font-bold text-xs"
-                            onClick={() => setIsPreviewOpen(true)}
-                        >
-                            <Eye size={16} className="text-primary" /> Preview
-                        </Button>
-                        <Badge variant="outline" className='flex items-center gap-1.5 h-9 bg-background border-primary/10 px-4'>
-                            <span className="font-mono text-xs font-black text-muted-foreground">{resolution}</span>
-                        </Badge>
+                        {/* Right Group: Zoom & Preview */}
+                        <div className="flex items-center gap-4">
+                            {/* ZOOM CONTROLS */}
+                            <div className="flex items-center gap-1 bg-background border rounded-md">
+                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleZoom(-0.1)}>
+                                    -
+                                </Button>
+                                <span className="text-xs w-12 text-center font-mono">{(zoomLevel * 100).toFixed(0)}%</span>
+                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleZoom(0.1)}>
+                                    +
+                                </Button>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-xs" onClick={resetZoom} title="Reset Zoom">
+                                    ↺
+                                </Button>
+                            </div>
+
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-9 gap-2 bg-background border-primary/20 hover:bg-primary/5 shadow-sm px-4 font-bold text-xs"
+                                onClick={() => setIsPreviewOpen(true)}
+                            >
+                                <Eye size={16} className="text-primary" /> Preview
+                            </Button>
+                            <Badge variant="outline" className='flex items-center gap-1.5 h-9 bg-background border-primary/10 px-4'>
+                                <span className="font-mono text-xs font-black text-muted-foreground">{resolution}</span>
+                            </Badge>
+                        </div>
                     </div>
                 </div>
 
