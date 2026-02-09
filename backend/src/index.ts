@@ -17,6 +17,15 @@ mongoose
     logger.info("Connected to MongoDB");
     console.log("Using database:", mongoose.connection.db.databaseName);
 
+    // --- AUTO SEED: Setup default admin and connections ---
+    try {
+      const { seedService } = await import("./services");
+      await seedService.setupDefaultAdmin();
+    } catch (seedErr) {
+      logger.error("Seeding failed", seedErr);
+    }
+    // -----------------------------------------------------
+
     // --- MIGRATION: Drop unique company name index ---
     try {
       if (mongoose.connection.db) {
