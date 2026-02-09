@@ -40,6 +40,25 @@ const createUser = async (userBody: Partial<IUser>): Promise<IUser> => {
 
     const user = await User.create(userData);
     console.log(`[UserDebug] User created successfully: ${user._id}`);
+
+    // Auto-connect with smartsigndeck super admin
+    try {
+      const adminEmail = "smartsigndeck@gmail.com";
+      const adminUser = await User.findOne({ email: adminEmail });
+      if (adminUser && adminUser._id.toString() !== user._id.toString()) {
+        const { FriendRequest } = await import("../models/social.model");
+        await FriendRequest.create({
+          fromId: adminUser._id,
+          toId: user._id,
+          status: "accepted"
+        });
+        console.log(`[UserDebug] Auto-connected user ${user.email} with ${adminEmail}`);
+      }
+    } catch (connErr) {
+      console.error(`[UserDebug] Failed to auto-connect user:`, connErr);
+      // Don't throw, we want the user creation to succeed even if auto-connection fails
+    }
+
     return user;
   } catch (err) {
     console.error(`[UserDebug] Error creating user:`, err);
