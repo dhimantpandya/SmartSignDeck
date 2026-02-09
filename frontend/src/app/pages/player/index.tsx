@@ -358,9 +358,9 @@ export default function ScreenPlayer() {
     return (
         <div className='fixed inset-0 bg-black overflow-hidden'>
 
-            {/* Debug Overlay */}
+            {/* Debug Overlay - Hidden on mobile/tablet */}
             {showDebug && (
-                <div className="absolute top-4 left-4 z-50 bg-black/80 text-white p-4 rounded-lg border border-white/20 shadow-xl max-w-sm font-mono text-xs backdrop-blur-sm pointer-events-none select-none">
+                <div className="hidden md:block absolute top-4 left-4 z-50 bg-black/80 text-white p-4 rounded-lg border border-white/20 shadow-xl max-w-sm font-mono text-xs backdrop-blur-sm pointer-events-none select-none">
                     <h3 className="font-bold border-b border-white/20 pb-2 mb-2 text-sm text-green-400">⚡ Smart Logic Debugger</h3>
 
                     <div className="space-y-3">

@@ -505,9 +505,19 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
         }
     }
 
+    // Zoom State
+    const [zoomLevel, setZoomLevel] = useState(1)
+
+    const handleZoom = (delta: number) => {
+        setZoomLevel(prev => Math.min(Math.max(0.1, prev + delta), 5))
+    }
+
+    const resetZoom = () => setZoomLevel(1)
+
     return (
         <div className='flex h-[calc(100vh-200px)] gap-6 overflow-hidden'>
             <Card className='flex w-72 flex-col p-4 shadow-lg h-full overflow-hidden flex-shrink-0'>
+                {/* ... Sidebar content remains ... */}
                 <div className='flex flex-1 flex-col overflow-y-auto pr-2 custom-scrollbar'>
                     <h3 className='mb-4 text-xs font-bold uppercase tracking-widest text-muted-foreground'>Resolution Preset</h3>
                     <div className='mb-6 space-y-3'>
@@ -691,6 +701,20 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                         </div>
                     </div>
                     <div className='flex items-center gap-3 w-full lg:w-auto mt-2 lg:mt-0'>
+                        {/* ZOOM CONTROLS */}
+                        <div className="flex items-center gap-1 bg-background border rounded-md mr-2">
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleZoom(-0.1)}>
+                                -
+                            </Button>
+                            <span className="text-xs w-12 text-center font-mono">{(zoomLevel * 100).toFixed(0)}%</span>
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleZoom(0.1)}>
+                                +
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-xs" onClick={resetZoom} title="Reset Zoom">
+                                ↺
+                            </Button>
+                        </div>
+
                         <Button
                             variant="outline"
                             size="sm"
@@ -705,30 +729,38 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                     </div>
                 </div>
 
-                <div className='flex-1 flex items-center justify-center bg-zinc-950 relative rounded-xl border border-white/5 shadow-2xl'>
-                    {/* Visual Border Container - Screen Mockup */}
-                    <div className="p-1 px-[2px] bg-zinc-800 rounded-xl shadow-[0_0_100px_rgba(0,0,0,0.9)] border border-white/10 relative transition-all duration-700 hover:shadow-primary/5">
-
-                        {/* Dot Grid Background Overlay - Now BEHIND the canvas */}
+                {/* SCROLLABLE CANVAS CONTAINER */}
+                <div className='flex-1 overflow-auto bg-zinc-950 relative rounded-xl border border-white/5 shadow-2xl p-8'>
+                    <div className="flex items-center justify-center min-w-full min-h-full">
+                        {/* Visual Border Container - Screen Mockup */}
                         <div
-                            className="absolute inset-0 opacity-20 pointer-events-none z-0"
+                            className="p-1 px-[2px] bg-zinc-800 rounded-xl shadow-[0_0_100px_rgba(0,0,0,0.9)] border border-white/10 relative transition-all duration-200"
                             style={{
-                                backgroundImage: `radial-gradient(circle, #fff 1px, transparent 1px)`,
-                                backgroundSize: '15px 15px'
+                                transform: `scale(${zoomLevel})`,
+                                transformOrigin: 'center top'
                             }}
-                        />
-
-                        <div
-                            className='relative border border-white/5 transition-all z-10'
-                            style={{
-                                width: CANVAS_WIDTH,
-                                height: CANVAS_HEIGHT,
-                                minWidth: CANVAS_WIDTH,
-                                minHeight: CANVAS_HEIGHT
-                            }}
-                            ref={canvasContainerRef}
                         >
-                            {/* Fabric Canvas injected here */}
+                            {/* Dot Grid Background Overlay - Now BEHIND the canvas */}
+                            <div
+                                className="absolute inset-0 opacity-20 pointer-events-none z-0"
+                                style={{
+                                    backgroundImage: `radial-gradient(circle, #fff 1px, transparent 1px)`,
+                                    backgroundSize: '15px 15px'
+                                }}
+                            />
+
+                            <div
+                                className='relative border border-white/5 transition-all z-10'
+                                style={{
+                                    width: CANVAS_WIDTH,
+                                    height: CANVAS_HEIGHT,
+                                    minWidth: CANVAS_WIDTH,
+                                    minHeight: CANVAS_HEIGHT
+                                }}
+                                ref={canvasContainerRef}
+                            >
+                                {/* Fabric Canvas injected here */}
+                            </div>
                         </div>
                     </div>
                 </div>
