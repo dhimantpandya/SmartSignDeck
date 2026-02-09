@@ -59,100 +59,106 @@ export default function ScheduleManager({
 
             {/* Schedule Configuration Panel (Only if a schedule is active) */}
             {activeTab !== 'default' && schedules[currentScheduleIndex] && (
-                <div className='mt-4 mb-2 grid gap-4 rounded-lg bg-muted/30 p-4 sm:grid-cols-3 animate-in fade-in slide-in-from-top-1'>
-                    <div className='grid gap-1'>
-                        <Label className="text-xs">Slot Name</Label>
-                        <Input
-                            value={schedules[currentScheduleIndex].name}
-                            onChange={(e) => onUpdateSchedule(currentScheduleIndex, 'name', e.target.value)}
-                        />
-                    </div>
-                    <div className='grid gap-1'>
-                        <Label className="text-xs">Start Time</Label>
-                        <Input
-                            type="time"
-                            value={schedules[currentScheduleIndex].startTime}
-                            onChange={(e) => onUpdateSchedule(currentScheduleIndex, 'startTime', e.target.value)}
-                        />
-                    </div>
-                    <div className='grid gap-1'>
-                        <Label className="text-xs">End Time</Label>
-                        <Input
-                            type="time"
-                            value={schedules[currentScheduleIndex].endTime}
-                            onChange={(e) => onUpdateSchedule(currentScheduleIndex, 'endTime', e.target.value)}
-                        />
-                    </div>
-
-                    {/* Advanced Rules */}
-                    <div className='grid gap-1'>
-                        <Label className="text-xs">Start Date (Optional)</Label>
-                        <Input
-                            type="date"
-                            value={schedules[currentScheduleIndex].startDate ? new Date(schedules[currentScheduleIndex].startDate).toISOString().split('T')[0] : ''}
-                            onChange={(e) => onUpdateSchedule(currentScheduleIndex, 'startDate', e.target.value)}
-                        />
-                    </div>
-                    <div className='grid gap-1'>
-                        <Label className="text-xs">End Date (Optional)</Label>
-                        <Input
-                            type="date"
-                            value={schedules[currentScheduleIndex].endDate ? new Date(schedules[currentScheduleIndex].endDate).toISOString().split('T')[0] : ''}
-                            onChange={(e) => onUpdateSchedule(currentScheduleIndex, 'endDate', e.target.value)}
-                        />
-                    </div>
-                    <div className='grid gap-1'>
-                        <Label className="text-xs">Priority (Higher wins)</Label>
-                        <Input
-                            type="number"
-                            min="0"
-                            placeholder="0"
-                            value={schedules[currentScheduleIndex].priority || 0}
-                            onChange={(e) => onUpdateSchedule(currentScheduleIndex, 'priority', parseInt(e.target.value) || 0)}
-                        />
-                    </div>
-
-                    <div className='grid gap-1 sm:col-span-3'>
-                        <Label className="text-xs">Active Days</Label>
-                        <div className="flex flex-wrap gap-2">
-                            {[
-                                { val: 1, label: 'Mon' },
-                                { val: 2, label: 'Tue' },
-                                { val: 3, label: 'Wed' },
-                                { val: 4, label: 'Thu' },
-                                { val: 5, label: 'Fri' },
-                                { val: 6, label: 'Sat' },
-                                { val: 0, label: 'Sun' }
-                            ].map((day) => {
-                                const isSelected = (schedules[currentScheduleIndex].daysOfWeek || []).includes(day.val)
-                                return (
-                                    <Button
-                                        key={day.val}
-                                        size="sm"
-                                        variant={isSelected ? "default" : "outline"}
-                                        className={`h-7 w-9 p-0 text-[10px] uppercase ${isSelected ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}
-                                        onClick={() => {
-                                            const currentDays = schedules[currentScheduleIndex].daysOfWeek || []
-                                            const newDays = isSelected
-                                                ? currentDays.filter(d => d !== day.val)
-                                                : [...currentDays, day.val]
-                                            onUpdateSchedule(currentScheduleIndex, 'daysOfWeek', newDays)
-                                        }}
-                                    >
-                                        {day.label}
-                                    </Button>
-                                )
-                            })}
+                <div className='mt-4 mb-2 rounded-lg bg-muted/30 p-4 animate-in fade-in slide-in-from-top-1 max-h-[400px] overflow-y-auto custom-scrollbar'>
+                    <div className='grid gap-4 sm:grid-cols-3'>
+                        <div className='grid gap-1'>
+                            <Label className="text-xs">Slot Name</Label>
+                            <Input
+                                value={schedules[currentScheduleIndex].name}
+                                onChange={(e) => onUpdateSchedule(currentScheduleIndex, 'name', e.target.value)}
+                            />
                         </div>
+                        <div className='grid gap-1'>
+                            <Label className="text-xs">Start Time</Label>
+                            <Input
+                                type="time"
+                                value={schedules[currentScheduleIndex].startTime}
+                                onChange={(e) => onUpdateSchedule(currentScheduleIndex, 'startTime', e.target.value)}
+                            />
+                        </div>
+                        <div className='grid gap-1'>
+                            <Label className="text-xs">End Time</Label>
+                            <Input
+                                type="time"
+                                value={schedules[currentScheduleIndex].endTime}
+                                onChange={(e) => onUpdateSchedule(currentScheduleIndex, 'endTime', e.target.value)}
+                            />
+                        </div>
+
+                        {/* Advanced Rules */}
+                        <div className='grid gap-1'>
+                            <Label className="text-xs">Start Date (Optional)</Label>
+                            <Input
+                                type="date"
+                                value={schedules[currentScheduleIndex].startDate ? new Date(schedules[currentScheduleIndex].startDate).toISOString().split('T')[0] : ''}
+                                onChange={(e) => onUpdateSchedule(currentScheduleIndex, 'startDate', e.target.value)}
+                            />
+                        </div>
+                        <div className='grid gap-1'>
+                            <Label className="text-xs">End Date (Optional)</Label>
+                            <Input
+                                type="date"
+                                value={schedules[currentScheduleIndex].endDate ? new Date(schedules[currentScheduleIndex].endDate).toISOString().split('T')[0] : ''}
+                                onChange={(e) => onUpdateSchedule(currentScheduleIndex, 'endDate', e.target.value)}
+                            />
+                        </div>
+                        <div className='grid gap-1'>
+                            <Label className="text-xs">Priority (Higher wins)</Label>
+                            <Input
+                                type="number"
+                                min="0"
+                                placeholder="0"
+                                value={schedules[currentScheduleIndex].priority || 0}
+                                onChange={(e) => onUpdateSchedule(currentScheduleIndex, 'priority', parseInt(e.target.value) || 0)}
+                            />
+                        </div>
+
+                        <div className='grid gap-1 sm:col-span-3'>
+                            <Label className="text-xs">Active Days</Label>
+                            <div className="flex flex-wrap gap-2">
+                                {[
+                                    { val: 1, label: 'Mon' },
+                                    { val: 2, label: 'Tue' },
+                                    { val: 3, label: 'Wed' },
+                                    { val: 4, label: 'Thu' },
+                                    { val: 5, label: 'Fri' },
+                                    { val: 6, label: 'Sat' },
+                                    { val: 0, label: 'Sun' }
+                                ].map((day) => {
+                                    const isSelected = (schedules[currentScheduleIndex].daysOfWeek || []).includes(day.val)
+                                    return (
+                                        <Button
+                                            key={day.val}
+                                            size="sm"
+                                            variant={isSelected ? "default" : "outline"}
+                                            className={`h-7 w-9 p-0 text-[10px] uppercase transition-all duration-200 ${isSelected
+                                                    ? 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm'
+                                                    : 'text-muted-foreground hover:text-foreground hover:border-primary/50 hover:bg-primary/5'
+                                                }`}
+                                            title={isSelected ? 'Active - Click to deactivate' : 'Inactive - Click to activate'}
+                                            onClick={() => {
+                                                const currentDays = schedules[currentScheduleIndex].daysOfWeek || []
+                                                const newDays = isSelected
+                                                    ? currentDays.filter(d => d !== day.val)
+                                                    : [...currentDays, day.val]
+                                                onUpdateSchedule(currentScheduleIndex, 'daysOfWeek', newDays)
+                                            }}
+                                        >
+                                            {day.label}
+                                        </Button>
+                                    )
+                                })}
+                            </div>
+                        </div>
+                        <Button
+                            variant="destructive"
+                            size="sm"
+                            className='sm:col-span-3 w-fit mt-2'
+                            onClick={() => setConfirmDelete(true)}
+                        >
+                            <IconTrash size={16} className='mr-2' /> Delete Slot
+                        </Button>
                     </div>
-                    <Button
-                        variant="destructive"
-                        size="sm"
-                        className='sm:col-span-3 w-fit mt-2'
-                        onClick={() => setConfirmDelete(true)}
-                    >
-                        <IconTrash size={16} className='mr-2' /> Delete Slot
-                    </Button>
                 </div>
             )}
 
