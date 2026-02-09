@@ -173,7 +173,7 @@ export default function Screens() {
             <CardFooter className="flex justify-end gap-2 border-t bg-muted/20 px-4 py-2">
                 {isOwner ? (
                     <>
-                        <Button variant="ghost" size="sm" onClick={() => window.open(`/player/${screen.id}`, '_blank')}>
+                        <Button variant="ghost" size="sm" onClick={() => window.open(`/player/${screen.id}${screen.secretKey ? `?key=${screen.secretKey}` : ''}`, '_blank')}>
                             <IconPlayerPlay size={16} className="mr-1" /> Preview
                         </Button>
                         <Button variant="ghost" size="sm" onClick={() => handleForceRefresh(screen.id)}>
@@ -190,7 +190,7 @@ export default function Screens() {
                     </>
                 ) : (
                     <>
-                        <Button variant="ghost" size="sm" onClick={() => window.open(`/player/${screen.id}`, '_blank')}>
+                        <Button variant="ghost" size="sm" onClick={() => window.open(`/player/${screen.id}${screen.secretKey ? `?key=${screen.secretKey}` : ''}`, '_blank')}>
                             <IconPlayerPlay size={16} className="mr-1" /> Preview
                         </Button>
                         <Button

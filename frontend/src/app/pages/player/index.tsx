@@ -567,7 +567,9 @@ function ZoneRenderer({ zone, content, screenId, templateId, secretKey }: { zone
                     startTime, endTime, duration,
                     secretKey // Pass key for auth
                 })
-            } catch (err) { }
+            } catch (err) {
+                console.error('[ZoneRenderer] Playback Log Failed:', err)
+            }
         }
         return () => { logPlayback(new Date()) }
     }, [currentIndex, playlist, screenId, templateId, zone.id, zone.type])
