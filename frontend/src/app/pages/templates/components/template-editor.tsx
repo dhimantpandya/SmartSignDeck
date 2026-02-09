@@ -188,32 +188,7 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
         // checkOverlaps(obj)
     }
 
-    const checkOverlaps = (activeObj: any) => {
-        if (!canvasRef.current) return false
-        const objects = canvasRef.current.getObjects()
-        let hasOverlap = false
 
-        objects.forEach((obj: any) => {
-            if (obj === activeObj || obj.type === 'guide') return
-
-            if (activeObj.intersectsWithObject(obj)) {
-                hasOverlap = true
-                // Visual feedback: red shadow for the other object
-                obj.set({ shadow: new fabric.Shadow({ color: 'rgba(239, 68, 68, 0.4)', blur: 15 }) })
-            } else {
-                obj.set({ shadow: null })
-            }
-        })
-
-        // Visual feedback for active object
-        activeObj.set({
-            shadow: hasOverlap
-                ? new fabric.Shadow({ color: 'rgba(239, 68, 68, 0.8)', blur: 20 })
-                : null
-        })
-
-        return hasOverlap
-    }
 
     const handleRealtimeUpdate = (obj: any) => {
         if (!obj || !canvasRef.current) return

@@ -538,10 +538,19 @@ function ZoneRenderer({ zone, content, screenId, templateId, secretKey }: { zone
         }
     }
 
+    // Reset error when index changes to retry playback
+    useEffect(() => {
+        setHasError(false)
+    }, [currentIndex])
+
     useEffect(() => {
         if (!playlist || playlist.length <= 1) return
 
         const currentItem = playlist[currentIndex]
+        // If current item is VIDEO, do NOT use timer. Wait for onEnded.
+        // If current media is video type, we skip this timer logic.
+        if (currentItem.type === 'video' || (zone.type === 'video' && !currentItem.type)) return
+
         const duration = (currentItem?.duration || 10) * 1000
 
         const timer = setTimeout(() => {
@@ -549,7 +558,7 @@ function ZoneRenderer({ zone, content, screenId, templateId, secretKey }: { zone
         }, duration)
 
         return () => clearTimeout(timer)
-    }, [currentIndex, playlist])
+    }, [currentIndex, playlist, zone.type])
 
     // Proof of Play Logging remains same...
     useEffect(() => {
@@ -559,7 +568,9 @@ function ZoneRenderer({ zone, content, screenId, templateId, secretKey }: { zone
         const logPlayback = async (endTime: Date) => {
             try {
                 const typeToLog = item?.type || zone.type
+                // Don't log texts
                 if (zone.type === 'text') return
+
                 const duration = (endTime.getTime() - startTime.getTime()) / 1000
                 await apiService.post('/v1/playback-logs', {
                     screenId, templateId, zoneId: zone.id,
@@ -568,7 +579,7 @@ function ZoneRenderer({ zone, content, screenId, templateId, secretKey }: { zone
                     secretKey // Pass key for auth
                 })
             } catch (err) {
-                console.error('[ZoneRenderer] Playback Log Failed:', err)
+                // Silent catch
             }
         }
         return () => { logPlayback(new Date()) }
@@ -588,8 +599,15 @@ function ZoneRenderer({ zone, content, screenId, templateId, secretKey }: { zone
 
     // ERROR HANDLER WITH FALLBACK
     if (hasError) {
-        // If we are showing a playlist and it failed, and we have a fallbackSrc, we COULD try to show that.
-        // But for now, just show error if everything failed.
+        // If error, force advance after 5 seconds to avoid getting stuck
+        // But only if we have multiple items
+        if (playlist.length > 1) {
+            setTimeout(() => {
+                setHasError(false)
+                setCurrentIndex((prev) => (prev + 1) % playlist.length)
+            }, 5000)
+        }
+
         return (
             <div className='flex h-full w-full flex-col items-center justify-center bg-red-950/50 border border-red-900 p-4 text-center anim-pulse'>
                 <IconAlertTriangle size={32} className='mb-2 text-red-500' />
