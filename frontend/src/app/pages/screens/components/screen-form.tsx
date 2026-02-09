@@ -600,13 +600,31 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
                 {selectedZoneId ? (
                     <div className='animate-in fade-in slide-in-from-bottom-2 border border-primary/20 rounded-xl p-0 overflow-hidden bg-primary/5 shadow-inner'>
                         <div className='flex items-center justify-between px-4 py-2 border-b border-primary/10 bg-primary/10'>
-                            <div className='flex items-center gap-2'>
-                                <div className='w-2.5 h-2.5 rounded-full bg-primary shadow-[0_0_8px_rgba(var(--primary),0.5)]' />
-                                <h4 className='text-xs font-bold uppercase tracking-widest text-primary'>
+                            <div className='flex items-center gap-2 overflow-hidden flex-1'>
+                                <div className='w-2.5 h-2.5 rounded-full bg-primary shadow-[0_0_8px_rgba(var(--primary),0.5)] flex-shrink-0' />
+                                <h4 className='text-xs font-bold uppercase tracking-widest text-primary truncate'>
                                     {selectedTemplate?.zones.find((z: any) => z.id === selectedZoneId || z.id.toLowerCase() === selectedZoneId.toLowerCase())?.name || selectedZoneId}
                                 </h4>
+
+                                {(() => {
+                                    const zone = selectedTemplate?.zones.find((z: any) => (z.id || z._id) === selectedZoneId || (z.id || z._id)?.toLowerCase() === selectedZoneId?.toLowerCase());
+                                    if (zone && zone.type !== 'text') {
+                                        return (
+                                            <Button
+                                                size="sm"
+                                                variant="default"
+                                                className="h-7 px-3 gap-1.5 text-[10px] font-bold bg-primary hover:bg-primary/90 text-primary-foreground ml-4 shadow-sm animate-in zoom-in-50 duration-300"
+                                                onClick={() => handleOpenCloudinaryWidget(selectedZoneId)}
+                                            >
+                                                <IconCloudUpload size={14} />
+                                                ADD FROM CLOUDINARY
+                                            </Button>
+                                        );
+                                    }
+                                    return null;
+                                })()}
                             </div>
-                            <Button size="sm" variant="ghost" className="h-6 w-6 p-0 hover:bg-primary/20 rounded-full" onClick={() => setSelectedZoneId(null)}>×</Button>
+                            <Button size="sm" variant="ghost" className="h-6 w-6 p-0 hover:bg-primary/20 rounded-full flex-shrink-0" onClick={() => setSelectedZoneId(null)}>×</Button>
                         </div>
                         <div className='p-4'>
                             {activeContent && activeContent[selectedZoneId] && (
