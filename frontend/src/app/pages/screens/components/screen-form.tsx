@@ -770,78 +770,79 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
                         </div>
                     </div>
 
-                    <div className='grid gap-4 sm:grid-cols-3 flex-shrink-0 mb-6'>
-                        <div className='grid gap-2'>
-                            <Label htmlFor='name'>Screen Name</Label>
-                            <Input id='name' placeholder='Lobby Display 1' value={name} onChange={(e) => setName(e.target.value)} />
-                        </div>
-                        <div className='grid gap-2'>
-                            <Label>Template</Label>
-                            <Select
-                                value={selectedTemplateId}
-                                onValueChange={setSelectedTemplateId}
-                                disabled={!!initialData?.id}
-                            >
-                                <SelectTrigger className="w-full">
-                                    <SelectValue placeholder="Select a template" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {templatesData?.results?.filter((t: Template) => t.id).map((t: Template) => (
-                                        <SelectItem key={t.id} value={t.id}>
-                                            <div className="flex items-center justify-between w-full gap-4">
-                                                <span>{t.name} ({t.resolution})</span>
-                                                {t.id === latestTemplateId && (
-                                                    <span className="text-[10px] bg-primary/10 text-primary font-bold px-1.5 py-0.5 rounded-full uppercase tracking-tighter shrink-0 border border-primary/20">
-                                                        Latest
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </div>
-
-                    {selectedTemplate && (
-                        <div className='flex flex-col gap-6'>
-                            <div className='flex-shrink-0'>
-                                <ScheduleManager
-                                    schedules={schedules}
-                                    activeTab={activeTab}
-                                    onAddSchedule={addSchedule}
-                                    onRemoveSchedule={removeSchedule}
-                                    onUpdateSchedule={updateSchedule}
-                                    onTabChange={setActiveTab}
-                                />
+                    {/* Scrollable Content Area */}
+                    <div className='flex-1 overflow-y-auto pr-2 custom-scrollbar'>
+                        <div className='grid gap-4 sm:grid-cols-3 mb-6'>
+                            <div className='grid gap-2'>
+                                <Label htmlFor='name'>Screen Name</Label>
+                                <Input id='name' placeholder='Lobby Display 1' value={name} onChange={(e) => setName(e.target.value)} />
                             </div>
-
-                            <div className='border-t pt-6'>
-                                {selectedTemplate && renderMediaSection()}
+                            <div className='grid gap-2'>
+                                <Label>Template</Label>
+                                <Select
+                                    value={selectedTemplateId}
+                                    onValueChange={setSelectedTemplateId}
+                                    disabled={!!initialData?.id}
+                                >
+                                    <SelectTrigger className="w-full">
+                                        <SelectValue placeholder="Select a template" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {templatesData?.results?.filter((t: Template) => t.id).map((t: Template) => (
+                                            <SelectItem key={t.id} value={t.id}>
+                                                <div className="flex items-center justify-between w-full gap-4">
+                                                    <span>{t.name} ({t.resolution})</span>
+                                                    {t.id === latestTemplateId && (
+                                                        <span className="text-[10px] bg-primary/10 text-primary font-bold px-1.5 py-0.5 rounded-full uppercase tracking-tighter shrink-0 border border-primary/20">
+                                                            Latest
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </div>
                         </div>
-                    )}
-                </Card>
-            </div >
 
-            {/* Right: Visual Map */}
-            {
-                selectedTemplate && (
-                    <div className='w-full lg:w-[480px]'>
-                        <Card className='p-4 sticky top-6 bg-muted/30'>
-                            <h4 className='mb-3 font-semibold'>Visual Map</h4>
-                            <div className='rounded-lg bg-black p-2 shadow-inner'>
-                                <div className='relative w-full bg-slate-900 overflow-hidden rounded border border-gray-800 flex justify-center'>
-                                    <canvas ref={canvasRef} onClick={handleCanvasClick} className="cursor-pointer max-w-full h-auto" />
+                        {selectedTemplate && (
+                            <div className='flex flex-col gap-6 pb-4'>
+                                <div className='flex-shrink-0'>
+                                    <ScheduleManager
+                                        schedules={schedules}
+                                        activeTab={activeTab}
+                                        onAddSchedule={addSchedule}
+                                        onRemoveSchedule={removeSchedule}
+                                        onUpdateSchedule={updateSchedule}
+                                        onTabChange={setActiveTab}
+                                    />
+                                </div>
+
+                                <div className='border-t pt-6'>
+                                    {selectedTemplate && renderMediaSection()}
                                 </div>
                             </div>
-                            <p className='mt-2 text-xs text-muted-foreground text-center italic'>
-                                Click on a zone above to select it.
-                            </p>
-                        </Card>
+                        )}
                     </div>
-                )
-            }
-        </div >
+                </Card>
+            </div>
+
+            {/* Right: Visual Map */}
+            {selectedTemplate && (
+                <div className='w-full lg:w-[480px]'>
+                    <Card className='p-4 sticky top-6 bg-muted/30'>
+                        <h4 className='mb-3 font-semibold'>Visual Map</h4>
+                        <div className='rounded-lg bg-black p-2 shadow-inner'>
+                            <div className='relative w-full bg-slate-900 overflow-hidden rounded border border-gray-800 flex justify-center'>
+                                <canvas ref={canvasRef} onClick={handleCanvasClick} className="cursor-pointer max-w-full h-auto" />
+                            </div>
+                        </div>
+                        <p className='mt-2 text-xs text-muted-foreground text-center italic'>
+                            Click on a zone above to select it.
+                        </p>
+                    </Card>
+                </div>
+            )}
+        </div>
     )
 }
