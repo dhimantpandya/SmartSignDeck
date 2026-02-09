@@ -75,6 +75,10 @@ const createScreen = {
           endTime: Joi.string()
             .required()
             .regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/),
+          daysOfWeek: Joi.array().items(Joi.number().min(0).max(6)).optional(),
+          startDate: Joi.date().iso().allow(null, "").optional(),
+          endDate: Joi.date().iso().allow(null, "").optional(),
+          priority: Joi.number().integer().min(0).optional(),
           content: contentSchema.required(),
         }),
       )
@@ -146,6 +150,10 @@ const updateScreen = {
           endTime: Joi.string()
             .required()
             .regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/),
+          daysOfWeek: Joi.array().items(Joi.number().min(0).max(6)).optional(),
+          startDate: Joi.date().iso().allow(null, "").optional(),
+          endDate: Joi.date().iso().allow(null, "").optional(),
+          priority: Joi.number().integer().min(0).optional(),
           content: contentSchema.required(),
         }),
       ),
