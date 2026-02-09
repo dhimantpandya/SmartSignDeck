@@ -231,7 +231,7 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
                         </TabsTrigger>
                     </TabsList>
 
-                    <div className="flex-1 overflow-hidden relative flex flex-col">
+                    <div className="flex-1 overflow-hidden relative flex flex-col mt-0">
                         {/* Company Board */}
                         <TabsContent value="company" className="flex-1 m-0 p-0 flex flex-col overflow-hidden">
                             <div className="flex-1 overflow-y-auto p-3 flex flex-col justify-end custom-scrollbar">
@@ -294,7 +294,7 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
                         <TabsContent value="private" className="flex-1 m-0 p-0 flex flex-col overflow-hidden">
                             {!selectedFriend ? (
                                 <div className="flex-1 flex flex-col overflow-hidden">
-                                    <div className="px-3 py-2 border-b bg-muted/30">
+                                    <div className="px-3 pb-2 pt-0 border-b bg-muted/30">
                                         <div className="relative">
                                             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                                             <Input
@@ -351,7 +351,7 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
                                         </div>
                                     </div>
                                     {/* Private Messages */}
-                                    <div className="flex-1 overflow-y-auto px-3 py-1 flex flex-col justify-end custom-scrollbar">
+                                    <div className="flex-1 overflow-y-auto px-3 py-1 flex flex-col custom-scrollbar">
                                         <div className="space-y-2">
                                             {privateMessages.length === 0 && (
                                                 <div className="flex flex-col items-center justify-center h-full text-muted-foreground opacity-50">
@@ -460,7 +460,7 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
 
                     {/* Input Area (Shared between Board and Direct if friend selected) */}
                     {(activeTab === 'company' || (activeTab === 'private' && selectedFriend)) && (
-                        <div className="p-4 border-t bg-muted/10">
+                        <div className="p-3 border-t bg-muted/10">
                             <div className="flex gap-2">
                                 <Input
                                     placeholder="Type a message..."
