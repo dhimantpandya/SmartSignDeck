@@ -55,14 +55,14 @@ export default function PlaylistEditor({ zone, items, onChange }: PlaylistEditor
             }
 
             // Validation check against Zone Type
-            if (zone.type !== 'mixed' && zone.type !== type) {
+            if (zone?.type !== 'mixed' && zone?.type !== type) {
                 rejectedCount++;
-                rejectReason = `This is a ${zone.type}-only zone`;
+                rejectReason = `This is a ${zone?.type || 'media'}-only zone`;
                 return;
             }
 
             // Validation check against User Lock
-            if (zone.type === 'mixed' && mediaTypeLock !== 'both' && mediaTypeLock !== type) {
+            if (zone?.type === 'mixed' && mediaTypeLock !== 'both' && mediaTypeLock !== type) {
                 rejectedCount++;
                 rejectReason = `Locked to ${mediaTypeLock}s only`;
                 return;
@@ -184,7 +184,7 @@ export default function PlaylistEditor({ zone, items, onChange }: PlaylistEditor
                     </div>
 
                     {/* Type Lock for Mixed Zones */}
-                    {zone.type === 'mixed' && (
+                    {zone?.type === 'mixed' && (
                         <div className='flex items-center justify-between p-2 rounded bg-background/40 border border-border/40'>
                             <div className='flex items-center gap-2'>
                                 <IconArrowsSort size={14} className='text-muted-foreground' />

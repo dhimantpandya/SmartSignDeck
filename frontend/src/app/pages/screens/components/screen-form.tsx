@@ -111,23 +111,23 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
             const newContent: any = { ...defaultContent }
             selectedTemplate.zones.forEach((zone: any) => {
                 if (!newContent[zone.id]) {
-                    if (zone.type === 'text') {
+                    if (zone?.type === 'text') {
                         // Initialize text zone structure
                         newContent[zone.id] = { type: 'text', text: '', style: {} }
                     } else {
                         // Media init
                         if (initialData?.defaultContent?.[zone.id]?.src) {
                             newContent[zone.id] = {
-                                type: zone.type,
+                                type: zone?.type,
                                 playlist: [{
                                     url: initialData.defaultContent[zone.id].src,
-                                    type: zone.type === 'video' ? 'video' : 'image',
+                                    type: zone?.type === 'video' ? 'video' : 'image',
                                     duration: 10
                                 }]
                             }
                         } else {
                             newContent[zone.id] = {
-                                type: zone.type,
+                                type: zone?.type,
                                 sourceType: initialData?.defaultContent?.[zone.id]?.sourceType || 'local',
                                 playlistId: initialData?.defaultContent?.[zone.id]?.playlistId || '',
                                 playlist: []
@@ -146,6 +146,19 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
         }
     }, [selectedTemplateId, templatesData]) // Depend on ID, not text/styles
 
+    // Reset selected zone if it no longer exists in the new template
+    useEffect(() => {
+        if (selectedTemplate && selectedZoneId) {
+            const zoneExists = selectedTemplate.zones.some((z: any) =>
+                (z.id || z._id) === selectedZoneId ||
+                (z.id || z._id)?.toLowerCase() === selectedZoneId?.toLowerCase()
+            );
+            if (!zoneExists) {
+                setSelectedZoneId(null);
+            }
+        }
+    }, [selectedTemplateId, selectedTemplate])
+
     // Playback Animation Loop
     useEffect(() => {
         const interval = setInterval(() => {
@@ -155,7 +168,7 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
 
                 let changed = false
                 selectedTemplate.zones.forEach((zone: any) => {
-                    if (zone.type === 'text') return
+                    if (zone?.type === 'text') return
                     const content = activeContent?.[zone.id]
                     if (content?.playlist?.length > 1) {
                         const currentIndex = prev[zone.id] || 0
@@ -205,7 +218,7 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
                 const zoneContent = activeContent?.[zone.id]
 
                 // Draw Text Zone
-                if (zone.type === 'text') {
+                if (zone?.type === 'text') {
                     // Background & Box
                     const style = zoneContent?.style || {}
 
@@ -290,9 +303,9 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
                     }
 
                     // NEW: Apply strict type filtering for canvas preview
-                    if (zone.type === 'image') {
+                    if (zone?.type === 'image') {
                         playlist = playlist.filter((item: any) => item.type === 'image')
-                    } else if (zone.type === 'video') {
+                    } else if (zone?.type === 'video') {
                         playlist = playlist.filter((item: any) => item.type === 'video')
                     }
 
@@ -335,9 +348,9 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
 
                     if (drawPlaceholder) {
                         let color = '#f59e0b'
-                        if (zone.type === 'video') color = '#3b82f6'
-                        if (zone.type === 'image') color = '#10b981'
-                        if (zone.type === 'mixed') color = '#8b5cf6'
+                        if (zone?.type === 'video') color = '#3b82f6'
+                        if (zone?.type === 'image') color = '#10b981'
+                        if (zone?.type === 'mixed') color = '#8b5cf6'
 
                         ctx.fillStyle = color + '44'
                         ctx.fillRect(scaledX, scaledY, scaledW, scaledH)
@@ -369,7 +382,7 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
                 ctx.shadowColor = 'rgba(0,0,0,0.8)'
                 ctx.shadowBlur = 4
                 ctx.fillStyle = '#fff'
-                ctx.fillText(zone.type.toUpperCase(), scaledX + 6, scaledY + 14) // Slightly adjusted position
+                ctx.fillText(zone.type?.toUpperCase() || 'ZONE', scaledX + 6, scaledY + 14) // Defensively access type
                 ctx.shadowBlur = 0
             })
         }
@@ -608,7 +621,9 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
 
                                 {(() => {
                                     const zone = selectedTemplate?.zones.find((z: any) => (z.id || z._id) === selectedZoneId || (z.id || z._id)?.toLowerCase() === selectedZoneId?.toLowerCase());
-                                    if (zone && zone.type !== 'text') {
+                                    if (!zone) return null; // Defensive check for zone existence
+
+                                    if (zone.type !== 'text') {
                                         return (
                                             <Button
                                                 size="sm"
@@ -629,6 +644,11 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
                         <div className='p-4'>
                             {(() => {
                                 const zone = selectedTemplate?.zones.find((z: any) => z.id === selectedZoneId || z.id.toLowerCase() === selectedZoneId.toLowerCase());
+
+                                if (!zone && selectedZoneId) {
+                                    return <div className="p-4 text-xs italic text-muted-foreground bg-muted/20 rounded-lg">Zone no longer available in this template. Please select another.</div>;
+                                }
+
                                 const zoneContent = activeContent[selectedZoneId] || {
                                     type: zone?.type || 'image',
                                     sourceType: 'local',
