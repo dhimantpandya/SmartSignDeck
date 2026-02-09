@@ -64,6 +64,11 @@ export default function ScreenPlayer() {
     useEffect(() => {
         const STORAGE_KEY = `screen_cache_${screenId}`;
 
+        // Safety: Force stop loading after 15 seconds to prevent white screen
+        const safetyTimer = setTimeout(() => {
+            setIsLoading(false)
+        }, 15000)
+
         const fetchPlaybackData = async (retryCount = 0) => {
             try {
                 if (retryCount === 0) setIsLoading(true)
@@ -74,6 +79,7 @@ export default function ScreenPlayer() {
                 })
                 setData(screen)
                 setError(null)
+                clearTimeout(safetyTimer) // Loaded successfully
 
                 // Cache successful response
                 localStorage.setItem(STORAGE_KEY, JSON.stringify({
@@ -92,22 +98,20 @@ export default function ScreenPlayer() {
                     const { data: cachedData } = JSON.parse(cached);
                     setData(cachedData);
                     setError(null);
-                    /* 
-                    toast({
-                        title: "Offline Mode",
-                        description: "Running on cached content due to network issues.",
-                        variant: "destructive"
-                    });
-                    */
                 } else if (retryCount < 3) {
                     // Exponential backoff retry
                     const delay = Math.pow(2, retryCount) * 1000;
                     setTimeout(() => fetchPlaybackData(retryCount + 1), delay);
+                    return; // Return so we don't turn off loading until retries done
                 } else {
                     setError(err.message || 'Failed to load screen data')
                 }
             } finally {
-                if (retryCount === 0) setIsLoading(false)
+                // Only turn off loading if we are not retrying or if we failed
+                if (retryCount >= 3 || localStorage.getItem(STORAGE_KEY)) {
+                    setIsLoading(false)
+                    clearTimeout(safetyTimer)
+                }
             }
         }
 
@@ -115,7 +119,10 @@ export default function ScreenPlayer() {
 
         // 5-minute auto-refresh and ping (backup)
         const interval = setInterval(() => fetchPlaybackData(), 5 * 60 * 1000)
-        return () => clearInterval(interval)
+        return () => {
+            clearInterval(interval)
+            clearTimeout(safetyTimer)
+        }
     }, [screenId])
 
     // Socket.io integration for real-time updates
