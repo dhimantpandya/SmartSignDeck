@@ -581,7 +581,7 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                         {selectedPreset === 'custom' && (
                             <div className="grid grid-cols-2 gap-2 animate-in fade-in slide-in-from-top-2">
                                 <div className="space-y-1">
-                                    <Label className="text-[10px] uppercase text-muted-foreground">Width</Label>
+                                    <Label className="text-[10px] uppercase text-muted-foreground">Width (px)</Label>
                                     <Input
                                         type="number"
                                         value={screenWidth}
@@ -592,7 +592,7 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                                     />
                                 </div>
                                 <div className="space-y-1">
-                                    <Label className="text-[10px] uppercase text-muted-foreground">Height</Label>
+                                    <Label className="text-[10px] uppercase text-muted-foreground">Height (px)</Label>
                                     <Input
                                         type="number"
                                         value={screenHeight}
