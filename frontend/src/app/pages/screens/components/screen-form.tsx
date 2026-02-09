@@ -627,107 +627,111 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
                             <Button size="sm" variant="ghost" className="h-6 w-6 p-0 hover:bg-primary/20 rounded-full flex-shrink-0" onClick={() => setSelectedZoneId(null)}>×</Button>
                         </div>
                         <div className='p-4'>
-                            {activeContent && activeContent[selectedZoneId] && (
-                                <>
-                                    {selectedTemplate?.zones.find((z: any) => z.id === selectedZoneId || z.id.toLowerCase() === selectedZoneId.toLowerCase())?.type === 'text' ? (
+                            {(() => {
+                                const zone = selectedTemplate?.zones.find((z: any) => z.id === selectedZoneId || z.id.toLowerCase() === selectedZoneId.toLowerCase());
+                                const zoneContent = activeContent[selectedZoneId] || {
+                                    type: zone?.type || 'image',
+                                    sourceType: 'local',
+                                    playlist: [],
+                                    style: {}
+                                };
+
+                                if (zone?.type === 'text') {
+                                    return (
                                         <TextZoneEditor
                                             key={selectedZoneId}
-                                            zone={selectedTemplate?.zones.find((z: any) => z.id === selectedZoneId || z.id.toLowerCase() === selectedZoneId.toLowerCase())}
-                                            content={activeContent[selectedZoneId]}
+                                            zone={zone}
+                                            content={zoneContent}
                                             onChange={(newContent) => handleZoneContentChange(selectedZoneId, newContent)}
                                         />
-                                    ) : (
-                                        <div className="flex flex-col gap-4">
-                                            {/* Guided Media Type Message */}
-                                            {(() => {
-                                                const zone = selectedTemplate?.zones.find((z: any) => (z.id || z._id) === selectedZoneId || (z.id || z._id)?.toLowerCase() === selectedZoneId?.toLowerCase())
-                                                if (zone?.type === 'image') {
-                                                    return (
-                                                        <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3 flex items-center gap-3">
-                                                            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                                                            <p className="text-xs font-medium text-green-600">
-                                                                <span className="font-bold uppercase mr-1">Photo only zone:</span>
-                                                                Only images from your playlist will be displayed here.
-                                                            </p>
-                                                        </div>
-                                                    )
-                                                }
-                                                if (zone?.type === 'video') {
-                                                    return (
-                                                        <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3 flex items-center gap-3">
-                                                            <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-                                                            <p className="text-xs font-medium text-blue-600">
-                                                                <span className="font-bold uppercase mr-1">Video only zone:</span>
-                                                                Only videos from your playlist will be played here.
-                                                            </p>
-                                                        </div>
-                                                    )
-                                                }
-                                                return null
-                                            })()}
+                                    );
+                                }
 
-                                            {/* Source Toggle */}
-                                            <div className="flex items-center gap-2 p-1 bg-muted rounded-lg w-fit">
-                                                <button
-                                                    className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${activeContent[selectedZoneId].sourceType !== 'playlist'
-                                                        ? 'bg-background shadow text-foreground'
-                                                        : 'text-muted-foreground hover:text-foreground'
-                                                        }`}
-                                                    onClick={() => handleZoneContentChange(selectedZoneId, { sourceType: 'local' })}
-                                                >
-                                                    Custom Content
-                                                </button>
-                                                <button
-                                                    className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${activeContent[selectedZoneId].sourceType === 'playlist'
-                                                        ? 'bg-background shadow text-foreground'
-                                                        : 'text-muted-foreground hover:text-foreground'
-                                                        }`}
-                                                    onClick={() => handleZoneContentChange(selectedZoneId, { sourceType: 'playlist' })}
-                                                >
-                                                    Shared Playlist
-                                                </button>
-                                            </div>
+                                return (
+                                    <div className="flex flex-col gap-4">
+                                        {/* Guided Media Type Message */}
+                                        {(() => {
+                                            if (zone?.type === 'image') {
+                                                return (
+                                                    <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3 flex items-center gap-3">
+                                                        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                                                        <p className="text-xs font-medium text-green-600">
+                                                            <span className="font-bold uppercase mr-1">Photo only zone:</span>
+                                                            Only images from your playlist will be displayed here.
+                                                        </p>
+                                                    </div>
+                                                );
+                                            }
+                                            if (zone?.type === 'video') {
+                                                return (
+                                                    <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3 flex items-center gap-3">
+                                                        <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+                                                        <p className="text-xs font-medium text-blue-600">
+                                                            <span className="font-bold uppercase mr-1">Video only zone:</span>
+                                                            Only videos from your playlist will be played here.
+                                                        </p>
+                                                    </div>
+                                                );
+                                            }
+                                            return null;
+                                        })()}
 
-                                            {activeContent[selectedZoneId].sourceType === 'playlist' ? (
-                                                <div className="space-y-4 p-4 border rounded-lg bg-card">
-                                                    <div className="flex items-center gap-2 text-indigo-500 mb-2">
-                                                        <IconPlaylist size={20} />
-                                                        <h4 className="font-semibold text-sm">Linked Playlist</h4>
-                                                    </div>
-                                                    <p className="text-xs text-muted-foreground">
-                                                        Select a shared playlist to display in this zone. Content updates to the shared playlist will automatically appear here.
-                                                    </p>
-                                                    <div className="grid gap-2">
-                                                        <Label>Select Playlist</Label>
-                                                        <select
-                                                            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                                                            value={activeContent[selectedZoneId].playlistId || ''}
-                                                            onChange={(e) => handleZoneContentChange(selectedZoneId, { playlistId: e.target.value })}
-                                                        >
-                                                            <option value="">-- Choose a Playlist --</option>
-                                                            {playlistsData?.results?.map((p: Playlist) => (
-                                                                <option key={p.id} value={p.id}>{p.name} ({p.items.length} items)</option>
-                                                            ))}
-                                                        </select>
-                                                        {activeContent[selectedZoneId].playlistId && (
-                                                            <div className="text-xs text-muted-foreground mt-1">
-                                                                Authentication: {playlistsData?.results?.find((p: Playlist) => p.id === activeContent[selectedZoneId].playlistId)?.items.length || 0} items will be played.
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                <PlaylistEditor
-                                                    key={selectedZoneId}
-                                                    zone={selectedTemplate?.zones.find((z: any) => z.id === selectedZoneId || z.id.toLowerCase() === selectedZoneId.toLowerCase())}
-                                                    items={activeContent[selectedZoneId].playlist || []}
-                                                    onChange={(items) => handleZoneContentChange(selectedZoneId, { playlist: items })}
-                                                />
-                                            )}
+                                        {/* Source Toggle */}
+                                        <div className="flex items-center gap-2 p-1 bg-muted rounded-lg w-fit">
+                                            <button
+                                                className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${zoneContent.sourceType !== 'playlist'
+                                                    ? 'bg-background shadow text-foreground'
+                                                    : 'text-muted-foreground hover:text-foreground'
+                                                    }`}
+                                                onClick={() => handleZoneContentChange(selectedZoneId, { sourceType: 'local' })}
+                                            >
+                                                Custom Content
+                                            </button>
+                                            <button
+                                                className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${zoneContent.sourceType === 'playlist'
+                                                    ? 'bg-background shadow text-foreground'
+                                                    : 'text-muted-foreground hover:text-foreground'
+                                                    }`}
+                                                onClick={() => handleZoneContentChange(selectedZoneId, { sourceType: 'playlist' })}
+                                            >
+                                                Shared Playlist
+                                            </button>
                                         </div>
-                                    )}
-                                </>
-                            )}
+
+                                        {zoneContent.sourceType === 'playlist' ? (
+                                            <div className="space-y-4 p-4 border rounded-lg bg-card">
+                                                <div className="flex items-center gap-2 text-indigo-500 mb-2">
+                                                    <IconPlaylist size={20} />
+                                                    <h4 className="font-semibold text-sm">Linked Playlist</h4>
+                                                </div>
+                                                <p className="text-xs text-muted-foreground">
+                                                    Select a shared playlist to display in this zone. Content updates to the shared playlist will automatically appear here.
+                                                </p>
+                                                <div className="grid gap-2">
+                                                    <Label>Select Playlist</Label>
+                                                    <select
+                                                        className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                                                        value={zoneContent.playlistId || ''}
+                                                        onChange={(e) => handleZoneContentChange(selectedZoneId, { playlistId: e.target.value })}
+                                                    >
+                                                        <option value="">-- Choose a Playlist --</option>
+                                                        {playlistsData?.results?.map((p: Playlist) => (
+                                                            <option key={p.id} value={p.id}>{p.name} ({p.items.length} items)</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <PlaylistEditor
+                                                key={selectedZoneId}
+                                                zone={zone}
+                                                items={zoneContent.playlist || []}
+                                                onChange={(items) => handleZoneContentChange(selectedZoneId, { playlist: items })}
+                                            />
+                                        )}
+                                    </div>
+                                );
+                            })()}
                         </div>
                     </div>
                 ) : (
@@ -800,8 +804,7 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
                     </div>
 
                     {selectedTemplate && (
-                        <div className='flex flex-col gap-4 h-full overflow-hidden'>
-
+                        <div className='flex flex-col gap-6'>
                             <div className='flex-shrink-0'>
                                 <ScheduleManager
                                     schedules={schedules}
@@ -813,7 +816,7 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
                                 />
                             </div>
 
-                            <div className='flex-1 overflow-y-auto pr-2 custom-scrollbar'>
+                            <div className='border-t pt-6'>
                                 {selectedTemplate && renderMediaSection()}
                             </div>
                         </div>
