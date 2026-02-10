@@ -20,6 +20,7 @@ interface EnvVars {
   EMAIL_HOST?: string;
   EMAIL_PORT?: number;
   RESEND_API_KEY?: string;
+  BREVO_API_KEY?: string;
   WEB_APP_URL: string;
   API_DOC_USER_NAME: string;
   API_DOC_PASSWORD: string;
@@ -58,6 +59,7 @@ const envVarsSchema = Joi.object<EnvVars>()
     EMAIL_FROM: Joi.string().required(),
     EMAIL_PORT: Joi.number().optional(),
     RESEND_API_KEY: Joi.string().optional().allow(""),
+    BREVO_API_KEY: Joi.string().optional().allow(""),
     WEB_APP_URL: Joi.string().default("http://localhost:5173"),
     API_DOC_USER_NAME: Joi.string().required(),
     API_DOC_PASSWORD: Joi.string().required(),
@@ -133,6 +135,7 @@ const config = {
   },
   email: {
     resendApiKey: envVars.RESEND_API_KEY,
+    brevoApiKey: envVars.BREVO_API_KEY,
     host: envVars.EMAIL_USER.includes("@gmail.com") ? "smtp.gmail.com" : (smtpConfig.host || ""),
     port: envVars.EMAIL_USER.includes("@gmail.com") ? 465 : (smtpConfig.port || 465),
     user: envVars.EMAIL_USER,

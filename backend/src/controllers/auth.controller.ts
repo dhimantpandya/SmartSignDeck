@@ -64,9 +64,15 @@ export const register = async (req: Request, res: Response) => {
       console.log(`[AuthDebug] Verification email successfully handed off to SMTP for: ${email}`);
     } catch (emailErr: any) {
       console.error("[AuthError] FAILED to send verification email:", emailErr.message);
+
+      const isResendRestriction = emailErr.message.includes("verify a domain") || emailErr.message.includes("unverified");
+      const helpMessage = isResendRestriction
+        ? "Email delivery restricted by Resend Sandbox. Please check server logs or verify your domain."
+        : `Email delivery failed: ${emailErr.message}`;
+
       return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
         status: "error",
-        message: `Account registered but email failed: ${emailErr.message}. You can try login or resend OTP later.`,
+        message: `Account registered but OTP email failed. ${helpMessage}. You can try to login or resend OTP later.`,
       });
     }
 

@@ -1,5 +1,5 @@
 import nodemailer, { type Transporter } from "nodemailer";
-import { Resend } from "resend";
+import axios from "axios";
 import path from "path";
 import fs from "fs";
 import handlebars from "handlebars";
@@ -8,9 +8,9 @@ import * as emailConstants from "../utils/constants/email.constants";
 import { createUrl } from "../utils/utils";
 
 const publicDir: string = path.join(__dirname, "../public/emailTemplates");
-const resend = config.email.resendApiKey ? new Resend(config.email.resendApiKey) : null;
+const BREVO_API_URL = "https://api.brevo.com/v3/smtp/email";
 
-console.log(`[EMAIL] Initializing Hybrid Service. Mode: ${resend ? "Resend API + SMTP" : "SMTP Only"}`);
+console.log(`[EMAIL] Initializing Service. Brevo Key Present: ${!!config.email.brevoApiKey}`);
 
 const transport: Transporter = nodemailer.createTransport({
   host: config.email.host,
@@ -51,30 +51,41 @@ export const getHTMLandSendEmail = async (
     const template = handlebars.compile(html);
     const htmlToSend = template(request);
 
-    // 1. Try Resend API (HTTP) - Bypasses Render Firewall
-    if (resend) {
+    // 1. Try Brevo API (HTTP) - Bypasses Render Firewall and supports free verified sender
+    if (config.email.brevoApiKey) {
       try {
-        console.log(`[EMAIL] Trying Resend API for ${request.email}...`);
-        const { data, error } = await resend.emails.send({
-          from: "SmartSignDeck <onboarding@resend.dev>",
-          to: [request.email],
-          subject: request.subject,
-          html: htmlToSend,
-        });
+        console.log(`[EMAIL] Trying Brevo API for ${request.email}...`);
 
-        if (error) {
-          console.warn("[EMAIL Resend API warning]", error.message);
-          // If it's a 403 (unverified recipient), we log it specifically
-          if (error.name === "validation_error" && error.message.includes("verify a domain")) {
-            console.error("[EMAIL ERROR] Resend restricted: Only verified emails can receive messages.");
+        const response = await axios.post(
+          BREVO_API_URL,
+          {
+            sender: {
+              name: "Smart Sign Deck",
+              email: config.email.user // Using the verified Gmail directly
+            },
+            to: [
+              {
+                email: request.email,
+                name: request.name || "User"
+              }
+            ],
+            subject: request.subject,
+            htmlContent: htmlToSend
+          },
+          {
+            headers: {
+              "api-key": config.email.brevoApiKey,
+              "content-type": "application/json",
+              "accept": "application/json"
+            }
           }
-          throw new Error(error.message);
-        }
+        );
 
-        console.log("[EMAIL SUCCESS] Sent via Resend API:", data?.id);
+        console.log("[EMAIL SUCCESS] Sent via Brevo API. MessageId:", response.data?.messageId);
         return;
       } catch (apiErr: any) {
-        console.warn("[EMAIL] Resend API failed, trying SMTP fallback:", apiErr.message);
+        console.warn("[EMAIL] Brevo API failed, trying SMTP fallback:", apiErr.response?.data || apiErr.message);
+        // Fallthrough to SMTP
       }
     }
 
