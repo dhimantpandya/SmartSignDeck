@@ -71,6 +71,11 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
             newSocket.emit('join_user', user.id)
             console.log('[NotificationProvider] Emitted join_user:', user.id)
 
+            if (user.companyId) {
+                newSocket.emit('join_company', user.companyId)
+                console.log('[NotificationProvider] Emitted join_company:', user.companyId)
+            }
+
             return () => {
                 console.log('[NotificationProvider] Cleaning up socket connection')
                 newSocket.disconnect()
