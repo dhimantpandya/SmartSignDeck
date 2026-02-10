@@ -17,6 +17,8 @@ interface EnvVars {
   EMAIL_USER: string;
   EMAIL_PASS: string;
   EMAIL_FROM: string;
+  EMAIL_HOST?: string;
+  EMAIL_PORT?: number;
   WEB_APP_URL: string;
   API_DOC_USER_NAME: string;
   API_DOC_PASSWORD: string;
@@ -53,6 +55,8 @@ const envVarsSchema = Joi.object<EnvVars>()
     EMAIL_USER: Joi.string().required(),
     EMAIL_PASS: Joi.string().required(),
     EMAIL_FROM: Joi.string().required(),
+    EMAIL_HOST: Joi.string().optional(),
+    EMAIL_PORT: Joi.number().optional(),
     WEB_APP_URL: Joi.string().default("http://localhost:5173"),
     API_DOC_USER_NAME: Joi.string().required(),
     API_DOC_PASSWORD: Joi.string().required(),
@@ -107,8 +111,8 @@ const config = {
     verifyEmailExpirationMinutes: envVars.JWT_VERIFY_EMAIL_EXPIRATION_MINUTES,
   },
   email: {
-    host: envVars.EMAIL_USER.includes("@gmail.com") ? "smtp.gmail.com" : "",
-    port: 465,
+    host: envVars.EMAIL_HOST || (envVars.EMAIL_USER.includes("@gmail.com") ? "smtp.gmail.com" : ""),
+    port: envVars.EMAIL_PORT || 465,
     user: envVars.EMAIL_USER,
     pass: envVars.EMAIL_PASS,
     from: envVars.EMAIL_FROM,

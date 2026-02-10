@@ -48,11 +48,19 @@ export const register = async (req: Request, res: Response) => {
     });
 
     // Send OTP email
-    await emailService.sendMail(constants.USER_EMAIL_VERIFICATION_TEMPLATE, {
-      email,
-      name: `${first_name} ${last_name}`,
-      otp,
-    });
+    try {
+      await emailService.sendMail(constants.USER_EMAIL_VERIFICATION_TEMPLATE, {
+        email,
+        name: `${first_name} ${last_name}`,
+        otp,
+      });
+    } catch (emailErr) {
+      console.error("[Register Email Error]", emailErr);
+      return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+        status: "error",
+        message: "Failed to send verification email. Please verify your email settings or try again later.",
+      });
+    }
 
     successResponse(
       res,
@@ -178,11 +186,19 @@ export const firebaseLogin = async (req: Request, res: Response) => {
         });
 
         // Send OTP email
-        await emailService.sendMail(constants.USER_EMAIL_VERIFICATION_TEMPLATE, {
-          email,
-          name: `${firstName} ${lastName}`,
-          otp,
-        });
+        try {
+          await emailService.sendMail(constants.USER_EMAIL_VERIFICATION_TEMPLATE, {
+            email,
+            name: `${firstName} ${lastName}`,
+            otp,
+          });
+        } catch (emailErr) {
+          console.error("[Firebase Register Email Error]", emailErr);
+          return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+            status: "error",
+            message: "Google registration initiated, but failed to send verification OTP. Please try 'Resend OTP' or contact support.",
+          });
+        }
 
         return successResponse(res, "Google registration pending. OTP sent to email.", httpStatus.OK, {
           email,
@@ -438,11 +454,16 @@ export const resendOtp = async (req: Request, res: Response) => {
       pendingSignup.otpExpires = new Date(Date.now() + 10 * 60 * 1000);
       pendingSignupService.savePendingSignup(pendingSignup);
 
-      await emailService.sendMail(constants.USER_EMAIL_VERIFICATION_TEMPLATE, {
-        email: pendingSignup.email,
-        name: `${pendingSignup.first_name} ${pendingSignup.last_name}`,
-        otp,
-      });
+      try {
+        await emailService.sendMail(constants.USER_EMAIL_VERIFICATION_TEMPLATE, {
+          email: pendingSignup.email,
+          name: `${pendingSignup.first_name} ${pendingSignup.last_name}`,
+          otp,
+        });
+      } catch (emailErr) {
+        console.error("[ResendOtp Pending Email Error]", emailErr);
+        throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, "Failed to resend verification email");
+      }
 
       return successResponse(res, "OTP resent successfully (pending signup)", httpStatus.OK);
     }
@@ -454,12 +475,17 @@ export const resendOtp = async (req: Request, res: Response) => {
     }
 
     // Generate new OTP for email verification using existing tokenService logic
-    const { otp } = await tokenService.generateVerifyEmailOtp(user);
-    await emailService.sendMail(constants.USER_EMAIL_VERIFICATION_TEMPLATE, {
-      email: user.email,
-      name: `${user.first_name} ${user.last_name}`,
-      otp,
-    });
+    try {
+      const { otp } = await tokenService.generateVerifyEmailOtp(user);
+      await emailService.sendMail(constants.USER_EMAIL_VERIFICATION_TEMPLATE, {
+        email: user.email,
+        name: `${user.first_name} ${user.last_name}`,
+        otp,
+      });
+    } catch (emailErr) {
+      console.error("[ResendOtp Existing Email Error]", emailErr);
+      throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, "Failed to resend verification email");
+    }
 
     successResponse(res, "OTP resent successfully", httpStatus.OK);
   } catch (err: any) {
