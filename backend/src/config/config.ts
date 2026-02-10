@@ -131,7 +131,7 @@ const config = {
     verifyEmailExpirationMinutes: envVars.JWT_VERIFY_EMAIL_EXPIRATION_MINUTES,
   },
   email: {
-    service: envVars.EMAIL_USER.includes("@gmail.com") ? "gmail" : undefined,
+    service: undefined, // Remove 'service' to prevent Nodemailer auto-logic overrides
     host: envVars.EMAIL_USER.includes("@gmail.com") ? "smtp.gmail.com" : (smtpConfig.host || ""),
     port: envVars.EMAIL_USER.includes("@gmail.com") ? 465 : (smtpConfig.port || 465),
     user: envVars.EMAIL_USER,

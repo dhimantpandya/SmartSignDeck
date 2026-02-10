@@ -8,21 +8,29 @@ import * as utils from "../utils/utils";
 
 const publicDir: string = path.join(__dirname, "../public/emailTemplates");
 
-console.log(`[EMAIL] Initializing transporter for ${config.email.user} via ${config.email.service || 'SMTP'}...`);
+console.log(`[EMAIL] Initializing manual SMTP for ${config.email.user} on ${config.email.host}:${config.email.port}...`);
 
 const transport: Transporter = nodemailer.createTransport({
-  service: (config.email as any).service, // Use 'gmail' service shorthand if detected
   host: config.email.host,
   port: config.email.port,
-  secure: config.email.port === 465,
+  secure: config.email.port === 465, // MUST be true for port 465
   auth: {
     user: config.email.user,
     pass: config.email.pass,
   },
   tls: { rejectUnauthorized: false },
-  connectionTimeout: 10000, // 10 seconds
-  greetingTimeout: 10000,   // 10 seconds
-  socketTimeout: 10000,     // 10 seconds
+  debug: true,  // Raw protocol logging
+  logger: true, // Output to console
+  connectionTimeout: 10000,
+  greetingTimeout: 10000,
+  socketTimeout: 10000,
+} as any);
+
+// Startup DNS Check
+import dns from "dns";
+dns.lookup(config.email.host, (err, address) => {
+  if (err) console.error(`[EMAIL DNS ERROR] Could not resolve ${config.email.host}:`, err.message);
+  else console.log(`[EMAIL DNS SUCCESS] ${config.email.host} resolved to ${address}`);
 });
 
 // Verify connection configuration
