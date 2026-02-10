@@ -50,8 +50,9 @@ const getHTMLandSendEmail = async (
   request: Record<string, string>,
 ) => {
   if (!fs.existsSync(templateFile)) {
-    console.error(`[EMAIL ERROR] Template file not found: ${templateFile}`);
-    return;
+    const errorMsg = `[EMAIL ERROR] Template file not found: ${templateFile}`;
+    console.error(errorMsg);
+    throw new Error(errorMsg);
   }
 
   const mailOptions = {
@@ -109,6 +110,10 @@ async function sendMail(type: string, request: Record<string, string>) {
   }
 
   try {
+    if (!config.email.host) {
+      throw new Error(`SMTP Host is not configured. (Detected for user: ${request.email})`);
+    }
+
     switch (type) {
       case constants.USER_EMAIL_VERIFICATION_TEMPLATE:
         request.subject = constants.USER_EMAIL_VERIFICATION_SUBJECT;
@@ -168,18 +173,10 @@ async function sendMail(type: string, request: Record<string, string>) {
         console.warn(`[EMAIL WARNING] Unknown email type: ${type}`);
         break;
     }
-  } catch (err: unknown) {
-    if (err instanceof Error) {
-      console.error(
-        `[EMAIL ERROR] Failed to send email of type ${type} to ${request.email}:`,
-        err.message,
-      );
-    } else {
-      console.error(
-        `[EMAIL ERROR] Failed to send email of type ${type} to ${request.email}:`,
-        err,
-      );
-    }
+  } catch (err: any) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    console.error(`[EMAIL ERROR] Failed to send email of type ${type} to ${request.email}:`, errorMsg);
+    throw err; // RE-THROW so controller knows it failed
   }
 }
 

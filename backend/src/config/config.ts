@@ -175,4 +175,6 @@ const config = {
   appUrl: envVars.WEB_APP_URL,
 };
 
+console.log(`[Config] SMTP Provider: ${config.email.host || "NOT CONFIGURED"} (Port: ${config.email.port})`);
+
 export default config;
