@@ -47,26 +47,21 @@ export const register = async (req: Request, res: Response) => {
       createdAt: new Date(),
     });
 
-    // Send OTP email
-    try {
-      await emailService.sendMail(constants.USER_EMAIL_VERIFICATION_TEMPLATE, {
-        email,
-        name: `${first_name} ${last_name}`,
-        otp,
-      });
-    } catch (emailErr: any) {
-      console.error("[Register Email Error]", emailErr);
-      return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
-        status: "error",
-        message: `Failed to send verification email: ${emailErr.message || "Unknown error"}`,
-      });
-    }
+    // Send OTP email (Non-blocking to prevent redirection timeout)
+    emailService.sendMail(constants.USER_EMAIL_VERIFICATION_TEMPLATE, {
+      email,
+      name: `${first_name} ${last_name}`,
+      otp,
+    }).catch((emailErr: any) => {
+      console.error("[Register Email Background Error]", emailErr.message);
+      // We don't return 500 here because we want the user to reach the OTP page
+    });
 
-    successResponse(
-      res,
-      "OTP sent to email. Please verify to complete registration.",
-      httpStatus.OK,
-    );
+    return res.status(httpStatus.CREATED).json({
+      status: "success",
+      message: "Registration initiated. Please verify your email with the OTP sent.",
+      data: { email },
+    });
   } catch (err: any) {
     console.error("[Register Error]", err);
     res.status(err.statusCode || httpStatus.INTERNAL_SERVER_ERROR).json({
@@ -185,23 +180,23 @@ export const firebaseLogin = async (req: Request, res: Response) => {
           createdAt: new Date(),
         });
 
-        // Send OTP email
-        try {
-          await emailService.sendMail(constants.USER_EMAIL_VERIFICATION_TEMPLATE, {
-            email,
-            name: `${firstName} ${lastName}`,
-            otp,
-          });
-        } catch (emailErr: any) {
-          console.error("[Firebase Register Email Error]", emailErr);
-          return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
-            status: "error",
-            message: `Google registration initiated, but failed to send verification OTP: ${emailErr.message || "Unknown error"}`,
-          });
-        }
+        // Send OTP email (Non-blocking)
+        emailService.sendMail(constants.USER_EMAIL_VERIFICATION_TEMPLATE, {
+          email: email,
+          name: `${firstName} ${lastName}`,
+          otp,
+        }).catch((emailErr: any) => {
+          console.error("[Firebase Register Email Background Error]", emailErr.message);
+        });
 
-        return successResponse(res, "Google registration pending. OTP sent to email.", httpStatus.OK, {
-          email,
+        return res.status(httpStatus.OK).json({
+          status: "success",
+          message: "Google registration successful. Please verify your email with the OTP sent.",
+          data: {
+            isNewUser: true,
+            email: email,
+            redirect: "otp-verification"
+          }
         });
       }
 

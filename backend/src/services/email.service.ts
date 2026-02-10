@@ -10,6 +10,7 @@ import * as utils from "../utils/utils";
 const publicDir: string = path.join(__dirname, "../public/emailTemplates");
 
 const transport: Transporter = nodemailer.createTransport({
+  service: config.email.host === "smtp.gmail.com" ? "gmail" : undefined,
   host: config.email.host,
   port: config.email.port,
   secure: config.email.port === 465, // dynamic secure
