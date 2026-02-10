@@ -92,7 +92,7 @@ const getSMTPConfig = (email: string, host?: string, port?: number) => {
   if (host) return { host, port: port || 465 };
 
   const domain = email.split("@")[1]?.toLowerCase();
-  if (domain === "gmail.com") return { host: "smtp.gmail.com", port: 465 };
+  if (domain === "gmail.com") return { host: "smtp.gmail.com", port: 587 };
   if (["outlook.com", "hotmail.com", "live.com", "msn.com"].includes(domain))
     return { host: "smtp-mail.outlook.com", port: 587 };
   if (domain === "yahoo.com") return { host: "smtp.mail.yahoo.com", port: 465 };

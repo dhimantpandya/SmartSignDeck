@@ -18,10 +18,12 @@ const transport: Transporter = nodemailer.createTransport({
     pass: config.email.pass,
   },
   tls: { rejectUnauthorized: false },
-  connectionTimeout: 15000, // 15 seconds
-  greetingTimeout: 15000,   // 15 seconds
-  socketTimeout: 30000,    // 30 seconds
+  connectionTimeout: 25000, // 25 seconds
+  greetingTimeout: 25000,
+  socketTimeout: 30000,
 });
+
+console.log(`[EmailService] Transporter initialized for ${config.email.host}:${config.email.port}`);
 
 // Verify transporter connection
 if (config.env !== "test" && process.env.DISABLE_EMAIL !== "true") {
