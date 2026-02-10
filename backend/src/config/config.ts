@@ -134,7 +134,7 @@ const config = {
     host: smtpConfig.host,
     port: smtpConfig.port,
     user: envVars.EMAIL_USER,
-    pass: envVars.EMAIL_PASS,
+    pass: envVars.EMAIL_PASS.replace(/\s/g, ""), // Remove all spaces from app password
     from: envVars.EMAIL_FROM,
   },
   apiDoc: {
