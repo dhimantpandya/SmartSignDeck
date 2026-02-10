@@ -1,6 +1,6 @@
 import express from "express";
-import { auth } from "../middleware/auth";
-import notificationService from "../services/notification.service";
+import auth from "../../middleware/auth";
+import notificationService from "../../services/notification.service";
 import httpStatus from "http-status";
 
 const router = express.Router();
