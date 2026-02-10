@@ -7,7 +7,6 @@ import { cn, formatRole } from '@/lib/utils'
 import { sidelinks } from '@/data/sidelinks'
 import { useAuth } from '@/hooks/use-auth'
 import { useNotifications } from './nav-notification-provider'
-import { NotificationBell } from './notification-bell'
 
 interface SidebarProps extends React.HTMLAttributes<HTMLElement> {
   isCollapsed: boolean
@@ -143,7 +142,6 @@ export default function Sidebar({
           </div>
 
           <div className="flex items-center gap-2">
-            <NotificationBell />
             {/* Toggle Button in mobile */}
             <Button
               variant='ghost'

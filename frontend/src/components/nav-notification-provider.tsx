@@ -46,19 +46,33 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
     // 1. Initialize API & Socket
     useEffect(() => {
         if (user) {
+            console.log('[NotificationProvider] Initializing for user:', user.id)
+
             // Fetch initial notifications
             apiService.get<{ notifications: Notification[], unreadCount: number }>('/v1/notifications').then(data => {
+                console.log('[NotificationProvider] Loaded notifications:', data.notifications.length, 'unread:', data.unreadCount)
                 setNotifications(data.notifications)
                 setUnreadCount(data.unreadCount)
             }).catch((err: any) => console.error('Failed to fetch notifications', err))
 
             // Connect Socket
             const newSocket = io(import.meta.env.VITE_API_URL || 'http://localhost:10000')
+            console.log('[NotificationProvider] Connecting socket to:', import.meta.env.VITE_API_URL || 'http://localhost:10000')
             setSocket(newSocket)
 
+            newSocket.on('connect', () => {
+                console.log('[NotificationProvider] Socket connected:', newSocket.id)
+            })
+
+            newSocket.on('disconnect', () => {
+                console.log('[NotificationProvider] Socket disconnected')
+            })
+
             newSocket.emit('join_user', user.id)
+            console.log('[NotificationProvider] Emitted join_user:', user.id)
 
             return () => {
+                console.log('[NotificationProvider] Cleaning up socket connection')
                 newSocket.disconnect()
             }
         }
@@ -68,8 +82,11 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
     useEffect(() => {
         if (!socket) return
 
+        console.log('[NotificationProvider] Setting up event listeners')
+
         // Standard Notifications (Bell)
         socket.on('new_notification', (newNotif: Notification) => {
+            console.log('[NotificationProvider] Received new_notification:', newNotif)
             setNotifications(prev => [newNotif, ...prev])
             setUnreadCount(prev => prev + 1)
 
@@ -81,11 +98,14 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
 
         // Chat Badges (Sidebar)
         socket.on('new_chat', (data: any) => {
+            console.log('[NotificationProvider] Received new_chat:', data)
             if (data.type === 'company' && data.senderId !== user?.id) {
                 // Company-wide message (not sent by me)
+                console.log('[NotificationProvider] Incrementing company chat count')
                 setUnreadCompanyChatCount(prev => prev + 1)
             } else if (data.type === 'private' && data.senderId !== user?.id) {
                 // Private message (not sent by me)
+                console.log('[NotificationProvider] Incrementing private chat count for sender:', data.senderId)
                 setUnreadChatCounts(prev => ({
                     ...prev,
                     [data.senderId]: (prev[data.senderId] || 0) + 1
@@ -94,6 +114,7 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
         })
 
         return () => {
+            console.log('[NotificationProvider] Cleaning up event listeners')
             socket.off('new_notification')
             socket.off('new_chat')
         }
