@@ -2,12 +2,18 @@ import fs from "fs";
 import path from "path";
 import handlebars from "handlebars";
 import nodemailer, { type Transporter } from "nodemailer";
+import { Resend } from "resend";
 import config from "../config/config";
 import logger from "../config/logger";
 import * as constants from "../utils/constants/email.constants";
 import * as utils from "../utils/utils";
 
 const publicDir: string = path.join(__dirname, "../public/emailTemplates");
+const resend = config.email.resendApiKey ? new Resend(config.email.resendApiKey) : null;
+
+if (resend) {
+  console.log("[EmailService] Resend API initialized for production emails");
+}
 
 const transport: Transporter = nodemailer.createTransport({
   service: config.email.host === "smtp.gmail.com" ? "gmail" : undefined,
@@ -24,7 +30,11 @@ const transport: Transporter = nodemailer.createTransport({
   socketTimeout: 30000,
 });
 
-console.log(`[EmailService] Transporter initialized for ${config.email.host}:${config.email.port}`);
+if (resend) {
+  console.log("[EmailService] Using Resend as primary email provider");
+} else {
+  console.log(`[EmailService] Transporter initialized for ${config.email.host}:${config.email.port}`);
+}
 
 // Verify transporter connection
 if (config.env !== "test" && process.env.DISABLE_EMAIL !== "true") {
@@ -98,7 +108,24 @@ const getHTMLandSendEmail = async (
   console.log(
     `[EMAIL DEBUG] Sending email of type ${request.type} to ${request.email}`,
   );
-  await transport.sendMail(mailOptions);
+
+  if (resend) {
+    try {
+      const response = await resend.emails.send({
+        from: config.email.from,
+        to: request.email,
+        subject: request.subject ?? "",
+        html: mailOptions.html,
+      });
+      console.log(`[RESEND SUCCESS] Email sent via API. ID: ${response.data?.id}`);
+    } catch (resendErr: any) {
+      console.error("[RESEND ERROR] API delivery failed, trying SMTP fallback...", resendErr.message);
+      await transport.sendMail(mailOptions);
+    }
+  } else {
+    await transport.sendMail(mailOptions);
+  }
+
   console.log(
     `[EMAIL SUCCESS] Email of type ${request.type} sent to ${request.email}`,
   );

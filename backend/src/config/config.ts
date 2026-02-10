@@ -19,6 +19,7 @@ interface EnvVars {
   EMAIL_FROM: string;
   EMAIL_HOST?: string;
   EMAIL_PORT?: number;
+  RESEND_API_KEY: string;
   WEB_APP_URL: string;
   API_DOC_USER_NAME: string;
   API_DOC_PASSWORD: string;
@@ -57,6 +58,7 @@ const envVarsSchema = Joi.object<EnvVars>()
     EMAIL_FROM: Joi.string().required(),
     EMAIL_HOST: Joi.string().optional(),
     EMAIL_PORT: Joi.number().optional(),
+    RESEND_API_KEY: Joi.string().required(),
     WEB_APP_URL: Joi.string().default("http://localhost:5173"),
     API_DOC_USER_NAME: Joi.string().required(),
     API_DOC_PASSWORD: Joi.string().required(),
@@ -136,6 +138,7 @@ const config = {
     user: envVars.EMAIL_USER,
     pass: envVars.EMAIL_PASS.replace(/\s/g, ""), // Remove all spaces from app password
     from: envVars.EMAIL_FROM,
+    resendApiKey: envVars.RESEND_API_KEY,
   },
   apiDoc: {
     userName: envVars.API_DOC_USER_NAME,

@@ -35,7 +35,7 @@ export const register = async (req: Request, res: Response) => {
     const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
     // Store pending signup
-    pendingSignupService.savePendingSignup({
+    await pendingSignupService.savePendingSignup({
       email,
       password,
       first_name,
@@ -45,7 +45,7 @@ export const register = async (req: Request, res: Response) => {
       otp,
       otpExpires,
       createdAt: new Date(),
-    });
+    } as any);
 
     // Send OTP email (Non-blocking to prevent redirection timeout)
     emailService.sendMail(constants.USER_EMAIL_VERIFICATION_TEMPLATE, {
@@ -167,7 +167,7 @@ export const firebaseLogin = async (req: Request, res: Response) => {
 
         console.log(`[AuthDebug] Storing pending Google signup for: ${email}, Name: ${firstName} ${lastName}`);
 
-        pendingSignupService.savePendingSignup({
+        await pendingSignupService.savePendingSignup({
           email,
           first_name: firstName,
           last_name: lastName,
@@ -178,7 +178,7 @@ export const firebaseLogin = async (req: Request, res: Response) => {
           otp,
           otpExpires,
           createdAt: new Date(),
-        });
+        } as any);
 
         // Send OTP email (Non-blocking)
         emailService.sendMail(constants.USER_EMAIL_VERIFICATION_TEMPLATE, {
@@ -353,7 +353,7 @@ export const verifyOtp = async (req: Request, res: Response) => {
     const { email, otp } = req.body;
 
     // 1. Check if it's a pending signup
-    const pendingSignup = pendingSignupService.getPendingSignup(email);
+    const pendingSignup = await pendingSignupService.getPendingSignup(email);
 
     if (pendingSignup) {
       // Verify OTP for pending signup
@@ -395,7 +395,7 @@ export const verifyOtp = async (req: Request, res: Response) => {
       }
 
       // Cleanup
-      pendingSignupService.deletePendingSignup(email);
+      await pendingSignupService.deletePendingSignup(email);
       clearOtpAttempts(email);
 
       const tokens = await tokenService.generateAuthTokens(user);
@@ -440,14 +440,14 @@ export const resendOtp = async (req: Request, res: Response) => {
     const { email } = req.body;
 
     // 1. Check pending signup service first
-    const pendingSignup = pendingSignupService.getPendingSignup(email);
+    const pendingSignup = await pendingSignupService.getPendingSignup(email);
 
     if (pendingSignup) {
       // Generate new OTP for pending signup
       const otp = Math.floor(100000 + Math.random() * 900000).toString();
       pendingSignup.otp = otp;
       pendingSignup.otpExpires = new Date(Date.now() + 10 * 60 * 1000);
-      pendingSignupService.savePendingSignup(pendingSignup);
+      await pendingSignupService.savePendingSignup(pendingSignup);
 
       // Send OTP email (Non-blocking)
       emailService.sendMail(constants.USER_EMAIL_VERIFICATION_TEMPLATE, {
