@@ -26,6 +26,11 @@ import rateLimit from "express-rate-limit";
 
 const app: Application = express();
 
+// Trust proxy - CRITICAL for Vercel/Render deployment
+// This allows Express to read the real client IP from X-Forwarded-For header
+// Without this, all users appear as the same IP (proxy IP) and share rate limits
+app.set('trust proxy', true);
+
 if (config.env !== "test") {
   app.use(morgan.successHandler);
   app.use(morgan.errorHandler);
@@ -154,9 +159,6 @@ const playerLimiter = rateLimit({
 // Apply to player-specific endpoints
 app.use("/v1/screens/:screenId", playerLimiter);
 app.use("/v1/playback-logs", playerLimiter);
-
-// v1 api routes
-app.use("/v1", routes);
 
 // send back a 404 error for any unknown api request
 app.use((req: Request, res: Response, next: NextFunction) => {

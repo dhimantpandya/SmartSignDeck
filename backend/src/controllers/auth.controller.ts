@@ -95,6 +95,8 @@ export const register = async (req: Request, res: Response) => {
 export const firebaseLogin = async (req: Request, res: Response) => {
   try {
     const { idToken, mode } = req.body;
+    const clientIp = req.ip || req.socket.remoteAddress || 'unknown';
+    console.log(`[AuthDebug] Firebase login attempt from IP: ${clientIp}, Mode: "${mode}"`);
 
     // Import admin dynamically or check if initialized
     const firebaseModule = await import("../config/firebase");
@@ -312,7 +314,8 @@ export const firebaseLogin = async (req: Request, res: Response) => {
 export const login = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
-    console.log(`[AuthDebug] Login attempt for email: "${email}"`);
+    const clientIp = req.ip || req.socket.remoteAddress || 'unknown';
+    console.log(`[AuthDebug] Login attempt from IP: ${clientIp}, Email: "${email}"`);
     const user = await authService.loginUserWithEmailAndPassword(
       email,
       password,
