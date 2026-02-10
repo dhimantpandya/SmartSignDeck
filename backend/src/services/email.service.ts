@@ -111,16 +111,27 @@ const getHTMLandSendEmail = async (
 
   if (resend) {
     try {
-      const response = await resend.emails.send({
+      const { data, error } = await resend.emails.send({
         from: config.email.from,
         to: request.email,
         subject: request.subject ?? "",
         html: mailOptions.html,
       });
-      console.log(`[RESEND SUCCESS] Email sent via API. ID: ${response.data?.id}`);
+
+      if (error) {
+        throw new Error(`Resend API Error: ${error.message} (Code: ${error.name})`);
+      }
+
+      console.log(`[RESEND SUCCESS] Email sent via API. ID: ${data?.id}`);
     } catch (resendErr: any) {
       console.error("[RESEND ERROR] API delivery failed, trying SMTP fallback...", resendErr.message);
-      await transport.sendMail(mailOptions);
+      try {
+        await transport.sendMail(mailOptions);
+        console.log(`[SMTP FALLBACK SUCCESS] Email sent to ${request.email} via SMTP`);
+      } catch (smtpErr: any) {
+        console.error("[SMTP FALLBACK FAILED] SMTP also failed:", smtpErr.message);
+        throw smtpErr; // Re-throw to inform controller
+      }
     }
   } else {
     await transport.sendMail(mailOptions);
