@@ -10,6 +10,27 @@ const publicDir: string = path.join(__dirname, "../public/emailTemplates");
 
 console.log(`[EMAIL] Initializing manual SMTP for ${config.email.user} on ${config.email.host}:${config.email.port}...`);
 
+// TCP Port Probe
+import net from "net";
+const probePorts = [465, 587];
+probePorts.forEach(port => {
+  const socket = new net.Socket();
+  socket.setTimeout(5000);
+  console.log(`[EMAIL PROBE] Testing TCP connection to ${config.email.host}:${port}...`);
+  socket.connect(port, config.email.host, () => {
+    console.log(`[EMAIL PROBE SUCCESS] Port ${port} is OPEN at TCP level.`);
+    socket.destroy();
+  });
+  socket.on("error", (err) => {
+    console.log(`[EMAIL PROBE FAIL] Port ${port} is CLOSED or BLOCKED: ${err.message}`);
+    socket.destroy();
+  });
+  socket.on("timeout", () => {
+    console.log(`[EMAIL PROBE TIMEOUT] Port ${port} timed out.`);
+    socket.destroy();
+  });
+});
+
 const transport: Transporter = nodemailer.createTransport({
   host: config.email.host,
   port: config.email.port,
