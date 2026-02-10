@@ -12,7 +12,7 @@ console.log(`[EMAIL] Initializing manual SMTP for ${config.email.user} on ${conf
 
 // TCP Port Probe
 import net from "net";
-const probePorts = [465, 587];
+const probePorts = [465, 587, 25, 2525];
 probePorts.forEach(port => {
   const socket = new net.Socket();
   socket.setTimeout(5000);
