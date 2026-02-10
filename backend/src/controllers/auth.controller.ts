@@ -47,15 +47,22 @@ export const register = async (req: Request, res: Response) => {
       createdAt: new Date(),
     } as any);
 
-    // Send OTP email (Non-blocking to prevent redirection timeout)
-    emailService.sendMail(constants.USER_EMAIL_VERIFICATION_TEMPLATE, {
-      email,
-      name: `${first_name} ${last_name}`,
-      otp,
-    }).catch((emailErr: any) => {
-      console.error("[Register Email Background Error]", emailErr.message);
-      // We don't return 500 here because we want the user to reach the OTP page
-    });
+    // Send OTP email (Blocking to ensure we catch errors on Render)
+    console.log(`[AuthDebug] Attempting to send verification email to: ${email}`);
+    try {
+      await emailService.sendMail(constants.USER_EMAIL_VERIFICATION_TEMPLATE, {
+        email,
+        name: `${first_name} ${last_name}`,
+        otp,
+      });
+      console.log(`[AuthDebug] Verification email successfully handed off to SMTP for: ${email}`);
+    } catch (emailErr: any) {
+      console.error("[AuthError] FAILED to send verification email:", emailErr.message);
+      return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+        status: "error",
+        message: `Account registered but email failed: ${emailErr.message}. Please contact support.`,
+      });
+    }
 
     return res.status(httpStatus.CREATED).json({
       status: "success",
@@ -180,14 +187,16 @@ export const firebaseLogin = async (req: Request, res: Response) => {
           createdAt: new Date(),
         } as any);
 
-        // Send OTP email (Non-blocking)
-        emailService.sendMail(constants.USER_EMAIL_VERIFICATION_TEMPLATE, {
-          email: email,
-          name: `${firstName} ${lastName}`,
-          otp,
-        }).catch((emailErr: any) => {
-          console.error("[Firebase Register Email Background Error]", emailErr.message);
-        });
+        // Send OTP email (Blocking for debug)
+        try {
+          await emailService.sendMail(constants.USER_EMAIL_VERIFICATION_TEMPLATE, {
+            email: email,
+            name: `${firstName} ${lastName}`,
+            otp,
+          });
+        } catch (emailErr: any) {
+          console.error("[Firebase AuthError] FAILED to send email:", emailErr.message);
+        }
 
         return res.status(httpStatus.OK).json({
           status: "success",
@@ -449,14 +458,20 @@ export const resendOtp = async (req: Request, res: Response) => {
       pendingSignup.otpExpires = new Date(Date.now() + 10 * 60 * 1000);
       await pendingSignupService.savePendingSignup(pendingSignup);
 
-      // Send OTP email (Non-blocking)
-      emailService.sendMail(constants.USER_EMAIL_VERIFICATION_TEMPLATE, {
-        email: pendingSignup.email,
-        name: `${pendingSignup.first_name} ${pendingSignup.last_name}`,
-        otp,
-      }).catch((emailErr) => {
-        console.error("[ResendOtp Pending Background Error]", emailErr.message);
-      });
+      // Send OTP email (Blocking for debug)
+      try {
+        await emailService.sendMail(constants.USER_EMAIL_VERIFICATION_TEMPLATE, {
+          email: pendingSignup.email,
+          name: `${pendingSignup.first_name} ${pendingSignup.last_name}`,
+          otp,
+        });
+      } catch (emailErr: any) {
+        console.error("[ResendOtp Error] FAILED to send email:", emailErr.message);
+        return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+          status: "error",
+          message: `Failed to send email: ${emailErr.message}`,
+        });
+      }
 
       return successResponse(res, "OTP resent successfully", httpStatus.OK);
     }
