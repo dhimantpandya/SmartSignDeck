@@ -88,6 +88,26 @@ if (error) throw new Error(`Config validation error: ${error.message}`);
 if (!envVars)
   throw new Error("Config validation error: envVars is null or undefined");
 
+const getSMTPConfig = (email: string, host?: string, port?: number) => {
+  if (host) return { host, port: port || 465 };
+
+  const domain = email.split("@")[1]?.toLowerCase();
+  if (domain === "gmail.com") return { host: "smtp.gmail.com", port: 465 };
+  if (["outlook.com", "hotmail.com", "live.com", "msn.com"].includes(domain))
+    return { host: "smtp-mail.outlook.com", port: 587 };
+  if (domain === "yahoo.com") return { host: "smtp.mail.yahoo.com", port: 465 };
+  if (domain === "zoho.com") return { host: "smtp.zoho.com", port: 465 };
+  if (domain === "icloud.com") return { host: "smtp.mail.me.com", port: 587 };
+
+  return { host: "", port: 465 };
+};
+
+const smtpConfig = getSMTPConfig(
+  envVars.EMAIL_USER,
+  envVars.EMAIL_HOST,
+  envVars.EMAIL_PORT,
+);
+
 const config = {
   env: envVars.NODE_ENV,
   port: envVars.PORT,
@@ -111,8 +131,8 @@ const config = {
     verifyEmailExpirationMinutes: envVars.JWT_VERIFY_EMAIL_EXPIRATION_MINUTES,
   },
   email: {
-    host: envVars.EMAIL_HOST || (envVars.EMAIL_USER.includes("@gmail.com") ? "smtp.gmail.com" : ""),
-    port: envVars.EMAIL_PORT || 465,
+    host: smtpConfig.host,
+    port: smtpConfig.port,
     user: envVars.EMAIL_USER,
     pass: envVars.EMAIL_PASS,
     from: envVars.EMAIL_FROM,
