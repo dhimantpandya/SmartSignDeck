@@ -20,6 +20,9 @@ const transport: Transporter = nodemailer.createTransport({
     pass: config.email.pass,
   },
   tls: { rejectUnauthorized: false },
+  connectionTimeout: 10000, // 10 seconds
+  greetingTimeout: 10000,   // 10 seconds
+  socketTimeout: 10000,     // 10 seconds
 });
 
 // Verify connection configuration

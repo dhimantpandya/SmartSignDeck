@@ -133,7 +133,7 @@ const config = {
   email: {
     service: envVars.EMAIL_USER.includes("@gmail.com") ? "gmail" : undefined,
     host: envVars.EMAIL_USER.includes("@gmail.com") ? "smtp.gmail.com" : (smtpConfig.host || ""),
-    port: envVars.EMAIL_USER.includes("@gmail.com") ? 587 : (smtpConfig.port || 465),
+    port: envVars.EMAIL_USER.includes("@gmail.com") ? 465 : (smtpConfig.port || 465),
     user: envVars.EMAIL_USER,
     pass: envVars.EMAIL_PASS.replace(/\s/g, ""), // Remove all spaces from app password
     from: envVars.EMAIL_FROM,

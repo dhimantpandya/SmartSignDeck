@@ -47,20 +47,26 @@ export const register = async (req: Request, res: Response) => {
       createdAt: new Date(),
     } as any);
 
-    // Send OTP email (Blocking to ensure we catch errors on Render)
+    // Send OTP email (Blocking with 15s safety timeout)
     console.log(`[AuthDebug] Attempting to send verification email to: ${email}`);
     try {
-      await emailService.sendMail(constants.USER_EMAIL_VERIFICATION_TEMPLATE, {
+      const emailPromise = emailService.sendMail(constants.USER_EMAIL_VERIFICATION_TEMPLATE, {
         email,
         name: `${first_name} ${last_name}`,
         otp,
       });
+
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Mail server timeout (15s exceeded)")), 15000)
+      );
+
+      await Promise.race([emailPromise, timeoutPromise]);
       console.log(`[AuthDebug] Verification email successfully handed off to SMTP for: ${email}`);
     } catch (emailErr: any) {
       console.error("[AuthError] FAILED to send verification email:", emailErr.message);
       return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
         status: "error",
-        message: `Account registered but email failed: ${emailErr.message}. Please contact support.`,
+        message: `Account registered but email failed: ${emailErr.message}. You can try login or resend OTP later.`,
       });
     }
 
@@ -187,13 +193,17 @@ export const firebaseLogin = async (req: Request, res: Response) => {
           createdAt: new Date(),
         } as any);
 
-        // Send OTP email (Blocking for debug)
+        // Send OTP email (Blocking with timeout)
         try {
-          await emailService.sendMail(constants.USER_EMAIL_VERIFICATION_TEMPLATE, {
+          const emailPromise = emailService.sendMail(constants.USER_EMAIL_VERIFICATION_TEMPLATE, {
             email: email,
             name: `${firstName} ${lastName}`,
             otp,
           });
+          const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error("Mail timeout")), 15000)
+          );
+          await Promise.race([emailPromise, timeoutPromise]);
         } catch (emailErr: any) {
           console.error("[Firebase AuthError] FAILED to send email:", emailErr.message);
         }
@@ -458,13 +468,17 @@ export const resendOtp = async (req: Request, res: Response) => {
       pendingSignup.otpExpires = new Date(Date.now() + 10 * 60 * 1000);
       await pendingSignupService.savePendingSignup(pendingSignup);
 
-      // Send OTP email (Blocking for debug)
+      // Send OTP email (Blocking with timeout)
       try {
-        await emailService.sendMail(constants.USER_EMAIL_VERIFICATION_TEMPLATE, {
+        const emailPromise = emailService.sendMail(constants.USER_EMAIL_VERIFICATION_TEMPLATE, {
           email: pendingSignup.email,
           name: `${pendingSignup.first_name} ${pendingSignup.last_name}`,
           otp,
         });
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Mail timeout")), 15000)
+        );
+        await Promise.race([emailPromise, timeoutPromise]);
       } catch (emailErr: any) {
         console.error("[ResendOtp Error] FAILED to send email:", emailErr.message);
         return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
