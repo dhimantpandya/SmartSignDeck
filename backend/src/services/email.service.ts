@@ -8,6 +8,8 @@ import * as utils from "../utils/utils";
 
 const publicDir: string = path.join(__dirname, "../public/emailTemplates");
 
+console.log(`[EMAIL] Initializing transporter for ${config.email.user} via ${config.email.service || 'SMTP'}...`);
+
 const transport: Transporter = nodemailer.createTransport({
   service: (config.email as any).service, // Use 'gmail' service shorthand if detected
   host: config.email.host,
@@ -22,11 +24,12 @@ const transport: Transporter = nodemailer.createTransport({
 
 // Verify connection configuration
 if (config.env !== "test" && process.env.DISABLE_EMAIL !== "true") {
+  console.log("[EMAIL] Verifying SMTP connection...");
   transport.verify((error) => {
     if (error) {
       console.warn("[EMAIL ERROR] Connection failed:", error.message);
     } else {
-      console.log("[EMAIL SUCCESS] Connected to email server");
+      console.log("[EMAIL SUCCESS] Connected to email server and ready to send");
     }
   });
 }
