@@ -54,11 +54,11 @@ export const register = async (req: Request, res: Response) => {
         name: `${first_name} ${last_name}`,
         otp,
       });
-    } catch (emailErr) {
+    } catch (emailErr: any) {
       console.error("[Register Email Error]", emailErr);
       return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
         status: "error",
-        message: "Failed to send verification email. Please verify your email settings or try again later.",
+        message: `Failed to send verification email: ${emailErr.message || "Unknown error"}`,
       });
     }
 
@@ -192,11 +192,11 @@ export const firebaseLogin = async (req: Request, res: Response) => {
             name: `${firstName} ${lastName}`,
             otp,
           });
-        } catch (emailErr) {
+        } catch (emailErr: any) {
           console.error("[Firebase Register Email Error]", emailErr);
           return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
             status: "error",
-            message: "Google registration initiated, but failed to send verification OTP. Please try 'Resend OTP' or contact support.",
+            message: `Google registration initiated, but failed to send verification OTP: ${emailErr.message || "Unknown error"}`,
           });
         }
 
