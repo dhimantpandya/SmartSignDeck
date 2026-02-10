@@ -23,10 +23,12 @@ interface NotificationContextType {
     notifications: Notification[]
     unreadCount: number
     unreadChatCounts: Record<string, number> // senderId -> count
+    unreadCompanyChatCount: number // Company-wide chat messages
     unreadRequestCount: number
     markAsRead: (id: string) => Promise<void>
     markAllAsRead: () => Promise<void>
     clearChatBadges: () => void
+    clearCompanyChatBadge: () => void
     clearRequestBadges: () => void
 }
 
@@ -38,6 +40,7 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
     const [notifications, setNotifications] = useState<Notification[]>([])
     const [unreadCount, setUnreadCount] = useState(0)
     const [unreadChatCounts, setUnreadChatCounts] = useState<Record<string, number>>({})
+    const [unreadCompanyChatCount, setUnreadCompanyChatCount] = useState(0)
     const [unreadRequestCount, setUnreadRequestCount] = useState(0)
 
     // 1. Initialize API & Socket
@@ -78,8 +81,11 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
 
         // Chat Badges (Sidebar)
         socket.on('new_chat', (data: any) => {
-            // Only increment if it's a private message received (not sent by me)
-            if (data.type === 'private' && data.senderId !== user?.id) {
+            if (data.type === 'company' && data.senderId !== user?.id) {
+                // Company-wide message (not sent by me)
+                setUnreadCompanyChatCount(prev => prev + 1)
+            } else if (data.type === 'private' && data.senderId !== user?.id) {
+                // Private message (not sent by me)
                 setUnreadChatCounts(prev => ({
                     ...prev,
                     [data.senderId]: (prev[data.senderId] || 0) + 1
@@ -120,6 +126,10 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
         setUnreadChatCounts({})
     }
 
+    const clearCompanyChatBadge = () => {
+        setUnreadCompanyChatCount(0)
+    }
+
     const clearRequestBadges = () => {
         setUnreadRequestCount(0)
     }
@@ -130,10 +140,12 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
                 notifications,
                 unreadCount,
                 unreadChatCounts,
+                unreadCompanyChatCount,
                 unreadRequestCount,
                 markAsRead,
                 markAllAsRead,
                 clearChatBadges,
+                clearCompanyChatBadge,
                 clearRequestBadges
             }}
         >

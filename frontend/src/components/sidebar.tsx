@@ -26,7 +26,7 @@ export default function Sidebar({
   const [navOpened, setNavOpened] = useState(false)
   const [adminRequestCount, setAdminRequestCount] = useState(0)
   const { user } = useAuth()
-  const { unreadChatCounts, unreadRequestCount, clearChatBadges, clearRequestBadges } = useNotifications()
+  const { unreadChatCounts, unreadCompanyChatCount, unreadRequestCount, clearChatBadges, clearCompanyChatBadge, clearRequestBadges } = useNotifications()
 
   useEffect(() => {
     if (user && user.role === 'super_admin') {
@@ -56,10 +56,10 @@ export default function Sidebar({
   const filteredLinks = sidelinks.map(link => {
     // 1. Collaboration (Chat + Requests)
     if (link.title === 'Collaboration') {
-      // Total people talking to you
-      const chatSenders = Object.keys(unreadChatCounts).length;
-      // Total pending friend requests
-      const total = chatSenders + unreadRequestCount;
+      // Total people talking to you privately
+      const privateChatSenders = Object.keys(unreadChatCounts).length;
+      // Company-wide chat messages + pending friend requests
+      const total = privateChatSenders + unreadCompanyChatCount + unreadRequestCount;
 
       if (total > 0 && !currentPath?.includes('/collaboration')) {
         return { ...link, label: total.toString() }
@@ -78,9 +78,9 @@ export default function Sidebar({
   // Clear logic on navigation
   useEffect(() => {
     if (currentPath?.includes('/collaboration')) {
-      // Logic to clear badges contextually could be here or in page
-      // For now, we clear them when the user visits the page
+      // Clear all collaboration-related badges when visiting the page
       if (Object.keys(unreadChatCounts).length > 0) clearChatBadges()
+      if (unreadCompanyChatCount > 0) clearCompanyChatBadge()
       if (unreadRequestCount > 0) clearRequestBadges()
     }
   }, [currentPath])
