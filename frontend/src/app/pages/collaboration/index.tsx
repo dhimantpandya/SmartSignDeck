@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Layout } from '@/components/custom/layout'
 import ThemeSwitch from '@/components/theme-switch'
 import { UserNav } from '@/components/user-nav'
+import { NotificationBell } from '@/components/notification-bell'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/custom/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -266,6 +267,7 @@ export default function Collaboration() {
                     </div>
                     <div className='ml-auto flex items-center space-x-4'>
                         <ThemeSwitch />
+                        <NotificationBell />
                         <UserNav />
                     </div>
                 </Layout.Header>

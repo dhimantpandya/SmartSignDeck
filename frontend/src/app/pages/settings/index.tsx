@@ -4,6 +4,7 @@ import { Layout } from '@/components/custom/layout'
 import { Search } from '@/components/search'
 import { Separator } from '@/components/ui/separator'
 import ThemeSwitch from '@/components/theme-switch'
+import { NotificationBell } from '@/components/notification-bell'
 import { UserNav } from '@/components/user-nav'
 import SidebarNav from './components/sidebar-nav'
 import { useState } from 'react'
@@ -27,6 +28,7 @@ export default function Settings() {
         <Search searchTerm={searchTerm} onChange={handleSearch} />
         <div className='ml-auto flex items-center space-x-4'>
           <ThemeSwitch />
+          <NotificationBell />
           <UserNav />
         </div>
       </Layout.Header>

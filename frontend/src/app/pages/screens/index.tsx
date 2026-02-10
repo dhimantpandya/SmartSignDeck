@@ -1,6 +1,7 @@
 import { Layout } from '@/components/custom/layout'
 import ThemeSwitch from '@/components/theme-switch'
 import { UserNav } from '@/components/user-nav'
+import { NotificationBell } from '@/components/notification-bell'
 import { BreadcrumbNavigation } from '@/components/ui/breadcrumb-navigation'
 import { IconHome, IconDeviceTv, IconPlus, IconTrash, IconEdit, IconPlayerPlay, IconRefresh, IconCopy } from '@tabler/icons-react'
 import { Button } from '@/components/custom/button'
@@ -214,6 +215,7 @@ export default function Screens() {
             <Layout.Header>
                 <div className='ml-auto flex items-center space-x-4'>
                     <ThemeSwitch />
+                    <NotificationBell />
                     <UserNav />
                 </div>
             </Layout.Header>
