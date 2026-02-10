@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react'
-import { useAuth } from './use-auth'
+import { useAuth } from '@/hooks/use-auth'
 import { io, Socket } from 'socket.io-client'
-import { axiosInstance } from '@/api/axios'
+import { apiService } from '@/api'
 
 interface Notification {
     _id: string
@@ -44,10 +44,10 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
     useEffect(() => {
         if (user) {
             // Fetch initial notifications
-            axiosInstance.get('/notifications').then(res => {
-                setNotifications(res.data.notifications)
-                setUnreadCount(res.data.unreadCount)
-            }).catch(err => console.error('Failed to fetch notifications', err))
+            apiService.get<{ notifications: Notification[], unreadCount: number }>('/v1/notifications').then(data => {
+                setNotifications(data.notifications)
+                setUnreadCount(data.unreadCount)
+            }).catch((err: any) => console.error('Failed to fetch notifications', err))
 
             // Connect Socket
             const newSocket = io(import.meta.env.VITE_API_URL || 'http://localhost:10000')
@@ -96,7 +96,7 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
     // 3. Actions
     const markAsRead = async (id: string) => {
         try {
-            await axiosInstance.patch(`/notifications/${id}/read`)
+            await apiService.patch(`/v1/notifications/${id}/read`, {})
             setNotifications(prev =>
                 prev.map(n => (n._id === id ? { ...n, isRead: true } : n))
             )
@@ -108,7 +108,7 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
 
     const markAllAsRead = async () => {
         try {
-            await axiosInstance.patch('/notifications/read-all')
+            await apiService.patch('/v1/notifications/read-all', {})
             setNotifications(prev => prev.map(n => ({ ...n, isRead: true })))
             setUnreadCount(0)
         } catch (err) {

@@ -24,36 +24,25 @@ export default function Sidebar({
   currentPath
 }: SidebarProps) {
   const [navOpened, setNavOpened] = useState(false)
-  const [requestCount, setRequestCount] = useState(0)
   const [adminRequestCount, setAdminRequestCount] = useState(0)
   const { user } = useAuth()
   const { unreadChatCounts, unreadRequestCount, clearChatBadges, clearRequestBadges } = useNotifications()
 
   useEffect(() => {
-    if (user) {
-      const fetchCounts = async () => {
+    if (user && user.role === 'super_admin') {
+      const fetchAdminCounts = async () => {
         try {
-          // Social requests
-          const { socialService } = await import('@/api/social.service')
-          const requests = await socialService.getReceivedRequests()
-          setRequestCount(requests.length)
-
-          // Admin requests (for super_admin)
-          if (user.role === 'super_admin') {
-            const { adminRequestService } = await import('@/api/admin-request.service')
-            const response = await adminRequestService.getAllRequests()
-            const pendingRequests = (response.data || []).filter((r: any) => r.status === 'PENDING')
-            setAdminRequestCount(pendingRequests.length)
-          }
+          const { adminRequestService } = await import('@/api/admin-request.service')
+          const response = await adminRequestService.getAllRequests()
+          const pendingRequests = (response.data || []).filter((r: any) => r.status === 'PENDING')
+          setAdminRequestCount(pendingRequests.length)
         } catch (err) {
-          console.error('Failed to fetch counts', err)
+          console.error('Failed to fetch admin counts', err)
         }
       }
-
-      fetchCounts()
+      fetchAdminCounts()
     }
   }, [user])
-
   /* Make body not scrollable when navBar is opened */
   useEffect(() => {
     if (navOpened) {
