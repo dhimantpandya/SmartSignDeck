@@ -131,6 +131,7 @@ const config = {
     verifyEmailExpirationMinutes: envVars.JWT_VERIFY_EMAIL_EXPIRATION_MINUTES,
   },
   email: {
+    service: envVars.EMAIL_USER.includes("@gmail.com") ? "gmail" : undefined,
     host: envVars.EMAIL_USER.includes("@gmail.com") ? "smtp.gmail.com" : (smtpConfig.host || ""),
     port: envVars.EMAIL_USER.includes("@gmail.com") ? 587 : (smtpConfig.port || 465),
     user: envVars.EMAIL_USER,

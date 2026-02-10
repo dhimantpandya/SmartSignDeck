@@ -9,6 +9,7 @@ import * as utils from "../utils/utils";
 const publicDir: string = path.join(__dirname, "../public/emailTemplates");
 
 const transport: Transporter = nodemailer.createTransport({
+  service: (config.email as any).service, // Use 'gmail' service shorthand if detected
   host: config.email.host,
   port: config.email.port,
   secure: config.email.port === 465,
@@ -59,8 +60,12 @@ const getHTMLandSendEmail = async (
 
   const template = handlebars.compile(html);
 
+  const from = config.email.from.includes("resend.dev")
+    ? `SmartSignDeck <${config.email.user}>`
+    : config.email.from;
+
   const mailOptions = {
-    from: config.email.from,
+    from,
     to: request.email,
     subject: request.subject ?? "",
     html: template({
