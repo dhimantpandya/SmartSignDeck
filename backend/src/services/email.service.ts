@@ -1,132 +1,104 @@
-import fs from "fs";
-import path from "path";
-import handlebars from "handlebars";
 import nodemailer, { type Transporter } from "nodemailer";
+import { Resend } from "resend";
+import path from "path";
+import fs from "fs";
+import handlebars from "handlebars";
 import config from "../config/config";
-import * as constants from "../utils/constants/email.constants";
-import * as utils from "../utils/utils";
+import * as emailConstants from "../utils/constants/email.constants";
+import { createUrl } from "../utils/utils";
 
 const publicDir: string = path.join(__dirname, "../public/emailTemplates");
+const resend = config.email.resendApiKey ? new Resend(config.email.resendApiKey) : null;
 
-console.log(`[EMAIL] Initializing manual SMTP for ${config.email.user} on ${config.email.host}:${config.email.port}...`);
-
-// TCP Port Probe
-import net from "net";
-const probePorts = [465, 587, 25, 2525];
-probePorts.forEach(port => {
-  const socket = new net.Socket();
-  socket.setTimeout(5000);
-  console.log(`[EMAIL PROBE] Testing TCP connection to ${config.email.host}:${port}...`);
-  socket.connect(port, config.email.host, () => {
-    console.log(`[EMAIL PROBE SUCCESS] Port ${port} is OPEN at TCP level.`);
-    socket.destroy();
-  });
-  socket.on("error", (err) => {
-    console.log(`[EMAIL PROBE FAIL] Port ${port} is CLOSED or BLOCKED: ${err.message}`);
-    socket.destroy();
-  });
-  socket.on("timeout", () => {
-    console.log(`[EMAIL PROBE TIMEOUT] Port ${port} timed out.`);
-    socket.destroy();
-  });
-});
+console.log(`[EMAIL] Initializing Hybrid Service. Mode: ${resend ? "Resend API + SMTP" : "SMTP Only"}`);
 
 const transport: Transporter = nodemailer.createTransport({
   host: config.email.host,
   port: config.email.port,
-  secure: config.email.port === 465, // MUST be true for port 465
+  secure: config.email.port === 465,
   auth: {
     user: config.email.user,
     pass: config.email.pass,
   },
   tls: { rejectUnauthorized: false },
-  debug: true,  // Raw protocol logging
-  logger: true, // Output to console
   connectionTimeout: 10000,
   greetingTimeout: 10000,
   socketTimeout: 10000,
 } as any);
 
-// Startup DNS Check
-import dns from "dns";
-dns.lookup(config.email.host, (err, address) => {
-  if (err) console.error(`[EMAIL DNS ERROR] Could not resolve ${config.email.host}:`, err.message);
-  else console.log(`[EMAIL DNS SUCCESS] ${config.email.host} resolved to ${address}`);
-});
-
-// Verify connection configuration
-if (config.env !== "test" && process.env.DISABLE_EMAIL !== "true") {
-  console.log("[EMAIL] Verifying SMTP connection...");
-  transport.verify((error) => {
-    if (error) {
-      console.warn("[EMAIL ERROR] Connection failed:", error.message);
-    } else {
-      console.log("[EMAIL SUCCESS] Connected to email server and ready to send");
-    }
-  });
-}
-
-const readHTMLFile = (
-  filepath: string,
-  callback: (err: Error | null, html?: string) => void,
-) => {
-  fs.readFile(filepath, { encoding: "utf-8" }, (err, html) => {
-    if (err) callback(err);
-    else callback(null, html);
+/**
+ * Read HTML file
+ */
+const readHTMLFile = (filePath: string): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    fs.readFile(filePath, { encoding: "utf-8" }, (err, html) => {
+      if (err) reject(err);
+      else resolve(html);
+    });
   });
 };
 
-const getHTMLandSendEmail = async (
+/**
+ * Core Sending Logic
+ */
+export const getHTMLandSendEmail = async (
   templateFile: string,
   request: Record<string, string>,
 ) => {
-  if (!fs.existsSync(templateFile)) {
-    const errorMsg = `[EMAIL ERROR] Template file not found: ${templateFile}`;
-    console.error(errorMsg);
-    throw new Error(errorMsg);
-  }
-
-  const html = await new Promise<string>((resolve, reject) => {
-    readHTMLFile(templateFile, (err, html) => {
-      if (err) reject(err);
-      else if (html) resolve(html);
-    });
-  });
-
-  const template = handlebars.compile(html);
-
-  const from = config.email.from.includes("resend.dev")
-    ? `SmartSignDeck <${config.email.user}>`
-    : config.email.from;
-
-  const mailOptions = {
-    from,
-    to: request.email,
-    subject: request.subject ?? "",
-    html: template({
-      user_name: request.name ?? "",
-      url: request.url ?? "",
-      email_verification_link: request.email_verification_link ?? "",
-      reset_password_link: request.reset_password_link ?? "",
-      email: request.email,
-      password: request.password,
-      otp: request.otp ?? "",
-    }),
-  };
-
   try {
-    const info = await transport.sendMail(mailOptions);
-    console.log(`[EMAIL SUCCESS] Type: ${path.basename(templateFile)} sent to ${request.email}. MessageId: ${info.messageId}`);
-    if (request.otp) {
-      console.log(`[EMERGENCY DEBUG] OTP for ${request.email} is: ${request.otp}`);
+    const templatePath = path.join(publicDir, templateFile);
+    const html = await readHTMLFile(templatePath);
+    const template = handlebars.compile(html);
+    const htmlToSend = template(request);
+
+    // 1. Try Resend API (HTTP) - Bypasses Render Firewall
+    if (resend) {
+      try {
+        console.log(`[EMAIL] Trying Resend API for ${request.email}...`);
+        const { data, error } = await resend.emails.send({
+          from: "SmartSignDeck <onboarding@resend.dev>",
+          to: [request.email],
+          subject: request.subject,
+          html: htmlToSend,
+        });
+
+        if (error) {
+          console.warn("[EMAIL Resend API warning]", error.message);
+          // If it's a 403 (unverified recipient), we log it specifically
+          if (error.name === "validation_error" && error.message.includes("verify a domain")) {
+            console.error("[EMAIL ERROR] Resend restricted: Only verified emails can receive messages.");
+          }
+          throw new Error(error.message);
+        }
+
+        console.log("[EMAIL SUCCESS] Sent via Resend API:", data?.id);
+        return;
+      } catch (apiErr: any) {
+        console.warn("[EMAIL] Resend API failed, trying SMTP fallback:", apiErr.message);
+      }
     }
-  } catch (error: any) {
-    console.error(`[EMAIL ERROR] Failed to send to ${request.email}:`, error.message);
-    throw error;
+
+    // 2. Fallback to SMTP (Likely to fail on Render, but works locally)
+    console.log(`[EMAIL] Trying SMTP for ${request.email}...`);
+    const mailOptions = {
+      from: `"${config.email.from}" <${config.email.user}>`,
+      to: request.email,
+      subject: request.subject,
+      html: htmlToSend,
+    };
+
+    const info = await transport.sendMail(mailOptions);
+    console.log("[EMAIL SUCCESS] Sent via SMTP:", info.messageId);
+  } catch (err: any) {
+    console.error("[EMAIL FATAL ERROR]", err.message);
+    throw err;
   }
 };
 
-async function sendMail(type: string, request: Record<string, string>) {
+/**
+ * Main Interface used by Controllers
+ */
+export const sendMail = async (type: string, request: Record<string, string>) => {
   if (process.env.DISABLE_EMAIL === "true") {
     console.log(`[EMAIL DISABLED] Skipping ${type} to ${request.email}`);
     return;
@@ -134,52 +106,35 @@ async function sendMail(type: string, request: Record<string, string>) {
 
   try {
     switch (type) {
-      case constants.USER_EMAIL_VERIFICATION_TEMPLATE:
-        request.subject = constants.USER_EMAIL_VERIFICATION_SUBJECT;
-        request.email_verification_link = utils.createUrl({
-          type: "otp",
+      case emailConstants.USER_EMAIL_VERIFICATION_TEMPLATE:
+        request.subject = emailConstants.USER_EMAIL_VERIFICATION_SUBJECT;
+        request.email_verification_link = createUrl({
+          type: "verify-otp",
           query: `email=${request.email}`,
         });
-        await getHTMLandSendEmail(`${publicDir}/email-verification.html`, request);
+        await getHTMLandSendEmail("email-verification.html", request);
         break;
 
-      case constants.USER_FORGOT_PASSWORD_TEMPLATE:
-        request.subject = constants.USER_FORGOT_PASSWORD_SUBJECT;
-        request.reset_password_link = utils.createUrl({
-          type: "forgot-password",
-          query: `email=${request.email}&step=2`,
-        });
-        await getHTMLandSendEmail(`${publicDir}/forgot-password.html`, request);
+      case emailConstants.USER_FORGOT_PASSWORD_TEMPLATE:
+        request.subject = emailConstants.USER_FORGOT_PASSWORD_SUBJECT;
+        await getHTMLandSendEmail("forgot-password.html", request);
         break;
 
-      case constants.USER_REGISTERED_TEMPLATE:
-        request.subject = constants.USER_REGISTERED_SUBJECT;
-        await getHTMLandSendEmail(`${publicDir}/welcome.html`, request);
+      case emailConstants.USER_REGISTERED_TEMPLATE:
+        request.subject = emailConstants.USER_REGISTERED_SUBJECT;
+        await getHTMLandSendEmail("user-registered.html", request);
         break;
 
-      case constants.USER_EMAIL_VERIFIED_TEMPLATE:
-        request.subject = constants.USER_EMAIL_VERIFIED_SUBJECT;
-        await getHTMLandSendEmail(`${publicDir}/email-verification-success.html`, request);
-        break;
-
-      case constants.USER_RESET_PASSWORD_TEMPLATE:
-        request.subject = constants.USER_RESET_PASSWORD_SUBJECT;
-        await getHTMLandSendEmail(`${publicDir}/reset-password-success.html`, request);
-        break;
-
-      case constants.USER_WITH_CREDENTIALS_TEMPLATE:
-        request.subject = constants.USER_WITH_CREDENTIALS_SUBJECT;
-        await getHTMLandSendEmail(`${publicDir}/user-with-credentials.html`, request);
+      case emailConstants.USER_RESET_PASSWORD_TEMPLATE:
+        request.subject = emailConstants.USER_RESET_PASSWORD_SUBJECT;
+        await getHTMLandSendEmail("reset-password-success.html", request);
         break;
 
       default:
-        console.warn(`[EMAIL WARNING] Unknown email type: ${type}`);
-        break;
+        console.warn(`[EMAIL] Unknown template type: ${type}`);
     }
   } catch (err: any) {
-    console.error(`[EMAIL FATAL ERROR] ${err.message}`);
+    console.error(`[EMAIL FATAL] Failed to send ${type}:`, err.message);
     throw err;
   }
-}
-
-export { sendMail, transport };
+};

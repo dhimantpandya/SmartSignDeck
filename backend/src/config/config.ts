@@ -19,7 +19,7 @@ interface EnvVars {
   EMAIL_FROM: string;
   EMAIL_HOST?: string;
   EMAIL_PORT?: number;
-  RESEND_API_KEY: string;
+  RESEND_API_KEY?: string;
   WEB_APP_URL: string;
   API_DOC_USER_NAME: string;
   API_DOC_PASSWORD: string;
@@ -57,6 +57,7 @@ const envVarsSchema = Joi.object<EnvVars>()
     EMAIL_PASS: Joi.string().required(),
     EMAIL_FROM: Joi.string().required(),
     EMAIL_PORT: Joi.number().optional(),
+    RESEND_API_KEY: Joi.string().optional().allow(""),
     WEB_APP_URL: Joi.string().default("http://localhost:5173"),
     API_DOC_USER_NAME: Joi.string().required(),
     API_DOC_PASSWORD: Joi.string().required(),
@@ -113,8 +114,8 @@ const config = {
   port: envVars.PORT,
   httpsPort: envVars.PORT,
   mongoose: {
-    url: envVars.MONGO_DB_URL, // just host:port
-    dbName: envVars.MONGO_DB_NAME, // exact database name you created
+    url: envVars.MONGO_DB_URL,
+    dbName: envVars.MONGO_DB_NAME,
     options: {
       maxPoolSize: 10,
       minPoolSize: 2,
@@ -131,11 +132,11 @@ const config = {
     verifyEmailExpirationMinutes: envVars.JWT_VERIFY_EMAIL_EXPIRATION_MINUTES,
   },
   email: {
-    service: undefined, // Remove 'service' to prevent Nodemailer auto-logic overrides
+    resendApiKey: envVars.RESEND_API_KEY,
     host: envVars.EMAIL_USER.includes("@gmail.com") ? "smtp.gmail.com" : (smtpConfig.host || ""),
     port: envVars.EMAIL_USER.includes("@gmail.com") ? 465 : (smtpConfig.port || 465),
     user: envVars.EMAIL_USER,
-    pass: envVars.EMAIL_PASS.replace(/\s/g, ""), // Remove all spaces from app password
+    pass: envVars.EMAIL_PASS.replace(/\s/g, ""),
     from: envVars.EMAIL_FROM,
   },
   apiDoc: {
@@ -175,7 +176,5 @@ const config = {
   },
   appUrl: envVars.WEB_APP_URL,
 };
-
-console.log(`[Config] SMTP Provider: ${config.email.host || "NOT CONFIGURED"} (Port: ${config.email.port})`);
 
 export default config;
