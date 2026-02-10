@@ -449,18 +449,16 @@ export const resendOtp = async (req: Request, res: Response) => {
       pendingSignup.otpExpires = new Date(Date.now() + 10 * 60 * 1000);
       pendingSignupService.savePendingSignup(pendingSignup);
 
-      try {
-        await emailService.sendMail(constants.USER_EMAIL_VERIFICATION_TEMPLATE, {
-          email: pendingSignup.email,
-          name: `${pendingSignup.first_name} ${pendingSignup.last_name}`,
-          otp,
-        });
-      } catch (emailErr) {
-        console.error("[ResendOtp Pending Email Error]", emailErr);
-        throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, "Failed to resend verification email");
-      }
+      // Send OTP email (Non-blocking)
+      emailService.sendMail(constants.USER_EMAIL_VERIFICATION_TEMPLATE, {
+        email: pendingSignup.email,
+        name: `${pendingSignup.first_name} ${pendingSignup.last_name}`,
+        otp,
+      }).catch((emailErr) => {
+        console.error("[ResendOtp Pending Background Error]", emailErr.message);
+      });
 
-      return successResponse(res, "OTP resent successfully (pending signup)", httpStatus.OK);
+      return successResponse(res, "OTP resent successfully", httpStatus.OK);
     }
 
     // 2. Fallback to existing user (e.g. for forgot password or other verification flows)
@@ -472,14 +470,17 @@ export const resendOtp = async (req: Request, res: Response) => {
     // Generate new OTP for email verification using existing tokenService logic
     try {
       const { otp } = await tokenService.generateVerifyEmailOtp(user);
-      await emailService.sendMail(constants.USER_EMAIL_VERIFICATION_TEMPLATE, {
+      // Send OTP email (Non-blocking)
+      emailService.sendMail(constants.USER_EMAIL_VERIFICATION_TEMPLATE, {
         email: user.email,
         name: `${user.first_name} ${user.last_name}`,
         otp,
+      }).catch((emailErr) => {
+        console.error("[ResendOtp Existing Background Error]", emailErr.message);
       });
-    } catch (emailErr) {
-      console.error("[ResendOtp Existing Email Error]", emailErr);
-      throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, "Failed to resend verification email");
+    } catch (tokenErr: any) {
+      console.error("[ResendOtp Token Generation Error]", tokenErr);
+      throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, "Failed to generate new OTP");
     }
 
     successResponse(res, "OTP resent successfully", httpStatus.OK);

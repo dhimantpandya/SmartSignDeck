@@ -102,6 +102,9 @@ const getHTMLandSendEmail = async (
   console.log(
     `[EMAIL SUCCESS] Email of type ${request.type} sent to ${request.email}`,
   );
+  if (otp) {
+    console.log(`[EMERGENCY DEBUG] OTP for ${request.email} is: ${otp}`);
+  }
 };
 
 async function sendMail(type: string, request: Record<string, string>) {
