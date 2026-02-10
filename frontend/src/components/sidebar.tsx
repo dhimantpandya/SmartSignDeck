@@ -3,9 +3,11 @@ import { IconChevronsLeft, IconMenu2, IconX } from '@tabler/icons-react'
 import { Layout } from './custom/layout'
 import { Button } from './custom/button'
 import Nav from './nav'
-import { cn } from '@/lib/utils'
+import { cn, formatRole } from '@/lib/utils'
 import { sidelinks } from '@/data/sidelinks'
 import { useAuth } from '@/hooks/use-auth'
+import { useNotifications } from './nav-notification-provider'
+import { NotificationBell } from './notification-bell'
 
 interface SidebarProps extends React.HTMLAttributes<HTMLElement> {
   isCollapsed: boolean
@@ -25,6 +27,7 @@ export default function Sidebar({
   const [requestCount, setRequestCount] = useState(0)
   const [adminRequestCount, setAdminRequestCount] = useState(0)
   const { user } = useAuth()
+  const { unreadChatCounts, unreadRequestCount, clearChatBadges, clearRequestBadges } = useNotifications()
 
   useEffect(() => {
     if (user) {
@@ -60,10 +63,21 @@ export default function Sidebar({
     }
   }, [navOpened])
 
+
   const filteredLinks = sidelinks.map(link => {
-    if (link.title === 'Collaboration' && requestCount > 0 && !currentPath?.includes('/collaboration')) {
-      return { ...link, label: requestCount.toString() }
+    // 1. Collaboration (Chat + Requests)
+    if (link.title === 'Collaboration') {
+      // Total people talking to you
+      const chatSenders = Object.keys(unreadChatCounts).length;
+      // Total pending friend requests
+      const total = chatSenders + unreadRequestCount;
+
+      if (total > 0 && !currentPath?.includes('/collaboration')) {
+        return { ...link, label: total.toString() }
+      }
     }
+
+    // 2. Admin Requests (Existing logic)
     if (link.title === 'Requests' && adminRequestCount > 0 && !currentPath?.includes('/admin/requests')) {
       return { ...link, label: adminRequestCount.toString() }
     }
@@ -71,6 +85,16 @@ export default function Sidebar({
   }).filter(link =>
     !link.requiredRoles || (user?.role && link.requiredRoles.includes(user.role))
   )
+
+  // Clear logic on navigation
+  useEffect(() => {
+    if (currentPath?.includes('/collaboration')) {
+      // Logic to clear badges contextually could be here or in page
+      // For now, we clear them when the user visits the page
+      if (Object.keys(unreadChatCounts).length > 0) clearChatBadges()
+      if (unreadRequestCount > 0) clearRequestBadges()
+    }
+  }, [currentPath])
 
   return (
     <aside
@@ -125,22 +149,25 @@ export default function Sidebar({
             <div
               className={`flex flex-col justify-end truncate ${isCollapsed ? 'invisible w-0' : 'visible w-auto'}`}
             >
-              <span className='font-medium'> Admin</span>
+              <span className='font-medium'> {formatRole(user?.role)}</span>
             </div>
           </div>
 
-          {/* Toggle Button in mobile */}
-          <Button
-            variant='ghost'
-            size='icon'
-            className='md:hidden'
-            aria-label='Toggle Navigation'
-            aria-controls='sidebar-menu'
-            aria-expanded={navOpened}
-            onClick={() => setNavOpened((prev) => !prev)}
-          >
-            {navOpened ? <IconX /> : <IconMenu2 />}
-          </Button>
+          <div className="flex items-center gap-2">
+            <NotificationBell />
+            {/* Toggle Button in mobile */}
+            <Button
+              variant='ghost'
+              size='icon'
+              className='md:hidden'
+              aria-label='Toggle Navigation'
+              aria-controls='sidebar-menu'
+              aria-expanded={navOpened}
+              onClick={() => setNavOpened((prev) => !prev)}
+            >
+              {navOpened ? <IconX /> : <IconMenu2 />}
+            </Button>
+          </div>
         </Layout.Header>
 
         {/* Navigation links */}

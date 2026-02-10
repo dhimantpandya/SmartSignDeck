@@ -2,6 +2,7 @@ import { Server, Socket } from "socket.io";
 import { type Server as HttpServer } from "http";
 import { type Server as HttpsServer } from "https";
 import logger from "../config/logger";
+import notificationService from "./notification.service";
 
 let io: Server;
 
@@ -61,6 +62,16 @@ const initSocket = (server: HttpServer | HttpsServer): Server => {
                 // send to recipient + sender (for sync across tabs)
                 io.to(`user_${recipientId}`).emit("new_chat", { ...payload, type: "private" });
                 io.to(`user_${senderId}`).emit("new_chat", { ...payload, type: "private" });
+
+                // PERSIST NOTIFICATION FOR RECIPIENT
+                notificationService.createNotification(
+                    recipientId,
+                    "new_chat",
+                    senderName,
+                    text.substring(0, 50) + (text.length > 50 ? "..." : ""),
+                    senderId,
+                    { chatId: senderId } // For redirection
+                ).catch(err => logger.error(`Failed to create chat notification: ${err.message}`));
             }
         });
 

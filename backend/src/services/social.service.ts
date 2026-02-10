@@ -2,6 +2,7 @@ import httpStatus from "http-status";
 import { Message, FriendRequest } from "../models/social.model";
 import ApiError from "../utils/ApiError";
 import { emitToUser } from "./socket.service";
+import notificationService from "./notification.service";
 
 /**
  * Send a message
@@ -66,6 +67,16 @@ const sendFriendRequest = async (fromId: string, toId: string) => {
     const request = await FriendRequest.create({ fromId, toId });
 
     // Notify recipient
+    await notificationService.createNotification(
+        toId,
+        "friend_request",
+        "New Friend Request",
+        "sent you a connection request",
+        fromId,
+        { requestId: request._id }
+    );
+
+    // Legacy socket event (can keep for now)
     emitToUser(toId, "friend_request_received", { fromId });
 
     return request;
@@ -91,6 +102,16 @@ const respondToFriendRequest = async (requestId: string, status: "accepted" | "r
         await sendMessage(userId, "You are now connected with this user!", request.fromId.toString());
 
         // Notify original sender
+        // Notify original sender
+        await notificationService.createNotification(
+            request.fromId.toString(),
+            "friend_request", // Re-using type for acceptance logic logic can differentiate by title
+            "Request Accepted",
+            "accepted your connection request",
+            userId,
+            { requestId: request._id }
+        );
+
         emitToUser(request.fromId.toString(), "friend_request_accepted", {
             requestId: request._id,
             toId: userId,

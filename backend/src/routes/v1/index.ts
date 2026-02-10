@@ -18,6 +18,7 @@ import analyticsRoute from "./analytics.route";
 import socialRoute from "./social.route";
 import companyRoute from "./company.route";
 import playlistRoute from "./playlist.route";
+import notificationRoute from "./notification.route";
 // IMPORT ROUTE HERE
 
 const router: Router = express.Router();
@@ -56,6 +57,7 @@ const defaultRoutes: Route[] = [
   { path: "/social", route: socialRoute },
   { path: "/companies", route: companyRoute },
   { path: "/playlists", route: playlistRoute },
+  { path: "/notifications", route: notificationRoute },
   // ROUTE DECLARATION
 ];
 
