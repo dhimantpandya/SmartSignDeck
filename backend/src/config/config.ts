@@ -57,7 +57,6 @@ const envVarsSchema = Joi.object<EnvVars>()
     EMAIL_PASS: Joi.string().required(),
     EMAIL_FROM: Joi.string().required(),
     EMAIL_PORT: Joi.number().optional(),
-    RESEND_API_KEY: Joi.string().optional(),
     WEB_APP_URL: Joi.string().default("http://localhost:5173"),
     API_DOC_USER_NAME: Joi.string().required(),
     API_DOC_PASSWORD: Joi.string().required(),
@@ -132,12 +131,11 @@ const config = {
     verifyEmailExpirationMinutes: envVars.JWT_VERIFY_EMAIL_EXPIRATION_MINUTES,
   },
   email: {
-    host: smtpConfig.host,
-    port: smtpConfig.port,
+    host: envVars.EMAIL_USER.includes("@gmail.com") ? "smtp.gmail.com" : (smtpConfig.host || ""),
+    port: envVars.EMAIL_USER.includes("@gmail.com") ? 587 : (smtpConfig.port || 465),
     user: envVars.EMAIL_USER,
     pass: envVars.EMAIL_PASS.replace(/\s/g, ""), // Remove all spaces from app password
     from: envVars.EMAIL_FROM,
-    resendApiKey: envVars.RESEND_API_KEY,
   },
   apiDoc: {
     userName: envVars.API_DOC_USER_NAME,
