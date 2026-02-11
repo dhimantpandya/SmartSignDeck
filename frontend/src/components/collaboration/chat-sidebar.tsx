@@ -27,6 +27,7 @@ interface ChatSidebarProps {
 }
 
 export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
+    const { user } = useAuth()
     const {
         unreadChatCounts,
         unreadCompanyChatCount,
