@@ -10,8 +10,7 @@ import {
     Search,
     ChevronLeft,
     MessageSquare,
-    UserPlus,
-    Bell
+    UserPlus
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { useNotifications } from '@/components/nav-notification-provider'
