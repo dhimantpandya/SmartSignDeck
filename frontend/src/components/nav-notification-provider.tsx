@@ -158,11 +158,6 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
     // 3. Derived State for UI
     // Filter out chat messages from the bell notifications
     const bellNotifications = notifications.filter(n => n.type !== 'new_chat')
-    // Chat notifications specifically
-    const chatNotifications = notifications.filter(n => n.type === 'new_chat')
-
-    // Total unread chat messages for sidebar
-    const totalUnreadChats = Object.values(unreadChatCounts).reduce((a, b) => a + b, 0) + unreadCompanyChatCount
 
     // Actions
     const markAsRead = async (id: string) => {
