@@ -3,6 +3,7 @@ import { useAuth } from '@/hooks/use-auth'
 import { io, Socket } from 'socket.io-client'
 import { apiService } from '@/api'
 import { tokenStore } from '@/store/token'
+import { useToast } from '@/components/ui/use-toast'
 
 interface Notification {
     _id: string
@@ -48,6 +49,7 @@ const extractId = (senderId: any): string | null => {
 
 export const NotificationProvider = ({ children }: { children: React.ReactNode }) => {
     const { user } = useAuth()
+    const { toast } = useToast()
     const [socket, setSocket] = useState<Socket | null>(null)
     const [notifications, setNotifications] = useState<Notification[]>([])
     const [unreadCount, setUnreadCount] = useState(0)
@@ -160,6 +162,13 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
                 setSuppressedChatSections(prev => {
                     const next = new Set(prev); next.delete('private'); return next;
                 })
+
+                // Show toast notification
+                toast({
+                    title: "New Message",
+                    description: `${data.senderName || 'Someone'} sent you a message`,
+                    duration: 3000,
+                })
             }
         })
 
@@ -167,7 +176,7 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
             socket.off('new_notification')
             socket.off('new_chat')
         }
-    }, [socket, user])
+    }, [socket, user, isChatOpen])
 
     // Filter out chat messages from the bell notifications list
     const bellNotifications = notifications.filter(n => n.type !== 'new_chat')
