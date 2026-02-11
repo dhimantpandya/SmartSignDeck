@@ -12,6 +12,7 @@ interface Notification {
     isRead: boolean
     senderId?: {
         _id: string
+        id?: string
         first_name: string
         last_name: string
         avatar?: string
@@ -37,6 +38,13 @@ interface NotificationContextType {
 }
 
 const NotificationContext = createContext<NotificationContextType | null>(null)
+
+// Helper for robust ID extraction
+const extractId = (senderId: any): string | null => {
+    if (!senderId) return null
+    if (typeof senderId === 'string') return senderId
+    return senderId._id || senderId.id || null
+}
 
 export const NotificationProvider = ({ children }: { children: React.ReactNode }) => {
     const { user } = useAuth()
@@ -64,8 +72,8 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
                 // Populate chat unread badges
                 const chatMap: Record<string, number> = {}
                 data.notifications.filter(n => !n.isRead && n.type === 'new_chat').forEach(n => {
-                    if (n.senderId) {
-                        const sId = typeof n.senderId === 'string' ? n.senderId : n.senderId._id
+                    const sId = extractId(n.senderId)
+                    if (sId) {
                         chatMap[sId] = (chatMap[sId] || 0) + 1
                     } else {
                         setUnreadCompanyChatCount(prev => prev + 1)
@@ -102,11 +110,11 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
 
         socket.on('new_notification', (newNotif: Notification) => {
             if (newNotif.type === 'new_chat') {
-                const senderId = newNotif.senderId?._id || 'unknown'
-                if (senderId !== 'unknown') {
+                const sId = extractId(newNotif.senderId)
+                if (sId) {
                     setUnreadChatCounts(prev => ({
                         ...prev,
-                        [senderId]: (prev[senderId] || 0) + 1
+                        [sId]: (prev[sId] || 0) + 1
                     }))
                     setSuppressedChatSections(prev => {
                         if (prev.has('private')) {
@@ -216,7 +224,7 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
             // Sync notifications list
             setNotifications(prev => prev.map(n => {
                 if (n.type === 'new_chat') {
-                    const nSenderId = n.senderId?._id || n.senderId;
+                    const nSenderId = extractId(n.senderId)
                     if (type === 'company' && !n.senderId) return { ...n, isRead: true };
                     if (type === 'private' && (!senderId || nSenderId === senderId)) return { ...n, isRead: true };
                 }

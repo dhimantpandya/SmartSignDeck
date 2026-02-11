@@ -27,7 +27,6 @@ export default function Sidebar({
   const { user } = useAuth()
   const {
     unreadChatCounts,
-    unreadCompanyChatCount,
     unreadRequestCount,
     clearRequestBadges,
     isChatOpen
@@ -65,11 +64,9 @@ export default function Sidebar({
     }
 
     if (link.title === 'Chat' && !isChatOpen) {
-      const privateChatSenders = Object.keys(unreadChatCounts).length;
-      const boardEntity = unreadCompanyChatCount > 0 ? 1 : 0;
-      const totalEntities = privateChatSenders + boardEntity;
-      if (totalEntities > 0) {
-        return { ...link, label: totalEntities.toString() }
+      const totalPrivateMessages = Object.values(unreadChatCounts).reduce((a, b) => a + b, 0);
+      if (totalPrivateMessages > 0) {
+        return { ...link, label: totalPrivateMessages.toString() }
       }
     }
 

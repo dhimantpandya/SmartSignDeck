@@ -10,8 +10,15 @@ import {
     Search,
     ChevronLeft,
     MessageSquare,
-    UserPlus
+    UserPlus,
+    CheckCheck
 } from 'lucide-react'
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { Badge } from '@/components/ui/badge'
 import { useNotifications } from '@/components/nav-notification-provider'
 import { Button } from '@/components/custom/button'
@@ -264,9 +271,9 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
                         </TabsTrigger>
                         <TabsTrigger value="private" className="rounded-none data-[state=active]:bg-background border-b-2 border-transparent data-[state=active]:border-primary transition-all text-[10px] px-1 relative">
                             Direct
-                            {Object.keys(unreadChatCounts).length > 0 && !suppressedChatSections.has('private') && (
+                            {Object.values(unreadChatCounts).some(v => v > 0) && !suppressedChatSections.has('private') && (
                                 <Badge variant="destructive" className="absolute -top-1 -right-1 h-3 w-3 flex items-center justify-center p-0 text-[7px] animate-pulse">
-                                    {Object.keys(unreadChatCounts).length}
+                                    {Object.values(unreadChatCounts).reduce((a, b) => a + b, 0)}
                                 </Badge>
                             )}
                         </TabsTrigger>
@@ -345,14 +352,31 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
                             {!selectedFriend ? (
                                 <div className="flex-1 flex flex-col overflow-hidden">
                                     <div className="px-3 pb-2 pt-0 border-b bg-muted/30">
-                                        <div className="relative">
-                                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                                            <Input
-                                                placeholder="Search connections..."
-                                                className="pl-9 h-9 text-xs"
-                                                value={searchQuery}
-                                                onChange={(e) => setSearchQuery(e.target.value)}
-                                            />
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <div className="relative flex-1">
+                                                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                                <Input
+                                                    placeholder="Search connections..."
+                                                    className="pl-9 h-9 text-xs"
+                                                    value={searchQuery}
+                                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                                />
+                                            </div>
+                                            <TooltipProvider>
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-9 w-9 text-muted-foreground hover:text-primary"
+                                                            onClick={() => clearChatNotifications('private')}
+                                                        >
+                                                            <CheckCheck size={18} />
+                                                        </Button>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent side="bottom" className="text-[10px]">Mark all as read</TooltipContent>
+                                                </Tooltip>
+                                            </TooltipProvider>
                                         </div>
                                     </div>
                                     <div className="flex-1 overflow-y-auto p-2" style={{ scrollbarWidth: 'thin', scrollbarColor: 'hsl(var(--primary)) transparent' }}>
