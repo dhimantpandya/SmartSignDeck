@@ -75,8 +75,6 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
                     const sId = extractId(n.senderId)
                     if (sId) {
                         chatMap[sId] = (chatMap[sId] || 0) + 1
-                    } else {
-                        setUnreadCompanyChatCount(prev => prev + 1)
                     }
                 })
                 setUnreadChatCounts(chatMap)
@@ -151,14 +149,6 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
                 setUnreadCompanyChatCount(prev => prev + 1)
                 setSuppressedChatSections(prev => {
                     const next = new Set(prev); next.delete('company'); return next;
-                })
-            } else if (data.type === 'private') {
-                setUnreadChatCounts(prev => ({
-                    ...prev,
-                    [data.senderId]: (prev[data.senderId] || 0) + 1
-                }))
-                setSuppressedChatSections(prev => {
-                    const next = new Set(prev); next.delete('private'); return next;
                 })
             }
         })
