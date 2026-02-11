@@ -72,11 +72,11 @@ export default function Screens() {
     })
 
     const deleteMutation = useMutation({
-        mutationFn: (id: string) => apiService.delete(`/v1/screens/${id}`),
+        mutationFn: (id: string) => screenService.deleteScreen(id),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['screens'] })
-            queryClient.invalidateQueries({ queryKey: ['screens', 'trashed'] })
-            toast({ title: 'Screen deleted' })
+            queryClient.invalidateQueries({ queryKey: ['dashboard'] }) // Update counts
+            toast({ title: 'Screen moved to Recycle Bin', description: 'You can restore it within 30 days.' })
         },
     })
 

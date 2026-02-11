@@ -34,6 +34,7 @@ export default function RecycleBin() {
         mutationFn: (id: string) => screenService.restoreScreen(id),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['screens'] })
+            queryClient.invalidateQueries({ queryKey: ['dashboard'] })
             toast({ title: 'Screen restored' })
         },
     })
@@ -42,6 +43,7 @@ export default function RecycleBin() {
         mutationFn: (id: string) => screenService.permanentDeleteScreen(id),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['screens'] })
+            queryClient.invalidateQueries({ queryKey: ['dashboard'] })
             toast({ title: 'Screen permanently deleted' })
         },
     })
@@ -50,6 +52,7 @@ export default function RecycleBin() {
         mutationFn: (id: string) => templateService.restoreTemplate(id),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['templates'] })
+            queryClient.invalidateQueries({ queryKey: ['dashboard'] })
             toast({ title: 'Template restored' })
         },
     })
@@ -58,6 +61,7 @@ export default function RecycleBin() {
         mutationFn: (id: string) => templateService.permanentDeleteTemplate(id),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['templates'] })
+            queryClient.invalidateQueries({ queryKey: ['dashboard'] })
             toast({ title: 'Template permanently deleted' })
         },
     })

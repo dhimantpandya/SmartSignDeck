@@ -49,7 +49,15 @@ const createScreen = async (screenBody: any, user: IUser) => {
  */
 const queryScreens = async (filter: any, options: CustomPaginateOptions, user: IUser) => {
   // 1. Clean up filter
-  const finalFilter: any = { deletedAt: null, ...filter };
+  const finalFilter: any = { ...filter };
+
+  // If not explicitly querying trashed items, ensure we only get non-deleted ones
+  if (finalFilter.trashed === 'true' || finalFilter.trashed === true) {
+    finalFilter.deletedAt = { $ne: null };
+    delete finalFilter.trashed;
+  } else if (finalFilter.deletedAt === undefined) {
+    finalFilter.deletedAt = null;
+  }
 
   Object.keys(finalFilter).forEach(key => {
     if (finalFilter[key] === undefined || finalFilter[key] === null || finalFilter[key] === '' || finalFilter[key] === 'undefined' || finalFilter[key] === 'null') {

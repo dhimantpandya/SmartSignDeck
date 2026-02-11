@@ -61,8 +61,8 @@ export default function Templates() {
         mutationFn: (id: string) => templateService.deleteTemplate(id),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['templates'] })
-            queryClient.invalidateQueries({ queryKey: ['templates', 'trashed'] })
-            toast({ title: 'Template deleted' })
+            queryClient.invalidateQueries({ queryKey: ['dashboard'] }) // Update counts
+            toast({ title: 'Template moved to Recycle Bin', description: 'You can restore it within 30 days.' })
         },
     })
 
