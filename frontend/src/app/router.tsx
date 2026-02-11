@@ -198,6 +198,9 @@ const Router: FC = () => {
 
   const { isLoading } = useQuery({
     queryKey: ['auth-bootstrap'],
+    staleTime: Infinity, // 🛡️ Never refetch automatically - only runs once per app load
+    gcTime: Infinity,
+    refetchOnWindowFocus: false, // 🛡️ Prevent loops triggered by focus changes
     queryFn: async () => {
       const refreshToken = tokenStore.getRefreshToken()
       if (!refreshToken) return true

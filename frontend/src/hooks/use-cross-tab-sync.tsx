@@ -23,8 +23,24 @@ export const useCrossTabSync = () => {
             if (event.key === 'refreshToken' && event.oldValue && !event.newValue) {
                 console.log('[Cross-Tab Sync] Logout detected in another tab')
 
+                // 🛡️ Loop Protection: If we are already on the sign-in/up page, don't redirect (avoids refresh loop)
+                const isAuthPage = window.location.pathname.includes('/sign-in') ||
+                    window.location.pathname.includes('/sign-up') ||
+                    window.location.pathname.includes('/otp') ||
+                    window.location.pathname.includes('/forgot-password')
+
+                if (isAuthPage) return
+
                 // Skip if we are already logged out
                 if (!tokenStore.getRefreshToken()) return
+
+                // 🛡️ Debounce reload/redirect
+                const lastReload = sessionStorage.getItem('last_sync_reload')
+                const now = Date.now()
+                if (lastReload && (now - parseInt(lastReload)) < 5000) {
+                    return
+                }
+                sessionStorage.setItem('last_sync_reload', now.toString())
 
                 // Clear local state WITHOUT calling backend logout again
                 logout()

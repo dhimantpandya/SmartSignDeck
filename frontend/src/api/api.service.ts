@@ -15,8 +15,10 @@ class ApiService {
     const baseURL = import.meta.env.PROD
       ? (import.meta.env.VITE_APP_URL && import.meta.env.VITE_APP_URL !== '/'
         ? import.meta.env.VITE_APP_URL
-        : 'https://smart-sign-deck.onrender.com') // Corrected Render URL
-      : import.meta.env.VITE_APP_URL || 'http://localhost:3000';
+        : 'https://smart-sign-deck.onrender.com') // Slug-based Render URL
+      : import.meta.env.VITE_APP_URL || 'http://localhost:5000'; // Standardized local port
+
+    console.log(`[ApiService] PROD: ${import.meta.env.PROD}, baseURL: ${baseURL}`);
 
     if (!axios || typeof axios.create !== 'function') {
       console.error('[ApiService] Axios is not properly imported or .create is missing!', axios);
