@@ -150,6 +150,16 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
                 setSuppressedChatSections(prev => {
                     const next = new Set(prev); next.delete('company'); return next;
                 })
+            } else if (data.type === 'private' && !isChatOpen) {
+                // Only update badge from new_chat if sidebar is closed
+                // When sidebar is open, new_notification will handle it
+                setUnreadChatCounts(prev => ({
+                    ...prev,
+                    [data.senderId]: (prev[data.senderId] || 0) + 1
+                }))
+                setSuppressedChatSections(prev => {
+                    const next = new Set(prev); next.delete('private'); return next;
+                })
             }
         })
 
