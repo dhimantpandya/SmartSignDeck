@@ -202,9 +202,12 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
     // Clear individual when selected
     useEffect(() => {
         if (isOpen && activeTab === 'private' && selectedFriend) {
-            clearChatNotifications('private', selectedFriend._id || selectedFriend.id)
+            const friendId = selectedFriend._id || selectedFriend.id
+            if (unreadChatCounts[friendId] > 0) {
+                clearChatNotifications('private', friendId)
+            }
         }
-    }, [selectedFriend, isOpen])
+    }, [selectedFriend, isOpen, unreadChatCounts])
 
     const handleSendMessage = async () => {
         if (!inputText.trim() || !user) return
