@@ -87,8 +87,11 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
 
         socket.on('new_friend_message', (data) => {
             // Re-fetch history if this friend's chat is active
-            if (selectedFriend && (data.senderId === selectedFriend.id || data.recipientId === selectedFriend.id)) {
-                fetchChatHistory(selectedFriend.id)
+            if (selectedFriend) {
+                const friendId = selectedFriend._id || selectedFriend.id;
+                if (data.senderId === friendId || data.recipientId === friendId) {
+                    fetchChatHistory(friendId)
+                }
             }
         })
 
@@ -103,7 +106,7 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
     // Fetch private history when friend changes
     useEffect(() => {
         if (selectedFriend) {
-            fetchChatHistory(selectedFriend.id)
+            fetchChatHistory(selectedFriend._id || selectedFriend.id)
         }
     }, [selectedFriend])
 
@@ -199,7 +202,7 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
     // Clear individual when selected
     useEffect(() => {
         if (isOpen && activeTab === 'private' && selectedFriend) {
-            clearChatNotifications('private', selectedFriend.id)
+            clearChatNotifications('private', selectedFriend._id || selectedFriend.id)
         }
     }, [selectedFriend, isOpen])
 
@@ -209,7 +212,7 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
         const payload = {
             text: inputText,
             companyId: activeTab === 'company' ? user.companyId : undefined,
-            recipientId: activeTab === 'private' ? selectedFriend?.id : undefined,
+            recipientId: activeTab === 'private' ? (selectedFriend?._id || selectedFriend?.id) : undefined,
             senderName: `${user.first_name} ${user.last_name}`,
             senderId: user.id,
             avatar: user.avatar
@@ -385,30 +388,33 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
                                                 No connections found.
                                             </div>
                                         )}
-                                        {filteredFriends.map(friend => (
-                                            <div
-                                                key={friend.id}
-                                                className="flex items-center gap-3 p-3 hover:bg-muted rounded-xl cursor-pointer transition-all group"
-                                                onClick={() => setSelectedFriend(friend)}
-                                            >
-                                                <div className="relative">
-                                                    <Avatar className="h-10 w-10 border border-primary/10 group-hover:border-primary/30 transition-all">
-                                                        <AvatarImage src={friend.avatar} />
-                                                        <AvatarFallback className="bg-primary/5 text-primary text-xs font-bold">{friend.first_name?.[0]}{friend.last_name?.[0]}</AvatarFallback>
-                                                    </Avatar>
-                                                    <div className="absolute bottom-0 right-0 h-3 w-3 bg-green-500 border-2 border-background rounded-full" />
+                                        {filteredFriends.map(friend => {
+                                            const friendId = friend._id || friend.id;
+                                            return (
+                                                <div
+                                                    key={friendId}
+                                                    className="flex items-center gap-3 p-3 hover:bg-muted rounded-xl cursor-pointer transition-all group"
+                                                    onClick={() => setSelectedFriend(friend)}
+                                                >
+                                                    <div className="relative">
+                                                        <Avatar className="h-10 w-10 border border-primary/10 group-hover:border-primary/30 transition-all">
+                                                            <AvatarImage src={friend.avatar} />
+                                                            <AvatarFallback className="bg-primary/5 text-primary text-xs font-bold">{friend.first_name?.[0]}{friend.last_name?.[0]}</AvatarFallback>
+                                                        </Avatar>
+                                                        <div className="absolute bottom-0 right-0 h-3 w-3 bg-green-500 border-2 border-background rounded-full" />
+                                                    </div>
+                                                    <div className="flex flex-col flex-1 overflow-hidden">
+                                                        <span className="text-sm font-semibold truncate">{friend.first_name} {friend.last_name}</span>
+                                                        <span className="text-[10px] text-muted-foreground truncate">{friend.email}</span>
+                                                    </div>
+                                                    {unreadChatCounts[friendId] > 0 && (
+                                                        <Badge variant="destructive" className="h-5 w-5 rounded-full flex items-center justify-center p-0 text-[10px] font-bold">
+                                                            {unreadChatCounts[friendId]}
+                                                        </Badge>
+                                                    )}
                                                 </div>
-                                                <div className="flex flex-col flex-1 overflow-hidden">
-                                                    <span className="text-sm font-semibold truncate">{friend.first_name} {friend.last_name}</span>
-                                                    <span className="text-[10px] text-muted-foreground truncate">{friend.email}</span>
-                                                </div>
-                                                {unreadChatCounts[friend.id] > 0 && (
-                                                    <Badge variant="destructive" className="h-5 w-5 rounded-full flex items-center justify-center p-0 text-[10px] font-bold">
-                                                        {unreadChatCounts[friend.id]}
-                                                    </Badge>
-                                                )}
-                                            </div>
-                                        ))}
+                                            )
+                                        })}
                                     </div>
                                 </div>
                             ) : (
