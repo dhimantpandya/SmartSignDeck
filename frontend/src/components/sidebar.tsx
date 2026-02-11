@@ -53,14 +53,18 @@ export default function Sidebar({
 
 
   const filteredLinks = sidelinks.map(link => {
-    // 1. Collaboration (Chat + Requests)
+    // 1. Collaboration (Now specifically for Friend Requests if user wants it there, 
+    // but user said Friend Requests -> Bell icon. 
     if (link.title === 'Collaboration') {
-      // Total people talking to you privately
-      const privateChatSenders = Object.keys(unreadChatCounts).length;
-      // Company-wide chat messages + pending friend requests
-      const total = privateChatSenders + unreadCompanyChatCount + unreadRequestCount;
+      // User said: friend request -> bell icon.
+      // So let's keep Collaboration badge empty or only for other collaboration types if needed.
+      return link;
+    }
 
-      if (total > 0 && !currentPath?.includes('/collaboration')) {
+    if (link.title === 'Chat') {
+      const privateChatSenders = Object.keys(unreadChatCounts).length;
+      const total = privateChatSenders + unreadCompanyChatCount;
+      if (total > 0) {
         return { ...link, label: total.toString() }
       }
     }

@@ -66,7 +66,7 @@ export function NotificationBell() {
                             )}
                         </div>
                         <p className='text-xs leading-none text-muted-foreground'>
-                            You have {unreadCount} unread messages
+                            You have {unreadCount} unread {unreadCount === 1 ? 'notification' : 'notifications'}
                         </p>
                     </div>
                 </DropdownMenuLabel>

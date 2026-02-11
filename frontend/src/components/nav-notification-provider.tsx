@@ -52,9 +52,25 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
 
             // Fetch initial notifications
             apiService.get<{ notifications: Notification[], unreadCount: number }>('/v1/notifications').then(data => {
-                console.log('[NotificationProvider] Loaded notifications:', data.notifications.length, 'unread:', data.unreadCount)
+                console.log('[NotificationProvider] Loaded notifications:', data.notifications.length)
                 setNotifications(data.notifications)
-                setUnreadCount(data.unreadCount)
+
+                // 🛡️ FRONTEND FILTERING: 
+                // Recalculate unread counts based on user's desired separation
+                const bellUnread = data.notifications.filter(n => !n.isRead && n.type !== 'new_chat').length
+                setUnreadCount(bellUnread)
+
+                // Populate chat unread badges from the same list
+                const chatMap: Record<string, number> = {}
+                data.notifications.filter(n => !n.isRead && n.type === 'new_chat').forEach(n => {
+                    const senderId = n.senderId?._id || 'unknown'
+                    chatMap[senderId] = (chatMap[senderId] || 0) + 1
+                })
+                setUnreadChatCounts(chatMap)
+
+                // Friend request specific count
+                const requestCount = data.notifications.filter(n => !n.isRead && n.type === 'friend_request').length
+                setUnreadRequestCount(requestCount)
             }).catch((err: any) => console.error('Failed to fetch notifications', err))
 
             // Connect Socket
@@ -98,25 +114,33 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
         // Standard Notifications (Bell)
         socket.on('new_notification', (newNotif: Notification) => {
             console.log('[NotificationProvider] Received new_notification:', newNotif)
-            setNotifications(prev => [newNotif, ...prev])
-            setUnreadCount(prev => prev + 1)
 
-            // Also update request count if it's a friend request
-            if (newNotif.type === 'friend_request') {
-                setUnreadRequestCount(prev => prev + 1)
+            if (newNotif.type === 'new_chat') {
+                // If it's a chat notification, update chat logic rather than global bell
+                const senderId = newNotif.senderId?._id || 'unknown'
+                setUnreadChatCounts(prev => ({
+                    ...prev,
+                    [senderId]: (prev[senderId] || 0) + 1
+                }))
+                // We still keep it in notifications for now if fetched later, 
+                // but the unreadCount badge for Bell will filter it out.
+            } else {
+                setNotifications(prev => [newNotif, ...prev])
+                setUnreadCount(prev => prev + 1)
+
+                if (newNotif.type === 'friend_request') {
+                    setUnreadRequestCount(prev => prev + 1)
+                }
             }
         })
 
-        // Chat Badges (Sidebar)
+        // Chat Badges (Sidebar) - This might be redundant if backend sends BOTH events, 
+        // but we keep it specialized for raw chat events that don't hit the notification DB
         socket.on('new_chat', (data: any) => {
-            console.log('[NotificationProvider] Received new_chat:', data)
+            console.log('[NotificationProvider] Received new_chat raw event:', data)
             if (data.type === 'company' && data.senderId !== user?.id) {
-                // Company-wide message (not sent by me)
-                console.log('[NotificationProvider] Incrementing company chat count')
                 setUnreadCompanyChatCount(prev => prev + 1)
             } else if (data.type === 'private' && data.senderId !== user?.id) {
-                // Private message (not sent by me)
-                console.log('[NotificationProvider] Incrementing private chat count for sender:', data.senderId)
                 setUnreadChatCounts(prev => ({
                     ...prev,
                     [data.senderId]: (prev[data.senderId] || 0) + 1
@@ -131,14 +155,28 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
         }
     }, [socket, user])
 
-    // 3. Actions
+    // 3. Derived State for UI
+    // Filter out chat messages from the bell notifications
+    const bellNotifications = notifications.filter(n => n.type !== 'new_chat')
+    // Chat notifications specifically
+    const chatNotifications = notifications.filter(n => n.type === 'new_chat')
+
+    // Total unread chat messages for sidebar
+    const totalUnreadChats = Object.values(unreadChatCounts).reduce((a, b) => a + b, 0) + unreadCompanyChatCount
+
+    // Actions
     const markAsRead = async (id: string) => {
         try {
             await apiService.patch(`/v1/notifications/${id}/read`, {})
             setNotifications(prev =>
                 prev.map(n => (n._id === id ? { ...n, isRead: true } : n))
             )
-            setUnreadCount(prev => Math.max(0, prev - 1))
+
+            // Adjust count only if it was a bell notification
+            const notif = notifications.find(n => n._id === id)
+            if (notif && notif.type !== 'new_chat') {
+                setUnreadCount(prev => Math.max(0, prev - 1))
+            }
         } catch (err) {
             console.error(err)
         }
@@ -169,8 +207,8 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
     return (
         <NotificationContext.Provider
             value={{
-                notifications,
-                unreadCount,
+                notifications: bellNotifications, // Bell only!
+                unreadCount, // Bell only!
                 unreadChatCounts,
                 unreadCompanyChatCount,
                 unreadRequestCount,
