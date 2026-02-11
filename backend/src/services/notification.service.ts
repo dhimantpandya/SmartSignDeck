@@ -72,7 +72,10 @@ const markChatAsRead = async (userId: string, type: string, senderId?: string) =
     if (senderId) {
         query.senderId = senderId;
     }
-    return await Notification.updateMany(query, { isRead: true });
+    console.log('[NOTIFICATION] Marking chat as read:', { userId, type, senderId, query });
+    const result = await Notification.updateMany(query, { isRead: true });
+    console.log('[NOTIFICATION] Mark chat as read result:', { matchedCount: result.matchedCount, modifiedCount: result.modifiedCount });
+    return result;
 };
 
 export default {
