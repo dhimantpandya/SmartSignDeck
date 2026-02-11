@@ -43,7 +43,7 @@ const NotificationContext = createContext<NotificationContextType | null>(null)
 const extractId = (senderId: any): string | null => {
     if (!senderId) return null
     if (typeof senderId === 'string') return senderId
-    return senderId._id || senderId.id || null
+    return (senderId._id || senderId.id)?.toString() || null
 }
 
 export const NotificationProvider = ({ children }: { children: React.ReactNode }) => {

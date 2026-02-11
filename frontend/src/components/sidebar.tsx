@@ -27,8 +27,10 @@ export default function Sidebar({
   const { user } = useAuth()
   const {
     unreadChatCounts,
+    unreadCompanyChatCount,
     unreadRequestCount,
     clearRequestBadges,
+    suppressedChatSections,
     isChatOpen
   } = useNotifications()
 
@@ -64,10 +66,12 @@ export default function Sidebar({
     }
 
     if (link.title === 'Chat' && !isChatOpen) {
-      const { suppressedChatSections } = useNotifications();
-      const uniqueSenders = Object.keys(unreadChatCounts).length;
-      if (uniqueSenders > 0 && !suppressedChatSections.has('private')) {
-        return { ...link, label: uniqueSenders.toString() }
+      const privateUnread = !suppressedChatSections.has('private') ? Object.keys(unreadChatCounts).length : 0;
+      const companyUnread = !suppressedChatSections.has('company') && unreadCompanyChatCount > 0 ? 1 : 0;
+      const totalUnread = privateUnread + companyUnread;
+
+      if (totalUnread > 0) {
+        return { ...link, label: totalUnread.toString() }
       }
     }
 
