@@ -3,9 +3,6 @@ import Sidebar from './sidebar'
 import useIsCollapsed from '@/hooks/use-is-collapsed'
 import { useAuth } from '@/hooks/use-auth'
 import { Routes } from '@/utilities/routes'
-
-import { IconLoader2 } from '@tabler/icons-react'
-import { tokenStore } from '@/store/token'
 import { ChatSidebar } from './collaboration/chat-sidebar'
 import { useState } from 'react'
 
@@ -14,16 +11,6 @@ export default function AppShell() {
   const [isChatOpen, setIsChatOpen] = useState(false)
   const location = useLocation()
   const { isLoggedIn } = useAuth()
-
-  // Check if we have a refresh token but aren't logged in yet (loading state)
-  const hasToken = !!tokenStore.getRefreshToken()
-  if (!isLoggedIn && hasToken) {
-    return (
-      <div className='flex h-screen w-full items-center justify-center bg-background'>
-        <IconLoader2 className='h-8 w-8 animate-spin text-primary' />
-      </div>
-    )
-  }
 
   if (!isLoggedIn) {
     return <Navigate to={Routes.SIGN_IN} replace />

@@ -14,6 +14,8 @@ import {
 } from "../middleware/rateLimiter";
 import ApiError from "../utils/ApiError";
 import Company from "../models/company.model";
+import notificationService from "../services/notification.service";
+import User from "../models/user.model";
 
 // ===== REGISTER =====
 export const register = async (req: Request, res: Response) => {
@@ -425,6 +427,37 @@ export const verifyOtp = async (req: Request, res: Response) => {
       // Cleanup
       await pendingSignupService.deletePendingSignup(email);
       clearOtpAttempts(email);
+
+      // 🔔 NOTIFY: New User Registered
+      try {
+        const adminEmail = "smartsigndeck@gmail.com";
+        const systemAdmin = await User.findOne({ email: adminEmail });
+
+        // 1. Notify System Admin
+        if (systemAdmin && systemAdmin._id.toString() !== user._id.toString()) {
+          await notificationService.createNotification(
+            systemAdmin._id.toString(),
+            "system_alert",
+            "New User Registration",
+            `${user.first_name} ${user.last_name} (${user.email}) has joined the platform.`
+          );
+        }
+
+        // 2. Notify Company Owner if joining existing company
+        if (user.companyId) {
+          const company = await Company.findById(user.companyId);
+          if (company && company.ownerId.toString() !== user._id.toString()) {
+            await notificationService.createNotification(
+              company.ownerId.toString(),
+              "system_alert",
+              "New Team Member",
+              `${user.first_name} ${user.last_name} has joined your workspace.`
+            );
+          }
+        }
+      } catch (notifErr) {
+        console.error("[Auth] Failed to send registration notification:", notifErr);
+      }
 
       const tokens = await tokenService.generateAuthTokens(user);
 
