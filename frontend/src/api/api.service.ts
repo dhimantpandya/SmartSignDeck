@@ -18,7 +18,7 @@ class ApiService {
         : 'https://smart-sign-deck.onrender.com') // Slug-based Render URL
       : import.meta.env.VITE_APP_URL || 'http://localhost:5000'; // Standardized local port
 
-    console.log(`[ApiService] PROD: ${import.meta.env.PROD}, baseURL: ${baseURL}`);
+    console.log(`[ApiService] PRODUCTION: ${import.meta.env.PROD}, URL: ${baseURL}`);
 
     if (!axios || typeof axios.create !== 'function') {
       console.error('[ApiService] Axios is not properly imported or .create is missing!', axios);
@@ -130,7 +130,17 @@ class ApiService {
             }
 
             tokenStore.clearTokens()
-            window.location.href = '/sign-in'
+
+            // 🛡️ Hardened Redirect: Avoid infinite reload loop if already on Auth page
+            const isAuthPage = window.location.pathname.includes('/sign-in') ||
+              window.location.pathname.includes('/sign-up') ||
+              window.location.pathname.includes('/otp') ||
+              window.location.pathname.includes('/forgot-password')
+
+            if (!isAuthPage) {
+              window.location.href = '/sign-in'
+            }
+
             return Promise.reject(refreshError)
           } finally {
             this.isRefreshing = false

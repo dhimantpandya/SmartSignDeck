@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState } from 'react'
 import { useAuth } from '@/hooks/use-auth'
 import { io, Socket } from 'socket.io-client'
 import { apiService } from '@/api'
+import { tokenStore } from '@/store/token'
 
 interface Notification {
     _id: string

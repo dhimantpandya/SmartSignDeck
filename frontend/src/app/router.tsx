@@ -83,10 +83,13 @@ const Setup = () => {
           lazy: async () => {
             const AppShell = await import('@/components/app-shell')
             const { NavSyncProvider } = await import('@/components/nav-sync-provider')
+            const { NotificationProvider } = await import('@/components/nav-notification-provider')
             return {
               Component: () => (
                 <NavSyncProvider>
-                  <AppShell.default />
+                  <NotificationProvider>
+                    <AppShell.default />
+                  </NotificationProvider>
                 </NavSyncProvider>
               )
             }

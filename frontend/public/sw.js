@@ -62,7 +62,13 @@ self.addEventListener('fetch', (event) => {
                 return networkResponse;
             })
             .catch(() => {
-                return caches.match(request);
+                return caches.match(request).then(response => {
+                    return response || new Response('Network error occurred', {
+                        status: 503,
+                        statusText: 'Service Unavailable',
+                        headers: new Headers({ 'Content-Type': 'text/plain' })
+                    });
+                });
             })
     );
 });
