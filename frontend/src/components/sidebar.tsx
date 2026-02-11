@@ -64,9 +64,10 @@ export default function Sidebar({
     }
 
     if (link.title === 'Chat' && !isChatOpen) {
-      const totalPrivateMessages = Object.values(unreadChatCounts).reduce((a, b) => a + b, 0);
-      if (totalPrivateMessages > 0) {
-        return { ...link, label: totalPrivateMessages.toString() }
+      const { suppressedChatSections } = useNotifications();
+      const uniqueSenders = Object.keys(unreadChatCounts).length;
+      if (uniqueSenders > 0 && !suppressedChatSections.has('private')) {
+        return { ...link, label: uniqueSenders.toString() }
       }
     }
 

@@ -271,9 +271,9 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
                         </TabsTrigger>
                         <TabsTrigger value="private" className="rounded-none data-[state=active]:bg-background border-b-2 border-transparent data-[state=active]:border-primary transition-all text-[10px] px-1 relative">
                             Direct
-                            {Object.values(unreadChatCounts).some(v => v > 0) && !suppressedChatSections.has('private') && (
+                            {Object.keys(unreadChatCounts).length > 0 && !suppressedChatSections.has('private') && (
                                 <Badge variant="destructive" className="absolute -top-1 -right-1 h-3 w-3 flex items-center justify-center p-0 text-[7px] animate-pulse">
-                                    {Object.values(unreadChatCounts).reduce((a, b) => a + b, 0)}
+                                    {Object.keys(unreadChatCounts).length}
                                 </Badge>
                             )}
                         </TabsTrigger>
