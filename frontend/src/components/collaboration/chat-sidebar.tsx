@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '@/hooks/use-auth'
 import { socialService } from '@/api'
-import { io, Socket } from 'socket.io-client'
+import { Socket } from 'socket.io-client'
 import {
     MessageCircle,
     X,
@@ -40,7 +40,8 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
         clearChatNotifications,
         setIsChatOpen,
         suppressedChatSections,
-        suppressChatSection
+        suppressChatSection,
+        socket
     } = useNotifications()
 
     const [boardMessages, setBoardMessages] = useState<any[]>([])
@@ -56,36 +57,32 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
     const scrollRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
-        if (!user || !isOpen) return
+        if (!user || !isOpen || !socket) return
 
-        const socket = io(import.meta.env.VITE_APP_URL || 'http://localhost:5000')
-        socketRef.current = socket
+        console.log('[ChatSidebar] Setting up chat listeners on shared socket')
 
-        socket.on('connect', () => {
-            if (user.companyId) {
-                socket.emit('join_company', user.companyId)
-            }
-            socket.emit('join_user', user.id)
-        })
-
-        socket.on('new_chat', (data) => {
+        const handleNewChat = (data: any) => {
+            console.log('[ChatSidebar] new_chat event:', data)
             if (data.type === 'company' || data.companyId) {
                 setBoardMessages((prev) => [...prev, data])
             } else if (data.type === 'private' || data.recipientId) {
                 setPrivateMessages((prev) => [...prev, data])
             }
-        })
+        }
 
-        socket.on('friend_request_received', () => {
+        const handleFriendRequestReceived = () => {
+            console.log('[ChatSidebar] friend_request_received')
             loadRequests()
-        })
+        }
 
-        socket.on('friend_request_accepted', () => {
+        const handleFriendRequestAccepted = () => {
+            console.log('[ChatSidebar] friend_request_accepted')
             loadFriends()
             loadRequests()
-        })
+        }
 
-        socket.on('new_friend_message', (data) => {
+        const handleNewFriendMessage = (data: any) => {
+            console.log('[ChatSidebar] new_friend_message:', data)
             // Re-fetch history if this friend's chat is active
             if (selectedFriend) {
                 const friendId = selectedFriend._id || selectedFriend.id;
@@ -93,15 +90,30 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
                     fetchChatHistory(friendId)
                 }
             }
-        })
+        }
+
+        socket.on('new_chat', handleNewChat)
+        socket.on('friend_request_received', handleFriendRequestReceived)
+        socket.on('friend_request_accepted', handleFriendRequestAccepted)
+        socket.on('new_friend_message', handleNewFriendMessage)
+
+        // Ensure rooms are joined on the shared socket if not already
+        socket.emit('join_user', user.id)
+        if (user.companyId) {
+            socket.emit('join_company', user.companyId)
+        }
 
         // Load board data initially
         fetchBoardData()
 
         return () => {
-            socket.disconnect()
+            console.log('[ChatSidebar] Cleaning up chat listeners')
+            socket.off('new_chat', handleNewChat)
+            socket.off('friend_request_received', handleFriendRequestReceived)
+            socket.off('friend_request_accepted', handleFriendRequestAccepted)
+            socket.off('new_friend_message', handleNewFriendMessage)
         }
-    }, [user, isOpen])
+    }, [user, isOpen, socket, selectedFriend]) // Added selectedFriend to ensure handleNewFriendMessage uses current value
 
     // Fetch private history when friend changes
     useEffect(() => {

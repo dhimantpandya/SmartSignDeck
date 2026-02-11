@@ -70,6 +70,8 @@ export default function Sidebar({
       const companyUnread = !suppressedChatSections.has('company') && unreadCompanyChatCount > 0 ? 1 : 0;
       const totalUnread = privateUnread + companyUnread;
 
+      console.log('[Sidebar] Chat badge check:', { privateUnread, companyUnread, totalUnread, suppressed: Array.from(suppressedChatSections) });
+
       if (totalUnread > 0) {
         return { ...link, label: totalUnread.toString() }
       }

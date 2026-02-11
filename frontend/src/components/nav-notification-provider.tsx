@@ -36,6 +36,7 @@ interface NotificationContextType {
     setIsChatOpen: (open: boolean) => void
     suppressedChatSections: Set<string>
     suppressChatSection: (section: string) => void
+    socket: Socket | null
 }
 
 const NotificationContext = createContext<NotificationContextType | null>(null)
@@ -93,12 +94,24 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
             const newSocket = io(socketURL)
             setSocket(newSocket)
 
-            newSocket.emit('join_user', user.id)
-            if (user.companyId) {
-                newSocket.emit('join_company', user.companyId)
-            }
+            newSocket.on('connect', () => {
+                console.log('[SOCKET] Connected to:', socketURL, 'ID:', newSocket.id)
+                newSocket.emit('join_user', user.id)
+                if (user.companyId) {
+                    newSocket.emit('join_company', user.companyId)
+                }
+            })
+
+            newSocket.on('connect_error', (err) => {
+                console.error('[SOCKET] Connection error:', err)
+            })
+
+            newSocket.on('disconnect', (reason) => {
+                console.log('[SOCKET] Disconnected:', reason)
+            })
 
             return () => {
+                console.log('[SOCKET] Cleaning up socket connection')
                 newSocket.disconnect()
             }
         }
@@ -145,14 +158,17 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
         })
 
         socket.on('new_chat', (data: any) => {
+            console.log('[SOCKET] new_chat event received:', data)
             if (data.senderId === user.id) return
 
             if (data.type === 'company') {
+                console.log('[SOCKET] Incrementing company chat count')
                 setUnreadCompanyChatCount(prev => prev + 1)
                 setSuppressedChatSections(prev => {
                     const next = new Set(prev); next.delete('company'); return next;
                 })
             } else if (data.type === 'private' && !isChatOpen) {
+                console.log('[SOCKET] Incrementing private chat count for:', data.senderId)
                 // Only update badge from new_chat if sidebar is closed
                 // When sidebar is open, new_notification will handle it
                 setUnreadChatCounts(prev => ({
@@ -169,6 +185,8 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
                     description: `${data.senderName || 'Someone'} sent you a message`,
                     duration: 3000,
                 })
+            } else {
+                console.log('[SOCKET] Skipping badge update (isChatOpen:', isChatOpen, ')')
             }
         })
 
@@ -262,7 +280,8 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
                 isChatOpen,
                 setIsChatOpen,
                 suppressedChatSections,
-                suppressChatSection
+                suppressChatSection,
+                socket
             }}
         >
             {children}
