@@ -18,26 +18,16 @@ const createScreen = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getScreens = catchAsync(async (req: Request, res: Response) => {
-  const filter: any = pick(req.query, ["name", "templateId", "status", "createdBy", "isPublic"]);
-  if ((req.query.trashed as any) === true || req.query.trashed === 'true') {
-    filter.deletedAt = { $ne: null };
-  }
+  const filter: any = pick(req.query, ["name", "templateId", "status", "createdBy", "isPublic", "trashed"]);
 
   // Handle boolean strings
   if (filter.isPublic === 'true') filter.isPublic = true;
   if (filter.isPublic === 'false') filter.isPublic = false;
+  if (filter.trashed === 'true') filter.trashed = true;
+  if (filter.trashed === 'false') filter.trashed = false;
 
   const options = pick(req.query, ["sortBy", "limit", "page"]);
   const result = await screenService.queryScreens(filter, options, req.user as any);
-
-  // DEBUG: Check for corrupted keys
-  if (result.results) {
-    result.results.forEach((s: any) => {
-      if (s.secretKey && s.secretKey.length > 32) {
-        console.log('CRITICAL: Corrupted Key detected in Controller:', s.id, s.secretKey);
-      }
-    });
-  }
 
   successResponse(res, "Screens retrieved successfully", httpStatus.OK, result);
 });

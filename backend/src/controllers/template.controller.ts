@@ -19,15 +19,13 @@ const createTemplate = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getTemplates = catchAsync(async (req: Request, res: Response) => {
-    const filter: any = pick(req.query, ["name", "createdBy", "isPublic"]);
-
-    if ((req.query.trashed as any) === true || req.query.trashed === 'true') {
-        filter.deletedAt = { $ne: null };
-    }
+    const filter: any = pick(req.query, ["name", "createdBy", "isPublic", "trashed"]);
 
     // Handle boolean strings
     if (filter.isPublic === 'true') filter.isPublic = true;
     if (filter.isPublic === 'false') filter.isPublic = false;
+    if (filter.trashed === 'true') filter.trashed = true;
+    if (filter.trashed === 'false') filter.trashed = false;
 
     const options = pick(req.query, ["sortBy", "limit", "page"]);
     const result = await templateService.queryTemplates(filter, options, req.user as any);

@@ -61,13 +61,13 @@ const queryTemplates = async (filter: any, options: CustomPaginateOptions, user:
   // 1. Clean up filter and ensure proper types
   const finalFilter: any = { ...filter };
 
-  // If not explicitly querying trashed items, ensure we only get non-deleted ones
-  if (finalFilter.trashed === 'true' || finalFilter.trashed === true) {
+  // Handle soft-delete filtering
+  if (finalFilter.trashed === true) {
     finalFilter.deletedAt = { $ne: null };
-    delete finalFilter.trashed;
-  } else if (finalFilter.deletedAt === undefined) {
+  } else if (finalFilter.trashed === false || finalFilter.deletedAt === undefined) {
     finalFilter.deletedAt = null;
   }
+  delete finalFilter.trashed;
 
   // Remove empty/undefined/string-literal-undefined filters
   Object.keys(finalFilter).forEach(key => {

@@ -51,13 +51,13 @@ const queryScreens = async (filter: any, options: CustomPaginateOptions, user: I
   // 1. Clean up filter
   const finalFilter: any = { ...filter };
 
-  // If not explicitly querying trashed items, ensure we only get non-deleted ones
-  if (finalFilter.trashed === 'true' || finalFilter.trashed === true) {
+  // Handle soft-delete filtering
+  if (finalFilter.trashed === true) {
     finalFilter.deletedAt = { $ne: null };
-    delete finalFilter.trashed;
-  } else if (finalFilter.deletedAt === undefined) {
+  } else if (finalFilter.trashed === false || finalFilter.deletedAt === undefined) {
     finalFilter.deletedAt = null;
   }
+  delete finalFilter.trashed;
 
   Object.keys(finalFilter).forEach(key => {
     if (finalFilter[key] === undefined || finalFilter[key] === null || finalFilter[key] === '' || finalFilter[key] === 'undefined' || finalFilter[key] === 'null') {
@@ -100,7 +100,6 @@ const queryScreens = async (filter: any, options: CustomPaginateOptions, user: I
     }
   }
 
-
   const screens = await Screen.paginate(finalFilter, {
     ...options,
     populate: [
@@ -115,7 +114,8 @@ const queryScreens = async (filter: any, options: CustomPaginateOptions, user: I
 
   if (screens.results) {
     screens.results = screens.results.map((screen: any) => {
-      const screenObj = screen.toObject ? screen.toObject() : screen;
+      // Use toJSON() to ensure plugin transforms (like id) are applied
+      const screenObj = screen.toJSON ? screen.toJSON() : screen;
       const lastPing = screenObj.lastPing ? new Date(screenObj.lastPing) : null;
 
       if (lastPing && lastPing > TWO_MINUTES_AGO) {
