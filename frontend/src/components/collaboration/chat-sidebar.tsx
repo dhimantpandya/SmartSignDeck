@@ -10,8 +10,11 @@ import {
     Search,
     ChevronLeft,
     MessageSquare,
-    UserPlus
+    UserPlus,
+    Bell
 } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { useNotifications } from '@/components/nav-notification-provider'
 import { Button } from '@/components/custom/button'
 import { Input } from '@/components/ui/input'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -24,7 +27,12 @@ interface ChatSidebarProps {
 }
 
 export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
-    const { user } = useAuth()
+    const {
+        unreadChatCounts,
+        unreadCompanyChatCount,
+        clearChatNotifications
+    } = useNotifications()
+
     const [boardMessages, setBoardMessages] = useState<any[]>([])
     const [privateMessages, setPrivateMessages] = useState<any[]>([])
     const [inputText, setInputText] = useState('')
@@ -153,8 +161,24 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
         if (isOpen) {
             loadFriends()
             loadRequests()
+
+            // If opening and on company board, clear it
+            if (activeTab === 'company') {
+                clearChatNotifications('company')
+            }
         }
     }, [isOpen])
+
+    // Clear notifications when tab changes
+    useEffect(() => {
+        if (!isOpen) return;
+
+        if (activeTab === 'company') {
+            clearChatNotifications('company')
+        } else if (activeTab === 'private' && selectedFriend) {
+            clearChatNotifications('private', selectedFriend.id)
+        }
+    }, [activeTab, selectedFriend, isOpen])
 
     const handleSendMessage = async () => {
         if (!inputText.trim() || !user) return
@@ -214,11 +238,21 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
                     if (val === 'company') setSelectedFriend(null)
                 }} className="flex-1 flex flex-col overflow-hidden gap-0">
                     <TabsList className="grid w-full grid-cols-4 rounded-none bg-muted/50 p-0 h-10 m-0">
-                        <TabsTrigger value="company" className="rounded-none data-[state=active]:bg-background border-b-2 border-transparent data-[state=active]:border-primary transition-all text-[10px] px-1">
+                        <TabsTrigger value="company" className="rounded-none data-[state=active]:bg-background border-b-2 border-transparent data-[state=active]:border-primary transition-all text-[10px] px-1 relative">
                             Board
+                            {unreadCompanyChatCount > 0 && (
+                                <Badge variant="destructive" className="absolute -top-1 -right-1 h-4 w-4 flex items-center justify-center p-0 text-[8px] animate-pulse">
+                                    {unreadCompanyChatCount}
+                                </Badge>
+                            )}
                         </TabsTrigger>
-                        <TabsTrigger value="private" className="rounded-none data-[state=active]:bg-background border-b-2 border-transparent data-[state=active]:border-primary transition-all text-[10px] px-1">
+                        <TabsTrigger value="private" className="rounded-none data-[state=active]:bg-background border-b-2 border-transparent data-[state=active]:border-primary transition-all text-[10px] px-1 relative">
                             Direct
+                            {Object.keys(unreadChatCounts).length > 0 && (
+                                <Badge variant="destructive" className="absolute -top-1 -right-1 h-4 w-4 flex items-center justify-center p-0 text-[8px] animate-pulse">
+                                    {Object.values(unreadChatCounts).reduce((a, b) => a + b, 0)}
+                                </Badge>
+                            )}
                         </TabsTrigger>
                         <TabsTrigger value="requests" className="rounded-none data-[state=active]:bg-background border-b-2 border-transparent data-[state=active]:border-primary transition-all text-[10px] px-1 relative">
                             Reqs
@@ -328,6 +362,11 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
                                                     <span className="text-sm font-semibold truncate">{friend.first_name} {friend.last_name}</span>
                                                     <span className="text-[10px] text-muted-foreground truncate">{friend.email}</span>
                                                 </div>
+                                                {unreadChatCounts[friend.id] > 0 && (
+                                                    <Badge variant="destructive" className="h-5 w-5 rounded-full flex items-center justify-center p-0 text-[10px] font-bold">
+                                                        {unreadChatCounts[friend.id]}
+                                                    </Badge>
+                                                )}
                                             </div>
                                         ))}
                                     </div>

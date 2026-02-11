@@ -31,6 +31,7 @@ interface NotificationContextType {
     clearChatBadges: () => void
     clearCompanyChatBadge: () => void
     clearRequestBadges: () => void
+    clearChatNotifications: (type: 'company' | 'private', senderId?: string) => Promise<void>
 }
 
 const NotificationContext = createContext<NotificationContextType | null>(null)
@@ -199,6 +200,43 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
         setUnreadRequestCount(0)
     }
 
+    const clearChatNotifications = async (type: 'company' | 'private', senderId?: string) => {
+        try {
+            // 1. Mark as read in Backend
+            const notificationType = 'new_chat'; // The type in DB
+            await apiService.patch('/v1/notifications/clear-chat', {
+                type: notificationType,
+                senderId: senderId
+            });
+
+            // 2. Update local state
+            if (type === 'company') {
+                setUnreadCompanyChatCount(0);
+            } else if (type === 'private' && senderId) {
+                setUnreadChatCounts(prev => {
+                    const newCounts = { ...prev };
+                    delete newCounts[senderId];
+                    return newCounts;
+                });
+            }
+
+            // Also remove from the master notifications list (or mark as read)
+            setNotifications(prev => prev.map(n => {
+                if (n.type === 'new_chat') {
+                    // Match company: no senderId in notification data usually means company board in this logic
+                    // Match private: senderId match
+                    const nSenderId = n.senderId?._id || n.senderId;
+                    if (type === 'company' && !n.senderId) return { ...n, isRead: true };
+                    if (type === 'private' && nSenderId === senderId) return { ...n, isRead: true };
+                }
+                return n;
+            }));
+
+        } catch (err) {
+            console.error('[NotificationProvider] Failed to clear chat notifications:', err);
+        }
+    };
+
     return (
         <NotificationContext.Provider
             value={{
@@ -211,7 +249,8 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
                 markAllAsRead,
                 clearChatBadges,
                 clearCompanyChatBadge,
-                clearRequestBadges
+                clearRequestBadges,
+                clearChatNotifications
             }}
         >
             {children}

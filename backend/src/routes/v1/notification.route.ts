@@ -21,4 +21,10 @@ router.patch("/read-all", auth(), async (req, res) => {
     res.status(httpStatus.NO_CONTENT).send();
 });
 
+router.patch("/clear-chat", auth(), async (req, res) => {
+    const { type, senderId } = req.body;
+    await notificationService.markChatAsRead(req.user!.id, type, senderId);
+    res.status(httpStatus.NO_CONTENT).send();
+});
+
 export default router;
