@@ -25,7 +25,13 @@ export default function Sidebar({
   const [navOpened, setNavOpened] = useState(false)
   const [adminRequestCount, setAdminRequestCount] = useState(0)
   const { user } = useAuth()
-  const { unreadChatCounts, unreadCompanyChatCount, unreadRequestCount, clearChatBadges, clearCompanyChatBadge, clearRequestBadges } = useNotifications()
+  const {
+    unreadChatCounts,
+    unreadCompanyChatCount,
+    unreadRequestCount,
+    clearRequestBadges,
+    isChatOpen
+  } = useNotifications()
 
   useEffect(() => {
     if (user && user.role === 'super_admin') {
@@ -54,18 +60,16 @@ export default function Sidebar({
 
   const filteredLinks = sidelinks.map(link => {
     // 1. Collaboration (Now specifically for Friend Requests if user wants it there, 
-    // but user said Friend Requests -> Bell icon. 
     if (link.title === 'Collaboration') {
-      // User said: friend request -> bell icon.
-      // So let's keep Collaboration badge empty or only for other collaboration types if needed.
       return link;
     }
 
-    if (link.title === 'Chat') {
+    if (link.title === 'Chat' && !isChatOpen) {
       const privateChatSenders = Object.keys(unreadChatCounts).length;
-      const total = privateChatSenders + unreadCompanyChatCount;
-      if (total > 0) {
-        return { ...link, label: total.toString() }
+      const boardEntity = unreadCompanyChatCount > 0 ? 1 : 0;
+      const totalEntities = privateChatSenders + boardEntity;
+      if (totalEntities > 0) {
+        return { ...link, label: totalEntities.toString() }
       }
     }
 
@@ -81,9 +85,6 @@ export default function Sidebar({
   // Clear logic on navigation
   useEffect(() => {
     if (currentPath?.includes('/collaboration')) {
-      // Clear all collaboration-related badges when visiting the page
-      if (Object.keys(unreadChatCounts).length > 0) clearChatBadges()
-      if (unreadCompanyChatCount > 0) clearCompanyChatBadge()
       if (unreadRequestCount > 0) clearRequestBadges()
     }
   }, [currentPath])

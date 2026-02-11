@@ -30,7 +30,10 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
     const {
         unreadChatCounts,
         unreadCompanyChatCount,
-        clearChatNotifications
+        clearChatNotifications,
+        setIsChatOpen,
+        suppressedChatSections,
+        suppressChatSection
     } = useNotifications()
 
     const [boardMessages, setBoardMessages] = useState<any[]>([])
@@ -48,7 +51,6 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
     useEffect(() => {
         if (!user || !isOpen) return
 
-        // Initialize Socket
         const socket = io(import.meta.env.VITE_APP_URL || 'http://localhost:5000')
         socketRef.current = socket
 
@@ -159,6 +161,7 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
 
     useEffect(() => {
         if (isOpen) {
+            setIsChatOpen(true)
             loadFriends()
             loadRequests()
 
@@ -167,18 +170,31 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
                 clearChatNotifications('company')
             }
         }
+        return () => {
+            setIsChatOpen(false)
+        }
     }, [isOpen])
 
-    // Clear notifications when tab changes
+    // Clear notifications or suppress badges when tab changes
     useEffect(() => {
         if (!isOpen) return;
 
         if (activeTab === 'company') {
             clearChatNotifications('company')
-        } else if (activeTab === 'private' && selectedFriend) {
+        } else if (activeTab === 'private') {
+            // When clicking the Direct tab, we suppress the tab-level notification count
+            // but we do NOT call clearChatNotifications(type) for all private yet
+            // because the user wants to see individual counts (e.g. "3") in the list.
+            suppressChatSection('private')
+        }
+    }, [activeTab, isOpen])
+
+    // Clear individual when selected
+    useEffect(() => {
+        if (isOpen && activeTab === 'private' && selectedFriend) {
             clearChatNotifications('private', selectedFriend.id)
         }
-    }, [activeTab, selectedFriend, isOpen])
+    }, [selectedFriend, isOpen])
 
     const handleSendMessage = async () => {
         if (!inputText.trim() || !user) return
@@ -240,17 +256,17 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
                     <TabsList className="grid w-full grid-cols-4 rounded-none bg-muted/50 p-0 h-10 m-0">
                         <TabsTrigger value="company" className="rounded-none data-[state=active]:bg-background border-b-2 border-transparent data-[state=active]:border-primary transition-all text-[10px] px-1 relative">
                             Board
-                            {unreadCompanyChatCount > 0 && (
-                                <Badge variant="destructive" className="absolute -top-1 -right-1 h-4 w-4 flex items-center justify-center p-0 text-[8px] animate-pulse">
-                                    {unreadCompanyChatCount}
+                            {unreadCompanyChatCount > 0 && !suppressedChatSections.has('company') && (
+                                <Badge variant="destructive" className="absolute -top-1 -right-1 h-3 w-3 flex items-center justify-center p-0 text-[7px] animate-pulse">
+                                    1
                                 </Badge>
                             )}
                         </TabsTrigger>
                         <TabsTrigger value="private" className="rounded-none data-[state=active]:bg-background border-b-2 border-transparent data-[state=active]:border-primary transition-all text-[10px] px-1 relative">
                             Direct
-                            {Object.keys(unreadChatCounts).length > 0 && (
-                                <Badge variant="destructive" className="absolute -top-1 -right-1 h-4 w-4 flex items-center justify-center p-0 text-[8px] animate-pulse">
-                                    {Object.values(unreadChatCounts).reduce((a, b) => a + b, 0)}
+                            {Object.keys(unreadChatCounts).length > 0 && !suppressedChatSections.has('private') && (
+                                <Badge variant="destructive" className="absolute -top-1 -right-1 h-3 w-3 flex items-center justify-center p-0 text-[7px] animate-pulse">
+                                    {Object.keys(unreadChatCounts).length}
                                 </Badge>
                             )}
                         </TabsTrigger>
