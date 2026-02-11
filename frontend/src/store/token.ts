@@ -47,6 +47,9 @@ class TokenService {
     localStorage.removeItem('accessToken')
     localStorage.removeItem('accessExpires')
     localStorage.removeItem('refreshToken')
+    // Clear Jotai storage atoms to prevent stale state reload loops
+    localStorage.removeItem('user')
+    localStorage.removeItem('isLoggedIn')
   }
 
   /**

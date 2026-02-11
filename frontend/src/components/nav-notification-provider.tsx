@@ -45,7 +45,8 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
 
     // 1. Initialize API & Socket
     useEffect(() => {
-        if (user) {
+        const hasToken = !!tokenStore.getRefreshToken()
+        if (user && hasToken) {
             console.log('[NotificationProvider] Initializing for user:', user.id)
 
             // Fetch initial notifications
@@ -56,8 +57,12 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
             }).catch((err: any) => console.error('Failed to fetch notifications', err))
 
             // Connect Socket
-            const newSocket = io(import.meta.env.VITE_API_URL || 'http://localhost:10000')
-            console.log('[NotificationProvider] Connecting socket to:', import.meta.env.VITE_API_URL || 'http://localhost:10000')
+            const socketURL = import.meta.env.PROD
+                ? 'https://smart-sign-deck.onrender.com'
+                : (import.meta.env.VITE_API_URL || 'http://localhost:5000')
+
+            console.log('[NotificationProvider] Connecting socket to:', socketURL)
+            const newSocket = io(socketURL)
             setSocket(newSocket)
 
             newSocket.on('connect', () => {
