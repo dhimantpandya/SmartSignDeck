@@ -15,7 +15,7 @@ class ApiService {
     const baseURL = import.meta.env.PROD
       ? (import.meta.env.VITE_APP_URL && import.meta.env.VITE_APP_URL !== '/'
         ? import.meta.env.VITE_APP_URL
-        : 'https://smartsigndeck.onrender.com') // Default to live backend if not specified
+        : 'https://smart-sign-deck.onrender.com') // Corrected Render URL
       : import.meta.env.VITE_APP_URL || 'http://localhost:3000';
 
     if (!axios || typeof axios.create !== 'function') {
@@ -123,7 +123,7 @@ class ApiService {
 
             const currentRefreshToken = tokenStore.getRefreshToken()
             if (currentRefreshToken && currentRefreshToken !== refreshTokenAtStart) {
-              window.location.reload()
+              // Token changed in another tab, but don't reload here as it can loop
               return Promise.reject(refreshError)
             }
 

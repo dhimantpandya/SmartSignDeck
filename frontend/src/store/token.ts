@@ -25,10 +25,6 @@ class TokenService {
   public setAccessToken(resp: Access): void {
     localStorage.setItem('accessToken', resp.token)
     localStorage.setItem('accessExpires', resp.expires.toString())
-
-    // Dispatch a manual storage event so the current tab can also react if needed
-    // (though usually only other tabs receive the event)
-    window.dispatchEvent(new Event('storage'))
   }
 
   // ===== REFRESH TOKEN (Persistent) =====
@@ -45,14 +41,12 @@ class TokenService {
 
   public setRefreshToken(token: string): void {
     localStorage.setItem('refreshToken', token)
-    window.dispatchEvent(new Event('storage'))
   }
 
   public clearTokens(): void {
     localStorage.removeItem('accessToken')
     localStorage.removeItem('accessExpires')
     localStorage.removeItem('refreshToken')
-    window.dispatchEvent(new Event('storage'))
   }
 
   /**
@@ -77,9 +71,6 @@ class TokenService {
     } else {
       localStorage.removeItem('isRefreshing')
     }
-    // Storage event fires automatically for other tabs, 
-    // but we dispatch manually for the SAME tab to react if needed
-    window.dispatchEvent(new Event('storage'))
   }
 
   /**
@@ -88,7 +79,6 @@ class TokenService {
    */
   public forceClearRefreshStatus(): void {
     localStorage.removeItem('isRefreshing')
-    window.dispatchEvent(new Event('storage'))
   }
 
   /**

@@ -34,14 +34,21 @@ export const useCrossTabSync = () => {
             }
 
             // Case 3: New login in another tab (sync login state)
-            // We only reload if we were previously logged out (!oldValue)
             if (event.key === 'refreshToken' && !event.oldValue && event.newValue) {
                 console.log('[Cross-Tab Sync] Login detected in another tab')
 
                 // Skip if we are already logged in with this token
                 if (tokenStore.getRefreshToken() === event.newValue) return
 
-                // Force a page reload to trigger the auth bootstrap logic in router.tsx
+                // 🛡️ Loop Protection: Prevent rapid sequential reloads
+                const lastReload = sessionStorage.getItem('last_sync_reload')
+                const now = Date.now()
+                if (lastReload && (now - parseInt(lastReload)) < 5000) {
+                    console.warn('[Cross-Tab Sync] Debouncing reload to prevent loop')
+                    return
+                }
+
+                sessionStorage.setItem('last_sync_reload', now.toString())
                 window.location.reload()
             }
         }
