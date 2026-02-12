@@ -80,53 +80,67 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
                 setUnreadRequestCount(requestCount)
             }).catch((err: any) => console.error('Failed to fetch notifications', err))
 
-            // Connect Socket
-            const socketURL = import.meta.env.PROD
-                ? 'https://smart-sign-deck.onrender.com'
-                : (import.meta.env.VITE_API_URL || 'http://localhost:5000')
+            const getSocketURL = () => {
+                const prodUrl = import.meta.env.VITE_APP_URL || 'https://smart-sign-deck.onrender.com';
+                const devUrl = import.meta.env.VITE_APP_URL || 'http://localhost:5000';
+
+                let url = import.meta.env.PROD ? prodUrl : devUrl;
+
+                // Clean URL: Strip /v1 if present
+                if (url.endsWith('/v1')) url = url.slice(0, -3);
+                if (url.endsWith('/')) url = url.slice(0, -1);
+
+                return url;
+            }
+
+            const socketURL = getSocketURL();
+            console.log('[SOCKET] Initializing at:', socketURL, 'Env:', import.meta.env.PROD ? 'PROD' : 'DEV')
 
             const newSocket = io(socketURL, {
-                transports: ['websocket', 'polling'],
+                transports: ['websocket', 'polling'], // Standard order, but polling fallback is key
                 reconnection: true,
-                reconnectionAttempts: Infinity,
-                reconnectionDelay: 1000,
-                reconnectionDelayMax: 5000,
+                reconnectionAttempts: 10,
+                reconnectionDelay: 2000,
                 timeout: 20000,
+                autoConnect: true,
             })
+
             setSocket(newSocket)
 
             const joinRooms = () => {
                 if (!user) return
                 const uid = extractId(user)
                 if (!uid) return
-                console.log('[SOCKET] Joining rooms for user:', uid)
+                console.log('[SOCKET] 🟢 Emitting join_user:', uid)
                 newSocket.emit('join_user', uid)
+
                 if (user.companyId) {
                     const cid = extractId(user.companyId)
-                    console.log('[SOCKET] Joining company room:', cid)
+                    console.log('[SOCKET] 🟢 Emitting join_company:', cid)
                     newSocket.emit('join_company', cid)
                 }
             }
 
             newSocket.on('connect', () => {
-                console.log('[SOCKET] Connected! ID:', newSocket.id)
+                console.log('[SOCKET] ✅ CONNECTED! ID:', newSocket.id)
                 joinRooms()
             })
 
             newSocket.on('reconnect', (attempt) => {
-                console.log('[SOCKET] Reconnected after', attempt, 'attempts')
+                console.log('[SOCKET] 🔄 RECONNECTED after', attempt, 'attempts')
                 joinRooms()
             })
 
             newSocket.on('connect_error', (err) => {
-                console.error('[SOCKET] Connection error:', err)
+                console.error('[SOCKET] ❌ CONNECTION ERROR:', err.message)
             })
 
             newSocket.on('disconnect', (reason) => {
-                console.log('[SOCKET] Disconnected:', reason)
+                console.log('[SOCKET] 🔴 DISCONNECTED:', reason)
             })
+
             return () => {
-                console.log('[SOCKET] Cleaning up socket connection')
+                console.log('[SOCKET] 🛑 Cleaning up socket connection')
                 newSocket.disconnect()
             }
         }
