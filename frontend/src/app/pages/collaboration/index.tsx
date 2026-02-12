@@ -44,6 +44,19 @@ export default function Collaboration() {
     const [selectedProfileUser, setSelectedProfileUser] = useState<any>(null)
     const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false)
     const { socket } = useNotifications()
+
+    const extractId = (idObj: any) => {
+        if (!idObj) return null
+        if (typeof idObj === 'string') return idObj
+        return idObj.id || idObj._id || null
+    }
+
+    const isSameId = (id1: any, id2: any) => {
+        const s1 = extractId(id1)
+        const s2 = extractId(id2)
+        return s1 && s2 && s1 === s2
+    }
+
     const messagesEndRef = useRef<HTMLDivElement | null>(null)
 
     // Auto-scroll to bottom when new messages arrive or when switching to the board tab
@@ -79,29 +92,41 @@ export default function Collaboration() {
         }
 
         const handleNewChat = (data: any) => {
-            console.log('New chat received:', data)
+            console.log('[Collaboration] New chat received:', data)
             if (data.type === 'company' || data.companyId) {
+                console.log('[Collaboration] Processing company message')
                 setCompanyMessages((prev) => {
                     // Prevent duplicate if added optimistically
-                    if (prev.some(m => m.text === data.text && m.senderId === data.senderId && Math.abs(new Date(m.created_at).getTime() - new Date(data.created_at).getTime()) < 2000)) {
+                    if (prev.some(m => m.text === data.text && isSameId(m.senderId, data.senderId) && Math.abs(new Date(m.created_at).getTime() - new Date(data.created_at).getTime()) < 2000)) {
                         return prev
                     }
                     return [...prev, data]
                 })
             } else if (data.type === 'private' || data.recipientId) {
-                const friendId = selectedFriend?.id || selectedFriend?._id
-                const isRelevant =
-                    data.senderId === friendId || // from current friend
-                    (data.senderId === user?.id && data.recipientId === friendId) // from me to current friend
+                const friendId = extractId(selectedFriend)
+                const senderId = extractId(data.senderId)
+                const recipientId = extractId(data.recipientId)
+                const myId = extractId(user)
 
-                if (isRelevant) {
+                const isFromFriend = isSameId(senderId, friendId)
+                const isFromMeToFriend = isSameId(senderId, myId) && isSameId(recipientId, friendId)
+
+                console.log('[Collaboration] Private message check:', {
+                    friendId, senderId, recipientId, myId,
+                    isFromFriend, isFromMeToFriend
+                })
+
+                if (isFromFriend || isFromMeToFriend) {
                     setPrivateMessages((prev) => {
                         // Prevent duplicate if added optimistically
-                        if (prev.some(m => m.text === data.text && m.senderId === data.senderId && Math.abs(new Date(m.created_at).getTime() - new Date(data.created_at).getTime()) < 2000)) {
+                        if (prev.some(m => m.text === data.text && isSameId(m.senderId, data.senderId) && Math.abs(new Date(m.created_at).getTime() - new Date(data.created_at).getTime()) < 2000)) {
+                            console.log('[Collaboration] Skipping duplicate message')
                             return prev
                         }
                         return [...prev, data]
                     })
+                } else {
+                    console.log('[Collaboration] Message irrelevant to active chat window')
                 }
             }
         }
