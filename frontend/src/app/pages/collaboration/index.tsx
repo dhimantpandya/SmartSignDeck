@@ -80,11 +80,29 @@ export default function Collaboration() {
 
         const handleNewChat = (data: any) => {
             console.log('New chat received:', data)
-            if (data.type === 'company') {
-                setCompanyMessages(prev => [...prev, data])
-            } else if (data.type === 'private' && (selectedFriend?.id === data.senderId || selectedFriend?.id === data.recipientId || data.senderId === user?.id)) {
-                // Only append if chat is open with this person
-                setPrivateMessages(prev => [...prev, data])
+            if (data.type === 'company' || data.companyId) {
+                setCompanyMessages((prev) => {
+                    // Prevent duplicate if added optimistically
+                    if (prev.some(m => m.text === data.text && m.senderId === data.senderId && Math.abs(new Date(m.created_at).getTime() - new Date(data.created_at).getTime()) < 2000)) {
+                        return prev
+                    }
+                    return [...prev, data]
+                })
+            } else if (data.type === 'private' || data.recipientId) {
+                const friendId = selectedFriend?.id || selectedFriend?._id
+                const isRelevant =
+                    data.senderId === friendId || // from current friend
+                    (data.senderId === user?.id && data.recipientId === friendId) // from me to current friend
+
+                if (isRelevant) {
+                    setPrivateMessages((prev) => {
+                        // Prevent duplicate if added optimistically
+                        if (prev.some(m => m.text === data.text && m.senderId === data.senderId && Math.abs(new Date(m.created_at).getTime() - new Date(data.created_at).getTime()) < 2000)) {
+                            return prev
+                        }
+                        return [...prev, data]
+                    })
+                }
             }
         }
 
@@ -207,6 +225,14 @@ export default function Collaboration() {
         }
 
         try {
+            // Optimistic Update
+            const optimisticMsg = {
+                ...payload,
+                created_at: new Date().toISOString(),
+                isOptimistic: true
+            }
+            setPrivateMessages(prev => [...prev, optimisticMsg])
+
             await socialService.sendMessage({
                 text: privateInputText,
                 recipientId: selectedFriend.id
@@ -239,6 +265,14 @@ export default function Collaboration() {
         }
 
         try {
+            // Optimistic Update
+            const optimisticMsg = {
+                ...payload,
+                created_at: new Date().toISOString(),
+                isOptimistic: true
+            }
+            setCompanyMessages(prev => [...prev, optimisticMsg])
+
             await socialService.sendMessage({
                 text: inputText,
                 companyId: user.companyId

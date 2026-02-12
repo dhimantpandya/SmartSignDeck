@@ -57,11 +57,11 @@ const initSocket = (server: HttpServer | HttpsServer): Server => {
 
             if (companyId) {
                 // Broadcast to entire company
-                io.to(`company_${companyId}`).emit("new_chat", { ...payload, type: "company" });
+                io.to(`company_${companyId}`).emit("new_chat", { ...payload, type: "company", companyId });
             } else if (recipientId) {
                 // send to recipient + sender (for sync across tabs)
-                io.to(`user_${recipientId}`).emit("new_chat", { ...payload, type: "private" });
-                io.to(`user_${senderId}`).emit("new_chat", { ...payload, type: "private" });
+                io.to(`user_${recipientId}`).emit("new_chat", { ...payload, type: "private", recipientId });
+                io.to(`user_${senderId}`).emit("new_chat", { ...payload, type: "private", recipientId });
 
                 // PERSIST NOTIFICATION FOR RECIPIENT
                 notificationService.createNotification(

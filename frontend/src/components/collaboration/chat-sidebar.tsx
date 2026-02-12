@@ -61,10 +61,33 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
 
         const handleNewChat = (data: any) => {
             console.log('[ChatSidebar] new_chat event:', data)
+
+            // 🛡️ Filter for company messages
             if (data.type === 'company' || data.companyId) {
-                setBoardMessages((prev) => [...prev, data])
-            } else if (data.type === 'private' || data.recipientId) {
-                setPrivateMessages((prev) => [...prev, data])
+                // Prevent duplicate if added optimistically
+                setBoardMessages((prev) => {
+                    if (prev.some(m => m.text === data.text && m.senderId === data.senderId && Math.abs(new Date(m.created_at).getTime() - new Date(data.created_at).getTime()) < 2000)) {
+                        return prev
+                    }
+                    return [...prev, data]
+                })
+            }
+            // 🛡️ Filter for private messages
+            else if (data.type === 'private' || data.recipientId) {
+                const friendId = selectedFriend?._id || selectedFriend?.id
+                const isRelevant =
+                    data.senderId === friendId || // from current friend
+                    (data.senderId === user.id && data.recipientId === friendId) // from me to current friend
+
+                if (isRelevant) {
+                    setPrivateMessages((prev) => {
+                        // Prevent duplicate if added optimistically
+                        if (prev.some(m => m.text === data.text && m.senderId === data.senderId && Math.abs(new Date(m.created_at).getTime() - new Date(data.created_at).getTime()) < 2000)) {
+                            return prev
+                        }
+                        return [...prev, data]
+                    })
+                }
             }
         }
 
@@ -232,6 +255,18 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
         }
 
         try {
+            // Optimistic Update
+            const optimisticMsg = {
+                ...payload,
+                created_at: new Date().toISOString(),
+                isOptimistic: true
+            }
+            if (activeTab === 'company') {
+                setBoardMessages(prev => [...prev, optimisticMsg])
+            } else if (selectedFriend) {
+                setPrivateMessages(prev => [...prev, optimisticMsg])
+            }
+
             await socialService.sendMessage({
                 text: inputText,
                 companyId: payload.companyId,
