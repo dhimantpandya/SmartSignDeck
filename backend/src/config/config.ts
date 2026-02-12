@@ -85,7 +85,10 @@ const { value: envVars, error } = envVarsSchema
   .prefs({ errors: { label: "key" } })
   .validate(process.env);
 
-if (error) throw new Error(`Config validation error: ${error.message}`);
+if (error) {
+  console.error(`[Config Validation Error] Missing or invalid environment variable: ${error.message}`);
+  throw new Error(`Config validation error: ${error.message}`);
+}
 if (!envVars)
   throw new Error("Config validation error: envVars is null or undefined");
 

@@ -65,6 +65,7 @@ app.use(
         formAction: ["'self'"],
       },
     },
+    crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
     hsts: {
       maxAge: 31536000,
       includeSubDomains: true,
