@@ -91,15 +91,34 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
                 ? 'https://smart-sign-deck.onrender.com'
                 : (import.meta.env.VITE_API_URL || 'http://localhost:5000')
 
-            const newSocket = io(socketURL)
+            const newSocket = io(socketURL, {
+                transports: ['websocket', 'polling'],
+                reconnection: true,
+                reconnectionAttempts: Infinity,
+                reconnectionDelay: 1000,
+                reconnectionDelayMax: 5000,
+                timeout: 20000,
+            })
             setSocket(newSocket)
 
-            newSocket.on('connect', () => {
-                console.log('[SOCKET] Connected to:', socketURL, 'ID:', newSocket.id)
+            const joinRooms = () => {
+                if (!user) return
+                console.log('[SOCKET] Joining rooms for user:', user.id)
                 newSocket.emit('join_user', user.id)
                 if (user.companyId) {
+                    console.log('[SOCKET] Joining company room:', user.companyId)
                     newSocket.emit('join_company', user.companyId)
                 }
+            }
+
+            newSocket.on('connect', () => {
+                console.log('[SOCKET] Connected! ID:', newSocket.id)
+                joinRooms()
+            })
+
+            newSocket.on('reconnect', (attempt) => {
+                console.log('[SOCKET] Reconnected after', attempt, 'attempts')
+                joinRooms()
             })
 
             newSocket.on('connect_error', (err) => {
@@ -109,7 +128,6 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
             newSocket.on('disconnect', (reason) => {
                 console.log('[SOCKET] Disconnected:', reason)
             })
-
             return () => {
                 console.log('[SOCKET] Cleaning up socket connection')
                 newSocket.disconnect()

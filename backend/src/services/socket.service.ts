@@ -26,14 +26,16 @@ const initSocket = (server: HttpServer | HttpsServer): Server => {
         // --- SOCIAL ROOMS ---
         // Join organization room for company chat
         socket.on("join_company", (companyId: string) => {
+            if (!companyId) return;
             socket.join(`company_${companyId}`);
-            logger.info(`User ${socket.id} joined company room: company_${companyId}`);
+            logger.info(`[SOCKET] Socket ${socket.id} joined company: ${companyId}`);
         });
 
         // Join individual room for personal notifications/DMs
         socket.on("join_user", (userId: string) => {
+            if (!userId) return;
             socket.join(`user_${userId}`);
-            logger.info(`User ${socket.id} joined personal room: user_${userId}`);
+            logger.info(`[SOCKET] Socket ${socket.id} joined personal room: ${userId}`);
         });
 
         // Real-time Chat Broadcast
@@ -46,6 +48,8 @@ const initSocket = (server: HttpServer | HttpsServer): Server => {
             avatar?: string;
         }) => {
             const { companyId, recipientId, text, senderName, senderId, avatar } = data;
+
+            logger.info(`[SOCKET] send_chat from ${senderId} to ${recipientId || companyId} (type: ${companyId ? 'company' : 'private'})`);
 
             const payload = {
                 text,
@@ -60,6 +64,7 @@ const initSocket = (server: HttpServer | HttpsServer): Server => {
                 io.to(`company_${companyId}`).emit("new_chat", { ...payload, type: "company", companyId });
             } else if (recipientId) {
                 // send to recipient + sender (for sync across tabs)
+                logger.info(`[SOCKET] Emitting new_chat to user_${recipientId} and user_${senderId}`);
                 io.to(`user_${recipientId}`).emit("new_chat", { ...payload, type: "private", recipientId });
                 io.to(`user_${senderId}`).emit("new_chat", { ...payload, type: "private", recipientId });
 
