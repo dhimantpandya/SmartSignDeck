@@ -25,29 +25,35 @@ const initSocket = (server: HttpServer | HttpsServer): Server => {
 
         // --- SOCIAL ROOMS ---
         // Join organization room for company chat
-        socket.on("join_company", (companyId: string) => {
+        socket.on("join_company", (companyId: any) => {
             if (!companyId) return;
-            socket.join(`company_${companyId}`);
-            logger.info(`[SOCKET] Socket ${socket.id} joined company: ${companyId}`);
+            const cid = companyId.toString();
+            socket.join(`company_${cid}`);
+            logger.info(`[SOCKET] Socket ${socket.id} joined company: ${cid}`);
         });
 
         // Join individual room for personal notifications/DMs
-        socket.on("join_user", (userId: string) => {
+        socket.on("join_user", (userId: any) => {
             if (!userId) return;
-            socket.join(`user_${userId}`);
-            logger.info(`[SOCKET] Socket ${socket.id} joined personal room: ${userId}`);
+            const uid = userId.toString();
+            socket.join(`user_${uid}`);
+            logger.info(`[SOCKET] Socket ${socket.id} joined personal room: ${uid}`);
         });
 
         // Real-time Chat Broadcast
         socket.on("send_chat", (data: {
             text: string;
-            companyId?: string;
-            recipientId?: string;
+            companyId?: any;
+            recipientId?: any;
             senderName: string;
-            senderId: string;
+            senderId: any;
             avatar?: string;
         }) => {
-            const { companyId, recipientId, text, senderName, senderId, avatar } = data;
+            // Force everything to string to prevent comparison failures
+            const companyId = data.companyId ? data.companyId.toString() : undefined;
+            const recipientId = data.recipientId ? data.recipientId.toString() : undefined;
+            const senderId = data.senderId ? data.senderId.toString() : undefined;
+            const { text, senderName, avatar } = data;
 
             logger.info(`[SOCKET] send_chat from ${senderId} to ${recipientId || companyId} (type: ${companyId ? 'company' : 'private'})`);
 
@@ -64,11 +70,13 @@ const initSocket = (server: HttpServer | HttpsServer): Server => {
                 io.to(`company_${companyId}`).emit("new_chat", { ...payload, type: "company", companyId });
             } else if (recipientId) {
                 // send to recipient + sender (for sync across tabs)
-                logger.info(`[SOCKET] Emitting new_chat to user_${recipientId} and user_${senderId}`);
+                logger.info(`[SOCKET] Emitting new_chat/new_notification to user accounts: ${recipientId}, ${senderId}`);
+
+                // 1. Emit the actual message event
                 io.to(`user_${recipientId}`).emit("new_chat", { ...payload, type: "private", recipientId });
                 io.to(`user_${senderId}`).emit("new_chat", { ...payload, type: "private", recipientId });
 
-                // PERSIST NOTIFICATION FOR RECIPIENT
+                // 2. PERSIST & EMIT NOTIFICATION for recipient (for badges/toasts)
                 notificationService.createNotification(
                     recipientId,
                     "new_chat",
@@ -77,9 +85,8 @@ const initSocket = (server: HttpServer | HttpsServer): Server => {
                     senderId,
                     { chatId: senderId } // For redirection
                 ).then(notif => {
-                    logger.info(`[SOCKET] Emitting new_notification to user_${recipientId}`);
                     io.to(`user_${recipientId}`).emit("new_notification", notif);
-                }).catch(err => logger.error(`[SOCKET] Failed to create chat notification: ${err.message}`));
+                }).catch(err => logger.error(`[SOCKET] Notification failed: ${err.message}`));
             }
         });
 

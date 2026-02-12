@@ -45,17 +45,18 @@ export default function Collaboration() {
     const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false)
     const { socket } = useNotifications()
 
-    const extractId = (idObj: any) => {
-        if (!idObj) return null
-        if (typeof idObj === 'string') return idObj
-        return idObj.id || idObj._id || null
+    const extractId = (obj: any): string => {
+        if (!obj) return ''
+        if (typeof obj === 'string') return obj.trim().toLowerCase()
+        const id = obj.id || obj._id || obj.userId || obj.friendId
+        if (id) return id.toString().trim().toLowerCase()
+        return ''
     }
 
     const isSameId = (id1: any, id2: any) => {
         const s1 = extractId(id1)
         const s2 = extractId(id2)
-        if (!s1 || !s2) return false
-        return s1.toString().toLowerCase() === s2.toString().toLowerCase()
+        return s1 !== '' && s2 !== '' && s1 === s2
     }
 
     const messagesEndRef = useRef<HTMLDivElement | null>(null)
@@ -98,7 +99,12 @@ export default function Collaboration() {
                 console.log('[Collaboration] Processing company message')
                 setCompanyMessages((prev) => {
                     // Prevent duplicate if added optimistically
-                    if (prev.some(m => m.text === data.text && isSameId(m.senderId, data.senderId) && Math.abs(new Date(m.created_at).getTime() - new Date(data.created_at).getTime()) < 2000)) {
+                    const isDup = prev.some(m =>
+                        m.text === data.text &&
+                        isSameId(m.senderId, data.senderId) &&
+                        Math.abs(new Date(m.created_at).getTime() - new Date(data.created_at).getTime()) < 3000
+                    )
+                    if (isDup) {
                         console.log('[Collaboration] Skipping duplicate company message')
                         return prev
                     }
@@ -120,17 +126,22 @@ export default function Collaboration() {
                 })
 
                 if (isFromFriend || isFromMeToFriend) {
-                    console.log('[Collaboration] ✅ Match found! Appending message to UI')
+                    console.log('[Collaboration] ✅ Match found! Appending message to state')
                     setPrivateMessages((prev) => {
                         // Prevent duplicate if added optimistically
-                        if (prev.some(m => m.text === data.text && isSameId(m.senderId, data.senderId) && Math.abs(new Date(m.created_at).getTime() - new Date(data.created_at).getTime()) < 2000)) {
+                        const isDup = prev.some(m =>
+                            m.text === data.text &&
+                            isSameId(m.senderId, data.senderId) &&
+                            Math.abs(new Date(m.created_at).getTime() - new Date(data.created_at).getTime()) < 3000
+                        )
+                        if (isDup) {
                             console.log('[Collaboration] ⏭️ Skipping duplicate private message')
                             return prev
                         }
                         return [...prev, data]
                     })
                 } else {
-                    console.log('[Collaboration] ❌ Message discarded (irrelevant to current chat)')
+                    console.log('[Collaboration] ❌ Message discarded (irrelevant to current chat or friend not selected)')
                 }
             }
         }
@@ -244,11 +255,14 @@ export default function Collaboration() {
         if (!privateInputText.trim() || !user || !selectedFriend || isSending) return
 
         setIsSending(true)
+        const recipientId = extractId(selectedFriend)
+        const senderId = extractId(user)
+
         const payload = {
             text: privateInputText,
-            recipientId: selectedFriend.id,
+            recipientId,
             senderName: `${user.first_name} ${user.last_name}`,
-            senderId: user.id,
+            senderId,
             avatar: user.avatar,
             type: 'private'
         }
@@ -258,13 +272,13 @@ export default function Collaboration() {
             const optimisticMsg = {
                 ...payload,
                 created_at: new Date().toISOString(),
-                isOptimistic: true
+                isOptimistic: true // Mark for tracing
             }
             setPrivateMessages(prev => [...prev, optimisticMsg])
 
             await socialService.sendMessage({
                 text: privateInputText,
-                recipientId: selectedFriend.id
+                recipientId
             })
 
             socket?.emit('send_chat', payload)
@@ -284,11 +298,14 @@ export default function Collaboration() {
         if (!inputText.trim() || !user || isSending) return
 
         setIsSending(true)
+        const companyId = extractId(user.companyId)
+        const senderId = extractId(user)
+
         const payload = {
             text: inputText,
-            companyId: user.companyId,
+            companyId,
             senderName: `${user.first_name} ${user.last_name}`,
-            senderId: user.id,
+            senderId,
             avatar: user.avatar,
             type: 'company'
         }
@@ -298,13 +315,13 @@ export default function Collaboration() {
             const optimisticMsg = {
                 ...payload,
                 created_at: new Date().toISOString(),
-                isOptimistic: true
+                isOptimistic: true // Mark for tracing
             }
             setCompanyMessages(prev => [...prev, optimisticMsg])
 
             await socialService.sendMessage({
                 text: inputText,
-                companyId: user.companyId
+                companyId
             })
 
             socket?.emit('send_chat', payload)

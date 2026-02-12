@@ -18,6 +18,7 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { useToast } from '@/components/ui/use-toast'
 import { Badge } from '@/components/ui/badge'
 import { useNotifications } from '@/components/nav-notification-provider'
 import { Button } from '@/components/custom/button'
@@ -42,6 +43,7 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
         suppressChatSection,
         socket
     } = useNotifications()
+    const { toast } = useToast()
 
     const [boardMessages, setBoardMessages] = useState<any[]>([])
     const [privateMessages, setPrivateMessages] = useState<any[]>([])
@@ -54,17 +56,18 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
 
     const scrollRef = useRef<HTMLDivElement>(null)
 
-    const extractId = (idObj: any) => {
-        if (!idObj) return null
-        if (typeof idObj === 'string') return idObj
-        return idObj.id || idObj._id || null
+    const extractId = (obj: any): string => {
+        if (!obj) return ''
+        if (typeof obj === 'string') return obj.trim().toLowerCase()
+        const id = obj.id || obj._id || obj.userId || obj.friendId
+        if (id) return id.toString().trim().toLowerCase()
+        return ''
     }
 
     const isSameId = (id1: any, id2: any) => {
         const s1 = extractId(id1)
         const s2 = extractId(id2)
-        if (!s1 || !s2) return false
-        return s1.toString().toLowerCase() === s2.toString().toLowerCase()
+        return s1 !== '' && s2 !== '' && s1 === s2
     }
 
     useEffect(() => {
@@ -78,9 +81,14 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
             // 🛡️ Filter for company messages
             if (data.type === 'company' || data.companyId) {
                 console.log('[ChatSidebar] Processing company message')
-                // Prevent duplicate if added optimistically
                 setBoardMessages((prev) => {
-                    if (prev.some(m => m.text === data.text && isSameId(m.senderId, data.senderId) && Math.abs(new Date(m.created_at).getTime() - new Date(data.created_at).getTime()) < 2000)) {
+                    // Force string comparison for duplicate check
+                    const isDup = prev.some(m =>
+                        m.text === data.text &&
+                        isSameId(m.senderId, data.senderId) &&
+                        Math.abs(new Date(m.created_at).getTime() - new Date(data.created_at).getTime()) < 3000
+                    )
+                    if (isDup) {
                         console.log('[ChatSidebar] Skipping duplicate company message')
                         return prev
                     }
@@ -105,17 +113,22 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
                 })
 
                 if (isFromFriend || isFromMeToFriend) {
-                    console.log('[ChatSidebar] ✅ Match found! Appending message to UI')
+                    console.log('[ChatSidebar] ✅ Match found! Appending message to state')
                     setPrivateMessages((prev) => {
                         // Prevent duplicate if added optimistically
-                        if (prev.some(m => m.text === data.text && isSameId(m.senderId, data.senderId) && Math.abs(new Date(m.created_at).getTime() - new Date(data.created_at).getTime()) < 2000)) {
+                        const isDup = prev.some(m =>
+                            m.text === data.text &&
+                            isSameId(m.senderId, data.senderId) &&
+                            Math.abs(new Date(m.created_at).getTime() - new Date(data.created_at).getTime()) < 3000
+                        )
+                        if (isDup) {
                             console.log('[ChatSidebar] ⏭️ Skipping duplicate private message')
                             return prev
                         }
                         return [...prev, data]
                     })
                 } else {
-                    console.log('[ChatSidebar] ❌ Message discarded (irrelevant to current chat)')
+                    console.log('[ChatSidebar] ❌ Message discarded (irrelevant to current chat or friend not selected)')
                 }
             }
         }
@@ -273,39 +286,52 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
 
     const handleSendMessage = async () => {
         if (!inputText.trim() || !user) return
-
-        const payload = {
-            text: inputText,
-            companyId: activeTab === 'company' ? user.companyId : undefined,
-            recipientId: activeTab === 'private' ? (selectedFriend?._id || selectedFriend?.id) : undefined,
-            senderName: `${user.first_name} ${user.last_name}`,
-            senderId: user.id,
-            avatar: user.avatar
-        }
+        const text = inputText.trim()
+        setInputText('')
 
         try {
-            // Optimistic Update
+            const recipientId = activeTab === 'private' ? extractId(selectedFriend) : undefined
+            const companyId = activeTab === 'company' ? user.companyId : undefined
+
+            console.log('[ChatSidebar] Sending message:', { text, recipientId, companyId })
+
+            // Optimistic update
             const optimisticMsg = {
-                ...payload,
+                text,
+                senderId: user.id,
+                senderName: `${user.first_name} ${user.last_name}`,
+                avatar: user.avatar,
                 created_at: new Date().toISOString(),
-                isOptimistic: true
+                isOptimistic: true // Mark for tracing
             }
+
             if (activeTab === 'company') {
                 setBoardMessages(prev => [...prev, optimisticMsg])
-            } else if (selectedFriend) {
+            } else {
                 setPrivateMessages(prev => [...prev, optimisticMsg])
             }
 
-            await socialService.sendMessage({
-                text: inputText,
-                companyId: payload.companyId,
-                recipientId: payload.recipientId
-            })
+            // API Call
+            await socialService.sendMessage({ text, recipientId, companyId })
 
-            socket?.emit('send_chat', payload)
-            setInputText('')
-        } catch (err) {
-            console.error('Failed to send message', err)
+            // Socket Emit for real-time recipients
+            if (socket) {
+                socket.emit('send_chat', {
+                    text,
+                    companyId,
+                    recipientId,
+                    senderName: `${user.first_name} ${user.last_name}`,
+                    senderId: user.id,
+                    avatar: user.avatar
+                })
+            }
+        } catch (error) {
+            console.error('[ChatSidebar] Failed to send message:', error)
+            toast({
+                title: "Error",
+                description: "Failed to send message. Please try again.",
+                variant: "destructive"
+            })
         }
     }
 

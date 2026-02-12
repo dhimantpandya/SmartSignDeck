@@ -41,11 +41,12 @@ interface NotificationContextType {
 
 const NotificationContext = createContext<NotificationContextType | null>(null)
 
-// Helper for robust ID extraction
-const extractId = (senderId: any): string | null => {
-    if (!senderId) return null
-    if (typeof senderId === 'string') return senderId
-    return (senderId._id || senderId.id)?.toString() || null
+const extractId = (obj: any): string => {
+    if (!obj) return ''
+    if (typeof obj === 'string') return obj.trim().toLowerCase()
+    const id = obj.id || obj._id || obj.userId || obj.friendId || obj.senderId
+    if (id) return id.toString().trim().toLowerCase()
+    return ''
 }
 
 export const NotificationProvider = ({ children }: { children: React.ReactNode }) => {
@@ -142,28 +143,22 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
         socket.on('new_notification', (newNotif: Notification) => {
             if (newNotif.type === 'new_chat') {
                 const sId = extractId(newNotif.senderId)
-                if (sId) {
+                if (sId !== '') {
                     setUnreadChatCounts(prev => ({
                         ...prev,
                         [sId]: (prev[sId] || 0) + 1
                     }))
                     setSuppressedChatSections(prev => {
-                        if (prev.has('private')) {
-                            const next = new Set(prev)
-                            next.delete('private')
-                            return next
-                        }
-                        return prev
+                        const next = new Set(prev)
+                        next.delete('private')
+                        return next
                     })
                 } else {
                     setUnreadCompanyChatCount(prev => prev + 1)
                     setSuppressedChatSections(prev => {
-                        if (prev.has('company')) {
-                            const next = new Set(prev)
-                            next.delete('company')
-                            return next
-                        }
-                        return prev
+                        const next = new Set(prev)
+                        next.delete('company')
+                        return next
                     })
                 }
             } else {
@@ -177,25 +172,30 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
 
         socket.on('new_chat', (data: any) => {
             console.log('[SOCKET] new_chat event received:', data)
-            if (data.senderId === user.id) return
+            const myId = extractId(user)
+            const msgSenderId = extractId(data.senderId)
 
-            if (data.type === 'company') {
+            if (msgSenderId === myId) return
+
+            if (data.type === 'company' || data.companyId) {
                 console.log('[SOCKET] Incrementing company chat count')
                 setUnreadCompanyChatCount(prev => prev + 1)
                 setSuppressedChatSections(prev => {
                     const next = new Set(prev); next.delete('company'); return next;
                 })
-            } else if (data.type === 'private' && !isChatOpen) {
-                console.log('[SOCKET] Incrementing private chat count for:', data.senderId)
+            } else if ((data.type === 'private' || data.recipientId) && !isChatOpen) {
+                console.log('[SOCKET] Incrementing private chat count for:', msgSenderId)
                 // Only update badge from new_chat if sidebar is closed
                 // When sidebar is open, new_notification will handle it
-                setUnreadChatCounts(prev => ({
-                    ...prev,
-                    [data.senderId]: (prev[data.senderId] || 0) + 1
-                }))
-                setSuppressedChatSections(prev => {
-                    const next = new Set(prev); next.delete('private'); return next;
-                })
+                if (msgSenderId !== '') {
+                    setUnreadChatCounts(prev => ({
+                        ...prev,
+                        [msgSenderId]: (prev[msgSenderId] || 0) + 1
+                    }))
+                    setSuppressedChatSections(prev => {
+                        const next = new Set(prev); next.delete('private'); return next;
+                    })
+                }
 
                 // Show toast notification
                 toast({
