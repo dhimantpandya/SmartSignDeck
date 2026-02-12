@@ -90,24 +90,11 @@ app.use(mongoSanitize());
 app.use(compression());
 
 // enable cors with proper configuration
-const corsOptions = {
-  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-    const allowedOrigins = Array.isArray(config.cors.origin)
-      ? config.cors.origin
-      : [config.cors.origin];
+origin: true, // Allow all origins for debugging
 
-    // Allow requests with no origin (mobile apps, Postman, server-to-server)
-    if (!origin) return callback(null, true);
-
-    if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error(`Origin ${origin} not allowed by CORS`));
-    }
-  },
   credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
-  allowedHeaders: ["Content-Type", "Authorization"],
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+      allowedHeaders: ["Content-Type", "Authorization"],
 };
 app.use(cors(corsOptions));
 app.options("*", cors(corsOptions));
