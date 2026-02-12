@@ -2,9 +2,13 @@ import { Server, Socket } from "socket.io";
 import { type Server as HttpServer } from "http";
 import { type Server as HttpsServer } from "https";
 import logger from "../config/logger";
-import notificationService from "./notification.service";
 
 let io: Server;
+
+const cleanId = (id: any): string => {
+    if (!id) return "";
+    return id.toString().trim().toLowerCase();
+};
 
 const initSocket = (server: HttpServer | HttpsServer): Server => {
     io = new Server(server, {
@@ -26,16 +30,16 @@ const initSocket = (server: HttpServer | HttpsServer): Server => {
         // --- SOCIAL ROOMS ---
         // Join organization room for company chat
         socket.on("join_company", (companyId: any) => {
-            if (!companyId) return;
-            const cid = companyId.toString().trim().toLowerCase();
+            const cid = cleanId(companyId);
+            if (!cid) return;
             socket.join(`company_${cid}`);
             logger.info(`[SOCKET] Socket ${socket.id} joined company: ${cid}`);
         });
 
         // Join individual room for personal notifications/DMs
         socket.on("join_user", (userId: any) => {
-            if (!userId) return;
-            const uid = userId.toString().trim().toLowerCase();
+            const uid = cleanId(userId);
+            if (!uid) return;
             socket.join(`user_${uid}`);
             logger.info(`[SOCKET] Socket ${socket.id} joined personal room: ${uid}`);
         });
@@ -88,9 +92,9 @@ const broadcastChat = (data: {
 }) => {
     if (!io) return;
 
-    const companyId = data.companyId ? data.companyId.toString().toLowerCase() : undefined;
-    const recipientId = data.recipientId ? data.recipientId.toString().toLowerCase() : undefined;
-    const senderId = data.senderId ? data.senderId.toString().toLowerCase() : undefined;
+    const companyId = cleanId(data.companyId);
+    const recipientId = cleanId(data.recipientId);
+    const senderId = cleanId(data.senderId);
     const { text, senderName, avatar, created_at } = data;
 
     const payload = {
@@ -109,19 +113,7 @@ const broadcastChat = (data: {
         const privatePayload = { ...payload, type: "private", recipientId, senderId };
         io.to(`user_${recipientId}`).emit("new_chat", privatePayload);
         io.to(`user_${senderId}`).emit("new_chat", privatePayload);
-
-        // Notify recipient (for badges/toasts)
-        notificationService.createNotification(
-            recipientId,
-            "new_chat",
-            senderName,
-            text.substring(0, 50) + (text.length > 50 ? "..." : ""),
-            senderId,
-            { chatId: senderId }
-        ).then(notif => {
-            io.to(`user_${recipientId}`).emit("new_notification", notif);
-        }).catch(err => logger.error(`[SOCKET] Notification failed: ${err.message}`));
     }
 }
 
-export { initSocket, getIO, emitToScreen, emitToUser, emitToCompany, broadcastChat };
+export { initSocket, getIO, emitToScreen, emitToUser, emitToCompany, broadcastChat, cleanId };

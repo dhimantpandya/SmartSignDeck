@@ -15,19 +15,36 @@ const sendMessage = catchAsync(async (req: Request, res: Response) => {
         companyId
     );
 
-    // Dynamic import to avoid circular dependency if any
-    const { broadcastChat } = await import("../services/socket.service");
+    // Dynamic import to avoid circular dependency
+    const { broadcastChat, cleanId } = await import("../services/socket.service");
+    const { default: notificationService } = await import("../services/notification.service");
 
-    // Broadcast for real-time synchronization
+    const cSenderId = cleanId(user._id);
+    const cRecipientId = cleanId(recipientId);
+    const cCompanyId = cleanId(companyId);
+
+    // 1. Broadcast for real-time chat window synchronization
     broadcastChat({
         text,
-        recipientId: recipientId ? recipientId.toString() : undefined,
-        companyId: companyId ? companyId.toString() : undefined,
-        senderId: user._id.toString(),
+        recipientId: cRecipientId,
+        companyId: cCompanyId,
+        senderId: cSenderId,
         senderName: `${user.first_name} ${user.last_name}`,
         avatar: user.avatar,
         created_at: message.created_at
     });
+
+    // 2. Create notification for badges/toasts
+    if (cRecipientId) {
+        notificationService.createNotification(
+            cRecipientId,
+            "new_chat",
+            `${user.first_name} ${user.last_name}`,
+            text.substring(0, 50) + (text.length > 50 ? "..." : ""),
+            cSenderId,
+            { chatId: cSenderId }
+        ).catch(err => console.error('[SOCIAL] Notification failed:', err));
+    }
 
     successResponse(res, "Message sent", httpStatus.CREATED, message);
 });

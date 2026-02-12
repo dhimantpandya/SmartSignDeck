@@ -1,5 +1,5 @@
 import { Notification } from "../models/notification.model";
-import { emitToUser } from "./socket.service";
+import { emitToUser, cleanId } from "./socket.service";
 
 /**
  * Create a new notification and emit via socket
@@ -12,9 +12,12 @@ const createNotification = async (
     senderId?: string,
     data?: any
 ) => {
+    const cRecipientId = cleanId(recipientId);
+    const cSenderId = cleanId(senderId);
+
     const notification = await Notification.create({
-        recipientId,
-        senderId,
+        recipientId: cRecipientId,
+        senderId: cSenderId,
         type,
         title,
         message,
@@ -25,7 +28,7 @@ const createNotification = async (
     await notification.populate("senderId", "first_name last_name avatar");
 
     // Real-time emit
-    emitToUser(recipientId, "new_notification", notification);
+    emitToUser(cRecipientId, "new_notification", notification);
 
     return notification;
 };
