@@ -63,7 +63,8 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
     const isSameId = (id1: any, id2: any) => {
         const s1 = extractId(id1)
         const s2 = extractId(id2)
-        return s1 && s2 && s1 === s2
+        if (!s1 || !s2) return false
+        return s1.toString().toLowerCase() === s2.toString().toLowerCase()
     }
 
     useEffect(() => {
@@ -72,7 +73,7 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
         console.log('[ChatSidebar] Setting up chat listeners on shared socket')
 
         const handleNewChat = (data: any) => {
-            console.log('[ChatSidebar] new_chat event:', data)
+            console.log('[ChatSidebar] 🔵 new_chat event arrived:', data)
 
             // 🛡️ Filter for company messages
             if (data.type === 'company' || data.companyId) {
@@ -80,6 +81,7 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
                 // Prevent duplicate if added optimistically
                 setBoardMessages((prev) => {
                     if (prev.some(m => m.text === data.text && isSameId(m.senderId, data.senderId) && Math.abs(new Date(m.created_at).getTime() - new Date(data.created_at).getTime()) < 2000)) {
+                        console.log('[ChatSidebar] Skipping duplicate company message')
                         return prev
                     }
                     return [...prev, data]
@@ -88,29 +90,32 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
             // 🛡️ Filter for private messages
             else if (data.type === 'private' || data.recipientId) {
                 const friendId = extractId(selectedFriend)
-                const senderId = extractId(data.senderId)
-                const recipientId = extractId(data.recipientId)
+                const msgSenderId = extractId(data.senderId)
+                const msgRecipientId = extractId(data.recipientId)
                 const myId = extractId(user)
 
-                const isFromFriend = isSameId(senderId, friendId)
-                const isFromMeToFriend = isSameId(senderId, myId) && isSameId(recipientId, friendId)
+                const isFromFriend = isSameId(msgSenderId, friendId)
+                const isFromMeToFriend = isSameId(msgSenderId, myId) && isSameId(msgRecipientId, friendId)
 
-                console.log('[ChatSidebar] Private message check:', {
-                    friendId, senderId, recipientId, myId,
-                    isFromFriend, isFromMeToFriend
+                console.log('[ChatSidebar] 🕵️ Private match debug:', {
+                    friendId, msgSenderId, msgRecipientId, myId,
+                    isFromFriend, isFromMeToFriend,
+                    activeTab,
+                    hasSelectedFriend: !!selectedFriend
                 })
 
                 if (isFromFriend || isFromMeToFriend) {
+                    console.log('[ChatSidebar] ✅ Match found! Appending message to UI')
                     setPrivateMessages((prev) => {
                         // Prevent duplicate if added optimistically
                         if (prev.some(m => m.text === data.text && isSameId(m.senderId, data.senderId) && Math.abs(new Date(m.created_at).getTime() - new Date(data.created_at).getTime()) < 2000)) {
-                            console.log('[ChatSidebar] Skipping duplicate message')
+                            console.log('[ChatSidebar] ⏭️ Skipping duplicate private message')
                             return prev
                         }
                         return [...prev, data]
                     })
                 } else {
-                    console.log('[ChatSidebar] Message irrelevant to active chat window')
+                    console.log('[ChatSidebar] ❌ Message discarded (irrelevant to current chat)')
                 }
             }
         }

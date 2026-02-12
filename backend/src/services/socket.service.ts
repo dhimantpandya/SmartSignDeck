@@ -76,7 +76,10 @@ const initSocket = (server: HttpServer | HttpsServer): Server => {
                     text.substring(0, 50) + (text.length > 50 ? "..." : ""),
                     senderId,
                     { chatId: senderId } // For redirection
-                ).catch(err => logger.error(`Failed to create chat notification: ${err.message}`));
+                ).then(notif => {
+                    logger.info(`[SOCKET] Emitting new_notification to user_${recipientId}`);
+                    io.to(`user_${recipientId}`).emit("new_notification", notif);
+                }).catch(err => logger.error(`[SOCKET] Failed to create chat notification: ${err.message}`));
             }
         });
 
