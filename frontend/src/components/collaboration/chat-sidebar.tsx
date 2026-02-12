@@ -59,7 +59,7 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
     const extractId = (obj: any): string => {
         if (!obj) return ''
         if (typeof obj === 'string') return obj.trim().toLowerCase()
-        const id = obj.id || obj._id || obj.userId || obj.friendId
+        const id = obj.id || obj._id || obj.userId || obj.friendId || obj.senderId || obj.recipientId
         if (id) return id.toString().trim().toLowerCase()
         return ''
     }
@@ -71,7 +71,7 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
     }
 
     useEffect(() => {
-        if (!user || !isOpen || !socket) return
+        if (!user || !socket) return
 
         console.log('[ChatSidebar] Setting up chat listeners on shared socket')
 
@@ -384,8 +384,7 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
                                         </div>
                                     )}
                                     {boardMessages.map((msg, i) => {
-                                        const msgSenderId = typeof msg.senderId === 'string' ? msg.senderId : msg.senderId?._id || msg.senderId?.id;
-                                        const isOwnMessage = msgSenderId === user.id;
+                                        const isOwnMessage = isSameId(msg.senderId, user);
 
                                         const senderName = msg.senderName ||
                                             (msg.senderId?.first_name ? `${msg.senderId.first_name} ${msg.senderId.last_name}` : 'Unknown');
@@ -526,8 +525,7 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
                                                 </div>
                                             )}
                                             {privateMessages.map((msg, i) => {
-                                                const msgSenderId = typeof msg.senderId === 'string' ? msg.senderId : msg.senderId?._id || msg.senderId?.id;
-                                                const isOwnMessage = msgSenderId === user.id;
+                                                const isOwnMessage = isSameId(msg.senderId, user);
                                                 const messageDate = msg.timestamp || msg.created_at;
 
                                                 const senderAvatar = isOwnMessage ? user.avatar : (msg.senderId?.avatar || msg.avatar || selectedFriend.avatar);

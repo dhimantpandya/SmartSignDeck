@@ -27,7 +27,7 @@ const initSocket = (server: HttpServer | HttpsServer): Server => {
         // Join organization room for company chat
         socket.on("join_company", (companyId: any) => {
             if (!companyId) return;
-            const cid = companyId.toString().toLowerCase();
+            const cid = companyId.toString().trim().toLowerCase();
             socket.join(`company_${cid}`);
             logger.info(`[SOCKET] Socket ${socket.id} joined company: ${cid}`);
         });
@@ -35,7 +35,7 @@ const initSocket = (server: HttpServer | HttpsServer): Server => {
         // Join individual room for personal notifications/DMs
         socket.on("join_user", (userId: any) => {
             if (!userId) return;
-            const uid = userId.toString().toLowerCase();
+            const uid = userId.toString().trim().toLowerCase();
             socket.join(`user_${uid}`);
             logger.info(`[SOCKET] Socket ${socket.id} joined personal room: ${uid}`);
         });
