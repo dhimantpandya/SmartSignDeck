@@ -165,13 +165,16 @@ class ApiService {
   ): Promise<T> {
     try {
       const contentType = body instanceof FormData ? 'multipart/form-data' : 'application/json';
+      const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
       const config: any = {
-        url: endpoint.startsWith('/') ? endpoint.slice(1) : endpoint,
+        url: cleanEndpoint.startsWith('v1/') ? cleanEndpoint : `v1/${cleanEndpoint}`,
         method,
         headers: { ...headers, 'Content-Type': contentType },
         data: body instanceof FormData || body ? body : undefined,
         params,
       }
+
+      console.log(`[ApiService] Full Target URL: ${this.api.defaults.baseURL}/${config.url}`);
 
       const response = await this.api.request<any>(config)
       const data = response.data
