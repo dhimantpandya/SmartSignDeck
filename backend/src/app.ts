@@ -90,11 +90,11 @@ app.use(mongoSanitize());
 app.use(compression());
 
 // enable cors with proper configuration
-origin: true, // Allow all origins for debugging
-
+const corsOptions = {
+  origin: true, // Allow all origins for debugging
   credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
-      allowedHeaders: ["Content-Type", "Authorization"],
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+  allowedHeaders: ["Content-Type", "Authorization"],
 };
 app.use(cors(corsOptions));
 app.options("*", cors(corsOptions));
