@@ -303,19 +303,6 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
 
             // API Call
             await socialService.sendMessage({ text, recipientId, companyId })
-
-            // Socket Emit for real-time recipients
-            if (socket) {
-                const senderId = extractId(user)
-                socket.emit('send_chat', {
-                    text,
-                    companyId,
-                    recipientId,
-                    senderName: `${user.first_name} ${user.last_name}`,
-                    senderId,
-                    avatar: user.avatar
-                })
-            }
         } catch (error) {
             console.error('[ChatSidebar] Failed to send message:', error)
             toast({

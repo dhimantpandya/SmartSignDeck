@@ -8,12 +8,26 @@ const sendMessage = catchAsync(async (req: Request, res: Response) => {
     const { text, recipientId, companyId } = req.body;
     const user: any = req.user;
 
-    const message = await socialService.sendMessage(
+    const message: any = await socialService.sendMessage(
         user._id,
         text,
         recipientId,
         companyId
     );
+
+    // Dynamic import to avoid circular dependency if any
+    const { broadcastChat } = await import("../services/socket.service");
+
+    // Broadcast for real-time synchronization
+    broadcastChat({
+        text,
+        recipientId,
+        companyId,
+        senderId: user._id,
+        senderName: `${user.first_name} ${user.last_name}`,
+        avatar: user.avatar,
+        created_at: message.created_at
+    });
 
     successResponse(res, "Message sent", httpStatus.CREATED, message);
 });

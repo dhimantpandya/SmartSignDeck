@@ -40,58 +40,6 @@ const initSocket = (server: HttpServer | HttpsServer): Server => {
             logger.info(`[SOCKET] Socket ${socket.id} joined personal room: ${uid}`);
         });
 
-        // Real-time Chat Broadcast
-        socket.on("send_chat", (data: {
-            text: string;
-            companyId?: any;
-            recipientId?: any;
-            senderName: string;
-            senderId: any;
-            avatar?: string;
-        }) => {
-            // Force everything to string to prevent comparison failures
-            const companyId = data.companyId ? data.companyId.toString().toLowerCase() : undefined;
-            const recipientId = data.recipientId ? data.recipientId.toString().toLowerCase() : undefined;
-            const senderId = data.senderId ? data.senderId.toString().toLowerCase() : undefined;
-            const { text, senderName, avatar } = data;
-
-            logger.info(`[SOCKET] send_chat from ${senderId} to ${recipientId || companyId} (type: ${companyId ? 'company' : 'private'})`);
-
-            const payload = {
-                text,
-                senderName,
-                senderId,
-                avatar,
-                created_at: new Date(),
-            };
-
-            if (companyId) {
-                // Broadcast to entire company
-                io.to(`company_${companyId}`).emit("new_chat", { ...payload, type: "company", companyId });
-            } else if (recipientId) {
-                // send to recipient + sender (for sync across tabs)
-                logger.info(`[SOCKET] Emitting new_chat/new_notification to user accounts: ${recipientId}, ${senderId}`);
-
-                const privatePayload = { ...payload, type: "private", recipientId, senderId };
-
-                // 1. Emit the actual message event
-                io.to(`user_${recipientId}`).emit("new_chat", privatePayload);
-                io.to(`user_${senderId}`).emit("new_chat", privatePayload);
-
-                // 2. PERSIST & EMIT NOTIFICATION for recipient (for badges/toasts)
-                notificationService.createNotification(
-                    recipientId,
-                    "new_chat",
-                    senderName,
-                    text.substring(0, 50) + (text.length > 50 ? "..." : ""),
-                    senderId,
-                    { chatId: senderId } // For redirection
-                ).then(notif => {
-                    io.to(`user_${recipientId}`).emit("new_notification", notif);
-                }).catch(err => logger.error(`[SOCKET] Notification failed: ${err.message}`));
-            }
-        });
-
         socket.on("disconnect", () => {
             logger.info(`Client disconnected: ${socket.id}`);
         });
@@ -125,4 +73,51 @@ const emitToCompany = (companyId: string, event: string, data: any) => {
     }
 }
 
-export { initSocket, getIO, emitToScreen, emitToUser, emitToCompany };
+const broadcastChat = (data: {
+    text: string;
+    companyId?: any;
+    recipientId?: any;
+    senderName: string;
+    senderId: any;
+    avatar?: string;
+    created_at?: Date;
+}) => {
+    if (!io) return;
+
+    const companyId = data.companyId ? data.companyId.toString().toLowerCase() : undefined;
+    const recipientId = data.recipientId ? data.recipientId.toString().toLowerCase() : undefined;
+    const senderId = data.senderId ? data.senderId.toString().toLowerCase() : undefined;
+    const { text, senderName, avatar, created_at } = data;
+
+    const payload = {
+        text,
+        senderName,
+        senderId,
+        avatar,
+        created_at: created_at || new Date(),
+    };
+
+    if (companyId) {
+        logger.info(`[SOCKET] Broadcasting company chat to company_${companyId}`);
+        io.to(`company_${companyId}`).emit("new_chat", { ...payload, type: "company", companyId });
+    } else if (recipientId) {
+        logger.info(`[SOCKET] Broadcasting private chat from ${senderId} to ${recipientId}`);
+        const privatePayload = { ...payload, type: "private", recipientId, senderId };
+        io.to(`user_${recipientId}`).emit("new_chat", privatePayload);
+        io.to(`user_${senderId}`).emit("new_chat", privatePayload);
+
+        // Notify recipient (for badges/toasts)
+        notificationService.createNotification(
+            recipientId,
+            "new_chat",
+            senderName,
+            text.substring(0, 50) + (text.length > 50 ? "..." : ""),
+            senderId,
+            { chatId: senderId }
+        ).then(notif => {
+            io.to(`user_${recipientId}`).emit("new_notification", notif);
+        }).catch(err => logger.error(`[SOCKET] Notification failed: ${err.message}`));
+    }
+}
+
+export { initSocket, getIO, emitToScreen, emitToUser, emitToCompany, broadcastChat };
