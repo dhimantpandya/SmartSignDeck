@@ -82,11 +82,10 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
             if (data.type === 'company' || data.companyId) {
                 console.log('[ChatSidebar] Processing company message')
                 setBoardMessages((prev) => {
-                    // Force string comparison for duplicate check
                     const isDup = prev.some(m =>
                         m.text === data.text &&
                         isSameId(m.senderId, data.senderId) &&
-                        Math.abs(new Date(m.created_at).getTime() - new Date(data.created_at).getTime()) < 3000
+                        Math.abs(new Date(m.created_at || new Date()).getTime() - new Date(data.created_at || new Date()).getTime()) < 5000
                     )
                     if (isDup) {
                         console.log('[ChatSidebar] Skipping duplicate company message')
@@ -102,24 +101,25 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
                 const msgRecipientId = extractId(data.recipientId)
                 const myId = extractId(user)
 
+                // Match if:
+                // 1. Message is FROM the currently selected friend
+                // 2. Message is FROM me TO the currently selected friend (sent from another tab)
                 const isFromFriend = isSameId(msgSenderId, friendId)
                 const isFromMeToFriend = isSameId(msgSenderId, myId) && isSameId(msgRecipientId, friendId)
 
                 console.log('[ChatSidebar] 🕵️ Private match debug:', {
                     friendId, msgSenderId, msgRecipientId, myId,
                     isFromFriend, isFromMeToFriend,
-                    activeTab,
-                    hasSelectedFriend: !!selectedFriend
+                    activeTab
                 })
 
                 if (isFromFriend || isFromMeToFriend) {
-                    console.log('[ChatSidebar] ✅ Match found! Appending message to state')
+                    console.log('[ChatSidebar] ✅ Match! Appending to privateMessages')
                     setPrivateMessages((prev) => {
-                        // Prevent duplicate if added optimistically
                         const isDup = prev.some(m =>
                             m.text === data.text &&
                             isSameId(m.senderId, data.senderId) &&
-                            Math.abs(new Date(m.created_at).getTime() - new Date(data.created_at).getTime()) < 3000
+                            Math.abs(new Date(m.created_at || new Date()).getTime() - new Date(data.created_at || new Date()).getTime()) < 5000
                         )
                         if (isDup) {
                             console.log('[ChatSidebar] ⏭️ Skipping duplicate private message')
@@ -128,7 +128,7 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
                         return [...prev, data]
                     })
                 } else {
-                    console.log('[ChatSidebar] ❌ Message discarded (irrelevant to current chat or friend not selected)')
+                    console.log('[ChatSidebar] ❌ Message discarded (does not match selected friend)')
                 }
             }
         }
@@ -144,21 +144,9 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
             loadRequests()
         }
 
-        const handleNewFriendMessage = (data: any) => {
-            console.log('[ChatSidebar] new_friend_message:', data)
-            // Re-fetch history if this friend's chat is active
-            if (selectedFriend) {
-                const friendId = selectedFriend._id || selectedFriend.id;
-                if (data.senderId === friendId || data.recipientId === friendId) {
-                    fetchChatHistory(friendId)
-                }
-            }
-        }
-
         socket.on('new_chat', handleNewChat)
         socket.on('friend_request_received', handleFriendRequestReceived)
         socket.on('friend_request_accepted', handleFriendRequestAccepted)
-        socket.on('new_friend_message', handleNewFriendMessage)
 
         // Ensure rooms are joined on the shared socket if not already
         socket.emit('join_user', user.id)
@@ -174,7 +162,6 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
             socket.off('new_chat', handleNewChat)
             socket.off('friend_request_received', handleFriendRequestReceived)
             socket.off('friend_request_accepted', handleFriendRequestAccepted)
-            socket.off('new_friend_message', handleNewFriendMessage)
         }
     }, [user, isOpen, socket, selectedFriend]) // Added selectedFriend to ensure handleNewFriendMessage uses current value
 

@@ -72,9 +72,11 @@ const initSocket = (server: HttpServer | HttpsServer): Server => {
                 // send to recipient + sender (for sync across tabs)
                 logger.info(`[SOCKET] Emitting new_chat/new_notification to user accounts: ${recipientId}, ${senderId}`);
 
+                const privatePayload = { ...payload, type: "private", recipientId, senderId };
+
                 // 1. Emit the actual message event
-                io.to(`user_${recipientId}`).emit("new_chat", { ...payload, type: "private", recipientId });
-                io.to(`user_${senderId}`).emit("new_chat", { ...payload, type: "private", recipientId });
+                io.to(`user_${recipientId}`).emit("new_chat", privatePayload);
+                io.to(`user_${senderId}`).emit("new_chat", privatePayload);
 
                 // 2. PERSIST & EMIT NOTIFICATION for recipient (for badges/toasts)
                 notificationService.createNotification(
