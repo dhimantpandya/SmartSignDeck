@@ -50,7 +50,7 @@ mongoose
     // Initialize Socket.io
     initSocket(httpServer);
 
-    httpServer.listen(config.port, () => {
+    httpServer.listen(config.port, "0.0.0.0", () => {
       logger.info(`HTTP Server running on port ${config.port}`);
       cleanupService.startCleanupJob();
     });
