@@ -27,9 +27,17 @@ import rateLimit from "express-rate-limit";
 const app: Application = express();
 
 // Trust proxy - CRITICAL for Vercel/Render deployment
-// This allows Express to read the real client IP from X-Forwarded-For header
-// Without this, all users appear as the same IP (proxy IP) and share rate limits
 app.set('trust proxy', true);
+
+// enable cors with proper configuration - PLACE THIS FIRST
+const corsOptions = {
+  origin: ["http://localhost:5173", "https://smart-sign-deck.vercel.app", "https://smartsigndeck-production.up.railway.app"],
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept", "Origin", "Access-Control-Allow-Headers"],
+};
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
 
 if (config.env !== "test") {
   app.use(morgan.successHandler);
@@ -54,7 +62,7 @@ app.use(
       directives: {
         defaultSrc: ["'self'"],
         styleSrc: ["'self'", "'unsafe-inline'"],
-        scriptSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://apis.google.com"],
         imgSrc: ["'self'", "data:", "https:", "blob:"],
         mediaSrc: ["'self'", "https:", "blob:"],
         connectSrc: ["'self'", "https:", "wss:", "ws:"],
@@ -65,7 +73,7 @@ app.use(
         formAction: ["'self'"],
       },
     },
-    crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
+    crossOriginOpenerPolicy: false, // Totally disable COOP to allow Google Popup interaction
     hsts: {
       maxAge: 31536000,
       includeSubDomains: true,
@@ -73,32 +81,6 @@ app.use(
     },
   }),
 );
-
-// parse json request body
-app.use(express.json({ limit: '10kb' }));
-
-// parse urlencoded request body
-app.use(express.urlencoded({ extended: true, limit: '10kb' }));
-
-// set etag support
-app.set('etag', 'strong');
-
-// sanitize request data
-app.use(xss());
-app.use(mongoSanitize());
-
-// gzip compression
-app.use(compression());
-
-// enable cors with proper configuration
-const corsOptions = {
-  origin: true, // Allow all origins for debugging
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-};
-app.use(cors(corsOptions));
-app.options("*", cors(corsOptions));
 
 // serve static files from uploads
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
