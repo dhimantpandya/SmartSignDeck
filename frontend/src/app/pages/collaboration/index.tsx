@@ -3,6 +3,7 @@ import { Layout } from '@/components/custom/layout'
 import ThemeSwitch from '@/components/theme-switch'
 import { UserNav } from '@/components/user-nav'
 import { NotificationBell } from '@/components/notification-bell'
+import { useNotifications } from '@/components/nav-notification-provider'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/custom/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -14,7 +15,6 @@ import { socialService } from '@/api/social.service'
 import { userService } from '@/api/user.service'
 import { useAuth } from '@/hooks/use-auth'
 import { toast } from '@/components/ui/use-toast'
-import { io, Socket } from 'socket.io-client'
 import {
     Users,
     UserPlus,
@@ -43,7 +43,7 @@ export default function Collaboration() {
     const [privateInputText, setPrivateInputText] = useState('')
     const [selectedProfileUser, setSelectedProfileUser] = useState<any>(null)
     const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false)
-    const socketRef = useRef<Socket | null>(null)
+    const { socket } = useNotifications()
     const messagesEndRef = useRef<HTMLDivElement | null>(null)
 
     // Auto-scroll to bottom when new messages arrive or when switching to the board tab
@@ -58,53 +58,53 @@ export default function Collaboration() {
 
     useEffect(() => {
         loadData()
+    }, [user])
 
-        // Initialize socket for real-time updates
-        if (user?.companyId) {
-            const socketUrl = import.meta.env.VITE_APP_URL || 'http://localhost:5000'
-            const socket = io(socketUrl, {
-                transports: ['websocket', 'polling']
-            })
+    // Handle real-time updates via shared socket
+    useEffect(() => {
+        if (!socket || !user) return
 
-            socket.on('connect', () => {
-                console.log('Socket connected')
-                socket.emit('join_company', user.companyId)
-                socket.emit('join_user', user.id)
-            })
+        console.log('[Collaboration] Setting up listeners on shared socket')
 
-            socket.on('friend_request_received', (data) => {
-                console.log('Friend request received:', data)
-                toast({ title: 'New friend request received!' })
-                loadData()
-            })
+        const handleFriendRequestReceived = (data: any) => {
+            console.log('Friend request received:', data)
+            toast({ title: 'New friend request received!' })
+            loadData()
+        }
 
-            socket.on('friend_request_accepted', (data) => {
-                console.log('Friend request accepted:', data)
-                toast({ title: 'A friend request was accepted!' })
-                loadData()
-            })
+        const handleFriendRequestAccepted = (data: any) => {
+            console.log('Friend request accepted:', data)
+            toast({ title: 'A friend request was accepted!' })
+            loadData()
+        }
 
-            socket.on('new_chat', (data) => {
-                console.log('New chat received:', data)
-                if (data.type === 'company') {
-                    setCompanyMessages(prev => [...prev, data])
-                } else if (data.type === 'private' && (selectedFriend?.id === data.senderId || selectedFriend?.id === data.recipientId || data.senderId === user?.id)) {
-                    // Only append if chat is open with this person
-                    setPrivateMessages(prev => [...prev, data])
-                }
-            })
-
-            socket.on('disconnect', () => {
-                console.log('Socket disconnected')
-            })
-
-            socketRef.current = socket
-
-            return () => {
-                socket.disconnect()
+        const handleNewChat = (data: any) => {
+            console.log('New chat received:', data)
+            if (data.type === 'company') {
+                setCompanyMessages(prev => [...prev, data])
+            } else if (data.type === 'private' && (selectedFriend?.id === data.senderId || selectedFriend?.id === data.recipientId || data.senderId === user?.id)) {
+                // Only append if chat is open with this person
+                setPrivateMessages(prev => [...prev, data])
             }
         }
-    }, [user])
+
+        socket.on('friend_request_received', handleFriendRequestReceived)
+        socket.on('friend_request_accepted', handleFriendRequestAccepted)
+        socket.on('new_chat', handleNewChat)
+
+        // Ensure rooms are joined (idempotent on backend)
+        socket.emit('join_user', user.id)
+        if (user.companyId) {
+            socket.emit('join_company', user.companyId)
+        }
+
+        return () => {
+            console.log('[Collaboration] Removing listeners from shared socket')
+            socket.off('friend_request_received', handleFriendRequestReceived)
+            socket.off('friend_request_accepted', handleFriendRequestAccepted)
+            socket.off('new_chat', handleNewChat)
+        }
+    }, [socket, user, selectedFriend]) // selectedFriend dependency ensures listener uses latest value
 
     const loadData = async () => {
         try {
@@ -212,7 +212,7 @@ export default function Collaboration() {
                 recipientId: selectedFriend.id
             })
 
-            socketRef.current?.emit('send_chat', payload)
+            socket?.emit('send_chat', payload)
             setPrivateInputText('')
         } catch (err: any) {
             toast({
@@ -244,7 +244,7 @@ export default function Collaboration() {
                 companyId: user.companyId
             })
 
-            socketRef.current?.emit('send_chat', payload)
+            socket?.emit('send_chat', payload)
             setInputText('')
         } catch (err: any) {
             toast({

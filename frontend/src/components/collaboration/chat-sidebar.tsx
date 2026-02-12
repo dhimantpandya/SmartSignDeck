@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '@/hooks/use-auth'
 import { socialService } from '@/api'
-import { Socket } from 'socket.io-client'
 import {
     MessageCircle,
     X,
@@ -53,7 +52,6 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
     const [selectedFriend, setSelectedFriend] = useState<any>(null)
     const [searchQuery, setSearchQuery] = useState('')
 
-    const socketRef = useRef<Socket | null>(null)
     const scrollRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
@@ -240,7 +238,7 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
                 recipientId: payload.recipientId
             })
 
-            socketRef.current?.emit('send_chat', payload)
+            socket?.emit('send_chat', payload)
             setInputText('')
         } catch (err) {
             console.error('Failed to send message', err)
