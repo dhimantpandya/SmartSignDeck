@@ -96,6 +96,7 @@ export const register = async (req: Request, res: Response) => {
 // ===== FIREBASE LOGIN =====
 export const firebaseLogin = async (req: Request, res: Response) => {
   try {
+    console.log(`[AuthDebug] Received Firebase login request at ${new Date().toISOString()}`);
     const { idToken, mode } = req.body;
     const clientIp = req.ip || req.socket.remoteAddress || 'unknown';
     console.log(`[AuthDebug] Firebase login attempt from IP: ${clientIp}, Mode: "${mode}"`);
