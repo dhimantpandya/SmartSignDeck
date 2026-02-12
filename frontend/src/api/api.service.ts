@@ -12,9 +12,17 @@ class ApiService {
   }> = []
 
   constructor() {
-    const baseURL = (import.meta.env.VITE_API_URL || import.meta.env.VITE_APP_URL || 'https://smart-sign-deck.onrender.com').replace(/\/$/, "");
+    let baseURL = (import.meta.env.VITE_API_URL || import.meta.env.VITE_APP_URL || 'https://smart-sign-deck.onrender.com').replace(/\/$/, "");
 
-    console.log(`[ApiService] Mode: ${import.meta.env.PROD ? 'PROD' : 'DEV'}, URL: ${baseURL}`);
+    // Safety check: ensure protocol is present (Railway URLs often copied without https://)
+    if (!baseURL.startsWith('http') && !baseURL.includes('localhost')) {
+      baseURL = `https://${baseURL}`;
+    }
+
+    // Safety check: strip /v1 if it was accidentally included in the env var
+    baseURL = baseURL.replace(/\/v1\/?$/, "");
+
+    console.log(`[ApiService] Final API URL: ${baseURL}`);
 
     if (!axios || typeof axios.create !== 'function') {
       console.error('[ApiService] Axios is not properly imported or .create is missing!', axios);
