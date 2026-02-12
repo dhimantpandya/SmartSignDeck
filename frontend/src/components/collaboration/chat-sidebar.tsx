@@ -139,18 +139,27 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
     }, [user, socket]) // Stable dependencies, no selectedFriend here
 
     // Fetch private history when friend changes
+    const fetchingHistoryForRef = useRef<string | null>(null)
+
     useEffect(() => {
         if (selectedFriend) {
-            fetchChatHistory(selectedFriend._id || selectedFriend.id)
+            const fId = extractId(selectedFriend)
+            console.log('[ChatSidebar] Friend changed, fetching history for:', fId)
+            fetchingHistoryForRef.current = fId
+            fetchChatHistory(fId)
+            if (socket) socket.emit('join_user', extractId(user))
         }
-    }, [selectedFriend])
+    }, [selectedFriend, socket])
 
     const fetchBoardData = async () => {
         if (!user?.companyId) return
         try {
             const res = await socialService.getCompanyBoard()
-            // Backend returns { created_at: -1 }, reverse for ascending
-            setBoardMessages(res.reverse())
+            setBoardMessages(prev => {
+                const history = [...res].reverse()
+                const realTimeOnly = prev.filter(m => !history.some(h => h.text === m.text && isSameId(h.senderId, m.senderId)))
+                return [...history, ...realTimeOnly]
+            })
         } catch (err) {
             console.error('Failed to load board data', err)
         }
@@ -159,8 +168,13 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
     const fetchChatHistory = async (friendId: string) => {
         try {
             const res = await socialService.getChatHistory(friendId)
-            // Backend returns { created_at: -1 }, reverse for ascending
-            setPrivateMessages(res.reverse())
+            if (fetchingHistoryForRef.current !== friendId) return
+
+            setPrivateMessages(prev => {
+                const history = [...res].reverse()
+                const realTimeArr = prev.filter(m => !history.some(h => h.text === m.text && isSameId(h.senderId, m.senderId)))
+                return [...history, ...realTimeArr]
+            })
         } catch (err) {
             console.error('Failed to load chat history', err)
         }
@@ -609,6 +623,11 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
                             </div>
                         </div>
                     )}
+                    {/* Connection Diagnostic */}
+                    <div className="px-3 py-1 bg-muted/5 border-t text-[8px] text-muted-foreground/40 flex justify-between items-center">
+                        <span>Socket: {socket?.connected ? '✅' : '❌'} {socket?.id?.substring(0, 6)}</span>
+                        <span>User: {extractId(user).substring(0, 8)}</span>
+                    </div>
                 </Tabs>
             </div>
         </aside>
