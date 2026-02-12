@@ -1,0 +1,8 @@
+{
+    "name": "smart-sign-deck-monorepo",
+    "private": true,
+    "scripts": {
+        "build": "npm install --prefix backend --legacy-peer-deps && npm run build --prefix backend",
+        "start": "npm start --prefix backend"
+    }
+}

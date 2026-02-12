@@ -69,9 +69,7 @@ const envVarsSchema = Joi.object<EnvVars>()
     AWS_BUCKET_NAME: Joi.string().allow("").optional(),
     GOOGLE_CLIENT_ID: Joi.string().default("placeholder_id"),
     GOOGLE_CLIENT_SECRET: Joi.string().default("placeholder_secret"),
-    GOOGLE_CALLBACK_URL: Joi.string().default(
-      "http://localhost:5000/v1/auth/google/callback",
-    ),
+    GOOGLE_CALLBACK_URL: Joi.string().optional(),
     FIREBASE_SERVICE_ACCOUNT_PATH: Joi.string().optional(),
     FIREBASE_PROJECT_ID: Joi.string().optional(),
     FIREBASE_PRIVATE_KEY: Joi.string().optional(),

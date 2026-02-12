@@ -81,14 +81,10 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
             }).catch((err: any) => console.error('Failed to fetch notifications', err))
 
             const getSocketURL = () => {
-                const prodUrl = import.meta.env.VITE_APP_URL || 'https://smart-sign-deck.onrender.com';
-                const devUrl = import.meta.env.VITE_APP_URL || 'http://localhost:5000';
+                let url = import.meta.env.VITE_API_URL || import.meta.env.VITE_APP_URL || 'https://smart-sign-deck.onrender.com';
 
-                let url = import.meta.env.PROD ? prodUrl : devUrl;
-
-                // Clean URL: Strip /v1 if present
-                if (url.endsWith('/v1')) url = url.slice(0, -3);
-                if (url.endsWith('/')) url = url.slice(0, -1);
+                // Clean URL: Strip /v1 and trailing slash
+                url = url.replace(/\/v1\/?$/, "").replace(/\/$/, "");
 
                 return url;
             }
