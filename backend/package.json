@@ -13,7 +13,7 @@
   "scripts": {
     "build": "tsc && npm run copy-public",
     "copy-public": "cpx \"src/public/**/*\" dist/public",
-    "start": "pm2 start ecosystem.config.json --no-daemon",
+    "start": "node dist/index.js",
     "prod": "node dist/index.js",
     "dev": "cross-env NODE_ENV=development nodemon -x ts-node src/index.ts",
     "test": "jest -i --colors --verbose --detectOpenHandles",
