@@ -27,7 +27,7 @@ const initSocket = (server: HttpServer | HttpsServer): Server => {
         // Join organization room for company chat
         socket.on("join_company", (companyId: any) => {
             if (!companyId) return;
-            const cid = companyId.toString();
+            const cid = companyId.toString().toLowerCase();
             socket.join(`company_${cid}`);
             logger.info(`[SOCKET] Socket ${socket.id} joined company: ${cid}`);
         });
@@ -35,7 +35,7 @@ const initSocket = (server: HttpServer | HttpsServer): Server => {
         // Join individual room for personal notifications/DMs
         socket.on("join_user", (userId: any) => {
             if (!userId) return;
-            const uid = userId.toString();
+            const uid = userId.toString().toLowerCase();
             socket.join(`user_${uid}`);
             logger.info(`[SOCKET] Socket ${socket.id} joined personal room: ${uid}`);
         });
@@ -50,9 +50,9 @@ const initSocket = (server: HttpServer | HttpsServer): Server => {
             avatar?: string;
         }) => {
             // Force everything to string to prevent comparison failures
-            const companyId = data.companyId ? data.companyId.toString() : undefined;
-            const recipientId = data.recipientId ? data.recipientId.toString() : undefined;
-            const senderId = data.senderId ? data.senderId.toString() : undefined;
+            const companyId = data.companyId ? data.companyId.toString().toLowerCase() : undefined;
+            const recipientId = data.recipientId ? data.recipientId.toString().toLowerCase() : undefined;
+            const senderId = data.senderId ? data.senderId.toString().toLowerCase() : undefined;
             const { text, senderName, avatar } = data;
 
             logger.info(`[SOCKET] send_chat from ${senderId} to ${recipientId || companyId} (type: ${companyId ? 'company' : 'private'})`);

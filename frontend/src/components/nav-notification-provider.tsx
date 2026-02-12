@@ -104,11 +104,14 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
 
             const joinRooms = () => {
                 if (!user) return
-                console.log('[SOCKET] Joining rooms for user:', user.id)
-                newSocket.emit('join_user', user.id)
+                const uid = extractId(user)
+                if (!uid) return
+                console.log('[SOCKET] Joining rooms for user:', uid)
+                newSocket.emit('join_user', uid)
                 if (user.companyId) {
-                    console.log('[SOCKET] Joining company room:', user.companyId)
-                    newSocket.emit('join_company', user.companyId)
+                    const cid = extractId(user.companyId)
+                    console.log('[SOCKET] Joining company room:', cid)
+                    newSocket.emit('join_company', cid)
                 }
             }
 

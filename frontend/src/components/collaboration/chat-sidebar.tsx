@@ -149,9 +149,12 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
         socket.on('friend_request_accepted', handleFriendRequestAccepted)
 
         // Ensure rooms are joined on the shared socket if not already
-        socket.emit('join_user', user.id)
+        const uid = extractId(user)
+        if (uid) {
+            socket.emit('join_user', uid)
+        }
         if (user.companyId) {
-            socket.emit('join_company', user.companyId)
+            socket.emit('join_company', extractId(user.companyId))
         }
 
         // Load board data initially
@@ -303,12 +306,13 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
 
             // Socket Emit for real-time recipients
             if (socket) {
+                const senderId = extractId(user)
                 socket.emit('send_chat', {
                     text,
                     companyId,
                     recipientId,
                     senderName: `${user.first_name} ${user.last_name}`,
-                    senderId: user.id,
+                    senderId,
                     avatar: user.avatar
                 })
             }
