@@ -21,9 +21,9 @@ const sendMessage = catchAsync(async (req: Request, res: Response) => {
     // Broadcast for real-time synchronization
     broadcastChat({
         text,
-        recipientId,
-        companyId,
-        senderId: user._id,
+        recipientId: recipientId ? recipientId.toString() : undefined,
+        companyId: companyId ? companyId.toString() : undefined,
+        senderId: user._id.toString(),
         senderName: `${user.first_name} ${user.last_name}`,
         avatar: user.avatar,
         created_at: message.created_at

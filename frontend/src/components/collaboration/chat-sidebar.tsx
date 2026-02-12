@@ -72,6 +72,7 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
 
             // 🛡️ Filter for company messages
             if (data.type === 'company' || data.companyId) {
+                console.log('[ChatSidebar] 🏢 Processing company message')
                 setBoardMessages((prev) => {
                     const isDup = prev.some(m =>
                         m.text === data.text &&
@@ -92,7 +93,14 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
                 const isFromFriend = isSameId(msgSenderId, friendId)
                 const isFromMeToFriend = isSameId(msgSenderId, myId) && isSameId(msgRecipientId, friendId)
 
+                console.log('[ChatSidebar] 🕵️ Private match check:', {
+                    currentFriend: currentFriend?.first_name,
+                    friendId, msgSenderId, msgRecipientId, myId,
+                    isFromFriend, isFromMeToFriend
+                })
+
                 if (isFromFriend || isFromMeToFriend) {
+                    console.log('[ChatSidebar] ✅ Match! Appending message')
                     setPrivateMessages((prev) => {
                         const isDup = prev.some(m =>
                             m.text === data.text &&

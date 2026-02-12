@@ -136,9 +136,9 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
     useEffect(() => {
         if (!socket || !user) return
 
-        socket.on('new_notification', (newNotif: Notification) => {
+        const handleNotification = (newNotif: Notification) => {
             if (newNotif.type === 'new_chat') {
-                console.log('[SOCKET] new_notification (chat) received, letting new_chat handler handle counts')
+                console.log('[SOCKET Provider] new_notification (chat) received, letting new_chat handler handle counts')
             } else {
                 setNotifications(prev => [newNotif, ...prev])
                 setUnreadCount(prev => prev + 1)
@@ -146,23 +146,23 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
                     setUnreadRequestCount(prev => prev + 1)
                 }
             }
-        })
+        }
 
-        socket.on('new_chat', (data: any) => {
-            console.log('[SOCKET] new_chat event received:', data)
+        const handleChat = (data: any) => {
+            console.log('[SOCKET Provider] new_chat event received:', data)
             const myId = extractId(user)
             const msgSenderId = extractId(data.senderId)
 
             if (msgSenderId === myId) return
 
             if (data.type === 'company' || data.companyId) {
-                console.log('[SOCKET] Incrementing company chat count')
+                console.log('[SOCKET Provider] Incrementing company chat count')
                 setUnreadCompanyChatCount(prev => prev + 1)
                 setSuppressedChatSections(prev => {
                     const next = new Set(prev); next.delete('company'); return next;
                 })
             } else if (data.type === 'private' || data.recipientId) {
-                console.log('[SOCKET] Private message received:', { from: msgSenderId, isChatOpen })
+                console.log('[SOCKET Provider] Private message received:', { from: msgSenderId, isChatOpen })
 
                 // Always update badges/counts so they are ready when the user looks
                 if (msgSenderId !== '') {
@@ -177,9 +177,7 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
                     })
                 }
 
-                // Only show toast if chat is closed OR user is on a different tab/looking at different friend
-                // (Though strictly speaking, NotificationProvider doesn't know the exact sub-tab state,
-                // ChatSidebar handles that. We'll show toast if sidebar is closed to be safe.)
+                // Only show toast if chat is closed
                 if (!isChatOpen) {
                     toast({
                         title: "New Message",
@@ -187,14 +185,15 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
                         duration: 3000,
                     })
                 }
-            } else {
-                console.log('[SOCKET] Skipping badge update (unknown type)', data)
             }
-        })
+        }
+
+        socket.on('new_notification', handleNotification)
+        socket.on('new_chat', handleChat)
 
         return () => {
-            socket.off('new_notification')
-            socket.off('new_chat')
+            socket.off('new_notification', handleNotification)
+            socket.off('new_chat', handleChat)
         }
     }, [socket, user, isChatOpen])
 
