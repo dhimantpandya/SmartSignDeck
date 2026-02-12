@@ -25,7 +25,7 @@ import { Button } from '@/components/custom/button'
 import { Input } from '@/components/ui/input'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { cn } from '@/lib/utils'
+import { cn, extractId, isSameId } from '../../lib/utils'
 
 interface ChatSidebarProps {
     isOpen: boolean
@@ -55,118 +55,80 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
     const [searchQuery, setSearchQuery] = useState('')
 
     const scrollRef = useRef<HTMLDivElement>(null)
+    const selectedFriendRef = useRef<any>(null)
 
-    const extractId = (obj: any): string => {
-        if (!obj) return ''
-        if (typeof obj === 'string') return obj.trim().toLowerCase()
-        const id = obj.id || obj._id || obj.userId || obj.friendId || obj.senderId || obj.recipientId
-        if (id) return id.toString().trim().toLowerCase()
-        return ''
-    }
-
-    const isSameId = (id1: any, id2: any) => {
-        const s1 = extractId(id1)
-        const s2 = extractId(id2)
-        return s1 !== '' && s2 !== '' && s1 === s2
-    }
+    // Sync ref with state
+    useEffect(() => {
+        selectedFriendRef.current = selectedFriend
+    }, [selectedFriend])
 
     useEffect(() => {
         if (!user || !socket) return
 
-        console.log('[ChatSidebar] Setting up chat listeners on shared socket')
+        console.log('[ChatSidebar] Setting up STABLE chat listeners')
 
         const handleNewChat = (data: any) => {
-            console.log('[ChatSidebar] 🔵 new_chat event arrived:', data)
+            console.log('[ChatSidebar] 🔵 new_chat arrived:', data)
 
             // 🛡️ Filter for company messages
             if (data.type === 'company' || data.companyId) {
-                console.log('[ChatSidebar] Processing company message')
                 setBoardMessages((prev) => {
                     const isDup = prev.some(m =>
                         m.text === data.text &&
                         isSameId(m.senderId, data.senderId) &&
                         Math.abs(new Date(m.created_at || new Date()).getTime() - new Date(data.created_at || new Date()).getTime()) < 5000
                     )
-                    if (isDup) {
-                        console.log('[ChatSidebar] Skipping duplicate company message')
-                        return prev
-                    }
-                    return [...prev, data]
+                    return isDup ? prev : [...prev, data]
                 })
             }
             // 🛡️ Filter for private messages
             else if (data.type === 'private' || data.recipientId) {
-                const friendId = extractId(selectedFriend)
+                const currentFriend = selectedFriendRef.current
+                const friendId = extractId(currentFriend)
                 const msgSenderId = extractId(data.senderId)
                 const msgRecipientId = extractId(data.recipientId)
                 const myId = extractId(user)
 
-                // Match if:
-                // 1. Message is FROM the currently selected friend
-                // 2. Message is FROM me TO the currently selected friend (sent from another tab)
                 const isFromFriend = isSameId(msgSenderId, friendId)
                 const isFromMeToFriend = isSameId(msgSenderId, myId) && isSameId(msgRecipientId, friendId)
 
-                console.log('[ChatSidebar] 🕵️ Private match debug:', {
-                    friendId, msgSenderId, msgRecipientId, myId,
-                    isFromFriend, isFromMeToFriend,
-                    activeTab
-                })
-
                 if (isFromFriend || isFromMeToFriend) {
-                    console.log('[ChatSidebar] ✅ Match! Appending to privateMessages')
                     setPrivateMessages((prev) => {
                         const isDup = prev.some(m =>
                             m.text === data.text &&
                             isSameId(m.senderId, data.senderId) &&
                             Math.abs(new Date(m.created_at || new Date()).getTime() - new Date(data.created_at || new Date()).getTime()) < 5000
                         )
-                        if (isDup) {
-                            console.log('[ChatSidebar] ⏭️ Skipping duplicate private message')
-                            return prev
-                        }
-                        return [...prev, data]
+                        return isDup ? prev : [...prev, data]
                     })
-                } else {
-                    console.log('[ChatSidebar] ❌ Message discarded (does not match selected friend)')
                 }
             }
         }
 
-        const handleFriendRequestReceived = () => {
-            console.log('[ChatSidebar] friend_request_received')
-            loadRequests()
-        }
-
+        const handleFriendRequestReceived = () => loadRequests()
         const handleFriendRequestAccepted = () => {
-            console.log('[ChatSidebar] friend_request_accepted')
-            loadFriends()
             loadRequests()
+            loadFriends()
         }
 
         socket.on('new_chat', handleNewChat)
         socket.on('friend_request_received', handleFriendRequestReceived)
         socket.on('friend_request_accepted', handleFriendRequestAccepted)
 
-        // Ensure rooms are joined on the shared socket if not already
+        // Ensure rooms are joined
         const uid = extractId(user)
-        if (uid) {
-            socket.emit('join_user', uid)
-        }
-        if (user.companyId) {
-            socket.emit('join_company', extractId(user.companyId))
-        }
+        if (uid) socket.emit('join_user', uid)
+        if (user.companyId) socket.emit('join_company', extractId(user.companyId))
 
         // Load board data initially
         fetchBoardData()
 
         return () => {
-            console.log('[ChatSidebar] Cleaning up chat listeners')
             socket.off('new_chat', handleNewChat)
             socket.off('friend_request_received', handleFriendRequestReceived)
             socket.off('friend_request_accepted', handleFriendRequestAccepted)
         }
-    }, [user, isOpen, socket, selectedFriend]) // Added selectedFriend to ensure handleNewFriendMessage uses current value
+    }, [user, socket]) // Stable dependencies, no selectedFriend here
 
     // Fetch private history when friend changes
     useEffect(() => {

@@ -61,9 +61,13 @@ const emitToScreen = (screenId: string, event: string, data: any) => {
     }
 };
 
-const emitToUser = (userId: string, event: string, data: any) => {
+/**
+ * Helper to emit event to a specific user room
+ */
+const emitToUser = (userId: string, event: string, payload: any) => {
     if (io) {
-        io.to(`user_${userId}`).emit(event, data);
+        const uid = userId.toString().trim().toLowerCase();
+        io.to(`user_${uid}`).emit(event, payload);
     }
 }
 

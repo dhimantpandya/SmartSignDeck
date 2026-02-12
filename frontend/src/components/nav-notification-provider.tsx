@@ -4,6 +4,7 @@ import { io, Socket } from 'socket.io-client'
 import { apiService } from '@/api'
 import { tokenStore } from '@/store/token'
 import { useToast } from '@/components/ui/use-toast'
+import { extractId } from '../lib/utils'
 
 interface Notification {
     _id: string
@@ -40,15 +41,6 @@ interface NotificationContextType {
 }
 
 const NotificationContext = createContext<NotificationContextType | null>(null)
-
-const extractId = (obj: any): string => {
-    if (!obj) return ''
-    if (typeof obj === 'string') return obj.trim().toLowerCase()
-    // Robust check for all common ID fields
-    const id = obj.id || obj._id || obj.userId || obj.friendId || obj.senderId || obj.recipientId
-    if (id) return id.toString().trim().toLowerCase()
-    return ''
-}
 
 export const NotificationProvider = ({ children }: { children: React.ReactNode }) => {
     const { user } = useAuth()
