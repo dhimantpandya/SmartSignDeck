@@ -2,18 +2,20 @@ import { google } from "googleapis";
 import dotenv from "dotenv";
 import path from "path";
 
-dotenv.config({ path: path.join(__dirname, "../.env") });
+dotenv.config({ path: path.join(__dirname, ".env") });
 
 const verify = async () => {
-    const clientId = process.env.GMAIL_CLIENT_ID?.trim();
-    const clientSecret = process.env.GMAIL_CLIENT_SECRET?.trim();
-    const refreshToken = process.env.GMAIL_REFRESH_TOKEN?.trim();
-    const user = process.env.EMAIL_USER?.trim();
+    const clean = (val?: string) => val?.trim().replace(/^["']|["']$/g, "").replace(/[^\x20-\x7E]/g, "") || "";
 
-    console.log("--- Gmail Credential Verification ---");
-    console.log(`Client ID: ${clientId ? clientId.substring(0, 5) + "..." + clientId.slice(-5) : "MISSING"}`);
-    console.log(`Client Secret: ${clientSecret ? clientSecret.substring(0, 3) + "..." + clientSecret.slice(-3) : "MISSING"}`);
-    console.log(`Refresh Token: ${refreshToken ? refreshToken.substring(0, 5) + "..." + refreshToken.slice(-5) : "MISSING"}`);
+    const clientId = clean(process.env.GMAIL_CLIENT_ID);
+    const clientSecret = clean(process.env.GMAIL_CLIENT_SECRET);
+    const refreshToken = clean(process.env.GMAIL_REFRESH_TOKEN);
+    const user = clean(process.env.EMAIL_USER);
+
+    console.log("--- Gmail Credential Verification (v2.1) ---");
+    console.log(`Client ID: ${clientId.substring(0, 5)}...${clientId.slice(-5)} (Length: ${clientId.length})`);
+    console.log(`Client Secret: ${clientSecret.substring(0, 3)}...${clientSecret.slice(-3)} (Length: ${clientSecret.length})`);
+    console.log(`Refresh Token: ${refreshToken.substring(0, 5)}...${refreshToken.slice(-5)} (Length: ${refreshToken.length})`);
     console.log(`User: ${user}`);
 
     if (!clientId || !clientSecret || !refreshToken || !user) {
@@ -30,9 +32,11 @@ const verify = async () => {
     oAuth2Client.setCredentials({ refresh_token: refreshToken });
 
     try {
-        console.log("\nAttempting to get Access Token...");
-        const tokenResponse = await oAuth2Client.getAccessToken();
-        console.log("✅ Success! Access Token obtained.");
+        console.log("\n1. Testing Token Refresh...");
+        const { credentials } = await oAuth2Client.refreshAccessToken();
+        console.log("✅ Success! Refresh token is valid. New Access Token obtained.");
+
+        oAuth2Client.setCredentials(credentials);
 
         const gmail = google.gmail({ version: "v1", auth: oAuth2Client });
         console.log("Attempting to fetch profile...");

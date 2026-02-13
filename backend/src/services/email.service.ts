@@ -30,6 +30,19 @@ const sendViaGmailAPI = async (to: string, subject: string, html: string) => {
 
   oAuth2Client.setCredentials({ refresh_token: config.email.gmailRefreshToken });
 
+  // Explicitly refresh to get a detailed error if it fails
+  try {
+    console.log("[EMAIL DEBUG] Requesting new access token via refresh token...");
+    const { token } = await oAuth2Client.getAccessToken();
+    if (!token) throw new Error("Failed to obtain access token");
+  } catch (refreshErr: any) {
+    console.error("[EMAIL DEBUG] Token refresh FAILED:", refreshErr.message);
+    if (refreshErr.response?.data) {
+      console.error("[EMAIL DEBUG] Refresh error detail:", JSON.stringify(refreshErr.response.data));
+    }
+    throw refreshErr;
+  }
+
   const gmail = google.gmail({ version: "v1", auth: oAuth2Client });
 
   // Create the email content in RFC 822 format
@@ -58,6 +71,7 @@ const sendViaGmailAPI = async (to: string, subject: string, html: string) => {
       raw: encodedMessage,
     },
   });
+
 
   return res.data;
 };
