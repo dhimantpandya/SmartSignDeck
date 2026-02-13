@@ -1,5 +1,6 @@
 import nodemailer, { type Transporter } from "nodemailer";
 import { google } from "googleapis";
+import axios from "axios";
 import path from "path";
 import fs from "fs";
 import handlebars from "handlebars";
@@ -32,13 +33,28 @@ const sendViaGmailAPI = async (to: string, subject: string, html: string) => {
 
   // Explicitly refresh to get a detailed error if it fails
   try {
-    console.log("[EMAIL DEBUG] Requesting new access token via refresh token...");
-    const { token } = await oAuth2Client.getAccessToken();
-    if (!token) throw new Error("Failed to obtain access token");
+    console.log("[EMAIL DEBUG] Requesting new access token via direct HTTPS request...");
+    const refreshRes = await axios.post("https://oauth2.googleapis.com/token", {
+      client_id: config.email.gmailClientId,
+      client_secret: config.email.gmailClientSecret,
+      refresh_token: config.email.gmailRefreshToken,
+      grant_type: "refresh_token",
+    });
+
+    if (refreshRes.data && refreshRes.data.access_token) {
+      console.log("[EMAIL DEBUG] Successfully obtained new access token via axios.");
+      oAuth2Client.setCredentials({
+        access_token: refreshRes.data.access_token,
+        refresh_token: config.email.gmailRefreshToken
+      });
+    } else {
+      throw new Error("No access_token in Google response");
+    }
   } catch (refreshErr: any) {
+    const errorBody = refreshErr.response?.data;
     console.error("[EMAIL DEBUG] Token refresh FAILED:", refreshErr.message);
-    if (refreshErr.response?.data) {
-      console.error("[EMAIL DEBUG] Refresh error detail:", JSON.stringify(refreshErr.response.data));
+    if (errorBody) {
+      console.error("[EMAIL DEBUG] Raw Google Error Response:", JSON.stringify(errorBody));
     }
     throw refreshErr;
   }
