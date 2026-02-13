@@ -18,6 +18,7 @@ const sendViaGmailAPI = async (to: string, subject: string, html: string) => {
   }
 
   console.log(`[EMAIL DEBUG] Using Client ID: ${config.email.gmailClientId?.substring(0, 5)}...${config.email.gmailClientId?.slice(-5)}`);
+  console.log(`[EMAIL DEBUG] Using Client Secret: ${config.email.gmailClientSecret?.substring(0, 3)}...${config.email.gmailClientSecret?.slice(-3)}`);
   console.log(`[EMAIL DEBUG] Using Refresh Token: ${config.email.gmailRefreshToken?.substring(0, 5)}...${config.email.gmailRefreshToken?.slice(-5)}`);
 
   const oAuth2Client = new google.auth.OAuth2(
