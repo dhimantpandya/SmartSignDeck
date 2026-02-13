@@ -148,9 +148,9 @@ const config = {
     user: envVars.EMAIL_USER,
     pass: envVars.EMAIL_PASS.replace(/\s/g, ""),
     from: envVars.EMAIL_FROM,
-    gmailClientId: envVars.GMAIL_CLIENT_ID?.replace(/["']/g, "").replace(/\s/g, ""),
-    gmailClientSecret: envVars.GMAIL_CLIENT_SECRET?.replace(/["']/g, "").replace(/\s/g, ""),
-    gmailRefreshToken: envVars.GMAIL_REFRESH_TOKEN?.replace(/["']/g, "").replace(/\s/g, ""),
+    gmailClientId: envVars.GMAIL_CLIENT_ID?.replace(/[^a-zA-Z0-9.\-_/]/g, ""),
+    gmailClientSecret: envVars.GMAIL_CLIENT_SECRET?.replace(/[^a-zA-Z0-9.\-_/]/g, ""),
+    gmailRefreshToken: envVars.GMAIL_REFRESH_TOKEN?.replace(/[^a-zA-Z0-9.\-_/]/g, ""),
   },
   apiDoc: {
     userName: envVars.API_DOC_USER_NAME,
