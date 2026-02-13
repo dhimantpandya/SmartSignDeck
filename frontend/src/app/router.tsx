@@ -180,6 +180,11 @@ const Setup = () => {
             Component: (await import('./pages/player')).default,
           }),
         },
+        // ===== BACKWARD COMPATIBILITY =====
+        {
+          path: '/verify-otp',
+          element: <Navigate to={Routes.OTP} replace />,
+        },
 
         // ===== ERRORS =====
         { path: Routes.ERROR.GENERAL, Component: GeneralError },

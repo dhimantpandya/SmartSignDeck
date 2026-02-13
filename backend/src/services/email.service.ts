@@ -184,7 +184,7 @@ export const sendMail = async (type: string, request: Record<string, string>) =>
       case emailConstants.USER_EMAIL_VERIFICATION_TEMPLATE:
         request.subject = emailConstants.USER_EMAIL_VERIFICATION_SUBJECT;
         request.email_verification_link = createUrl({
-          type: "verify-otp",
+          type: "otp",
           query: `email=${request.email}`,
         });
         await getHTMLandSendEmail("email-verification.html", request);
