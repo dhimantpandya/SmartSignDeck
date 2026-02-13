@@ -17,9 +17,9 @@ const sendViaGmailAPI = async (to: string, subject: string, html: string) => {
     throw new Error("Gmail OAuth2 credentials missing");
   }
 
-  console.log(`[EMAIL DEBUG] Using Client ID: ${config.email.gmailClientId?.substring(0, 5)}...${config.email.gmailClientId?.slice(-5)}`);
-  console.log(`[EMAIL DEBUG] Using Client Secret: ${config.email.gmailClientSecret?.substring(0, 3)}...${config.email.gmailClientSecret?.slice(-3)}`);
-  console.log(`[EMAIL DEBUG] Using Refresh Token: ${config.email.gmailRefreshToken?.substring(0, 5)}...${config.email.gmailRefreshToken?.slice(-5)}`);
+  console.log(`[EMAIL DEBUG] Using Client ID: ${config.email.gmailClientId?.substring(0, 5)}...${config.email.gmailClientId?.slice(-5)} (Length: ${config.email.gmailClientId?.length})`);
+  console.log(`[EMAIL DEBUG] Using Client Secret: ${config.email.gmailClientSecret?.substring(0, 3)}...${config.email.gmailClientSecret?.slice(-3)} (Length: ${config.email.gmailClientSecret?.length})`);
+  console.log(`[EMAIL DEBUG] Using Refresh Token: ${config.email.gmailRefreshToken?.substring(0, 5)}...${config.email.gmailRefreshToken?.slice(-5)} (Length: ${config.email.gmailRefreshToken?.length})`);
   console.log(`[EMAIL DEBUG] Using Redirect URI: https://developers.google.com/oauthplayground`);
 
   const oAuth2Client = new google.auth.OAuth2(
