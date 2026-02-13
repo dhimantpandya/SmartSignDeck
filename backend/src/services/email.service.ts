@@ -1,6 +1,5 @@
 import nodemailer, { type Transporter } from "nodemailer";
-import axios from "axios";
-import { Resend } from "resend";
+import { google } from "googleapis";
 import path from "path";
 import fs from "fs";
 import handlebars from "handlebars";
@@ -9,33 +8,59 @@ import * as emailConstants from "../utils/constants/email.constants";
 import { createUrl } from "../utils/utils";
 
 const publicDir: string = path.join(__dirname, "../public/emailTemplates");
-const BREVO_API_URL = "https://api.brevo.com/v3/smtp/email";
 
-// Initialize Resend if API key is present
-const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
-
-console.log(`[EMAIL] Initializing Service. Resend Key Present: ${!!resend}, Brevo Key Present: ${!!config.email.brevoApiKey}`);
-
-const getTransporter = (): Transporter => {
-  // Use OAuth2 if GMAIL credentials are present
-  if (config.email.gmailClientId && config.email.gmailClientSecret && config.email.gmailRefreshToken) {
-    console.log("[EMAIL] Using Gmail OAuth2 Transporter");
-    return nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        type: "OAuth2",
-        user: config.email.user,
-        clientId: config.email.gmailClientId,
-        clientSecret: config.email.gmailClientSecret,
-        refreshToken: config.email.gmailRefreshToken,
-      },
-      tls: { rejectUnauthorized: false },
-    } as any);
+/**
+ * Send email via Gmail REST API (HTTP) - Bypasses Railway SMTP port blocks
+ */
+const sendViaGmailAPI = async (to: string, subject: string, html: string) => {
+  if (!config.email.gmailClientId || !config.email.gmailClientSecret || !config.email.gmailRefreshToken) {
+    throw new Error("Gmail OAuth2 credentials missing");
   }
 
-  // Fallback to standard SMTP
-  console.log("[EMAIL] Using Standard SMTP Transporter");
-  return nodemailer.createTransport({
+  const oAuth2Client = new google.auth.OAuth2(
+    config.email.gmailClientId,
+    config.email.gmailClientSecret
+  );
+
+  oAuth2Client.setCredentials({ refresh_token: config.email.gmailRefreshToken });
+
+  const gmail = google.gmail({ version: "v1", auth: oAuth2Client });
+
+  // Create the email content in RFC 822 format
+  const utf8Subject = `=?utf-8?B?${Buffer.from(subject).toString("base64")}?=`;
+  const messageParts = [
+    `From: "${config.email.from}" <${config.email.user}>`,
+    `To: ${to}`,
+    `Content-Type: text/html; charset=utf-8`,
+    `MIME-Version: 1.0`,
+    `Subject: ${utf8Subject}`,
+    ``,
+    html,
+  ];
+  const message = messageParts.join("\n");
+
+  // The body needs to be base64url encoded
+  const encodedMessage = Buffer.from(message)
+    .toString("base64")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+
+  const res = await gmail.users.messages.send({
+    userId: "me",
+    requestBody: {
+      raw: encodedMessage,
+    },
+  });
+
+  return res.data;
+};
+
+/**
+ * Standard SMTP Fallback (Likely to fail on Railway, works locally)
+ */
+const sendViaSMTP = async (to: string, subject: string, html: string) => {
+  const transport: Transporter = nodemailer.createTransport({
     host: config.email.host,
     port: config.email.port,
     secure: config.email.port === 465,
@@ -48,6 +73,16 @@ const getTransporter = (): Transporter => {
     greetingTimeout: 10000,
     socketTimeout: 10000,
   } as any);
+
+  const mailOptions = {
+    from: `"${config.email.from}" <${config.email.user}>`,
+    to,
+    subject,
+    html,
+  };
+
+  const info = await transport.sendMail(mailOptions);
+  return info;
 };
 
 /**
@@ -75,18 +110,23 @@ export const getHTMLandSendEmail = async (
     const template = handlebars.compile(html);
     const htmlToSend = template(request);
 
-    console.log(`[EMAIL] Attempting to send email to ${request.email}...`);
-    const transport = getTransporter();
+    // 1. Try Gmail REST API (HTTP) - This is the best way for Railway
+    if (config.email.gmailClientId && config.email.gmailClientSecret && config.email.gmailRefreshToken) {
+      try {
+        console.log(`[EMAIL] Attempting via Gmail API (HTTP) to ${request.email}...`);
+        const result = await sendViaGmailAPI(request.email, request.subject, htmlToSend);
+        console.log("[EMAIL SUCCESS] Sent via Gmail API. ID:", result.id);
+        return;
+      } catch (gmailErr: any) {
+        console.error("[EMAIL] Gmail API failed:", gmailErr.message);
+        // Fallthrough if it fails
+      }
+    }
 
-    const mailOptions = {
-      from: `"${config.email.from}" <${config.email.user}>`,
-      to: request.email,
-      subject: request.subject,
-      html: htmlToSend,
-    };
-
-    const info = await transport.sendMail(mailOptions);
-    console.log("[EMAIL SUCCESS] Sent successfully. MessageId:", info.messageId);
+    // 2. Fallback to Standard SMTP
+    console.log(`[EMAIL] Attempting via SMTP to ${request.email}...`);
+    const info = await sendViaSMTP(request.email, request.subject, htmlToSend);
+    console.log("[EMAIL SUCCESS] Sent via SMTP. ID:", info.messageId);
   } catch (err: any) {
     console.error("[EMAIL FATAL ERROR]", err.message);
     throw err;
