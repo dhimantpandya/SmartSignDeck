@@ -191,18 +191,19 @@ export const firebaseLogin = async (req: Request, res: Response) => {
 
         console.log(`[AuthDebug] Storing pending Google signup for: ${email}, Name: ${firstName} ${lastName}`);
 
-        await pendingSignupService.savePendingSignup({
+        const pendingData: any = {
           email,
           first_name: firstName,
           last_name: lastName,
-          password: "", // No password for Google users
-          companyName: undefined, // Google users need to create workspace later
           authProvider: "google",
           googleId: decodedToken.uid || decodedToken.sub,
           otp,
           otpExpires,
           createdAt: new Date(),
-        } as any);
+        };
+
+        // No password field at all for Google users to avoid validation issues
+        await pendingSignupService.savePendingSignup(pendingData);
 
         // Send OTP email (Blocking with timeout)
         try {
