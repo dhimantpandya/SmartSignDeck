@@ -61,7 +61,7 @@ export const getHTMLandSendEmail = async (
         console.log(`[EMAIL] Trying Resend API for ${request.email}...`);
 
         const { data, error } = await resend.emails.send({
-          from: 'Smart Sign Deck <onboarding@resend.dev>', // Resend's verified test domain
+          from: `Smart Sign Deck <${config.email.user}>`, // Your verified Gmail
           to: [request.email],
           subject: request.subject,
           html: htmlToSend,
