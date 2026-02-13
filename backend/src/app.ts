@@ -26,8 +26,8 @@ import rateLimit from "express-rate-limit";
 
 const app: Application = express();
 
-// Trust proxy - CRITICAL for Vercel/Render deployment
-app.set('trust proxy', true);
+// Trust proxy - CRITICAL for Vercel/Render/Railway deployment (set to 1 hop)
+app.set("trust proxy", 1);
 
 // enable cors with proper configuration
 // using origin: true reflects the request origin, effectively allowing any origin
