@@ -19,6 +19,9 @@ interface EnvVars {
   EMAIL_FROM: string;
   EMAIL_HOST?: string;
   EMAIL_PORT?: number;
+  GMAIL_CLIENT_ID?: string;
+  GMAIL_CLIENT_SECRET?: string;
+  GMAIL_REFRESH_TOKEN?: string;
   RESEND_API_KEY?: string;
   BREVO_API_KEY?: string;
   WEB_APP_URL: string;
@@ -58,6 +61,9 @@ const envVarsSchema = Joi.object<EnvVars>()
     EMAIL_PASS: Joi.string().required(),
     EMAIL_FROM: Joi.string().required(),
     EMAIL_PORT: Joi.number().optional(),
+    GMAIL_CLIENT_ID: Joi.string().optional().allow(""),
+    GMAIL_CLIENT_SECRET: Joi.string().optional().allow(""),
+    GMAIL_REFRESH_TOKEN: Joi.string().optional().allow(""),
     RESEND_API_KEY: Joi.string().optional().allow(""),
     BREVO_API_KEY: Joi.string().optional().allow(""),
     WEB_APP_URL: Joi.string().default("http://localhost:5173"),
@@ -142,6 +148,9 @@ const config = {
     user: envVars.EMAIL_USER,
     pass: envVars.EMAIL_PASS.replace(/\s/g, ""),
     from: envVars.EMAIL_FROM,
+    gmailClientId: envVars.GMAIL_CLIENT_ID,
+    gmailClientSecret: envVars.GMAIL_CLIENT_SECRET,
+    gmailRefreshToken: envVars.GMAIL_REFRESH_TOKEN,
   },
   apiDoc: {
     userName: envVars.API_DOC_USER_NAME,
