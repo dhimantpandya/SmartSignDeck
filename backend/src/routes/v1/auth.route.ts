@@ -92,6 +92,9 @@ router.post(
 // ===== FIREBASE AUTH =====
 router.post("/firebase", authController.firebaseLogin);
 
+// ===== DELETE ACCOUNT =====
+router.delete("/account", auth(), authController.deleteAccount);
+
 // ===== LOGOUT =====
 router.post("/logout", validate(logout), authController.logout);
 
