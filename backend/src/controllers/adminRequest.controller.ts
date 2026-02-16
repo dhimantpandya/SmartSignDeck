@@ -25,6 +25,26 @@ const createRequest = catchAsync(async (req: Request, res: Response) => {
         details,
     });
 
+    // 🔔 Notify all Super Admins about the new request
+    try {
+        const superAdmins = await User.find({ role: 'super_admin' });
+        const requester = await User.findById(requesterId);
+
+        for (const admin of superAdmins) {
+            await notificationService.createNotification(
+                admin._id.toString(),
+                "system_alert",
+                "New Admin Request",
+                `${requester?.first_name || 'An admin'} has submitted a new ${type.replace('_', ' ')} request.`,
+                requesterId,
+                { requestId: request._id, type }
+            );
+        }
+        console.log(`[AdminRequest] Notified ${superAdmins.length} super admins about request ${request._id}`);
+    } catch (notifErr) {
+        console.error("[AdminRequest] Super Admin notification failed:", notifErr);
+    }
+
     successResponse(res, "Request submitted to Super Admin", httpStatus.CREATED, request);
 });
 
@@ -71,6 +91,28 @@ const processRequest = catchAsync(async (req: Request, res: Response) => {
         } else if (request.type === 'ROLE_UPDATE') {
             targetUser.role = (request as any).details.proposedRole;
             await targetUser.save();
+        }
+
+        // 🔄 Auto-approve older pending requests of the same type for this user
+        try {
+            const olderRequests = await AdminRequest.updateMany(
+                {
+                    _id: { $ne: request._id },
+                    targetUserId: request.targetUserId,
+                    type: request.type,
+                    status: 'PENDING',
+                    createdAt: { $lt: request.createdAt }
+                },
+                {
+                    status: 'APPROVED',
+                    adminComment: adminComment || "Automatically approved as a newer request was processed."
+                }
+            );
+            if (olderRequests.modifiedCount > 0) {
+                console.log(`[AdminRequest] Auto-approved ${olderRequests.modifiedCount} older pending requests for user ${request.targetUserId}`);
+            }
+        } catch (autoErr) {
+            console.error("[AdminRequest] Auto-approval of older requests failed:", autoErr);
         }
     }
 
