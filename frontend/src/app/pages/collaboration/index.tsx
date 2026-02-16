@@ -10,6 +10,14 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { UserProfileDialog } from '@/app/pages/users/components/user-profile-dialog'
 import { socialService } from '@/api/social.service'
 import { userService } from '@/api/user.service'
@@ -21,7 +29,8 @@ import {
     MessageSquare,
     Building2,
     Search as SearchIcon,
-    Send
+    Send,
+    CircleDot
 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
@@ -44,6 +53,7 @@ export default function Collaboration() {
     const [selectedProfileUser, setSelectedProfileUser] = useState<any>(null)
     const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false)
     const { socket } = useNotifications()
+    const [companyMembers, setCompanyMembers] = useState<any[]>([])
 
     const extractId = (obj: any): string => {
         if (!obj) return ''
@@ -53,11 +63,26 @@ export default function Collaboration() {
         return ''
     }
 
-    const isSameId = (id1: any, id2: any) => {
+    const isSameId = (id1: any, id2: any): boolean => {
         const s1 = extractId(id1)
         const s2 = extractId(id2)
-        return s1 !== '' && s2 !== '' && s1 === s2
+        return !!s1 && !!s2 && s1 === s2
     }
+
+    // Fetch company members
+    useEffect(() => {
+        if (user?.companyId) {
+            const cid = extractId(user.companyId)
+            userService.getAllUsers({
+                pagination: { pageIndex: 0, pageSize: 100 },
+                filter: { companyId: cid } as any // Type assertion to avoid strict checks if model not updated
+            }).then(res => {
+                if (res.data?.users) {
+                    setCompanyMembers(res.data.users)
+                }
+            }).catch(err => console.error("Failed to fetch company members", err))
+        }
+    }, [user?.companyId])
 
     const messagesEndRef = useRef<HTMLDivElement | null>(null)
 
@@ -586,11 +611,60 @@ export default function Collaboration() {
                                             {/* Chat Container Background Effect */}
                                             <div className="absolute inset-0 pointer-events-none opacity-[0.03] bg-[radial-gradient(circle_at_center,var(--primary)_0%,transparent_100%)] shadow-inner" />
 
-                                            {/* Connection Status Indicator */}
+                                            {/* Company Members Dropdown */}
                                             <div className="absolute top-2 right-2 z-20">
-                                                <Badge variant={socket?.connected ? "secondary" : "destructive"} className="text-[10px] opacity-80 backdrop-blur-md">
-                                                    {socket?.connected ? "🟢 User Connected" : "🔴 Disconnected"}
-                                                </Badge>
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="outline" size="sm" className="h-7 text-[10px] px-2 gap-1.5 bg-background/60 backdrop-blur-md border-border/50 hover:bg-accent/50 shadow-sm transition-all hover:scale-105">
+                                                            <div className={cn("w-1.5 h-1.5 rounded-full animate-pulse", socket?.connected ? "bg-emerald-500" : "bg-destructive")} />
+                                                            <span>{socket?.connected ? 'Online' : 'Offline'}</span>
+                                                            <div className="w-px h-3 bg-border mx-0.5" />
+                                                            <Users className="w-3 h-3 text-muted-foreground" />
+                                                            <span>{companyMembers.length} Members</span>
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end" className="w-64 p-0 backdrop-blur-xl bg-background/95 border-border/50 shadow-xl">
+                                                        <div className="p-3 border-b border-border/50 bg-muted/20">
+                                                            <h4 className="text-xs font-semibold text-foreground flex items-center gap-2">
+                                                                <Building2 className="w-3.5 h-3.5 text-primary" />
+                                                                {user?.companyName || 'Company'} Team
+                                                            </h4>
+                                                            <p className="text-[10px] text-muted-foreground mt-0.5">
+                                                                Members can see this board
+                                                            </p>
+                                                        </div>
+                                                        <div className="max-h-[300px] overflow-y-auto p-1 custom-scrollbar">
+                                                            {companyMembers.map(member => (
+                                                                <DropdownMenuItem key={member.id} className="flex items-center gap-3 p-2 focus:bg-accent/50 rounded-md cursor-default">
+                                                                    <div className="relative">
+                                                                        <Avatar className="w-8 h-8 border border-border/50 shadow-sm">
+                                                                            <AvatarImage src={member.avatar} />
+                                                                            <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">
+                                                                                {member.first_name?.[0]}{member.last_name?.[0]}
+                                                                            </AvatarFallback>
+                                                                        </Avatar>
+                                                                        {/* Simple online indicator simulation (current user is always green) */}
+                                                                        <span className={cn(
+                                                                            "absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-[1.5px] border-background",
+                                                                            isSameId(user, member) ? "bg-emerald-500" : "bg-gray-300"
+                                                                        )} />
+                                                                    </div>
+                                                                    <div className="flex flex-col gap-0.5 min-w-0">
+                                                                        <span className="text-sm font-medium leading-none truncate w-full">
+                                                                            {member.first_name} {member.last_name}
+                                                                        </span>
+                                                                        <span className="text-[10px] text-muted-foreground truncate w-full">
+                                                                            {member.role || 'Member'} • {member.email}
+                                                                        </span>
+                                                                    </div>
+                                                                    {isSameId(user, member) && (
+                                                                        <Badge variant="secondary" className="ml-auto text-[9px] h-4 px-1.5 font-normal">You</Badge>
+                                                                    )}
+                                                                </DropdownMenuItem>
+                                                            ))}
+                                                        </div>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
                                             </div>
 
                                             {companyMessages.length === 0 ? (
