@@ -49,7 +49,7 @@ export default function Collaboration() {
     const [privateInputText, setPrivateInputText] = useState('')
     const [selectedProfileUser, setSelectedProfileUser] = useState<any>(null)
     const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false)
-    const { socket } = useNotifications()
+    const { socket, setActiveChat } = useNotifications()
     const [companyMembers, setCompanyMembers] = useState<any[]>([])
     const [onlineUserIds, setOnlineUserIds] = useState<Set<string>>(new Set())
 
@@ -98,6 +98,27 @@ export default function Collaboration() {
     useEffect(() => {
         loadData()
     }, [user])
+
+    // Update active chat context so NotificationProvider knows when to suppress badges
+    useEffect(() => {
+        if (activeTab === 'company') {
+            setActiveChat({ type: 'company' })
+        } else if (activeTab === 'private' && selectedFriend) {
+            setActiveChat({ type: 'private', id: extractId(selectedFriend) })
+        } else {
+            setActiveChat({ type: null, id: null })
+        }
+
+        return () => {
+            // Only clear if we are navigating AWAY from collaboration entirely
+            // (handled by unmount in real world, but let's be safe)
+        }
+    }, [activeTab, selectedFriend])
+
+    // Cleanup on unmount
+    useEffect(() => {
+        return () => setActiveChat({ type: null, id: null })
+    }, [])
 
     // Handle real-time updates via shared socket
     useEffect(() => {

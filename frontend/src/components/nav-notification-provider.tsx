@@ -38,6 +38,7 @@ interface NotificationContextType {
     suppressedChatSections: Set<string>
     suppressChatSection: (section: string) => void
     socket: Socket | null
+    setActiveChat: (info: { type: 'company' | 'private' | null; id?: string | null }) => void
 }
 
 const NotificationContext = createContext<NotificationContextType | null>(null)
@@ -53,6 +54,7 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
     const [unreadRequestCount, setUnreadRequestCount] = useState(0)
     const [isChatOpen, setIsChatOpen] = useState(false)
     const [suppressedChatSections, setSuppressedChatSections] = useState<Set<string>>(new Set())
+    const [activeChatInfo, setActiveChatInfo] = useState<{ type: 'company' | 'private' | null; id?: string | null }>({ type: null, id: null })
 
     // 0. Force Refresh User on Mount to ensure CompanyID is up to date (Critical for merged companies)
     useEffect(() => {
@@ -173,12 +175,25 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
             if (msgSenderId === myId) return
 
             if (data.type === 'company' || data.companyId) {
+                // Skip if actively viewing company board
+                if (activeChatInfo.type === 'company') {
+                    console.log('[SOCKET Provider] Skipping company count increment (active view)')
+                    return
+                }
+
                 console.log('[SOCKET Provider] Incrementing company chat count')
                 setUnreadCompanyChatCount(prev => prev + 1)
                 setSuppressedChatSections(prev => {
                     const next = new Set(prev); next.delete('company'); return next;
                 })
             } else if (data.type === 'private' || data.recipientId) {
+                // Skip if actively viewing this specific private chat
+                const senderId = msgSenderId
+                if (activeChatInfo.type === 'private' && activeChatInfo.id === senderId) {
+                    console.log('[SOCKET Provider] Skipping private count increment (active view with friend)')
+                    return
+                }
+
                 console.log('[SOCKET Provider] Private message received:', { from: msgSenderId, isChatOpen })
 
                 // Always update badges/counts so they are ready when the user looks
@@ -299,7 +314,8 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
                 setIsChatOpen,
                 suppressedChatSections,
                 suppressChatSection,
-                socket
+                socket,
+                setActiveChat: setActiveChatInfo
             }}
         >
             {children}
