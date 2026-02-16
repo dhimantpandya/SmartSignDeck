@@ -77,18 +77,33 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
         console.log('[ChatSidebar] Setting up STABLE chat listeners')
 
         const handleNewChat = (data: any) => {
-            console.log('[ChatSidebar] 🔵 new_chat arrived:', data)
+            console.log('[ChatSidebar] 🔵 new_chat arrived:', JSON.stringify(data, null, 2))
+
+            // DIAGNOSTIC TOAST
+            toast({
+                title: "Debug: Message Received",
+                description: `From: ${data.senderName || 'Unknown'} - ${data.text?.substring(0, 20)}`,
+                duration: 3000
+            })
 
             // 🛡️ Filter for company messages
             if (data.type === 'company' || data.companyId) {
                 console.log('[ChatSidebar] 🏢 Processing company message')
                 setBoardMessages((prev) => {
-                    const isDup = prev.some(m =>
-                        m.text === data.text &&
-                        isSameId(m.senderId, data.senderId) &&
-                        Math.abs(new Date(m.created_at || new Date()).getTime() - new Date(data.created_at || new Date()).getTime()) < 5000
-                    )
-                    return isDup ? prev : [...prev, data]
+                    console.log('[ChatSidebar] Previous messages count:', prev.length)
+
+                    // TEMP: DISABLE DUPLICATE CHECK TO FORCE ADD
+                    // const isDup = prev.some(m => ... )
+                    const isDup = false;
+
+                    if (isDup) {
+                        console.log('[ChatSidebar] ⚠️ Duplicate skipped')
+                        return prev
+                    }
+
+                    const newMsgs = [...prev, data]
+                    console.log('[ChatSidebar] ✅ Added message. New count:', newMsgs.length)
+                    return newMsgs
                 })
             }
             // 🛡️ Filter for private messages
