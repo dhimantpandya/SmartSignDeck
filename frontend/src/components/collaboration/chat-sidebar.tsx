@@ -286,7 +286,6 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
         }
     }, [activeTab, isOpen])
 
-}, [selectedFriend, isOpen, unreadChatCounts])
 
     // Update global active chat context so Provider knows NOT to increment badges
     useEffect(() => {
@@ -304,393 +303,393 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
         }
     }, [activeTab, selectedFriend, isOpen])
 
-const handleSendMessage = async () => {
-    if (!inputText.trim() || !user) return
-    const text = inputText.trim()
-    setInputText('')
+    const handleSendMessage = async () => {
+        if (!inputText.trim() || !user) return
+        const text = inputText.trim()
+        setInputText('')
 
-    try {
-        const recipientId = activeTab === 'private' ? extractId(selectedFriend) : undefined
-        const companyId = activeTab === 'company' ? extractId(user.companyId) : undefined
+        try {
+            const recipientId = activeTab === 'private' ? extractId(selectedFriend) : undefined
+            const companyId = activeTab === 'company' ? extractId(user.companyId) : undefined
 
-        console.log('[ChatSidebar] Sending message:', { text, recipientId, companyId, rawCompanyId: user.companyId })
+            console.log('[ChatSidebar] Sending message:', { text, recipientId, companyId, rawCompanyId: user.companyId })
 
-        // Optimistic update
-        const optimisticMsg = {
-            text,
-            senderId: user.id,
-            senderName: `${user.first_name} ${user.last_name}`,
-            avatar: user.avatar,
-            created_at: new Date().toISOString(),
-            isOptimistic: true // Mark for tracing
+            // Optimistic update
+            const optimisticMsg = {
+                text,
+                senderId: user.id,
+                senderName: `${user.first_name} ${user.last_name}`,
+                avatar: user.avatar,
+                created_at: new Date().toISOString(),
+                isOptimistic: true // Mark for tracing
+            }
+
+            if (activeTab === 'company') {
+                setBoardMessages(prev => [...prev, optimisticMsg])
+            } else {
+                setPrivateMessages(prev => [...prev, optimisticMsg])
+            }
+
+            // API Call
+            await socialService.sendMessage({ text, recipientId, companyId })
+        } catch (error) {
+            console.error('[ChatSidebar] Failed to send message:', error)
+            toast({
+                title: "Error",
+                description: "Failed to send message. Please try again.",
+                variant: "destructive"
+            })
         }
-
-        if (activeTab === 'company') {
-            setBoardMessages(prev => [...prev, optimisticMsg])
-        } else {
-            setPrivateMessages(prev => [...prev, optimisticMsg])
-        }
-
-        // API Call
-        await socialService.sendMessage({ text, recipientId, companyId })
-    } catch (error) {
-        console.error('[ChatSidebar] Failed to send message:', error)
-        toast({
-            title: "Error",
-            description: "Failed to send message. Please try again.",
-            variant: "destructive"
-        })
     }
-}
 
-const filteredFriends = friends?.filter(f =>
-    f && f.first_name && (
-        (f.first_name + ' ' + f.last_name).toLowerCase().includes(searchQuery.toLowerCase()) ||
-        f.email.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-) || []
+    const filteredFriends = friends?.filter(f =>
+        f && f.first_name && (
+            (f.first_name + ' ' + f.last_name).toLowerCase().includes(searchQuery.toLowerCase()) ||
+            f.email.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+    ) || []
 
-if (!user) return null
+    if (!user) return null
 
-return (
-    <aside className={cn(
-        "fixed inset-y-0 right-0 z-50 w-80 bg-background border-l shadow-2xl transition-transform duration-300 ease-in-out transform",
-        isOpen ? "translate-x-0" : "translate-x-full"
-    )}>
-        <div className="flex flex-col h-full">
-            {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b bg-primary text-primary-foreground">
-                <div className="flex items-center gap-2">
-                    <MessageCircle size={20} />
-                    <h2 className="font-bold">Collaboration</h2>
+    return (
+        <aside className={cn(
+            "fixed inset-y-0 right-0 z-50 w-80 bg-background border-l shadow-2xl transition-transform duration-300 ease-in-out transform",
+            isOpen ? "translate-x-0" : "translate-x-full"
+        )}>
+            <div className="flex flex-col h-full">
+                {/* Header */}
+                <div className="flex items-center justify-between p-4 border-b bg-primary text-primary-foreground">
+                    <div className="flex items-center gap-2">
+                        <MessageCircle size={20} />
+                        <h2 className="font-bold">Collaboration</h2>
+                    </div>
+                    <Button size="icon" variant="ghost" className="h-8 w-8 hover:bg-white/10" onClick={onClose}>
+                        <X size={18} />
+                    </Button>
                 </div>
-                <Button size="icon" variant="ghost" className="h-8 w-8 hover:bg-white/10" onClick={onClose}>
-                    <X size={18} />
-                </Button>
-            </div>
 
-            {/* Tabs */}
-            <Tabs value={activeTab} onValueChange={(val) => {
-                setActiveTab(val)
-                if (val === 'company') setSelectedFriend(null)
-            }} className="flex-1 flex flex-col overflow-hidden gap-0">
-                <TabsList className="grid w-full grid-cols-4 rounded-none bg-muted/50 p-0 h-10 m-0">
-                    <TabsTrigger value="company" className="rounded-none data-[state=active]:bg-background border-b-2 border-transparent data-[state=active]:border-primary transition-all text-[10px] px-1 relative">
-                        Board
-                        {unreadCompanyChatCount > 0 && !suppressedChatSections.has('company') && (
-                            <Badge variant="destructive" className="absolute -top-1 -right-1 h-3 w-3 flex items-center justify-center p-0 text-[7px] animate-pulse">
-                                1
-                            </Badge>
-                        )}
-                    </TabsTrigger>
-                    <TabsTrigger value="private" className="rounded-none data-[state=active]:bg-background border-b-2 border-transparent data-[state=active]:border-primary transition-all text-[10px] px-1 relative">
-                        Direct
-                        {Object.keys(unreadChatCounts).length > 0 && !suppressedChatSections.has('private') && (
-                            <Badge variant="destructive" className="absolute -top-1 -right-1 h-3 w-3 flex items-center justify-center p-0 text-[7px] animate-pulse">
-                                {Object.keys(unreadChatCounts).length}
-                            </Badge>
-                        )}
-                    </TabsTrigger>
-                    <TabsTrigger value="requests" className="rounded-none data-[state=active]:bg-background border-b-2 border-transparent data-[state=active]:border-primary transition-all text-[10px] px-1 relative">
-                        Reqs
-                        {receivedRequests.length > 0 && (
-                            <span className="absolute top-1 right-1 h-2 w-2 bg-destructive rounded-full" />
-                        )}
-                    </TabsTrigger>
-                    <TabsTrigger value="find" className="rounded-none data-[state=active]:bg-background border-b-2 border-transparent data-[state=active]:border-primary transition-all text-[10px] px-1">
-                        Find
-                    </TabsTrigger>
-                </TabsList>
+                {/* Tabs */}
+                <Tabs value={activeTab} onValueChange={(val) => {
+                    setActiveTab(val)
+                    if (val === 'company') setSelectedFriend(null)
+                }} className="flex-1 flex flex-col overflow-hidden gap-0">
+                    <TabsList className="grid w-full grid-cols-4 rounded-none bg-muted/50 p-0 h-10 m-0">
+                        <TabsTrigger value="company" className="rounded-none data-[state=active]:bg-background border-b-2 border-transparent data-[state=active]:border-primary transition-all text-[10px] px-1 relative">
+                            Board
+                            {unreadCompanyChatCount > 0 && !suppressedChatSections.has('company') && (
+                                <Badge variant="destructive" className="absolute -top-1 -right-1 h-3 w-3 flex items-center justify-center p-0 text-[7px] animate-pulse">
+                                    1
+                                </Badge>
+                            )}
+                        </TabsTrigger>
+                        <TabsTrigger value="private" className="rounded-none data-[state=active]:bg-background border-b-2 border-transparent data-[state=active]:border-primary transition-all text-[10px] px-1 relative">
+                            Direct
+                            {Object.keys(unreadChatCounts).length > 0 && !suppressedChatSections.has('private') && (
+                                <Badge variant="destructive" className="absolute -top-1 -right-1 h-3 w-3 flex items-center justify-center p-0 text-[7px] animate-pulse">
+                                    {Object.keys(unreadChatCounts).length}
+                                </Badge>
+                            )}
+                        </TabsTrigger>
+                        <TabsTrigger value="requests" className="rounded-none data-[state=active]:bg-background border-b-2 border-transparent data-[state=active]:border-primary transition-all text-[10px] px-1 relative">
+                            Reqs
+                            {receivedRequests.length > 0 && (
+                                <span className="absolute top-1 right-1 h-2 w-2 bg-destructive rounded-full" />
+                            )}
+                        </TabsTrigger>
+                        <TabsTrigger value="find" className="rounded-none data-[state=active]:bg-background border-b-2 border-transparent data-[state=active]:border-primary transition-all text-[10px] px-1">
+                            Find
+                        </TabsTrigger>
+                    </TabsList>
 
-                <div className="flex-1 overflow-hidden relative flex flex-col mt-0 p-0 justify-start">
-                    {/* Company Board */}
-                    <TabsContent value="company" className="flex-1 m-0 p-0 flex flex-col overflow-hidden !mt-0 !pt-0 data-[state=inactive]:hidden">
-                        <div className="flex-1 overflow-y-auto p-3 flex flex-col justify-end custom-scrollbar">
-                            <div className="space-y-2">
-                                {boardMessages.length === 0 && (
-                                    <div className="flex flex-col items-center justify-center h-full text-muted-foreground opacity-50">
-                                        <Building2 size={48} className="mb-2" />
-                                        <p className="text-sm">No board messages yet.</p>
-                                    </div>
-                                )}
-                                {boardMessages.map((msg, i) => {
-                                    const isOwnMessage = isSameId(msg.senderId, user);
-
-                                    const senderName = msg.senderName ||
-                                        (msg.senderId?.first_name ? `${msg.senderId.first_name} ${msg.senderId.last_name}` : 'Unknown');
-                                    const messageDate = msg.created_at;
-
-                                    const senderAvatar = msg.senderId?.avatar || msg.avatar || null;
-                                    const senderInitials = senderName.split(' ').map((n: string) => n[0]).join('').toUpperCase();
-
-                                    return (
-                                        <div key={i} className={cn("flex gap-3", isOwnMessage ? "flex-row-reverse" : "flex-row")}>
-                                            <Avatar className="h-7 w-7 flex-shrink-0 border shadow-sm">
-                                                <AvatarImage src={senderAvatar} />
-                                                <AvatarFallback className="text-[10px] font-bold bg-primary/10 text-primary">{senderInitials}</AvatarFallback>
-                                            </Avatar>
-
-                                            <div className={cn("flex flex-col", isOwnMessage ? "items-end" : "items-start")}>
-                                                {!isOwnMessage && (
-                                                    <span className="text-[8px] font-bold text-muted-foreground mb-1 ml-1">
-                                                        {senderName}
-                                                    </span>
-                                                )}
-                                                <div className={cn(
-                                                    "rounded-2xl px-3 py-2 text-xs shadow-sm max-w-[90%]",
-                                                    isOwnMessage
-                                                        ? "bg-primary text-primary-foreground rounded-tr-none"
-                                                        : "bg-background border border-primary/5 text-foreground rounded-tl-none"
-                                                )}>
-                                                    {msg.text}
-                                                </div>
-                                                <span className="text-[7px] text-muted-foreground/60 mt-1 px-1">
-                                                    {messageDate ? new Date(messageDate).toLocaleTimeString('en-IN', {
-                                                        hour: '2-digit',
-                                                        minute: '2-digit',
-                                                        hour12: true
-                                                    }) : 'Now'}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    )
-                                })}
-                                <div ref={scrollRef} />
-                            </div>
-                        </div>
-                    </TabsContent>
-
-                    {/* Private Chat */}
-                    <TabsContent value="private" className="flex-1 m-0 p-0 flex flex-col overflow-hidden !mt-0 !pt-0 data-[state=inactive]:hidden">
-                        {!selectedFriend ? (
-                            <div className="flex-1 flex flex-col overflow-hidden">
-                                <div className="px-3 pb-2 pt-0 border-b bg-muted/30">
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <div className="relative flex-1">
-                                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                                            <Input
-                                                placeholder="Search connections..."
-                                                className="pl-9 h-9 text-xs"
-                                                value={searchQuery}
-                                                onChange={(e) => setSearchQuery(e.target.value)}
-                                            />
-                                        </div>
-                                        <TooltipProvider>
-                                            <Tooltip>
-                                                <TooltipTrigger asChild>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-9 w-9 text-muted-foreground hover:text-primary"
-                                                        onClick={() => clearChatNotifications('private')}
-                                                    >
-                                                        <CheckCheck size={18} />
-                                                    </Button>
-                                                </TooltipTrigger>
-                                                <TooltipContent side="bottom" className="text-[10px]">Mark all as read</TooltipContent>
-                                            </Tooltip>
-                                        </TooltipProvider>
-                                    </div>
-                                </div>
-                                <div className="flex-1 overflow-y-auto p-2" style={{ scrollbarWidth: 'thin', scrollbarColor: 'hsl(var(--primary)) transparent' }}>
-                                    {filteredFriends.length === 0 && (
-                                        <div className="text-center text-xs text-muted-foreground mt-10">
-                                            No connections found.
+                    <div className="flex-1 overflow-hidden relative flex flex-col mt-0 p-0 justify-start">
+                        {/* Company Board */}
+                        <TabsContent value="company" className="flex-1 m-0 p-0 flex flex-col overflow-hidden !mt-0 !pt-0 data-[state=inactive]:hidden">
+                            <div className="flex-1 overflow-y-auto p-3 flex flex-col justify-end custom-scrollbar">
+                                <div className="space-y-2">
+                                    {boardMessages.length === 0 && (
+                                        <div className="flex flex-col items-center justify-center h-full text-muted-foreground opacity-50">
+                                            <Building2 size={48} className="mb-2" />
+                                            <p className="text-sm">No board messages yet.</p>
                                         </div>
                                     )}
-                                    {filteredFriends.map(friend => {
-                                        const friendId = friend._id || friend.id;
+                                    {boardMessages.map((msg, i) => {
+                                        const isOwnMessage = isSameId(msg.senderId, user);
+
+                                        const senderName = msg.senderName ||
+                                            (msg.senderId?.first_name ? `${msg.senderId.first_name} ${msg.senderId.last_name}` : 'Unknown');
+                                        const messageDate = msg.created_at;
+
+                                        const senderAvatar = msg.senderId?.avatar || msg.avatar || null;
+                                        const senderInitials = senderName.split(' ').map((n: string) => n[0]).join('').toUpperCase();
+
                                         return (
-                                            <div
-                                                key={friendId}
-                                                className="flex items-center gap-3 p-3 hover:bg-muted rounded-xl cursor-pointer transition-all group"
-                                                onClick={() => setSelectedFriend(friend)}
-                                            >
-                                                <div className="relative">
-                                                    <Avatar className="h-10 w-10 border border-primary/10 group-hover:border-primary/30 transition-all">
-                                                        <AvatarImage src={friend.avatar} />
-                                                        <AvatarFallback className="bg-primary/5 text-primary text-xs font-bold">{friend.first_name?.[0]}{friend.last_name?.[0]}</AvatarFallback>
-                                                    </Avatar>
-                                                    <div className="absolute bottom-0 right-0 h-3 w-3 bg-green-500 border-2 border-background rounded-full" />
+                                            <div key={i} className={cn("flex gap-3", isOwnMessage ? "flex-row-reverse" : "flex-row")}>
+                                                <Avatar className="h-7 w-7 flex-shrink-0 border shadow-sm">
+                                                    <AvatarImage src={senderAvatar} />
+                                                    <AvatarFallback className="text-[10px] font-bold bg-primary/10 text-primary">{senderInitials}</AvatarFallback>
+                                                </Avatar>
+
+                                                <div className={cn("flex flex-col", isOwnMessage ? "items-end" : "items-start")}>
+                                                    {!isOwnMessage && (
+                                                        <span className="text-[8px] font-bold text-muted-foreground mb-1 ml-1">
+                                                            {senderName}
+                                                        </span>
+                                                    )}
+                                                    <div className={cn(
+                                                        "rounded-2xl px-3 py-2 text-xs shadow-sm max-w-[90%]",
+                                                        isOwnMessage
+                                                            ? "bg-primary text-primary-foreground rounded-tr-none"
+                                                            : "bg-background border border-primary/5 text-foreground rounded-tl-none"
+                                                    )}>
+                                                        {msg.text}
+                                                    </div>
+                                                    <span className="text-[7px] text-muted-foreground/60 mt-1 px-1">
+                                                        {messageDate ? new Date(messageDate).toLocaleTimeString('en-IN', {
+                                                            hour: '2-digit',
+                                                            minute: '2-digit',
+                                                            hour12: true
+                                                        }) : 'Now'}
+                                                    </span>
                                                 </div>
-                                                <div className="flex flex-col flex-1 overflow-hidden">
-                                                    <span className="text-sm font-semibold truncate">{friend.first_name} {friend.last_name}</span>
-                                                    <span className="text-[10px] text-muted-foreground truncate">{friend.email}</span>
-                                                </div>
-                                                {unreadChatCounts[friendId] > 0 && (
-                                                    <Badge variant="destructive" className="h-5 w-5 rounded-full flex items-center justify-center p-0 text-[10px] font-bold">
-                                                        {unreadChatCounts[friendId]}
-                                                    </Badge>
-                                                )}
                                             </div>
                                         )
                                     })}
+                                    <div ref={scrollRef} />
                                 </div>
                             </div>
-                        ) : (
-                            <div className="flex-1 flex flex-col overflow-hidden">
-                                {/* Friend Header */}
-                                <div className="flex items-center gap-3 px-3 py-2 border-b bg-muted/30">
-                                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSelectedFriend(null)}>
-                                        <ChevronLeft size={18} />
-                                    </Button>
-                                    <Avatar className="h-8 w-8">
-                                        <AvatarImage src={selectedFriend.avatar} />
-                                        <AvatarFallback className="text-xs font-bold">{selectedFriend.first_name[0]}</AvatarFallback>
-                                    </Avatar>
-                                    <div className="flex flex-col flex-1 overflow-hidden">
-                                        <span className="text-xs font-bold truncate">{selectedFriend.first_name} {selectedFriend.last_name}</span>
-                                        <span className="text-[10px] text-green-500 flex items-center gap-1">
-                                            <span className="h-1.5 w-1.5 bg-green-500 rounded-full" /> Online
-                                        </span>
+                        </TabsContent>
+
+                        {/* Private Chat */}
+                        <TabsContent value="private" className="flex-1 m-0 p-0 flex flex-col overflow-hidden !mt-0 !pt-0 data-[state=inactive]:hidden">
+                            {!selectedFriend ? (
+                                <div className="flex-1 flex flex-col overflow-hidden">
+                                    <div className="px-3 pb-2 pt-0 border-b bg-muted/30">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <div className="relative flex-1">
+                                                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                                <Input
+                                                    placeholder="Search connections..."
+                                                    className="pl-9 h-9 text-xs"
+                                                    value={searchQuery}
+                                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                                />
+                                            </div>
+                                            <TooltipProvider>
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-9 w-9 text-muted-foreground hover:text-primary"
+                                                            onClick={() => clearChatNotifications('private')}
+                                                        >
+                                                            <CheckCheck size={18} />
+                                                        </Button>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent side="bottom" className="text-[10px]">Mark all as read</TooltipContent>
+                                                </Tooltip>
+                                            </TooltipProvider>
+                                        </div>
                                     </div>
-                                </div>
-                                {/* Private Messages */}
-                                <div className="flex-1 overflow-y-auto px-3 py-1 flex flex-col custom-scrollbar min-h-0">
-                                    <div className="space-y-2">
-                                        {privateMessages.length === 0 && (
-                                            <div className="flex flex-col items-center justify-center h-full text-muted-foreground opacity-50">
-                                                <MessageSquare size={48} className="mb-2" />
-                                                <p className="text-sm">No private messages yet.</p>
+                                    <div className="flex-1 overflow-y-auto p-2" style={{ scrollbarWidth: 'thin', scrollbarColor: 'hsl(var(--primary)) transparent' }}>
+                                        {filteredFriends.length === 0 && (
+                                            <div className="text-center text-xs text-muted-foreground mt-10">
+                                                No connections found.
                                             </div>
                                         )}
-                                        {privateMessages.map((msg, i) => {
-                                            const isOwnMessage = isSameId(msg.senderId, user);
-                                            const messageDate = msg.timestamp || msg.created_at;
-
-                                            const senderAvatar = isOwnMessage ? user.avatar : (msg.senderId?.avatar || msg.avatar || selectedFriend.avatar);
-                                            const senderInitials = isOwnMessage ? user.first_name[0] : selectedFriend.first_name[0];
-
+                                        {filteredFriends.map(friend => {
+                                            const friendId = friend._id || friend.id;
                                             return (
-                                                <div key={i} className={cn("flex gap-3", isOwnMessage ? "flex-row-reverse" : "flex-row")}>
-                                                    <Avatar className="h-7 w-7 flex-shrink-0 border shadow-sm">
-                                                        <AvatarImage src={senderAvatar} />
-                                                        <AvatarFallback className="text-[10px] font-bold bg-primary/10 text-primary">{senderInitials}</AvatarFallback>
-                                                    </Avatar>
-                                                    <div className={cn("flex flex-col", isOwnMessage ? "items-end" : "items-start")}>
-                                                        <div className={cn(
-                                                            "rounded-2xl px-3 py-2 text-xs shadow-sm max-w-[90%]",
-                                                            isOwnMessage
-                                                                ? "bg-primary text-primary-foreground rounded-tr-none"
-                                                                : "bg-background border border-primary/5 text-foreground rounded-tl-none"
-                                                        )}>
-                                                            {msg.text}
-                                                        </div>
-                                                        <span className="text-[7px] text-muted-foreground/60 mt-1 px-1">
-                                                            {messageDate ? new Date(messageDate).toLocaleTimeString('en-IN', {
-                                                                hour: '2-digit',
-                                                                minute: '2-digit',
-                                                                hour12: true
-                                                            }) : 'Now'}
-                                                        </span>
+                                                <div
+                                                    key={friendId}
+                                                    className="flex items-center gap-3 p-3 hover:bg-muted rounded-xl cursor-pointer transition-all group"
+                                                    onClick={() => setSelectedFriend(friend)}
+                                                >
+                                                    <div className="relative">
+                                                        <Avatar className="h-10 w-10 border border-primary/10 group-hover:border-primary/30 transition-all">
+                                                            <AvatarImage src={friend.avatar} />
+                                                            <AvatarFallback className="bg-primary/5 text-primary text-xs font-bold">{friend.first_name?.[0]}{friend.last_name?.[0]}</AvatarFallback>
+                                                        </Avatar>
+                                                        <div className="absolute bottom-0 right-0 h-3 w-3 bg-green-500 border-2 border-background rounded-full" />
                                                     </div>
+                                                    <div className="flex flex-col flex-1 overflow-hidden">
+                                                        <span className="text-sm font-semibold truncate">{friend.first_name} {friend.last_name}</span>
+                                                        <span className="text-[10px] text-muted-foreground truncate">{friend.email}</span>
+                                                    </div>
+                                                    {unreadChatCounts[friendId] > 0 && (
+                                                        <Badge variant="destructive" className="h-5 w-5 rounded-full flex items-center justify-center p-0 text-[10px] font-bold">
+                                                            {unreadChatCounts[friendId]}
+                                                        </Badge>
+                                                    )}
                                                 </div>
                                             )
                                         })}
-                                        <div ref={scrollRef} />
                                     </div>
                                 </div>
-                            </div>
-                        )}
-                    </TabsContent>
-
-                    {/* Requests List */}
-                    <TabsContent value="requests" className="flex-1 m-0 p-0 flex flex-col overflow-hidden !mt-0 !pt-0 data-[state=inactive]:hidden">
-                        <div className="flex-1 overflow-y-auto p-2 custom-scrollbar">
-                            {receivedRequests.length === 0 ? (
-                                <div className="text-center text-xs text-muted-foreground mt-10">
-                                    No pending requests.
-                                </div>
                             ) : (
-                                <div className="space-y-2">
-                                    {receivedRequests.map(req => (
-                                        <div key={req.id} className="p-3 bg-muted/30 rounded-xl border border-primary/5">
-                                            <div className="flex items-center gap-3 mb-3">
-                                                <Avatar className="h-8 w-8">
-                                                    <AvatarImage src={req.fromId?.avatar} />
-                                                    <AvatarFallback className="text-[10px]">{req.fromId?.first_name?.[0]}</AvatarFallback>
-                                                </Avatar>
-                                                <div className="flex-1 min-w-0">
-                                                    <p className="text-xs font-bold truncate">{req.fromId?.first_name} {req.fromId?.last_name}</p>
-                                                    <p className="text-[10px] text-muted-foreground truncate">{req.fromId?.email}</p>
-                                                </div>
-                                            </div>
-                                            <div className="flex gap-2">
-                                                <Button size="sm" className="flex-1 h-7 text-[10px]" onClick={() => handleRequestResponse(req.id || req._id, 'accepted')}>Accept</Button>
-                                                <Button size="sm" variant="outline" className="flex-1 h-7 text-[10px] border-destructive/20 text-destructive hover:bg-destructive/5" onClick={() => handleRequestResponse(req.id || req._id, 'rejected')}>Reject</Button>
-                                            </div>
+                                <div className="flex-1 flex flex-col overflow-hidden">
+                                    {/* Friend Header */}
+                                    <div className="flex items-center gap-3 px-3 py-2 border-b bg-muted/30">
+                                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSelectedFriend(null)}>
+                                            <ChevronLeft size={18} />
+                                        </Button>
+                                        <Avatar className="h-8 w-8">
+                                            <AvatarImage src={selectedFriend.avatar} />
+                                            <AvatarFallback className="text-xs font-bold">{selectedFriend.first_name[0]}</AvatarFallback>
+                                        </Avatar>
+                                        <div className="flex flex-col flex-1 overflow-hidden">
+                                            <span className="text-xs font-bold truncate">{selectedFriend.first_name} {selectedFriend.last_name}</span>
+                                            <span className="text-[10px] text-green-500 flex items-center gap-1">
+                                                <span className="h-1.5 w-1.5 bg-green-500 rounded-full" /> Online
+                                            </span>
                                         </div>
-                                    ))}
+                                    </div>
+                                    {/* Private Messages */}
+                                    <div className="flex-1 overflow-y-auto px-3 py-1 flex flex-col custom-scrollbar min-h-0">
+                                        <div className="space-y-2">
+                                            {privateMessages.length === 0 && (
+                                                <div className="flex flex-col items-center justify-center h-full text-muted-foreground opacity-50">
+                                                    <MessageSquare size={48} className="mb-2" />
+                                                    <p className="text-sm">No private messages yet.</p>
+                                                </div>
+                                            )}
+                                            {privateMessages.map((msg, i) => {
+                                                const isOwnMessage = isSameId(msg.senderId, user);
+                                                const messageDate = msg.timestamp || msg.created_at;
+
+                                                const senderAvatar = isOwnMessage ? user.avatar : (msg.senderId?.avatar || msg.avatar || selectedFriend.avatar);
+                                                const senderInitials = isOwnMessage ? user.first_name[0] : selectedFriend.first_name[0];
+
+                                                return (
+                                                    <div key={i} className={cn("flex gap-3", isOwnMessage ? "flex-row-reverse" : "flex-row")}>
+                                                        <Avatar className="h-7 w-7 flex-shrink-0 border shadow-sm">
+                                                            <AvatarImage src={senderAvatar} />
+                                                            <AvatarFallback className="text-[10px] font-bold bg-primary/10 text-primary">{senderInitials}</AvatarFallback>
+                                                        </Avatar>
+                                                        <div className={cn("flex flex-col", isOwnMessage ? "items-end" : "items-start")}>
+                                                            <div className={cn(
+                                                                "rounded-2xl px-3 py-2 text-xs shadow-sm max-w-[90%]",
+                                                                isOwnMessage
+                                                                    ? "bg-primary text-primary-foreground rounded-tr-none"
+                                                                    : "bg-background border border-primary/5 text-foreground rounded-tl-none"
+                                                            )}>
+                                                                {msg.text}
+                                                            </div>
+                                                            <span className="text-[7px] text-muted-foreground/60 mt-1 px-1">
+                                                                {messageDate ? new Date(messageDate).toLocaleTimeString('en-IN', {
+                                                                    hour: '2-digit',
+                                                                    minute: '2-digit',
+                                                                    hour12: true
+                                                                }) : 'Now'}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                )
+                                            })}
+                                            <div ref={scrollRef} />
+                                        </div>
+                                    </div>
                                 </div>
                             )}
-                        </div>
-                    </TabsContent>
+                        </TabsContent>
 
-                    {/* Find People tab in sidebar */}
-                    <TabsContent value="find" className="flex-1 m-0 p-0 flex flex-col overflow-hidden !mt-0 !pt-0 data-[state=inactive]:hidden">
-                        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-4">
-                            <div className="p-4 bg-primary/5 rounded-full">
-                                <UserPlus size={32} className="text-primary" />
+                        {/* Requests List */}
+                        <TabsContent value="requests" className="flex-1 m-0 p-0 flex flex-col overflow-hidden !mt-0 !pt-0 data-[state=inactive]:hidden">
+                            <div className="flex-1 overflow-y-auto p-2 custom-scrollbar">
+                                {receivedRequests.length === 0 ? (
+                                    <div className="text-center text-xs text-muted-foreground mt-10">
+                                        No pending requests.
+                                    </div>
+                                ) : (
+                                    <div className="space-y-2">
+                                        {receivedRequests.map(req => (
+                                            <div key={req.id} className="p-3 bg-muted/30 rounded-xl border border-primary/5">
+                                                <div className="flex items-center gap-3 mb-3">
+                                                    <Avatar className="h-8 w-8">
+                                                        <AvatarImage src={req.fromId?.avatar} />
+                                                        <AvatarFallback className="text-[10px]">{req.fromId?.first_name?.[0]}</AvatarFallback>
+                                                    </Avatar>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-xs font-bold truncate">{req.fromId?.first_name} {req.fromId?.last_name}</p>
+                                                        <p className="text-[10px] text-muted-foreground truncate">{req.fromId?.email}</p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex gap-2">
+                                                    <Button size="sm" className="flex-1 h-7 text-[10px]" onClick={() => handleRequestResponse(req.id || req._id, 'accepted')}>Accept</Button>
+                                                    <Button size="sm" variant="outline" className="flex-1 h-7 text-[10px] border-destructive/20 text-destructive hover:bg-destructive/5" onClick={() => handleRequestResponse(req.id || req._id, 'rejected')}>Reject</Button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
-                            <div>
-                                <p className="text-sm font-semibold">Grow your network</p>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                    Use the main Collaboration Hub to find and connect with new people.
-                                </p>
-                            </div>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                    onClose();
-                                    window.location.href = '/collaboration?tab=find';
-                                }}
-                            >
-                                Open Hub
-                            </Button>
-                        </div>
-                    </TabsContent>
-                </div>
+                        </TabsContent>
 
-                {/* Input Area (Shared between Board and Direct if friend selected) */}
-                {(activeTab === 'company' || (activeTab === 'private' && selectedFriend)) && (
-                    <div className="p-3 border-t bg-muted/10">
+                        {/* Find People tab in sidebar */}
+                        <TabsContent value="find" className="flex-1 m-0 p-0 flex flex-col overflow-hidden !mt-0 !pt-0 data-[state=inactive]:hidden">
+                            <div className="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-4">
+                                <div className="p-4 bg-primary/5 rounded-full">
+                                    <UserPlus size={32} className="text-primary" />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-semibold">Grow your network</p>
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                        Use the main Collaboration Hub to find and connect with new people.
+                                    </p>
+                                </div>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                        onClose();
+                                        window.location.href = '/collaboration?tab=find';
+                                    }}
+                                >
+                                    Open Hub
+                                </Button>
+                            </div>
+                        </TabsContent>
+                    </div>
+
+                    {/* Input Area (Shared between Board and Direct if friend selected) */}
+                    {(activeTab === 'company' || (activeTab === 'private' && selectedFriend)) && (
+                        <div className="p-3 border-t bg-muted/10">
+                            <div className="flex gap-2">
+                                <Input
+                                    placeholder="Type a message..."
+                                    className="h-10 text-xs focus-visible:ring-primary border-primary/10 bg-background"
+                                    value={inputText}
+                                    onChange={(e) => setInputText(e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                                />
+                                <Button size="icon" className="h-10 w-10 shrink-0 shadow-lg" onClick={handleSendMessage} disabled={!inputText.trim()}>
+                                    <Send size={16} />
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                    {/* Connection Diagnostic */}
+                    <div className="px-3 py-1 bg-muted/5 border-t text-[8px] text-muted-foreground/40 flex justify-between items-center">
                         <div className="flex gap-2">
-                            <Input
-                                placeholder="Type a message..."
-                                className="h-10 text-xs focus-visible:ring-primary border-primary/10 bg-background"
-                                value={inputText}
-                                onChange={(e) => setInputText(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                            />
-                            <Button size="icon" className="h-10 w-10 shrink-0 shadow-lg" onClick={handleSendMessage} disabled={!inputText.trim()}>
-                                <Send size={16} />
-                            </Button>
+                            <span>Socket: {socket?.connected ? '✅' : '❌'} {socket?.id?.substring(0, 6)}</span>
+                            <span>Comp: {extractId(user?.companyId).substring(0, 6)}...</span>
                         </div>
+                        <button
+                            onClick={() => {
+                                if (socket) {
+                                    socket.disconnect();
+                                    setTimeout(() => socket.connect(), 500);
+                                    toast({ title: "Reconnecting socket..." });
+                                }
+                            }}
+                            className="hover:text-primary transition-colors"
+                            title="Force Reconnect"
+                        >
+                            Reconnect
+                        </button>
                     </div>
-                )}
-                {/* Connection Diagnostic */}
-                <div className="px-3 py-1 bg-muted/5 border-t text-[8px] text-muted-foreground/40 flex justify-between items-center">
-                    <div className="flex gap-2">
-                        <span>Socket: {socket?.connected ? '✅' : '❌'} {socket?.id?.substring(0, 6)}</span>
-                        <span>Comp: {extractId(user?.companyId).substring(0, 6)}...</span>
-                    </div>
-                    <button
-                        onClick={() => {
-                            if (socket) {
-                                socket.disconnect();
-                                setTimeout(() => socket.connect(), 500);
-                                toast({ title: "Reconnecting socket..." });
-                            }
-                        }}
-                        className="hover:text-primary transition-colors"
-                        title="Force Reconnect"
-                    >
-                        Reconnect
-                    </button>
-                </div>
-            </Tabs>
-        </div>
-    </aside>
-)
+                </Tabs>
+            </div>
+        </aside>
+    )
 }
