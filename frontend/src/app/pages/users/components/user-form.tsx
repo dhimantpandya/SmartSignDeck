@@ -73,7 +73,7 @@ export const UserForm: FC<UserFormProps> = ({
     },
     onSuccess: (response) => {
       toast({
-        title: response.message,
+        title: response.message || (initialData ? 'User updated successfully' : 'User created successfully'),
       })
       resetForm()
       handleClose(true)
