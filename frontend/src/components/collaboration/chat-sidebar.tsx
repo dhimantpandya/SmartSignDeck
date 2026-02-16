@@ -90,15 +90,15 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
             if (data.type === 'company' || data.companyId) {
                 console.log('[ChatSidebar] 🏢 Processing company message')
                 setBoardMessages((prev) => {
-                    console.log('[ChatSidebar] Previous messages count:', prev.length)
-
-                    // TEMP: DISABLE DUPLICATE CHECK TO FORCE ADD
-                    // const isDup = prev.some(m => ... )
-                    const isDup = false;
+                    const isDup = prev.some(m =>
+                        m.text === data.text &&
+                        isSameId(m.senderId, data.senderId) &&
+                        (m.isOptimistic || Math.abs(new Date(m.created_at || new Date()).getTime() - new Date(data.created_at || new Date()).getTime()) < 5000)
+                    )
 
                     if (isDup) {
-                        console.log('[ChatSidebar] ⚠️ Duplicate skipped')
-                        return prev
+                        console.log('[ChatSidebar] ⚠️ Duplicate found, merging/replacing')
+                        return prev.map(m => (m.isOptimistic && m.text === data.text) ? { ...data, isOptimistic: false } : m)
                     }
 
                     const newMsgs = [...prev, data]
@@ -129,9 +129,13 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
                         const isDup = prev.some(m =>
                             m.text === data.text &&
                             isSameId(m.senderId, data.senderId) &&
-                            Math.abs(new Date(m.created_at || new Date()).getTime() - new Date(data.created_at || new Date()).getTime()) < 5000
+                            (m.isOptimistic || Math.abs(new Date(m.created_at || new Date()).getTime() - new Date(data.created_at || new Date()).getTime()) < 5000)
                         )
-                        return isDup ? prev : [...prev, data]
+                        if (isDup) {
+                            console.log('[ChatSidebar] ⚠️ Private duplicate found, merging/replacing')
+                            return prev.map(m => (m.isOptimistic && m.text === data.text) ? { ...data, isOptimistic: false } : m)
+                        }
+                        return [...prev, data]
                     })
                 }
             }

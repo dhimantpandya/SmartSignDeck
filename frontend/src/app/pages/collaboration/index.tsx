@@ -157,11 +157,11 @@ export default function Collaboration() {
                         const isDup = prev.some(m =>
                             m.text === data.text &&
                             isSameId(m.senderId, data.senderId) &&
-                            Math.abs(new Date(m.created_at).getTime() - new Date(data.created_at).getTime()) < 3000
+                            (m.isOptimistic || Math.abs(new Date(m.created_at).getTime() - new Date(data.created_at).getTime()) < 3000)
                         )
                         if (isDup) {
-                            console.log('[Collaboration] ⏭️ Skipping duplicate private message')
-                            return prev
+                            console.log('[Collaboration] ⏭️ Merging/Replacing duplicate private message')
+                            return prev.map(m => (m.isOptimistic && m.text === data.text) ? { ...data, isOptimistic: false } : m)
                         }
                         return [...prev, data]
                     })
