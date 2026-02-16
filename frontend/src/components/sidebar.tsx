@@ -29,6 +29,7 @@ export default function Sidebar({
     unreadChatCounts,
     unreadCompanyChatCount,
     unreadRequestCount,
+    unreadCount, // Added for dependency tracking
     clearRequestBadges,
     suppressedChatSections,
     isChatOpen
@@ -40,7 +41,9 @@ export default function Sidebar({
         try {
           const { adminRequestService } = await import('@/api/admin-request.service')
           const response = await adminRequestService.getAllRequests()
-          const pendingRequests = (response.data || []).filter((r: any) => r.status === 'PENDING')
+          // ApiService unwraps the response, so response itself is likely the array
+          const requests = Array.isArray(response) ? response : (response.data || [])
+          const pendingRequests = requests.filter((r: any) => r.status === 'PENDING')
           setAdminRequestCount(pendingRequests.length)
         } catch (err) {
           console.error('Failed to fetch admin counts', err)
@@ -48,7 +51,7 @@ export default function Sidebar({
       }
       fetchAdminCounts()
     }
-  }, [user])
+  }, [user, unreadCount]) // Re-fetch when notifications change (unreadCount changes on new notifs)
   /* Make body not scrollable when navBar is opened */
   useEffect(() => {
     if (navOpened) {
