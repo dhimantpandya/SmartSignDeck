@@ -658,9 +658,23 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
                     )}
                     {/* Connection Diagnostic */}
                     <div className="px-3 py-1 bg-muted/5 border-t text-[8px] text-muted-foreground/40 flex justify-between items-center">
-                        <span>Socket: {socket?.connected ? '✅' : '❌'} {socket?.id?.substring(0, 6)}</span>
-                        <span>Comp: {extractId(user?.companyId).substring(0, 6)}...</span>
-                        <span>User: {extractId(user).substring(0, 6)}...</span>
+                        <div className="flex gap-2">
+                            <span>Socket: {socket?.connected ? '✅' : '❌'} {socket?.id?.substring(0, 6)}</span>
+                            <span>Comp: {extractId(user?.companyId).substring(0, 6)}...</span>
+                        </div>
+                        <button
+                            onClick={() => {
+                                if (socket) {
+                                    socket.disconnect();
+                                    setTimeout(() => socket.connect(), 500);
+                                    toast({ title: "Reconnecting socket..." });
+                                }
+                            }}
+                            className="hover:text-primary transition-colors"
+                            title="Force Reconnect"
+                        >
+                            Reconnect
+                        </button>
                     </div>
                 </Tabs>
             </div>
