@@ -47,23 +47,35 @@ const createUser = async (userBody: Partial<IUser>): Promise<IUser> => {
     const user = await User.create(userData);
     console.log(`[UserDebug] User created successfully: ${user._id}`);
 
-    // Auto-connect with smartsigndeck super admin
-    try {
-      const adminEmail = "smartsigndeck@gmail.com";
-      const adminUser = await User.findOne({ email: adminEmail });
-      if (adminUser && adminUser._id.toString() !== user._id.toString()) {
-        const { FriendRequest } = await import("../models/social.model");
-        await FriendRequest.create({
-          fromId: adminUser._id,
-          toId: user._id,
-          status: "accepted"
-        });
-        console.log(`[UserDebug] Auto-connected user ${user.email} with ${adminEmail}`);
+    // Auto-connect with smartsigndeck super admin (Non-blocking)
+    setImmediate(async () => {
+      try {
+        const adminEmail = "smartsigndeck@gmail.com";
+        const adminUser = await User.findOne({ email: adminEmail });
+        if (adminUser && adminUser._id.toString() !== user._id.toString()) {
+          const { FriendRequest } = await import("../models/social.model");
+
+          // Idempotency check: only create if not already exists
+          const existingRequest = await FriendRequest.findOne({
+            fromId: adminUser._id,
+            toId: user._id
+          });
+
+          if (!existingRequest) {
+            await FriendRequest.create({
+              fromId: adminUser._id,
+              toId: user._id,
+              status: "accepted"
+            });
+            console.log(`[UserDebug] Auto-connected user ${user.email} with ${adminEmail}`);
+          } else {
+            console.log(`[UserDebug] Auto-connection already exists for ${user.email}`);
+          }
+        }
+      } catch (connErr) {
+        console.error(`[UserDebug] Background auto-connect failed:`, connErr);
       }
-    } catch (connErr) {
-      console.error(`[UserDebug] Failed to auto-connect user:`, connErr);
-      // Don't throw, we want the user creation to succeed even if auto-connection fails
-    }
+    });
 
     return user;
   } catch (err) {
