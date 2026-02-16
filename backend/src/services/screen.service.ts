@@ -72,8 +72,8 @@ const queryScreens = async (filter: any, options: CustomPaginateOptions, user: I
     const companyIdStr = (user.companyId || "").toString();
     const requestedCreatedBy = (filter.createdBy || "").toString();
 
-    const isQueryingOwn = requestedCreatedBy && userIdStr && requestedCreatedBy === userIdStr;
-    const isRecycleBinQuery = finalFilter.deletedAt !== null;
+    const isQueryingPublic = finalFilter.isPublic === true;
+    const isQueryingByCreator = !!finalFilter.createdBy;
 
     if (isRecycleBinQuery) {
       // 🗑️ Recycle Bin Isolation: Strictly same company ONLY
@@ -83,6 +83,9 @@ const queryScreens = async (filter: any, options: CustomPaginateOptions, user: I
         // Fallback for users without company (shouldn't happen with ensureUserCompany)
         finalFilter.createdBy = new mongoose.Types.ObjectId(userIdStr);
       }
+    } else if (isQueryingPublic && isQueryingByCreator) {
+      // 🌍 Global Profile View: Allow bypass if specifically looking for PUBLIC items by a CREATOR
+      // This enables the "Users -> Profile" modal to work across companies.
     } else {
       // 🔒 Account Isolation: Strictly same company ONLY (whether public or private)
       if (companyIdStr && mongoose.Types.ObjectId.isValid(companyIdStr)) {
