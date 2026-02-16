@@ -55,7 +55,8 @@ export default function Collaboration() {
     const extractId = (obj: any): string => {
         if (!obj) return ''
         if (typeof obj === 'string') return obj.trim().toLowerCase()
-        const id = obj.id || obj._id || obj.userId || obj.friendId
+        // Check standard valid ID fields
+        const id = obj._id || obj.id || obj.userId || obj.friendId
         if (id) return id.toString().trim().toLowerCase()
         return ''
     }

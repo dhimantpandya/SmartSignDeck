@@ -19,6 +19,7 @@ const sendMessage = catchAsync(async (req: Request, res: Response) => {
     const { broadcastChat, cleanId } = await import("../services/socket.service");
     const { default: notificationService } = await import("../services/notification.service");
 
+    // Use robust cleanId which now handles objects/definitions
     const cSenderId = cleanId(user._id);
     const cRecipientId = cleanId(recipientId);
     const cCompanyId = cleanId(companyId);

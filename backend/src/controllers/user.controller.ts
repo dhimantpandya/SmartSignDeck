@@ -98,14 +98,12 @@ const getUsers = catchAsync(async (req: Request, res: Response) => {
       const companyNames = relatedCompanies.map(c => c.name);
 
       filter.$or = [
-        { email: PREDEFINED_EMAIL },
         { companyId: { $in: companyIds } },
         { companyName: { $in: companyNames } },
         { companyName: { $regex: new RegExp(`^${company.name}$`, "i") } }
       ];
     } else {
       filter.$or = [
-        { email: PREDEFINED_EMAIL },
         { companyId: companyId },
         { companyName: companyId }
       ];
@@ -115,13 +113,7 @@ const getUsers = catchAsync(async (req: Request, res: Response) => {
     // If NO companyId is provided (Global Directory mode)
     // we should still ensure smartsigndeck is visible even if search filters are applied.
     if (filter.search || filter.role || filter.first_name || filter.last_name) {
-      const currentFilter = { ...filter };
-      filter = {
-        $or: [
-          currentFilter,
-          { email: PREDEFINED_EMAIL }
-        ]
-      };
+      // Standard filtering without forced super admin inclusion
     }
   }
 

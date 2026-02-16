@@ -7,7 +7,10 @@ let io: Server;
 
 const cleanId = (id: any): string => {
     if (!id) return "";
-    return id.toString().trim().toLowerCase();
+    if (typeof id === 'string') return id.trim().toLowerCase();
+    // Handle mongoose ObjectId or generic object with id/_id
+    const extracted = id._id || id.id || id;
+    return extracted.toString().trim().toLowerCase();
 };
 
 const initSocket = (server: HttpServer | HttpsServer): Server => {
