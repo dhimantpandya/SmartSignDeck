@@ -99,18 +99,19 @@ export default function Collaboration() {
                 console.log('[Collaboration] Processing company message')
                 setCompanyMessages((prev) => {
                     // Prevent duplicate if added optimistically
+                    // Relaxed dedupe logic: Match text and sender, ignore exact timestamp to avoid timezone/clock skew issues
                     const isDup = prev.some(m =>
                         m.text === data.text &&
                         isSameId(m.senderId, data.senderId) &&
-                        Math.abs(new Date(m.created_at).getTime() - new Date(data.created_at).getTime()) < 3000
+                        (m.isOptimistic || Math.abs(new Date(m.created_at || new Date()).getTime() - new Date(data.created_at || new Date()).getTime()) < 5000)
                     )
                     if (isDup) {
-                        console.log('[Collaboration] Skipping duplicate company message')
-                        return prev
+                        return prev.map(m => (m.isOptimistic && m.text === data.text) ? { ...data, isOptimistic: false } : m)
                     }
                     return [...prev, data]
                 })
             } else if (data.type === 'private' || data.recipientId) {
+                console.log('[Collaboration] Processing private message')
                 const friendId = extractId(selectedFriend)
                 const msgSenderId = extractId(data.senderId)
                 const msgRecipientId = extractId(data.recipientId)
@@ -584,6 +585,13 @@ export default function Collaboration() {
                                         <CardContent className="p-0 flex-1 flex flex-col min-h-0 bg-muted/5 relative">
                                             {/* Chat Container Background Effect */}
                                             <div className="absolute inset-0 pointer-events-none opacity-[0.03] bg-[radial-gradient(circle_at_center,var(--primary)_0%,transparent_100%)] shadow-inner" />
+
+                                            {/* Connection Status Indicator */}
+                                            <div className="absolute top-2 right-2 z-20">
+                                                <Badge variant={socket?.connected ? "secondary" : "destructive"} className="text-[10px] opacity-80 backdrop-blur-md">
+                                                    {socket?.connected ? "🟢 User Connected" : "🔴 Disconnected"}
+                                                </Badge>
+                                            </div>
 
                                             {companyMessages.length === 0 ? (
                                                 <div className="flex-1 p-6 text-center flex flex-col items-center justify-center space-y-4 relative z-10">

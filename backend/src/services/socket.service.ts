@@ -37,6 +37,7 @@ const initSocket = (server: HttpServer | HttpsServer): Server => {
             }
             socket.join(`company_${cid}`);
             logger.info(`[SOCKET] Socket ${socket.id} joined company: ${cid} (Room: company_${cid})`);
+            socket.emit('room_joined', { room: `company_${cid}`, companyId: cid });
         });
 
         // Join individual room for personal notifications/DMs
@@ -45,6 +46,7 @@ const initSocket = (server: HttpServer | HttpsServer): Server => {
             if (!uid) return;
             socket.join(`user_${uid}`);
             logger.info(`[SOCKET] Socket ${socket.id} joined personal room: ${uid}`);
+            socket.emit('room_joined', { room: `user_${uid}`, userId: uid });
         });
 
         socket.on("disconnect", () => {
