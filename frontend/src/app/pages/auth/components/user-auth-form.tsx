@@ -1,10 +1,10 @@
 // src/components/forms/UserAuthForm.tsx
 
-import { useState, type HTMLAttributes } from 'react'
+import { useState, type HTMLAttributes, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation } from '@tanstack/react-query'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, Link, useLocation } from 'react-router-dom'
 
 import { authService } from '@/api'
 import { LoginRequest, loginSchema } from '@/validations/auth.validation'
@@ -54,8 +54,19 @@ interface UserAuthFormProps extends HTMLAttributes<HTMLDivElement> { }
 
 export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
   const [isLoading, setIsLoading] = useState(false)
-  const { login } = useAuth()
+  const { isLoggedIn, login } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
+
+  // ===== ROBUST REDIRECT =====
+  // If user is already logged in, get them out of here
+  useEffect(() => {
+    if (isLoggedIn) {
+      console.log('[UserAuthForm] User is logged in, redirecting to dashboard...');
+      // Use replace to prevent back button from returning to login
+      navigate(Routes.DASHBOARD, { replace: true });
+    }
+  }, [isLoggedIn, navigate]);
 
   const form = useForm<LoginRequest>({
     resolver: zodResolver(loginSchema),
@@ -87,7 +98,7 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
 
       toast({ title: 'Login successful' })
       form.reset()
-      navigate(Routes.DASHBOARD)
+      // Redirection is now handled by the useEffect watching isLoggedIn
     },
 
     onError: (error: any) => {
@@ -245,7 +256,7 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
                   login(user, refreshToken, accessToken);
 
                   toast({ title: 'Login successful' });
-                  navigate(Routes.DASHBOARD);
+                  // Redirection is now handled by the useEffect watching isLoggedIn
                 } catch (error: any) {
                   console.error('Google Sign-In Error:', error);
 
