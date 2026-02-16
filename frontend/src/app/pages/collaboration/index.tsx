@@ -14,8 +14,6 @@ import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { UserProfileDialog } from '@/app/pages/users/components/user-profile-dialog'
@@ -29,8 +27,7 @@ import {
     MessageSquare,
     Building2,
     Search as SearchIcon,
-    Send,
-    CircleDot
+    Send
 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
