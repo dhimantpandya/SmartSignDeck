@@ -438,7 +438,7 @@ export const verifyOtp = async (req: Request, res: Response) => {
 
           // 1. Notify System Admin
           if (systemAdmin && systemAdmin._id.toString() !== user._id.toString()) {
-            await (await import("./notification.service")).default.createNotification(
+            await (await import("../services/notification.service")).default.createNotification(
               systemAdmin._id.toString(),
               "system_alert",
               "New User Registration",
@@ -451,7 +451,7 @@ export const verifyOtp = async (req: Request, res: Response) => {
             const { default: Company } = await import("../models/company.model");
             const company = await Company.findById(user.companyId);
             if (company && company.ownerId.toString() !== user._id.toString()) {
-              await (await import("./notification.service")).default.createNotification(
+              await (await import("../services/notification.service")).default.createNotification(
                 company.ownerId.toString(),
                 "system_alert",
                 "New Team Member",
