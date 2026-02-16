@@ -151,9 +151,12 @@ export default function Collaboration() {
         socket.on('new_chat', handleNewChat)
 
         // Ensure rooms are joined (idempotent on backend)
-        socket.emit('join_user', user.id)
-        if (user.companyId) {
-            socket.emit('join_company', user.companyId)
+        const uid = extractId(user)
+        if (uid) socket.emit('join_user', uid)
+
+        const cid = extractId(user.companyId)
+        if (cid) {
+            socket.emit('join_company', cid)
         }
 
         return () => {
