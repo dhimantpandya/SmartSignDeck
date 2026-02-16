@@ -21,6 +21,9 @@ const initSocket = (server: HttpServer | HttpsServer): Server => {
         },
     });
 
+    // Track online users: userId -> Set<socketId>
+    const onlineUsers = new Map<string, Set<string>>();
+
     io.on("connection", (socket: Socket) => {
         logger.info(`New client connected: ${socket.id}`);
 
@@ -40,25 +43,56 @@ const initSocket = (server: HttpServer | HttpsServer): Server => {
             }
             socket.join(`company_${cid}`);
             logger.info(`[SOCKET] Socket ${socket.id} joined company: ${cid} (Room: company_${cid})`);
-            socket.emit('room_joined', { room: `company_${cid}`, companyId: cid });
+
+            // Send current list of online users in this company (basic implementation)
+            // In a real app, we'd filter this list by companyId, but for now we rely on the client to filter by known ids
+            const onlineUserIds = Array.from(onlineUsers.keys());
+            socket.emit('online_users_update', onlineUserIds);
         });
 
-        // Join individual room for personal notifications/DMs
+        // Join individual room for personal notifications/DMs AND track presence
         socket.on("join_user", (userId: any) => {
             const uid = cleanId(userId);
             if (!uid) return;
+
             socket.join(`user_${uid}`);
             logger.info(`[SOCKET] Socket ${socket.id} joined personal room: ${uid}`);
+
+            // Track presence
+            if (!onlineUsers.has(uid)) {
+                onlineUsers.set(uid, new Set());
+                // Notify everyone this user is now online
+                io.emit('user_status_change', { userId: uid, status: 'online' });
+            }
+            onlineUsers.get(uid)?.add(socket.id);
+
+            // Store userId on socket instance for disconnect handling
+            (socket as any).userId = uid;
+
             socket.emit('room_joined', { room: `user_${uid}`, userId: uid });
         });
 
         socket.on("disconnect", () => {
             logger.info(`Client disconnected: ${socket.id}`);
+
+            const uid = (socket as any).userId;
+            if (uid && onlineUsers.has(uid)) {
+                const userSockets = onlineUsers.get(uid);
+                userSockets?.delete(socket.id);
+
+                if (userSockets?.size === 0) {
+                    onlineUsers.delete(uid);
+                    // Notify everyone this user is now offline
+                    io.emit('user_status_change', { userId: uid, status: 'offline' });
+                }
+            }
         });
     });
 
     return io;
 };
+
+
 
 const getIO = (): Server => {
     if (!io) {
