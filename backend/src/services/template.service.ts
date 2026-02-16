@@ -83,6 +83,8 @@ const queryTemplates = async (filter: any, options: CustomPaginateOptions, user:
     const companyIdStr = (user.companyId || "").toString();
     const requestedCreatedBy = (filter.createdBy || "").toString();
 
+    const isQueryingOwn = requestedCreatedBy && userIdStr && requestedCreatedBy === userIdStr;
+    const isRecycleBinQuery = finalFilter.deletedAt !== null;
     const isQueryingPublic = finalFilter.isPublic === true;
     const isQueryingByCreator = !!finalFilter.createdBy;
 
