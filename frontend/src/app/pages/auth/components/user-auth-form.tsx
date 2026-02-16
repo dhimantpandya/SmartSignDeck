@@ -4,7 +4,7 @@ import { useState, type HTMLAttributes, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation } from '@tanstack/react-query'
-import { useNavigate, Link, useLocation } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 
 import { authService } from '@/api'
 import { LoginRequest, loginSchema } from '@/validations/auth.validation'
@@ -56,7 +56,6 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
   const [isLoading, setIsLoading] = useState(false)
   const { isLoggedIn, login } = useAuth()
   const navigate = useNavigate()
-  const location = useLocation()
 
   // ===== ROBUST REDIRECT =====
   // If user is already logged in, get them out of here
