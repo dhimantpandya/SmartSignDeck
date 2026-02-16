@@ -6,6 +6,7 @@ import { userService } from "../services";
 import catchAsync from "../utils/catchAsync";
 import successResponse from "../helpers/responses/successResponse";
 import ApiError from "../utils/ApiError";
+import notificationService from "../services/notification.service";
 
 const createRequest = catchAsync(async (req: Request, res: Response) => {
     const { targetUserId, type, details } = req.body;
