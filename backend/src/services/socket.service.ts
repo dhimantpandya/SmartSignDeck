@@ -38,7 +38,7 @@ const initSocket = (server: HttpServer | HttpsServer): Server => {
         socket.on("join_company", (companyId: any) => {
             const cid = cleanId(companyId);
             if (!cid) {
-                logger.warn(`[SOCKET] Socket ${socket.id} tried to join invalid company: ${companyId}`);
+                logger.warn(`[SOCKET] ⚠️ Socket ${socket.id} tried to join invalid company. Raw: ${companyId}`);
                 return;
             }
             socket.join(`company_${cid}`);

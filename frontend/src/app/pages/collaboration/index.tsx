@@ -199,6 +199,7 @@ export default function Collaboration() {
 
         const cid = extractId(user.companyId)
         if (cid) {
+            console.log('[Collaboration] 🏢 Joining company room:', cid)
             socket.emit('join_company', cid)
         }
 
@@ -621,19 +622,8 @@ export default function Collaboration() {
                                                         <CardDescription className="text-[10px]">Coordinate in real-time with {user?.companyName || 'the team'}.</CardDescription>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        </CardHeader>
 
-                                        <CardContent className="p-0 flex-1 flex flex-col min-h-0 bg-muted/5 relative">
-                                            {/* Chat Container Background Effect */}
-                                            <div className="absolute inset-0 pointer-events-none opacity-[0.03] bg-[radial-gradient(circle_at_center,var(--primary)_0%,transparent_100%)] shadow-inner" />
-
-                                            {/* Company Members Dropdown - Moved to Header/Right */}
-                                            {/* Note: In the user's request, they wanted it specifically "beside live company discussion on the right side" */}
-                                            {/* We will render it relatively positioned within the header area or absolute if needed. 
-                                                The previous code had it absolute top-2 right-2. 
-                                                Let's keep it absolute but ensure it's visually aligned where requested. */}
-                                            <div className="absolute top-3 right-4 z-20">
+                                                {/* Company Members Dropdown - Integrated into Header */}
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild>
                                                         <Button variant="outline" size="sm" className="h-8 text-xs px-3 gap-2 bg-background/80 backdrop-blur-md border-border/50 hover:bg-accent/50 shadow-sm transition-all hover:scale-105">
@@ -695,6 +685,11 @@ export default function Collaboration() {
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>
                                             </div>
+                                        </CardHeader>
+
+                                        <CardContent className="p-0 flex-1 flex flex-col min-h-0 bg-muted/5 relative">
+                                            {/* Chat Container Background Effect */}
+                                            <div className="absolute inset-0 pointer-events-none opacity-[0.03] bg-[radial-gradient(circle_at_center,var(--primary)_0%,transparent_100%)] shadow-inner" />
 
                                             {companyMessages.length === 0 ? (
                                                 <div className="flex-1 p-6 text-center flex flex-col items-center justify-center space-y-4 relative z-10">
