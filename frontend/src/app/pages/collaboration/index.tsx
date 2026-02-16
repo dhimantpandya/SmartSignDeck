@@ -399,21 +399,21 @@ export default function Collaboration() {
                     </div>
                 </Layout.Header>
 
-                <Layout.Body className='flex gap-0 p-0 overflow-hidden h-[calc(100vh-var(--header-height))]'>
+                <Layout.Body className='flex gap-0 p-0 overflow-hidden h-[calc(100vh-var(--header-height))] flex-col md:flex-row'>
                     {/* Local Sidebar */}
-                    <aside className='w-72 border-r bg-muted/10 backdrop-blur-sm flex flex-col p-6 gap-6 flex-shrink-0'>
+                    <aside className='w-full md:w-72 border-r-0 md:border-r border-b md:border-b-0 bg-muted/10 backdrop-blur-sm flex flex-col p-4 md:p-6 gap-4 md:gap-6 flex-shrink-0'>
                         <div>
-                            <h2 className='text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4 px-2'>Navigation</h2>
-                            <TabsList className="flex flex-col h-auto bg-transparent gap-2 items-stretch p-0">
-                                <TabsTrigger value="friends" className="justify-start gap-3 px-4 py-3 h-auto data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-xl transition-all hover:bg-primary/10">
+                            <h2 className='text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-2 md:mb-4 px-2 hidden md:block'>Navigation</h2>
+                            <TabsList className="flex flex-row md:flex-col h-auto bg-transparent gap-2 items-stretch p-0 overflow-x-auto md:overflow-visible pb-2 md:pb-0 scrollbar-hide">
+                                <TabsTrigger value="friends" className="justify-center md:justify-start gap-3 px-4 py-3 h-auto data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-xl transition-all hover:bg-primary/10 flex-shrink-0 whitespace-nowrap">
                                     <Users size={18} />
                                     <span className="font-medium">My Connections</span>
                                 </TabsTrigger>
-                                <TabsTrigger value="find" className="justify-start gap-3 px-4 py-3 h-auto data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-xl transition-all hover:bg-primary/10">
+                                <TabsTrigger value="find" className="justify-center md:justify-start gap-3 px-4 py-3 h-auto data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-xl transition-all hover:bg-primary/10 flex-shrink-0 whitespace-nowrap">
                                     <UserPlus size={18} />
                                     <span className="font-medium">Find People</span>
                                 </TabsTrigger>
-                                <TabsTrigger value="requests" className="justify-start gap-3 px-4 py-3 h-auto data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-xl transition-all hover:bg-primary/10 relative">
+                                <TabsTrigger value="requests" className="justify-center md:justify-start gap-3 px-4 py-3 h-auto data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-xl transition-all hover:bg-primary/10 relative flex-shrink-0 whitespace-nowrap">
                                     <UserPlus size={18} />
                                     <span className="font-medium">Requests</span>
                                     {receivedRequests.length > 0 && (
@@ -422,14 +422,14 @@ export default function Collaboration() {
                                         </Badge>
                                     )}
                                 </TabsTrigger>
-                                <TabsTrigger value="company" className="justify-start gap-3 px-4 py-3 h-auto data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-xl transition-all hover:bg-primary/10">
+                                <TabsTrigger value="company" className="justify-center md:justify-start gap-3 px-4 py-3 h-auto data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-xl transition-all hover:bg-primary/10 flex-shrink-0 whitespace-nowrap">
                                     <Building2 size={18} />
                                     <span className="font-medium">Company Board</span>
                                 </TabsTrigger>
                             </TabsList>
                         </div>
 
-                        <div className="mt-auto px-2">
+                        <div className="mt-auto px-2 hidden md:block">
                             <Card className="bg-primary/5 border-none shadow-none">
                                 <CardContent className="p-4">
                                     <p className="text-[10px] text-muted-foreground leading-relaxed">
@@ -610,7 +610,7 @@ export default function Collaboration() {
 
                             <TabsContent value="company" className="mt-0">
                                 <div className="max-w-5xl mx-auto">
-                                    <Card className="border-primary/10 shadow-xl overflow-hidden h-[700px] flex flex-col bg-background/50 backdrop-blur-sm">
+                                    <Card className="border-primary/10 shadow-xl overflow-hidden h-[calc(100vh-250px)] md:h-[700px] flex flex-col bg-background/50 backdrop-blur-sm">
                                         <CardHeader className="bg-primary/5 border-b py-3 flex-shrink-0 z-10">
                                             <div className="flex items-center justify-between w-full px-2">
                                                 <div className="flex items-center gap-3">

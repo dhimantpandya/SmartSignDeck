@@ -54,9 +54,9 @@ export function RecentActivity({ items = [], isLoading }: RecentActivityProps) {
               {item.type === 'template' ? <IconLayout size={18} /> : <IconDeviceTv size={18} />}
             </AvatarFallback>
           </Avatar>
-          <div className='ml-4 space-y-1'>
-            <p className='text-sm font-medium leading-none'>{item.name}</p>
-            <p className='text-xs text-muted-foreground'>
+          <div className='ml-4 space-y-1 flex-1 min-w-0'>
+            <p className='text-sm font-medium leading-none truncate'>{item.name}</p>
+            <p className='text-xs text-muted-foreground truncate'>
               Added {dayjs(item.created_at).fromNow()}
             </p>
           </div>
