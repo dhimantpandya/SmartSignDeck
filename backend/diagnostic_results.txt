@@ -1,0 +1,29 @@
+Connected to MongoDB: smartsigndeck
+Total companies in collection: 3
+Total users: 3
+
+--- User Grouping by Normalized Company Name ---
+
+Group: "technostacks"
+  - dhimant.pandya@technostacks.in (ID: 698040e35f0b4d7e9641159e)
+  - dhimantpandya6@gmail.com (ID: 698040e35f0b4d7e9641159e)
+
+Group: "no name"
+  - smartsigndeck@gmail.com (ID: 698186920a37de04e58fc07c)
+
+--- Company Name Groups (Case-Insensitive) ---
+
+Group: "technostacks" (1 instance)
+  - ID: 698040e35f0b4d7e9641159e, Original Name: "Technostacks", Users: 2
+
+Group: "smartsigndeck" (1 instance)
+  - ID: 698186920a37de04e58fc07c, Original Name: "smartsigndeck", Users: 1
+
+Group: "debug corp" (1 instance)
+  - ID: 6984795109b953efc6cfebab, Original Name: "Debug Corp", Users: 0
+Total messages: 11
+
+--- Message Count by CompanyID ---
+  - CompanyID: 698040e35f0b4d7e9641159e (Technostacks): 4 messages
+  - CompanyID: 698089733c9edec5bec1ca10 (Unknown Company): 1 messages
+  - CompanyID: No Company (None): 6 messages

@@ -18,20 +18,27 @@ import { type IUser } from "../models/user.model";
 const ensureUserCompany = async (user: IUser) => {
   if (user.companyId || user.role === "super_admin") return;
 
-  const newCompany = await Company.create({
-    name: `${user.first_name}'s Workspace`,
-    ownerId: user._id || (user as any).id,
-  });
+  const companyName = user.companyName || `${user.first_name}'s Workspace`;
+  const normalizedName = companyName.trim().toLowerCase();
+
+  let company = await Company.findOne({ name: normalizedName });
+
+  if (!company) {
+    company = await Company.create({
+      name: normalizedName,
+      ownerId: user._id || (user as any).id,
+    });
+  }
 
   await User.findByIdAndUpdate(user._id || (user as any).id, {
-    companyId: newCompany._id,
-    companyName: newCompany.name,
+    companyId: company._id,
+    companyName: company.name,
     role: "admin",
     onboardingCompleted: true,
   });
 
-  user.companyId = newCompany._id as any;
-  (user as any).companyName = newCompany.name;
+  user.companyId = company._id as any;
+  (user as any).companyName = company.name;
 };
 
 const createTemplate = async (templateBody: any, user: IUser) => {

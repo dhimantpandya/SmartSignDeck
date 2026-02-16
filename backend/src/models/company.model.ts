@@ -34,6 +34,7 @@ const companySchema = new Schema<ICompany, ICompanyModel>(
             required: true,
             trim: true,
             index: true,
+            lowercase: true,
         },
         ownerId: {
             type: Schema.Types.ObjectId,

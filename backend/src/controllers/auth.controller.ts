@@ -413,16 +413,28 @@ export const verifyOtp = async (req: Request, res: Response) => {
 
       // Handle Company generation/linking
       if (pendingSignup.companyName) {
-        const company = await Company.create({
-          name: pendingSignup.companyName,
-          ownerId: user._id,
-        });
+        const normalizedName = pendingSignup.companyName.trim().toLowerCase();
+        let company = await Company.findOne({ name: normalizedName });
+
+        if (!company) {
+          company = await Company.create({
+            name: normalizedName,
+            ownerId: user._id,
+          });
+          console.log(`[AuthDebug] Created new company: "${normalizedName}" for user: ${user.email}`);
+        } else {
+          console.log(`[AuthDebug] User ${user.email} joined existing company: "${normalizedName}" (ID: ${company._id})`);
+        }
 
         // Update user with companyId
         const { default: User } = await import("../models/user.model");
         if (User) {
-          await User.findByIdAndUpdate(user._id, { companyId: company._id });
+          await User.findByIdAndUpdate(user._id, {
+            companyId: company._id,
+            companyName: company.name // Ensure consistent casing from DB
+          });
           (user as any).companyId = company._id;
+          (user as any).companyName = company.name;
         }
       }
 
