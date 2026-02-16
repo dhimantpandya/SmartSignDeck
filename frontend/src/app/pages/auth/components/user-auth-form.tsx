@@ -97,7 +97,10 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
 
       toast({ title: 'Login successful' })
       form.reset()
-      // Redirection is now handled by the useEffect watching isLoggedIn
+
+      // Immediate redirect after login
+      console.log('[UserAuthForm] Login successful, redirecting to dashboard...')
+      navigate(Routes.DASHBOARD, { replace: true })
     },
 
     onError: (error: any) => {
@@ -255,7 +258,10 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
                   login(user, refreshToken, accessToken);
 
                   toast({ title: 'Login successful' });
-                  // Redirection is now handled by the useEffect watching isLoggedIn
+
+                  // Immediate redirect after login
+                  console.log('[UserAuthForm] Google login successful, redirecting to dashboard...')
+                  navigate(Routes.DASHBOARD, { replace: true })
                 } catch (error: any) {
                   console.error('Google Sign-In Error:', error);
 
