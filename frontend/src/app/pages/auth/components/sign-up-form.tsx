@@ -251,6 +251,12 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
                   // Call backend API with mode 'register'
                   const response = await authService.firebaseLogin(idToken, 'register');
 
+                  // Fix: String "false" is truthy, so explicit check is needed
+                  const isCookieBased = (import.meta.env.VITE_COOKIE_BASED_AUTHENTICATION as unknown as string) === 'true';
+                  const refreshToken = !isCookieBased
+                    ? response.tokens?.refresh?.token ?? null
+                    : null;
+
                   const expiresIn = 600; // 10 minutes
                   localStorage.setItem('otp_expires_at', (Date.now() + expiresIn * 1000).toString());
 

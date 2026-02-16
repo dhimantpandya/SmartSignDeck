@@ -87,7 +87,7 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
       const user = mapApiUserToUser(apiUser)
 
       const refreshToken =
-        !import.meta.env.VITE_COOKIE_BASED_AUTHENTICATION
+        (import.meta.env.VITE_COOKIE_BASED_AUTHENTICATION as unknown as string) !== 'true'
           ? response.tokens?.refresh?.token ?? null
           : null
 
@@ -247,7 +247,7 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
                   const apiUser = response.user;
                   const user = mapApiUserToUser(apiUser)
 
-                  const refreshToken = !import.meta.env.VITE_COOKIE_BASED_AUTHENTICATION
+                  const refreshToken = (import.meta.env.VITE_COOKIE_BASED_AUTHENTICATION as unknown as string) !== 'true'
                     ? response.tokens?.refresh?.token ?? null
                     : null;
                   const accessToken = response.tokens?.access ?? null
