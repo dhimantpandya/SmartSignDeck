@@ -62,6 +62,15 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
         selectedFriendRef.current = selectedFriend
     }, [selectedFriend])
 
+    // Load board data FIRST, before setting up socket listeners
+    // This prevents race condition where socket messages arrive before history loads
+    useEffect(() => {
+        if (user?.companyId) {
+            console.log('[ChatSidebar] 📥 Loading board history...')
+            fetchBoardData()
+        }
+    }, [user?.companyId])
+
     useEffect(() => {
         if (!user || !socket) return
 
@@ -138,9 +147,6 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
             console.log('[ChatSidebar] 📡 Emitting join_company with:', companyId)
             socket.emit('join_company', companyId)
         }
-
-        // Load board data initially
-        fetchBoardData()
 
         return () => {
             socket.off('new_chat', handleNewChat)
