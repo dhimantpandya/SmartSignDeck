@@ -38,6 +38,12 @@ router
     userController.deleteUser,
   );
 
+router.post(
+  "/fix-company-mismatch",
+  auth(),
+  userController.fixCompanyMismatch
+);
+
 export default router;
 
 /**

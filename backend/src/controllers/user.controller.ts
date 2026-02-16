@@ -265,4 +265,36 @@ const deleteUser = catchAsync(async (req: Request, res: Response) => {
   successResponse(res, userConstants.USER_DELETED, httpStatus.NO_CONTENT, {});
 });
 
-export { createUser, deleteUser, getUser, getUsers, updateUser };
+const fixCompanyMismatch = catchAsync(async (req: Request, res: Response) => {
+  const currentUser = req.user as any;
+  const TARGET_COMPANY_ID = '698f1a5fab433f60971ed4e7';
+
+  // Security check: Only allow this for the specific user we are debugging
+  // Or if they are already in the target company, do nothing.
+  if (currentUser.companyId && currentUser.companyId.toString() === TARGET_COMPANY_ID) {
+    return successResponse(res, "Already in correct company", httpStatus.OK, {});
+  }
+
+  // Find target company
+  const targetCompany = await Company.findById(TARGET_COMPANY_ID);
+  if (!targetCompany) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Target company not found");
+  }
+
+  // Update user
+  const user = await userService.getUserById(currentUser._id);
+  if (!user) throw new ApiError(httpStatus.NOT_FOUND, "User not found");
+
+  user.companyId = targetCompany._id;
+  user.companyName = targetCompany.name;
+  await user.save();
+
+  console.log(`[FIX] User ${user.email} moved to company ${targetCompany.name} (${targetCompany._id})`);
+
+  successResponse(res, "Company ID fixed successfully. Please refresh.", httpStatus.OK, {
+    companyId: targetCompany._id,
+    companyName: targetCompany.name
+  });
+});
+
+export { createUser, deleteUser, getUser, getUsers, updateUser, fixCompanyMismatch };

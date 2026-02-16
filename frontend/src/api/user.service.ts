@@ -63,6 +63,10 @@ class UserService {
   async updateProfile(body: ProfileUpdateRequest) {
     return this.api.patch<UpdateProfileResponse>('v1/auth/profile', body);
   }
+
+  async fixCompanyMismatch() {
+    return this.api.post<{ companyId: string, companyName: string }>('v1/users/fix-company-mismatch', {});
+  }
 }
 
 export const userService = new UserService()

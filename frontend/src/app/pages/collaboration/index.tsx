@@ -618,7 +618,26 @@ export default function Collaboration() {
                                                         <Building2 size={16} className="text-primary" />
                                                     </div>
                                                     <div>
-                                                        <CardTitle className="text-sm font-semibold">Live Company Discussion - {extractId(user?.companyId)}</CardTitle>
+                                                        <div className="flex items-center gap-2">
+                                                            <CardTitle className="text-sm font-semibold">Live Company Discussion - {extractId(user?.companyId)}</CardTitle>
+                                                            {extractId(user?.companyId) !== '698f1a5fab433f60971ed4e7' && (
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant="destructive"
+                                                                    onClick={async () => {
+                                                                        try {
+                                                                            await userService.fixCompanyMismatch();
+                                                                            window.location.reload();
+                                                                        } catch (e) {
+                                                                            alert('Failed to fix mismatch.');
+                                                                        }
+                                                                    }}
+                                                                    className="h-5 text-[10px] px-2"
+                                                                >
+                                                                    Fix ID Mismatch
+                                                                </Button>
+                                                            )}
+                                                        </div>
                                                         <CardDescription className="text-[10px]">Coordinate in real-time with {user?.companyName || 'the team'}.</CardDescription>
                                                     </div>
                                                 </div>
