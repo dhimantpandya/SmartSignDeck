@@ -659,7 +659,8 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
                     {/* Connection Diagnostic */}
                     <div className="px-3 py-1 bg-muted/5 border-t text-[8px] text-muted-foreground/40 flex justify-between items-center">
                         <span>Socket: {socket?.connected ? '✅' : '❌'} {socket?.id?.substring(0, 6)}</span>
-                        <span>User: {extractId(user).substring(0, 8)}</span>
+                        <span>Comp: {extractId(user?.companyId).substring(0, 6)}...</span>
+                        <span>User: {extractId(user).substring(0, 6)}...</span>
                     </div>
                 </Tabs>
             </div>
