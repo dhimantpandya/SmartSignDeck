@@ -31,9 +31,12 @@ const initSocket = (server: HttpServer | HttpsServer): Server => {
         // Join organization room for company chat
         socket.on("join_company", (companyId: any) => {
             const cid = cleanId(companyId);
-            if (!cid) return;
+            if (!cid) {
+                logger.warn(`[SOCKET] Socket ${socket.id} tried to join invalid company: ${companyId}`);
+                return;
+            }
             socket.join(`company_${cid}`);
-            logger.info(`[SOCKET] Socket ${socket.id} joined company: ${cid}`);
+            logger.info(`[SOCKET] Socket ${socket.id} joined company: ${cid} (Room: company_${cid})`);
         });
 
         // Join individual room for personal notifications/DMs
@@ -90,7 +93,10 @@ const broadcastChat = (data: {
     avatar?: string;
     created_at?: Date;
 }) => {
-    if (!io) return;
+    if (!io) {
+        logger.error("[SOCKET] broadcastChat called but IO not initialized!");
+        return;
+    }
 
     const companyId = cleanId(data.companyId);
     const recipientId = cleanId(data.recipientId);
@@ -106,7 +112,7 @@ const broadcastChat = (data: {
     };
 
     if (companyId) {
-        logger.info(`[SOCKET] Broadcasting company chat to company_${companyId}`);
+        logger.info(`[SOCKET] Broadcasting company chat to company_${companyId}. Payload sender: ${senderId}`);
         io.to(`company_${companyId}`).emit("new_chat", { ...payload, type: "company", companyId });
     } else if (recipientId) {
         logger.info(`[SOCKET] Broadcasting private chat from ${senderId} to ${recipientId}`);

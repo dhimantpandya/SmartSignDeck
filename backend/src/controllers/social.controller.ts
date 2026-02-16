@@ -23,6 +23,8 @@ const sendMessage = catchAsync(async (req: Request, res: Response) => {
     const cRecipientId = cleanId(recipientId);
     const cCompanyId = cleanId(companyId);
 
+    console.log(`[SOCIAL_CTRL] Sending msg. Text: "${text.substring(0, 10)}...", CompID: ${companyId} -> Clean: ${cCompanyId}`);
+
     // 1. Broadcast for real-time chat window synchronization
     broadcastChat({
         text,
