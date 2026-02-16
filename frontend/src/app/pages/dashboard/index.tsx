@@ -139,9 +139,11 @@ export default function Dashboard() {
             <div className='w-full overflow-x-auto pb-2'>
               <TabsList>
                 <TabsTrigger value='overview'>Overview</TabsTrigger>
-                <TabsTrigger value='templates' className='gap-2'>
-                  <IconLayout size={16} /> Templates ({stats?.totalTemplates ?? 0})
-                </TabsTrigger>
+                {user?.role !== 'advertiser' && (
+                  <TabsTrigger value='templates' className='gap-2'>
+                    <IconLayout size={16} /> Templates ({stats?.totalTemplates ?? 0})
+                  </TabsTrigger>
+                )}
                 <TabsTrigger value='screens' className='gap-2'>
                   <IconDeviceTv size={16} /> Screens ({stats?.totalScreens ?? 0})
                 </TabsTrigger>
@@ -174,11 +176,13 @@ export default function Dashboard() {
                       <CardDescription>Standard operations for your signage.</CardDescription>
                     </CardHeader>
                     <CardContent className="grid grid-cols-2 gap-2">
-                      <Button variant="outline" className="flex flex-col h-20 gap-1" onClick={() => navigate(`${Routes.TEMPLATES}?create=true`)}>
-                        <IconLayout size={20} />
-                        <span className="text-xs">New Template</span>
-                      </Button>
-                      <Button variant="outline" className="flex flex-col h-20 gap-1" onClick={() => navigate(`${Routes.SCREENS}?create=true`)}>
+                      {user?.role !== 'advertiser' && (
+                        <Button variant="outline" className="flex flex-col h-20 gap-1" onClick={() => navigate(`${Routes.TEMPLATES}?create=true`)}>
+                          <IconLayout size={20} />
+                          <span className="text-xs">New Template</span>
+                        </Button>
+                      )}
+                      <Button variant="outline" className={cn("flex flex-col h-20 gap-1", user?.role === 'advertiser' && "col-span-2")} onClick={() => navigate(`${Routes.SCREENS}?create=true`)}>
                         <IconDeviceTv size={20} />
                         <span className="text-xs">Add Screen</span>
                       </Button>

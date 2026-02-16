@@ -73,6 +73,24 @@ const processRequest = catchAsync(async (req: Request, res: Response) => {
         }
     }
 
+    // 🔔 Notify the requester about the status update
+    try {
+        const title = status === 'APPROVED' ? "Request Approved" : "Request Rejected";
+        const message = `Your request to ${request.type === 'DELETE' ? 'delete a user' : 'update a user role'} was ${status.toLowerCase()} by the Super Admin.`;
+
+        await notificationService.createNotification(
+            request.requesterId.toString(),
+            "system_alert",
+            title,
+            message,
+            (req.user as any).id,
+            { requestId: request._id, status }
+        );
+        console.log(`[AdminRequest] Notification sent to ${request.requesterId} for request ${request._id}`);
+    } catch (notifErr) {
+        console.error("[AdminRequest] Notification failed:", notifErr);
+    }
+
     successResponse(res, `Request ${status.toLowerCase()} successfully`, httpStatus.OK, request);
 });
 
