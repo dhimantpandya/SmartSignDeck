@@ -41,8 +41,12 @@ const initSocket = (server: HttpServer | HttpsServer): Server => {
                 logger.warn(`[SOCKET] ⚠️ Socket ${socket.id} tried to join invalid company. Raw: ${companyId}`);
                 return;
             }
-            socket.join(`company_${cid}`);
-            logger.info(`[SOCKET] Socket ${socket.id} joined company: ${cid} (Room: company_${cid})`);
+            const roomName = `company_${cid}`;
+            socket.join(roomName);
+            logger.info(`[SOCKET] ✅ Socket ${socket.id} joined company room: "${roomName}" | Raw ID: ${JSON.stringify(companyId)} | Cleaned: ${cid}`);
+
+            // Emit confirmation back to client
+            socket.emit('room_joined', { room: roomName, companyId: cid });
 
             // Send current list of online users in this company (basic implementation)
             // In a real app, we'd filter this list by companyId, but for now we rely on the client to filter by known ids
@@ -151,8 +155,12 @@ const broadcastChat = (data: {
     };
 
     if (companyId) {
-        logger.info(`[SOCKET] Broadcasting company chat to company_${companyId}. Payload sender: ${senderId}`);
-        io.to(`company_${companyId}`).emit("new_chat", { ...payload, type: "company", companyId });
+        const roomName = `company_${companyId}`;
+        const socketsInRoom = io.sockets.adapter.rooms.get(roomName);
+        const socketCount = socketsInRoom ? socketsInRoom.size : 0;
+        logger.info(`[SOCKET] 📢 Broadcasting company chat to room "${roomName}" | Sockets in room: ${socketCount} | Sender: ${senderId} | Raw companyId: ${JSON.stringify(data.companyId)} | Cleaned: ${companyId}`);
+        io.to(roomName).emit("new_chat", { ...payload, type: "company", companyId });
+        logger.info(`[SOCKET] ✅ Company message broadcast complete`);
     } else if (recipientId) {
         logger.info(`[SOCKET] Broadcasting private chat from ${senderId} to ${recipientId}`);
         const privatePayload = { ...payload, type: "private", recipientId, senderId };

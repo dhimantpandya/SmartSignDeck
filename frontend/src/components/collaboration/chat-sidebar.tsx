@@ -123,10 +123,21 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
         socket.on('friend_request_received', handleFriendRequestReceived)
         socket.on('friend_request_accepted', handleFriendRequestAccepted)
 
+        // Room join confirmation listener
+        const handleRoomJoined = (data: any) => {
+            console.log('[ChatSidebar] ✅ Room joined confirmation:', data)
+        }
+        socket.on('room_joined', handleRoomJoined)
+
         // Ensure rooms are joined
         const uid = extractId(user)
+        const companyId = extractId(user.companyId)
+        console.log('[ChatSidebar] 🔌 Joining rooms:', { uid, companyId, rawCompanyId: user.companyId })
         if (uid) socket.emit('join_user', uid)
-        if (user.companyId) socket.emit('join_company', extractId(user.companyId))
+        if (user.companyId) {
+            console.log('[ChatSidebar] 📡 Emitting join_company with:', companyId)
+            socket.emit('join_company', companyId)
+        }
 
         // Load board data initially
         fetchBoardData()
@@ -135,6 +146,7 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
             socket.off('new_chat', handleNewChat)
             socket.off('friend_request_received', handleFriendRequestReceived)
             socket.off('friend_request_accepted', handleFriendRequestAccepted)
+            socket.off('room_joined', handleRoomJoined)
         }
     }, [user, socket]) // Stable dependencies, no selectedFriend here
 
