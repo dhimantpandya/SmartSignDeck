@@ -3,6 +3,7 @@ import httpStatus from "http-status";
 import { type DeleteResult } from "mongodb";
 import mongoose, { type FilterQuery, type QueryOptions } from "mongoose";
 import User from "../models/user.model";
+import Company from "../models/company.model";
 import { type CustomPaginateResult } from "../models/plugins/paginate.plugin";
 import { type IUser } from "../models/user.model";
 import ApiError from "../utils/ApiError";
@@ -108,6 +109,30 @@ const updateUserById = async (
   const user = await getUserById(userId);
   if (!user) {
     throw new ApiError(httpStatus.NOT_FOUND, "User not found");
+  }
+
+  // Deduplication: Link to existing company if name matches
+  if (updateBody.companyName) {
+    const normalizedName = updateBody.companyName.trim().toLowerCase();
+
+    // Find existing company
+    let company = await Company.findOne({ name: normalizedName });
+
+    if (!company) {
+      // Create new if not exists
+      company = await Company.create({
+        name: normalizedName,
+        ownerId: user._id,
+        isActive: true
+      });
+      console.log(`[UserUpdate] Created new company: "${normalizedName}" for user ${user.email}`);
+    } else {
+      console.log(`[UserUpdate] Linking user ${user.email} to existing company: "${normalizedName}" (${company._id})`);
+    }
+
+    // Update user's company fields
+    updateBody.companyId = company._id;
+    updateBody.companyName = company.name; // Keep consistency
   }
 
   if (updateBody.email) {
