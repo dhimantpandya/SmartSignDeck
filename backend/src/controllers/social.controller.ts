@@ -3,6 +3,7 @@ import { Request, Response } from "express";
 import catchAsync from "../utils/catchAsync";
 import socialService from "../services/social.service";
 import successResponse from "../helpers/responses/successResponse";
+import User from "../models/user.model";
 
 const sendMessage = catchAsync(async (req: Request, res: Response) => {
     const { text, recipientId, companyId } = req.body;
@@ -16,7 +17,7 @@ const sendMessage = catchAsync(async (req: Request, res: Response) => {
     );
 
     // Dynamic import to avoid circular dependency
-    const { broadcastChat, cleanId } = await import("../services/socket.service");
+    const { broadcastChat, cleanId, emitToUser } = await import("../services/socket.service");
     const { default: notificationService } = await import("../services/notification.service");
 
     // Use robust cleanId which now handles objects/definitions
@@ -36,6 +37,31 @@ const sendMessage = catchAsync(async (req: Request, res: Response) => {
         avatar: user.avatar,
         created_at: message.created_at
     });
+
+    // 1.5 FALLBACK: Also emit to individual users to ensure delivery (Bypasses Room Join issues)
+    // This is critical if a user is "Online" but somehow not in the company room
+    if (cCompanyId) {
+        // Find all members of this company
+        const members = await User.find({ companyId: cCompanyId }).select('_id');
+        console.log(`[SOCIAL_CTRL] 🛡️ Fallback: Broadcasting to ${members.length} members individually`);
+
+        members.forEach(member => {
+            const memberId = member._id.toString();
+            // Don't emit to sender (optional, but frontend handles dupes)
+            if (memberId !== cSenderId) {
+                emitToUser(memberId, 'new_chat', {
+                    text,
+                    recipientId: cRecipientId, // Keep original recipient logic (null for company)
+                    companyId: cCompanyId,
+                    senderId: cSenderId,
+                    senderName: `${user.first_name} ${user.last_name}`,
+                    avatar: user.avatar,
+                    created_at: message.created_at,
+                    type: 'company' // Explicitly set type
+                });
+            }
+        });
+    }
 
     // 2. Create notification for badges/toasts
     if (cRecipientId) {
