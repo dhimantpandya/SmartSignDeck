@@ -43,7 +43,7 @@ interface NotificationContextType {
 const NotificationContext = createContext<NotificationContextType | null>(null)
 
 export const NotificationProvider = ({ children }: { children: React.ReactNode }) => {
-    const { user } = useAuth()
+    const { user, refreshUser } = useAuth()
     const { toast } = useToast()
     const [socket, setSocket] = useState<Socket | null>(null)
     const [notifications, setNotifications] = useState<Notification[]>([])
@@ -53,6 +53,13 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
     const [unreadRequestCount, setUnreadRequestCount] = useState(0)
     const [isChatOpen, setIsChatOpen] = useState(false)
     const [suppressedChatSections, setSuppressedChatSections] = useState<Set<string>>(new Set())
+
+    // 0. Force Refresh User on Mount to ensure CompanyID is up to date (Critical for merged companies)
+    useEffect(() => {
+        if (tokenStore.getRefreshToken()) {
+            refreshUser();
+        }
+    }, []);
 
     // 1. Initialize API & Socket
     useEffect(() => {
