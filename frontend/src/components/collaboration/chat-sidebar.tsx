@@ -277,9 +277,9 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
 
         try {
             const recipientId = activeTab === 'private' ? extractId(selectedFriend) : undefined
-            const companyId = activeTab === 'company' ? user.companyId : undefined
+            const companyId = activeTab === 'company' ? extractId(user.companyId) : undefined
 
-            console.log('[ChatSidebar] Sending message:', { text, recipientId, companyId })
+            console.log('[ChatSidebar] Sending message:', { text, recipientId, companyId, rawCompanyId: user.companyId })
 
             // Optimistic update
             const optimisticMsg = {
