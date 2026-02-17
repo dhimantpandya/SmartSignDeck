@@ -18,7 +18,7 @@ import { Folder } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 
 export default function RecycleBin() {
-    const [activeTab, setActiveTab] = useState('screens')
+    const [, setActiveTab] = useState('screens')
     const [confirmDelete, setConfirmDelete] = useState<{ id: string, type: 'screen' | 'template' | 'group' } | null>(null)
     const queryClient = useQueryClient()
 
