@@ -13,12 +13,14 @@ import { playlistService } from '@/api/playlist.service'
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
 import { Badge } from '@/components/ui/badge'
 import PlaylistForm from './components/playlist-form'
+import { useAuth } from '@/hooks/use-auth'
 
 export default function Playlists() {
     const [showForm, setShowForm] = useState(false)
     const [editingPlaylist, setEditingPlaylist] = useState<any>(null)
     const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
     const queryClient = useQueryClient()
+    const { user } = useAuth()
 
     const { data, isLoading } = useQuery({
         queryKey: ['playlists', user?.id],
