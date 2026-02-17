@@ -7,8 +7,8 @@ import ApiError from "../utils/ApiError";
 const createTemplateGroup = catchAsync(async (req, res) => {
     const group = await templateGroupService.createTemplateGroup({
         ...req.body,
-        createdBy: req.user.id,
-        companyId: req.user.companyId,
+        createdBy: (req as any).user.id,
+        companyId: (req as any).user.companyId,
     });
     res.status(httpStatus.CREATED).send(group);
 });
@@ -18,7 +18,7 @@ const getTemplateGroups = catchAsync(async (req, res) => {
     const options = pick(req.query, ["sortBy", "limit", "page"]);
 
     // Ensure users only see groups from their company
-    filter.companyId = req.user.companyId;
+    filter.companyId = (req as any).user.companyId;
 
     const result = await templateGroupService.queryTemplateGroups(filter, options);
     res.send(result);
@@ -26,7 +26,7 @@ const getTemplateGroups = catchAsync(async (req, res) => {
 
 const getTemplateGroup = catchAsync(async (req, res) => {
     const group = await templateGroupService.getTemplateGroupById(req.params.groupId);
-    if (!group || group.companyId.toString() !== req.user.companyId.toString()) {
+    if (!group || group.companyId.toString() !== (req as any).user.companyId.toString()) {
         throw new ApiError(httpStatus.NOT_FOUND, "Template group not found");
     }
     res.send(group);

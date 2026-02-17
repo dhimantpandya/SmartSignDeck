@@ -5,7 +5,7 @@ import { NotificationBell } from '@/components/notification-bell'
 import { BreadcrumbNavigation } from '@/components/ui/breadcrumb-navigation'
 import { IconHome, IconLayout, IconPlus, IconTrash, IconEdit, IconCopy } from '@tabler/icons-react'
 import { Button } from '@/components/custom/button'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import TemplateEditor from './components/template-editor'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { templateService } from '@/api/template.service'
@@ -14,17 +14,16 @@ import { toast } from '@/components/ui/use-toast'
 import Loader from '@/components/loader'
 import { useAuth } from '@/hooks/use-auth'
 import { Badge } from '@/components/ui/badge'
-import { Globe, Lock, User, Eye } from 'lucide-react'
+import { Globe, Lock, User, Eye, FolderPlus, Folder } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useSearchParams } from 'react-router-dom'
 import { PreviewModal } from '@/components/preview-modal'
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
 import { templateGroupService } from '@/api/template-group.service'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { FolderPlus, Folder, MoreVertical, Trash2 } from 'lucide-react'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 
 
@@ -64,6 +63,13 @@ export default function Templates() {
         queryKey: ['template-groups', user?.id],
         queryFn: () => templateGroupService.getGroups({ createdBy: user?.id }),
         enabled: !!user?.id,
+    })
+
+    // Query for global public templates
+    const { data: globalTemplatesData, isLoading: isLoadingGlobal } = useQuery({
+        queryKey: ['templates', 'global'],
+        queryFn: () => templateService.getTemplates({ isPublic: true, sortBy: 'created_at:desc' }),
+        enabled: true,
     })
 
     const createGroupMutation = useMutation({
@@ -188,7 +194,7 @@ export default function Templates() {
                         <DropdownMenuContent align="start" className="w-56">
                             <DropdownMenuLabel>Assign to Group</DropdownMenuLabel>
                             <DropdownMenuSeparator />
-                            {groupsData?.results?.length > 0 ? (
+                            {groupsData?.results && groupsData.results.length > 0 ? (
                                 groupsData.results.map((group: any) => (
                                     <DropdownMenuItem
                                         key={group.id}
@@ -329,7 +335,7 @@ export default function Templates() {
                                 <div className="flex h-64 items-center justify-center">
                                     <Loader />
                                 </div>
-                            ) : groupsData?.results?.length > 0 ? (
+                            ) : groupsData?.results && groupsData.results.length > 0 ? (
                                 <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
                                     {groupsData.results.map((group: any) => (
                                         <Card key={group.id} className="overflow-hidden border-dashed border-2 hover:border-primary transition-colors cursor-pointer group">

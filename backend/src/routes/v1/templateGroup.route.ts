@@ -1,5 +1,5 @@
 import express, { type Router } from "express";
-import auth from "../../middlewares/auth";
+import auth from "../../middleware/auth";
 import templateGroupController from "../../controllers/templateGroup.controller";
 
 const router: Router = express.Router();
