@@ -43,11 +43,11 @@ export default function Templates() {
         }
     }, [searchParams, setSearchParams])
 
-    // Query for user's own templates
+    // Query for user's own company templates
     const { data: myTemplatesData, isLoading: isLoadingMy } = useQuery({
-        queryKey: ['templates', 'my', user?.id],
-        queryFn: () => templateService.getTemplates({ createdBy: user?.id }),
-        enabled: !!user?.id,
+        queryKey: ['templates', 'my', user?.companyId],
+        queryFn: () => templateService.getTemplates({ sortBy: 'created_at:desc' }),
+        enabled: !!user?.companyId,
     })
 
     // Query for global public templates (from other users)

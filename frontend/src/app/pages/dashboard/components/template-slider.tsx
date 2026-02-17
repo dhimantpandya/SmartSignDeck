@@ -1,14 +1,14 @@
 import { useNavigate } from 'react-router-dom'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/custom/button'
-import { IconLayout, IconPlus, IconArrowRight, IconCopy } from '@tabler/icons-react'
+import { IconLayout, IconPlus, IconArrowRight, IconCopy, IconEye as Eye } from '@tabler/icons-react'
 import { Routes } from '@/utilities/routes'
 import { Template } from '@/api/template.service'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
 
 interface TemplateSliderProps {
-    templates: Template[]
+    templates: any[] // These are now "Active Screens" with template info
     isLoading: boolean
     isNewUser: boolean
 }
@@ -68,42 +68,87 @@ export const TemplateSlider = ({ templates, isLoading, isNewUser }: TemplateSlid
                         </CardContent>
                     </Card>
 
-                    {/* Template Cards */}
-                    {templates.map((template) => (
-                        <Card
-                            key={template.id || template._id}
-                            className="w-[260px] md:w-[300px] flex-shrink-0 snap-start overflow-hidden hover:shadow-lg transition-all cursor-pointer group/card border-primary/5"
-                            onClick={() => navigate(`${Routes.TEMPLATES}?id=${template.id || template._id}`)}
-                        >
-                            <CardContent className="p-0 h-[200px] flex flex-col">
-                                {/* Preview Area */}
-                                <div className="flex-1 bg-gradient-to-br from-muted/50 to-muted relative flex items-center justify-center overflow-hidden">
-                                    <IconLayout size={48} className="text-primary/20 group-hover/card:scale-110 transition-transform duration-500" />
+                    {/* Template/Screen Cards */}
+                    {templates.map((item) => {
+                        const screen = item;
+                        const template = item.templateId;
+                        if (!template) return null;
 
-                                    {/* Overlay */}
-                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/card:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
-                                        <Button size="sm" variant="secondary" className="scale-90 group-hover/card:scale-100 transition-transform">
-                                            <IconCopy size={14} className="mr-2" /> Use This
-                                        </Button>
-                                    </div>
+                        // Content Extraction Logic
+                        let previewUrl = '';
+                        let previewType: 'image' | 'video' | 'none' = 'none';
 
-                                    {template.isPublic && (
-                                        <div className="absolute top-3 left-3 bg-blue-500/90 backdrop-blur-sm text-white text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
-                                            Global
+                        if (screen.defaultContent) {
+                            Object.values(screen.defaultContent).forEach((zone: any) => {
+                                if (previewUrl) return; // Already found one
+
+                                if (zone.sourceType === 'playlist' && zone.playlist?.[0]?.url) {
+                                    previewUrl = zone.playlist[0].url;
+                                    previewType = zone.playlist[0].type;
+                                } else if (zone.media?.[0]?.url) {
+                                    previewUrl = zone.media[0].url;
+                                    previewType = zone.media[0].type || 'image';
+                                }
+                            });
+                        }
+
+                        return (
+                            <Card
+                                key={screen.id || screen._id}
+                                className="w-[260px] md:w-[300px] flex-shrink-0 snap-start overflow-hidden hover:shadow-lg transition-all cursor-pointer group/card border-primary/5"
+                                onClick={() => navigate(`${Routes.TEMPLATES}?id=${template.id || template._id}`)}
+                            >
+                                <CardContent className="p-0 h-[200px] flex flex-col">
+                                    {/* Preview Area */}
+                                    <div className="flex-1 bg-gradient-to-br from-muted/50 to-muted relative flex items-center justify-center overflow-hidden">
+                                        {previewUrl ? (
+                                            previewType === 'video' ? (
+                                                <video
+                                                    src={previewUrl}
+                                                    className="absolute inset-0 w-full h-full object-cover opacity-80 group-hover/card:scale-105 transition-transform duration-700"
+                                                    muted
+                                                    loop
+                                                    onMouseOver={(e) => e.currentTarget.play()}
+                                                    onMouseOut={(e) => {
+                                                        e.currentTarget.pause();
+                                                        e.currentTarget.currentTime = 0;
+                                                    }}
+                                                />
+                                            ) : (
+                                                <img
+                                                    src={previewUrl}
+                                                    alt={template.name}
+                                                    className="absolute inset-0 w-full h-full object-cover opacity-80 group-hover/card:scale-105 transition-transform duration-700"
+                                                />
+                                            )
+                                        ) : (
+                                            <IconLayout size={48} className="text-primary/20 group-hover/card:scale-110 transition-transform duration-500" />
+                                        )}
+
+                                        {/* Overlay */}
+                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/card:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
+                                            <Button size="sm" variant="secondary" className="scale-90 group-hover/card:scale-100 transition-transform">
+                                                <Eye size={14} className="mr-2" /> View Layout
+                                            </Button>
                                         </div>
-                                    )}
-                                </div>
-                                {/* Info Area */}
-                                <div className="p-4 bg-background border-t">
-                                    <h3 className="font-semibold text-sm truncate group-hover/card:text-primary transition-colors">{template.name}</h3>
-                                    <div className="flex items-center justify-between mt-1">
-                                        <p className="text-[10px] text-muted-foreground uppercase tracking-tight">{template.resolution}</p>
-                                        <p className="text-[10px] bg-muted px-2 py-0.5 rounded-md font-medium">{template.zones?.length || 0} Zones</p>
+
+                                        <div className="absolute top-3 left-3 bg-green-500/90 backdrop-blur-sm text-white text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider flex items-center gap-1">
+                                            <div className={cn("h-1.5 w-1.5 rounded-full", screen.status === 'online' ? "bg-white animate-pulse" : "bg-white/50")} />
+                                            {screen.name}
+                                        </div>
                                     </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    ))}
+                                    {/* Info Area */}
+                                    <div className="p-4 bg-background border-t">
+                                        <h3 className="font-semibold text-sm truncate group-hover/card:text-primary transition-colors">{template.name}</h3>
+                                        <div className="flex items-center justify-between mt-1">
+                                            <p className="text-[10px] text-muted-foreground uppercase tracking-tight">{template.resolution}</p>
+                                            <p className="text-[10px] bg-muted px-2 py-0.5 rounded-md font-medium">{template.zones?.length || 0} Zones</p>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        )
+                    })}
 
                     {/* Final spacer for padding-right simulation */}
                     <div className="w-1 flex-shrink-0" />

@@ -50,13 +50,19 @@ export default function Dashboard() {
   })
 
   const { data: recentScreens, isLoading: isScreensLoading } = useQuery({
-    queryKey: ['recent-screens', user?.id],
-    queryFn: () => screenService.getScreens({ limit: 5, createdBy: user?.id, sortBy: 'created_at:desc' }),
+    queryKey: ['recent-screens', user?.companyId],
+    queryFn: () => screenService.getScreens({ limit: 5, sortBy: 'created_at:desc' }),
   })
 
   const { data: recentTemplates, isLoading: isTemplatesLoading } = useQuery({
-    queryKey: ['recent-templates', user?.id],
-    queryFn: () => templateService.getTemplates({ limit: 5, createdBy: user?.id, sortBy: 'created_at:desc' }),
+    queryKey: ['recent-templates', user?.companyId],
+    queryFn: () => templateService.getTemplates({ limit: 5, sortBy: 'created_at:desc' }),
+  })
+
+  const { data: activeContent, isLoading: isActiveContentLoading } = useQuery({
+    queryKey: ['active-content', user?.companyId],
+    queryFn: () => signageService.getActiveContent(),
+    enabled: !!user?.companyId
   })
 
   const { data: timelineData } = useQuery({
@@ -207,8 +213,8 @@ export default function Dashboard() {
 
               <div className="py-2">
                 <TemplateSlider
-                  templates={(stats?.totalTemplates ?? 0) > 0 ? (recentTemplates?.results || []) : (globalTemplates?.results || [])}
-                  isLoading={isTemplatesLoading}
+                  templates={activeContent || []}
+                  isLoading={isActiveContentLoading}
                   isNewUser={(stats?.totalTemplates ?? 0) === 0}
                 />
               </div>

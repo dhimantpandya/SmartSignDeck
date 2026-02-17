@@ -5,5 +5,6 @@ import auth from "../../middleware/auth";
 const router = express.Router();
 
 router.get("/stats", auth(), signageController.getStats);
+router.get("/active-content", auth(), signageController.getActiveContent);
 
 export default router;

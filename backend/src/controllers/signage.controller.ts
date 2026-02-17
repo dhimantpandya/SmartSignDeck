@@ -43,6 +43,25 @@ const getStats = catchAsync(async (req: Request, res: Response) => {
   );
 });
 
+const getActiveContent = catchAsync(async (req: Request, res: Response) => {
+  const user = req.user as any;
+  const companyId = user?.companyId?.toString();
+
+  if (!companyId) {
+    return successResponse(res, "No active content found (No Company)", httpStatus.OK, []);
+  }
+
+  const activeContent = await signageService.getActiveContent(companyId);
+
+  successResponse(
+    res,
+    "Active displays retrieved successfully",
+    httpStatus.OK,
+    activeContent
+  );
+});
+
 export default {
   getStats,
+  getActiveContent
 };
