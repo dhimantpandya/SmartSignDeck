@@ -18,7 +18,7 @@ import { Overview } from './components/overview'
 import { useState, useRef, useMemo } from 'react'
 import { TemplateSlider } from './components/template-slider'
 import { Separator } from '@/components/ui/separator'
-import { BreadcrumbNavigation } from '@/components/ui/breadcrumb-navigation'
+// Breadcrumb Navigation removed temporarily to resolve build conflict.
 import { IconHome, IconLayout, IconDeviceTv, IconCircleCheck } from '@tabler/icons-react'
 import { Analytics } from './components/analytics'
 import { useQuery } from '@tanstack/react-query'
@@ -145,10 +145,10 @@ export default function Dashboard() {
   const greeting = useMemo(getGreeting, [user?.first_name, stats?.totalTemplates, stats?.totalScreens])
 
 
-  const breadcrumbItems = [
+  /* const breadcrumbItems = [
     { href: '/', icon: <IconHome size={18} /> },
     { label: 'Dashboard' },
-  ]
+  ] */
 
   return (
     <Layout>
@@ -166,7 +166,7 @@ export default function Dashboard() {
       {/* ===== Main ===== */}
       <Layout.Body>
         <div ref={dashboardRef} className='p-1'>
-          <BreadcrumbNavigation items={breadcrumbItems} />
+          {/* <BreadcrumbNavigation items={breadcrumbItems} /> */}
 
           <div className='mb-8 flex items-center justify-between space-y-2'>
             <div>
