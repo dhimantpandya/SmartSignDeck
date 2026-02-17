@@ -24,7 +24,16 @@ const queryTemplateGroups = async (
     filter: FilterQuery<ITemplateGroup>,
     options: CustomPaginateOptions,
 ): Promise<CustomPaginateResult<ITemplateGroup>> => {
-    const finalFilter = { ...filter, deletedAt: null };
+    // If 'trashed' is specifically passed as true, we look for deleted items
+    // Otherwise, we default to only non-deleted items
+    const finalFilter = { ...filter };
+    if (filter.trashed === 'true') {
+        finalFilter.deletedAt = { $ne: null };
+        delete finalFilter.trashed;
+    } else {
+        finalFilter.deletedAt = null;
+    }
+
     const groups = await TemplateGroup.paginate(finalFilter, options);
     return groups;
 };
@@ -73,6 +82,35 @@ const deleteTemplateGroupById = async (groupId: string): Promise<ITemplateGroup 
 };
 
 /**
+ * Restore template group by id
+ * @param {string} groupId
+ * @returns {Promise<ITemplateGroup | null>}
+ */
+const restoreTemplateGroupById = async (groupId: string): Promise<ITemplateGroup | null> => {
+    const group = await TemplateGroup.findById(groupId);
+    if (!group) {
+        throw new ApiError(httpStatus.NOT_FOUND, "Template group not found");
+    }
+    group.deletedAt = null;
+    await group.save();
+    return group;
+};
+
+/**
+ * Permanent delete template group by id
+ * @param {string} groupId
+ * @returns {Promise<ITemplateGroup | null>}
+ */
+const permanentDeleteTemplateGroupById = async (groupId: string): Promise<ITemplateGroup | null> => {
+    const group = await TemplateGroup.findById(groupId);
+    if (!group) {
+        throw new ApiError(httpStatus.NOT_FOUND, "Template group not found");
+    }
+    await group.deleteOne();
+    return group;
+};
+
+/**
  * Add templates to group
  * @param {string} groupId
  * @param {string[]} templateIds
@@ -95,11 +133,34 @@ const addTemplatesToGroup = async (groupId: string, templateIds: string[]): Prom
     return group;
 };
 
+/**
+ * Remove templates from group
+ * @param {string} groupId
+ * @param {string[]} templateIds
+ * @returns {Promise<ITemplateGroup | null>}
+ */
+const removeTemplatesFromGroup = async (groupId: string, templateIds: string[]): Promise<ITemplateGroup | null> => {
+    const group = await TemplateGroup.findById(groupId);
+    if (!group) {
+        throw new ApiError(httpStatus.NOT_FOUND, "Template group not found");
+    }
+
+    const idsToRemove = templateIds.map(id => new (require('mongoose')).Types.ObjectId(id));
+    // @ts-ignore
+    group.templates = group.templates.filter(t => !templateIds.includes(t.toString()) && !templateIds.includes(t._id?.toString()));
+
+    await group.save();
+    return group;
+};
+
 export default {
     createTemplateGroup,
     queryTemplateGroups,
     getTemplateGroupById,
     updateTemplateGroupById,
     deleteTemplateGroupById,
-    addTemplatesToGroup
+    restoreTemplateGroupById,
+    permanentDeleteTemplateGroupById,
+    addTemplatesToGroup,
+    removeTemplatesFromGroup
 };

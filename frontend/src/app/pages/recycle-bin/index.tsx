@@ -13,11 +13,13 @@ import { toast } from '@/components/ui/use-toast'
 import Loader from '@/components/loader'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
+import { templateGroupService } from '@/api/template-group.service'
+import { Folder } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 
 export default function RecycleBin() {
-    const [, setActiveTab] = useState('screens')
-    const [confirmDelete, setConfirmDelete] = useState<{ id: string, type: 'screen' | 'template' } | null>(null)
+    const [activeTab, setActiveTab] = useState('screens')
+    const [confirmDelete, setConfirmDelete] = useState<{ id: string, type: 'screen' | 'template' | 'group' } | null>(null)
     const queryClient = useQueryClient()
 
     const { data: screensData, isLoading: isScreensLoading } = useQuery({
@@ -28,6 +30,11 @@ export default function RecycleBin() {
     const { data: templatesData, isLoading: isTemplatesLoading } = useQuery({
         queryKey: ['templates', 'trashed'],
         queryFn: () => templateService.getTemplates({ trashed: 'true', sortBy: 'updated_at:desc', limit: 100 }),
+    })
+
+    const { data: groupsData, isLoading: isGroupsLoading } = useQuery({
+        queryKey: ['template-groups', 'trashed'],
+        queryFn: () => templateGroupService.getGroups({ trashed: 'true', sortBy: 'updated_at:desc', limit: 100 }),
     })
 
     const restoreScreenMutation = useMutation({
@@ -63,6 +70,24 @@ export default function RecycleBin() {
             queryClient.invalidateQueries({ queryKey: ['templates'] })
             queryClient.invalidateQueries({ queryKey: ['dashboard'] })
             toast({ title: 'Template permanently deleted' })
+        },
+    })
+
+    const restoreGroupMutation = useMutation({
+        mutationFn: (id: string) => templateGroupService.restoreGroup(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['template-groups'] })
+            queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+            toast({ title: 'Group restored' })
+        },
+    })
+
+    const permanentDeleteGroupMutation = useMutation({
+        mutationFn: (id: string) => templateGroupService.permanentDeleteGroup(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['template-groups'] })
+            queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+            toast({ title: 'Group permanently deleted' })
         },
     })
 
@@ -106,6 +131,9 @@ export default function RecycleBin() {
                         </TabsTrigger>
                         <TabsTrigger value='templates'>
                             Templates ({templatesData?.results?.length || 0})
+                        </TabsTrigger>
+                        <TabsTrigger value='groups'>
+                            Groups ({groupsData?.results?.length || 0})
                         </TabsTrigger>
                     </TabsList>
 
@@ -196,6 +224,56 @@ export default function RecycleBin() {
                             </div>
                         )}
                     </TabsContent>
+
+                    <TabsContent value='groups' className='space-y-4'>
+                        {isGroupsLoading ? (
+                            <div className="flex h-64 items-center justify-center"><Loader /></div>
+                        ) : groupsData?.results && groupsData.results.length > 0 ? (
+                            <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
+                                {groupsData.results.map((group: any) => {
+                                    const daysRemaining = calculateDaysRemaining(group.deletedAt)
+                                    return (
+                                        <Card key={group.id}>
+                                            <CardHeader className="pb-2">
+                                                <div className="flex items-center gap-2">
+                                                    <Folder className="h-4 w-4 text-primary" />
+                                                    <CardTitle className="text-lg">{group.name}</CardTitle>
+                                                </div>
+                                            </CardHeader>
+                                            <CardContent className="space-y-2">
+                                                <p className="text-sm text-muted-foreground line-clamp-2">
+                                                    {group.description || 'No description provided.'}
+                                                </p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    Deleted: {group.deletedAt ? new Date(group.deletedAt).toLocaleDateString() : 'Unknown'}
+                                                </p>
+                                                {daysRemaining !== null && (
+                                                    <Badge variant={daysRemaining <= 7 ? "destructive" : "secondary"} className="gap-1">
+                                                        <IconClock size={12} />
+                                                        Purges in {daysRemaining} day{daysRemaining !== 1 ? 's' : ''}
+                                                    </Badge>
+                                                )}
+                                            </CardContent>
+                                            <CardFooter className="flex justify-end gap-2 border-t pt-4">
+                                                <Button variant="outline" size="sm" onClick={() => restoreGroupMutation.mutate(group.id)}>
+                                                    <IconRefresh size={16} className="mr-1" /> Restore
+                                                </Button>
+                                                <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10" onClick={() => {
+                                                    setConfirmDelete({ id: group.id, type: 'group' })
+                                                }}>
+                                                    <IconTrashX size={16} className="mr-1" /> Purge
+                                                </Button>
+                                            </CardFooter>
+                                        </Card>
+                                    )
+                                })}
+                            </div>
+                        ) : (
+                            <div className="flex h-64 flex-col items-center justify-center rounded-lg border border-dashed">
+                                <p className="text-muted-foreground">No groups in recycle bin.</p>
+                            </div>
+                        )}
+                    </TabsContent>
                 </Tabs>
 
                 <ConfirmationDialog
@@ -209,6 +287,8 @@ export default function RecycleBin() {
                             permanentDeleteScreenMutation.mutate(confirmDelete.id)
                         } else if (confirmDelete?.type === 'template') {
                             permanentDeleteTemplateMutation.mutate(confirmDelete.id)
+                        } else if (confirmDelete?.type === 'group') {
+                            permanentDeleteGroupMutation.mutate(confirmDelete.id)
                         }
                         setConfirmDelete(null)
                     }}

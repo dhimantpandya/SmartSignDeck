@@ -32,8 +32,20 @@ const deleteGroup = async (id: string) => {
     return apiService.delete(`/v1/template-groups/${id}`)
 }
 
+const restoreGroup = async (id: string) => {
+    return apiService.patch<TemplateGroup>(`/v1/template-groups/${id}/restore`)
+}
+
+const permanentDeleteGroup = async (id: string) => {
+    return apiService.delete(`/v1/template-groups/${id}/permanent`)
+}
+
 const addTemplatesToGroup = async (groupId: string, templateIds: string[]) => {
     return apiService.post<TemplateGroup>(`/v1/template-groups/${groupId}/templates`, { templateIds })
+}
+
+const removeTemplatesFromGroup = async (groupId: string, templateIds: string[]) => {
+    return apiService.delete<TemplateGroup>(`/v1/template-groups/${groupId}/templates`, { data: { templateIds } })
 }
 
 export const templateGroupService = {
@@ -42,5 +54,8 @@ export const templateGroupService = {
     createGroup,
     updateGroup,
     deleteGroup,
+    restoreGroup,
+    permanentDeleteGroup,
     addTemplatesToGroup,
+    removeTemplatesFromGroup
 }

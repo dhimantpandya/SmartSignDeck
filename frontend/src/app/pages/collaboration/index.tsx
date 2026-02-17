@@ -344,13 +344,12 @@ export default function Collaboration() {
             }
             setPrivateMessages(prev => [...prev, optimisticMsg])
 
+            socket?.emit('send_chat', payload)
+            setPrivateInputText('')
             await socialService.sendMessage({
                 text: privateInputText,
                 recipientId
             })
-
-            socket?.emit('send_chat', payload)
-            setPrivateInputText('')
         } catch (err: any) {
             toast({
                 title: 'Failed to send message',
@@ -387,13 +386,12 @@ export default function Collaboration() {
             }
             setCompanyMessages(prev => [...prev, optimisticMsg])
 
+            socket?.emit('send_chat', payload)
+            setInputText('')
             await socialService.sendMessage({
                 text: inputText,
                 companyId
             })
-
-            socket?.emit('send_chat', payload)
-            setInputText('')
         } catch (err: any) {
             toast({
                 title: 'Failed to send message',

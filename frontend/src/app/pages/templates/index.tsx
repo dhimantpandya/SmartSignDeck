@@ -113,7 +113,23 @@ export default function Templates() {
             templateGroupService.addTemplatesToGroup(data.groupId, [data.templateId]),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['template-groups'] })
+            if (selectedGroup) {
+                templateGroupService.getGroup(selectedGroup.id).then(setSelectedGroup)
+            }
             toast({ title: 'Template assigned', description: 'Template added to group successfully.' })
+        },
+    })
+
+    const removeFromGroupMutation = useMutation({
+        mutationFn: (data: { groupId: string; templateId: string }) =>
+            templateGroupService.removeTemplatesFromGroup(data.groupId, [data.templateId]),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['template-groups'] })
+            if (selectedGroup) {
+                // Refresh the local view immediately
+                templateGroupService.getGroup(selectedGroup.id).then(setSelectedGroup)
+            }
+            toast({ title: 'Removed from group', description: 'Template removed from this collection.' })
         },
     })
 
@@ -164,7 +180,7 @@ export default function Templates() {
         return createdById.toString() === currentUserId.toString();
     }
 
-    const renderTemplateCard = (template: any, isOwner: boolean) => (
+    const renderTemplateCard = (template: any, isOwner: boolean, inGroupView: boolean = false) => (
         <Card key={template.id} className="overflow-hidden">
             <CardHeader className="bg-muted/50 pb-4">
                 <div className="flex items-center justify-between">
@@ -194,30 +210,42 @@ export default function Templates() {
             </CardContent>
             <CardFooter className="flex justify-between border-t bg-muted/20 px-4 py-2">
                 <div className="flex gap-1">
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                <Folder className="h-4 w-4" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="start" className="w-56">
-                            <DropdownMenuLabel>Assign to Group</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            {groupsData?.results && groupsData.results.length > 0 ? (
-                                groupsData.results.map((group: any) => (
-                                    <DropdownMenuItem
-                                        key={group.id}
-                                        onClick={() => assignToGroupMutation.mutate({ groupId: group.id, templateId: template.id })}
-                                    >
-                                        <Folder className="mr-2 h-4 w-4" />
-                                        <span>{group.name}</span>
-                                    </DropdownMenuItem>
-                                ))
-                            ) : (
-                                <DropdownMenuItem disabled>No groups found</DropdownMenuItem>
-                            )}
-                        </DropdownMenuContent>
-                    </DropdownMenu>
+                    {inGroupView ? (
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 text-destructive hover:bg-destructive/10"
+                            onClick={() => removeFromGroupMutation.mutate({ groupId: selectedGroup.id, templateId: template.id })}
+                            title="Remove from Group"
+                        >
+                            <FolderPlus className="h-4 w-4 rotate-45" />
+                        </Button>
+                    ) : (
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                    <Folder className="h-4 w-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="start" className="w-56">
+                                <DropdownMenuLabel>Assign to Group</DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                {groupsData?.results && groupsData.results.length > 0 ? (
+                                    groupsData.results.map((group: any) => (
+                                        <DropdownMenuItem
+                                            key={group.id}
+                                            onClick={() => assignToGroupMutation.mutate({ groupId: group.id, templateId: template.id })}
+                                        >
+                                            <Folder className="mr-2 h-4 w-4" />
+                                            <span>{group.name}</span>
+                                        </DropdownMenuItem>
+                                    ))
+                                ) : (
+                                    <DropdownMenuItem disabled>No groups found</DropdownMenuItem>
+                                )}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    )}
                 </div>
                 <div className="flex gap-2">
                     <Button variant="ghost" size="sm" onClick={() => setPreviewTemplate(template)}>
@@ -323,7 +351,7 @@ export default function Templates() {
                                 </div>
                             ) : myTemplates.length > 0 ? (
                                 <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
-                                    {myTemplates.map((template: any) => renderTemplateCard(template, true))}
+                                    {myTemplates.map((template: any) => renderTemplateCard(template, true, false))}
                                 </div>
                             ) : (
                                 <div className='flex flex-col items-center justify-center rounded-lg border border-dashed p-20 text-center'>
@@ -445,7 +473,7 @@ export default function Templates() {
                                 </div>
                                 {selectedGroup.templates?.length > 0 ? (
                                     <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
-                                        {selectedGroup.templates.map((template: any) => renderTemplateCard(template, checkIsOwner(template)))}
+                                        {selectedGroup.templates.map((template: any) => renderTemplateCard(template, checkIsOwner(template), true))}
                                     </div>
                                 ) : (
                                     <div className="p-12 text-center bg-muted/20 rounded-xl border border-dashed">
@@ -462,7 +490,7 @@ export default function Templates() {
                                 </div>
                             ) : globalTemplates.length > 0 ? (
                                 <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
-                                    {globalTemplates.map((template: any) => renderTemplateCard(template, checkIsOwner(template)))}
+                                    {globalTemplates.map((template: any) => renderTemplateCard(template, checkIsOwner(template), false))}
                                 </div>
                             ) : (
                                 <div className='flex flex-col items-center justify-center rounded-lg border border-dashed p-20 text-center'>

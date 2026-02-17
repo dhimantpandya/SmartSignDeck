@@ -42,8 +42,23 @@ const deleteTemplateGroup = catchAsync(async (req, res) => {
     res.status(httpStatus.NO_CONTENT).send();
 });
 
+const restoreTemplateGroup = catchAsync(async (req, res) => {
+    const group = await templateGroupService.restoreTemplateGroupById(req.params.groupId);
+    res.send(group);
+});
+
+const permanentDeleteTemplateGroup = catchAsync(async (req, res) => {
+    await templateGroupService.permanentDeleteTemplateGroupById(req.params.groupId);
+    res.status(httpStatus.NO_CONTENT).send();
+});
+
 const addTemplatesToGroup = catchAsync(async (req, res) => {
     const group = await templateGroupService.addTemplatesToGroup(req.params.groupId, req.body.templateIds);
+    res.send(group);
+});
+
+const removeTemplatesFromGroup = catchAsync(async (req, res) => {
+    const group = await templateGroupService.removeTemplatesFromGroup(req.params.groupId, req.body.templateIds);
     res.send(group);
 });
 
@@ -53,5 +68,8 @@ export default {
     getTemplateGroup,
     updateTemplateGroup,
     deleteTemplateGroup,
-    addTemplatesToGroup
+    restoreTemplateGroup,
+    permanentDeleteTemplateGroup,
+    addTemplatesToGroup,
+    removeTemplatesFromGroup
 };
