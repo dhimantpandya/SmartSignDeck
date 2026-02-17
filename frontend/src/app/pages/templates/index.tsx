@@ -1,4 +1,4 @@
-import { Layout } from '@/components/custom/layout'
+﻿import { Layout } from '@/components/custom/layout'
 import ThemeSwitch from '@/components/theme-switch'
 import { UserNav } from '@/components/user-nav'
 import { NotificationBell } from '@/components/notification-bell'
@@ -61,7 +61,7 @@ export default function Templates() {
         return templates.length > 0 && templates.every(t => selectedTemplates.includes(t.id))
     }
 
-    const toggleSelectAll = (templates: any[]) => {
+    const handleSelectAll = (templates: any[]) => {
         if (isAllSelected(templates)) {
             clearSelection()
         } else {
@@ -450,9 +450,21 @@ export default function Templates() {
                                     <Loader />
                                 </div>
                             ) : myTemplates.length > 0 ? (
-                                <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
-                                    {myTemplates.map((template: any) => renderTemplateCard(template, true, false))}
-                                </div>
+                                <>
+                                    <div className="flex items-center gap-2 mb-4 px-2 py-2 bg-muted/30 rounded-lg border">
+                                        <Checkbox
+                                            id="select-all-my"
+                                            checked={isAllSelected(myTemplates)}
+                                            onCheckedChange={() => handleSelectAll(myTemplates)}
+                                        />
+                                        <label htmlFor="select-all-my" className="text-sm font-medium cursor-pointer flex-1">
+                                            Select All Templates ({myTemplates.length})
+                                        </label>
+                                    </div>
+                                    <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
+                                        {myTemplates.map((template: any) => renderTemplateCard(template, true, false))}
+                                    </div>
+                                </>
                             ) : (
                                 <div className='flex flex-col items-center justify-center rounded-lg border border-dashed p-20 text-center'>
                                     <IconLayout size={48} className='mb-4 text-muted-foreground' />
@@ -571,9 +583,21 @@ export default function Templates() {
                                             </div>
                                         </div>
                                         {selectedGroup.templates?.length > 0 ? (
-                                            <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
-                                                {selectedGroup.templates.map((template: any) => renderTemplateCard(template, checkIsOwner(template), true))}
-                                            </div>
+                                            <>
+                                                <div className="flex items-center gap-2 mb-4 px-2 py-2 bg-muted/30 rounded-lg border">
+                                                    <Checkbox
+                                                        id="select-all-group"
+                                                        checked={isAllSelected(selectedGroup.templates)}
+                                                        onCheckedChange={() => handleSelectAll(selectedGroup.templates)}
+                                                    />
+                                                    <label htmlFor="select-all-group" className="text-sm font-medium cursor-pointer flex-1">
+                                                        Select All Templates ({selectedGroup.templates.length})
+                                                    </label>
+                                                </div>
+                                                <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
+                                                    {selectedGroup.templates.map((template: any) => renderTemplateCard(template, checkIsOwner(template), true))}
+                                                </div>
+                                            </>
                                         ) : (
                                             <div className="p-12 text-center bg-muted/20 rounded-xl border border-dashed">
                                                 <p className="text-muted-foreground">No templates assigned to this group yet.</p>
@@ -590,9 +614,21 @@ export default function Templates() {
                                     <Loader />
                                 </div>
                             ) : globalTemplates.length > 0 ? (
-                                <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
-                                    {globalTemplates.map((template: any) => renderTemplateCard(template, checkIsOwner(template), false))}
-                                </div>
+                                <>
+                                    <div className="flex items-center gap-2 mb-4 px-2 py-2 bg-muted/30 rounded-lg border">
+                                        <Checkbox
+                                            id="select-all-global"
+                                            checked={isAllSelected(globalTemplates)}
+                                            onCheckedChange={() => handleSelectAll(globalTemplates)}
+                                        />
+                                        <label htmlFor="select-all-global" className="text-sm font-medium cursor-pointer flex-1">
+                                            Select All Templates ({globalTemplates.length})
+                                        </label>
+                                    </div>
+                                    <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
+                                        {globalTemplates.map((template: any) => renderTemplateCard(template, checkIsOwner(template), false))}
+                                    </div>
+                                </>
                             ) : (
                                 <div className='flex flex-col items-center justify-center rounded-lg border border-dashed p-20 text-center'>
                                     <Globe size={48} className='mb-4 text-muted-foreground' />
@@ -685,4 +721,5 @@ export default function Templates() {
         </Layout>
     )
 }
+
 

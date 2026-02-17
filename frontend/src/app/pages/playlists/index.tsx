@@ -1,4 +1,4 @@
-import { Layout } from '@/components/custom/layout'
+﻿import { Layout } from '@/components/custom/layout'
 import ThemeSwitch from '@/components/theme-switch'
 import { UserNav } from '@/components/user-nav'
 import { BreadcrumbNavigation } from '@/components/ui/breadcrumb-navigation'
@@ -206,20 +206,20 @@ export default function Playlists() {
                                         </Card>
                                     ))}
                                 </div>
-                                ) : (
-                                <div className='flex flex-col items-center justify-center rounded-lg border border-dashed p-20 text-center mt-6'>
-                                    <IconPlaylist size={48} className='mb-4 text-muted-foreground' />
-                                    <h2 className='text-xl font-semibold'>No Playlists</h2>
-                                    <p className='mb-6 text-muted-foreground'>
-                                        Create a shared playlist to reuse content across screens.
-                                    </p>
-                                    <Button onClick={handleCreate}>
-                                        Create First Playlist
-                                    </Button>
-                                </div>
-                        )}
                             </>
+                        ) : (
+                            <div className='flex flex-col items-center justify-center rounded-lg border border-dashed p-20 text-center mt-6'>
+                                <IconPlaylist size={48} className='mb-4 text-muted-foreground' />
+                                <h2 className='text-xl font-semibold'>No Playlists</h2>
+                                <p className='mb-6 text-muted-foreground'>
+                                    Create a shared playlist to reuse content across screens.
+                                </p>
+                                <Button onClick={handleCreate}>
+                                    Create First Playlist
+                                </Button>
+                            </div>
                         )}
+
 
                         <ConfirmationDialog
                             isOpen={!!confirmDelete}
@@ -233,42 +233,45 @@ export default function Playlists() {
                             }}
                             onClose={() => setConfirmDelete(null)}
                         />
-                    </Layout.Body>
-
-                {selectedPlaylists.length > 0 && (
-                    <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 bg-background border shadow-2xl rounded-full px-6 py-3 flex items-center gap-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
-                        <div className="flex items-center gap-2 border-r pr-6">
-                            <Badge variant="default" className="rounded-full h-6 w-6 flex items-center justify-center p-0">
-                                {selectedPlaylists.length}
-                            </Badge>
-                            <span className="text-sm font-medium">Items Selected</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={clearSelection}
-                                className="h-9 px-4 rounded-full"
-                            >
-                                Clear
-                            </Button>
-                            <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={() => {
-                                    if (confirm(`${selectedPlaylists.length} items will be permanently deleted. Proceed?`)) {
-                                        bulkDeleteMutation.mutate(selectedPlaylists)
-                                    }
-                                }}
-                                className="h-9 px-6 rounded-full gap-2"
-                                loading={bulkDeleteMutation.isPending}
-                            >
-                                <IconTrash size={16} />
-                                Delete Selected
-                            </Button>
-                        </div>
-                    </div>
+                    </>
                 )}
+            </Layout.Body>
+
+            {selectedPlaylists.length > 0 && (
+                <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 bg-background border shadow-2xl rounded-full px-6 py-3 flex items-center gap-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
+                    <div className="flex items-center gap-2 border-r pr-6">
+                        <Badge variant="default" className="rounded-full h-6 w-6 flex items-center justify-center p-0">
+                            {selectedPlaylists.length}
+                        </Badge>
+                        <span className="text-sm font-medium">Items Selected</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={clearSelection}
+                            className="h-9 px-4 rounded-full"
+                        >
+                            Clear
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => {
+                                if (confirm(`${selectedPlaylists.length} items will be permanently deleted. Proceed?`)) {
+                                    bulkDeleteMutation.mutate(selectedPlaylists)
+                                }
+                            }}
+                            className="h-9 px-6 rounded-full gap-2"
+                            loading={bulkDeleteMutation.isPending}
+                        >
+                            <IconTrash size={16} />
+                            Delete Selected
+                        </Button>
+                    </div>
+                </div>
+            )}
         </Layout>
     )
 }
+
