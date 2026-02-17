@@ -78,10 +78,47 @@ const deletePlaylistById = async (playlistId: string, companyId: string): Promis
     return playlist;
 };
 
+/**
+ * Delete multiple playlists by ids
+ * @param {string[]} ids
+ * @param {string} companyId- Ensure ownership
+ * @returns {Promise<Object>}
+ */
+const deletePlaylistsByIds = async (ids: string[], companyId: string) => {
+    const validIdsToDelete: string[] = [];
+    const errors: string[] = [];
+
+    for (const playlistId of ids) {
+        const playlist = await getPlaylistById(playlistId);
+        if (!playlist) continue;
+
+        if (playlist.companyId.toString() !== companyId.toString()) {
+            errors.push(`Playlist ${playlist.name}: Permission denied`);
+            continue;
+        }
+
+        validIdsToDelete.push(playlistId);
+    }
+
+    if (validIdsToDelete.length === 0 && errors.length > 0) {
+        throw new ApiError(httpStatus.BAD_REQUEST, `Cannot delete selected playlists: ${errors.join(", ")}`);
+    }
+
+    const result = await Playlist.deleteMany({
+        _id: { $in: validIdsToDelete }
+    });
+
+    return {
+        deletedCount: result.deletedCount,
+        errors: errors.length > 0 ? errors : undefined
+    };
+};
+
 export {
     createPlaylist,
     queryPlaylists,
     getPlaylistById,
     updatePlaylistById,
     deletePlaylistById,
+    deletePlaylistsByIds,
 };

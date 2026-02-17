@@ -90,6 +90,16 @@ const permanentDeleteTemplate = catchAsync(async (req: Request, res: Response) =
     res.status(httpStatus.NO_CONTENT).send();
 });
 
+const bulkDeleteTemplates = catchAsync(async (req: Request, res: Response) => {
+    const result = await templateService.deleteTemplatesByIds(req.body.ids, req.user as any);
+    successResponse(
+        res,
+        "Templates processed for deletion",
+        httpStatus.OK,
+        result,
+    );
+});
+
 const cloneTemplate = catchAsync(async (req: Request, res: Response) => {
     const template = await templateService.cloneTemplate(req.params.templateId, req.user as any);
     successResponse(
@@ -106,6 +116,7 @@ export default {
     getTemplate,
     updateTemplate,
     deleteTemplate,
+    bulkDeleteTemplates,
     restoreTemplate,
     permanentDeleteTemplate,
     cloneTemplate,

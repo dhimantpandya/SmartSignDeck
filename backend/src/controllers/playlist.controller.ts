@@ -4,6 +4,7 @@ import ApiError from "../utils/ApiError";
 import catchAsync from "../utils/catchAsync";
 import { playlistService } from "../services";
 import { type Request, type Response } from "express";
+import successResponse from "../helpers/responses/successResponse";
 
 const createPlaylist = catchAsync(async (req: Request, res: Response) => {
     if (!req.user) {
@@ -78,10 +79,22 @@ const deletePlaylist = catchAsync(async (req: Request, res: Response) => {
     res.status(httpStatus.NO_CONTENT).send();
 });
 
+const bulkDeletePlaylists = catchAsync(async (req: Request, res: Response) => {
+    const user = req.user as any;
+    const result = await playlistService.deletePlaylistsByIds(req.body.ids, user.companyId.toString());
+    successResponse(
+        res,
+        "Playlists processed for deletion",
+        httpStatus.OK,
+        result,
+    );
+});
+
 export {
     createPlaylist,
     getPlaylists,
     getPlaylist,
     updatePlaylist,
     deletePlaylist,
+    bulkDeletePlaylists,
 };

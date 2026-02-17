@@ -178,6 +178,54 @@ const updateTemplateById = async (templateId: string, updateBody: any, user: IUs
 };
 
 /**
+ * Delete multiple templates by ids
+ * @param {string[]} ids
+ * @param {IUser} user
+ * @returns {Promise<number>} - number of templates deleted
+ */
+const deleteTemplatesByIds = async (ids: string[], user: IUser) => {
+  const { default: Screen } = await import("../models/screen.model");
+
+  // Filter templates that are NOT used by any screens
+  const validIdsToDelete: string[] = [];
+  const errors: string[] = [];
+
+  for (const templateId of ids) {
+    const template = await getTemplateById(templateId);
+    if (!template) continue;
+
+    // Permission Check
+    if (user.role !== "super_admin" && template.companyId?.toString() !== user.companyId?.toString()) {
+      errors.push(`Template ${template.name}: Permission denied`);
+      continue;
+    }
+
+    // Check for dependent screens
+    const screensUsingTemplate = await Screen.find({ templateId });
+    if (screensUsingTemplate.length > 0) {
+      errors.push(`Template ${template.name}: Used by ${screensUsingTemplate.length} screen(s)`);
+      continue;
+    }
+
+    validIdsToDelete.push(templateId);
+  }
+
+  if (validIdsToDelete.length === 0 && errors.length > 0) {
+    throw new ApiError(httpStatus.BAD_REQUEST, `Cannot delete selected templates: ${errors.join(", ")}`);
+  }
+
+  const result = await Template.updateMany(
+    { _id: { $in: validIdsToDelete } },
+    { $set: { deletedAt: new Date() } }
+  );
+
+  return {
+    deletedCount: result.modifiedCount,
+    errors: errors.length > 0 ? errors : undefined
+  };
+};
+
+/**
  * Delete template by id
  * @param {ObjectId} templateId
  * @param {IUser} user
@@ -305,6 +353,7 @@ export default {
   getTemplateById,
   updateTemplateById,
   deleteTemplateById,
+  deleteTemplatesByIds,
   restoreTemplateById,
   permanentDeleteTemplateById,
   cloneTemplate,

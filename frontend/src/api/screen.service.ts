@@ -33,10 +33,15 @@ const cloneScreen = async (id: string) => {
     return apiService.post<Screen>(`/v1/screens/${id}/clone`, {})
 }
 
+const bulkDeleteScreens = async (ids: string[]) => {
+    return apiService.post('/v1/screens/bulk-delete', { ids })
+}
+
 export const screenService = {
     getScreens,
     deleteScreen,
     restoreScreen,
     permanentDeleteScreen,
     cloneScreen,
+    bulkDeleteScreens,
 }

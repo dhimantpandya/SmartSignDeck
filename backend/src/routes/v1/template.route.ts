@@ -3,6 +3,7 @@ import validate from "../../middleware/validate";
 import templateValidation from "../../validations/template.validation";
 import templateController from "../../controllers/template.controller";
 
+import { bulkValidation } from "../../validations";
 import auth from "../../middleware/auth";
 
 const router = express.Router();
@@ -18,6 +19,14 @@ router
     auth("getTemplates"),
     validate(templateValidation.getTemplates),
     templateController.getTemplates,
+  );
+
+router
+  .route("/bulk-delete")
+  .post(
+    auth("manageTemplates"),
+    validate(bulkValidation.bulkDelete),
+    templateController.bulkDeleteTemplates
   );
 
 router

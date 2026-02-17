@@ -11,6 +11,7 @@ import { io } from 'socket.io-client'
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
 import { toast } from '@/components/ui/use-toast'
 import Loader from '@/components/loader'
+import { Checkbox } from '@/components/ui/checkbox'
 import { apiService, screenService, templateGroupService } from '@/api'
 import ScreenForm from './components/screen-form'
 import { Badge } from '@/components/ui/badge'
@@ -29,7 +30,16 @@ export default function Screens() {
     const [activeTab, setActiveTab] = useState<'my-screens' | 'global' | 'groups'>('my-screens')
     const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null)
     const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
+    const [selectedScreens, setSelectedScreens] = useState<string[]>([])
     const queryClient = useQueryClient()
+
+    const toggleScreenSelection = (id: string) => {
+        setSelectedScreens(prev =>
+            prev.includes(id) ? prev.filter(sid => sid !== id) : [...prev, id]
+        )
+    }
+
+    const clearSelection = () => setSelectedScreens([])
 
     useEffect(() => {
         const s = io(import.meta.env.VITE_APP_URL || 'http://localhost:5000')
@@ -102,6 +112,27 @@ export default function Screens() {
         },
     })
 
+    const bulkDeleteMutation = useMutation({
+        mutationFn: (ids: string[]) => screenService.bulkDeleteScreens(ids),
+        onSuccess: (data: any) => {
+            queryClient.invalidateQueries({ queryKey: ['screens'] })
+            queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+            const deletedCount = data.deletedCount || selectedScreens.length
+            toast({
+                title: 'Bulk Action Completed',
+                description: `${deletedCount} screens moved to Recycle Bin.`
+            })
+            clearSelection()
+        },
+        onError: (error: any) => {
+            toast({
+                title: 'Bulk Deletion Failed',
+                description: error?.response?.data?.message || 'Failed to delete some screens.',
+                variant: 'destructive'
+            })
+        }
+    })
+
     const cloneMutation = useMutation({
         mutationFn: (id: string) => screenService.cloneScreen(id),
         onSuccess: () => {
@@ -169,7 +200,14 @@ export default function Screens() {
         <Card key={screen.id} className="overflow-hidden">
             <CardHeader className="bg-muted/50 pb-4">
                 <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">{screen.name}</CardTitle>
+                    <div className="flex items-center gap-3">
+                        <Checkbox
+                            checked={selectedScreens.includes(screen.id)}
+                            onCheckedChange={() => toggleScreenSelection(screen.id)}
+                            onClick={(e) => e.stopPropagation()}
+                        />
+                        <CardTitle className="text-lg">{screen.name}</CardTitle>
+                    </div>
                     <Badge variant="secondary" className="flex items-center gap-1">
                         <span className={`h-2 w-2 rounded-full ${getStatusColor(screen.status)}`} />
                         {screen.status}
@@ -455,6 +493,41 @@ export default function Screens() {
                     }}
                     onClose={() => setConfirmDelete(null)}
                 />
+
+                {selectedScreens.length > 0 && (
+                    <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 bg-background border shadow-2xl rounded-full px-6 py-3 flex items-center gap-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
+                        <div className="flex items-center gap-2 border-r pr-6">
+                            <Badge variant="default" className="rounded-full h-6 w-6 flex items-center justify-center p-0">
+                                {selectedScreens.length}
+                            </Badge>
+                            <span className="text-sm font-medium">Items Selected</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={clearSelection}
+                                className="h-9 px-4 rounded-full"
+                            >
+                                Clear
+                            </Button>
+                            <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => {
+                                    if (confirm(`${selectedScreens.length} items will be moved to Recycle Bin. Proceed?`)) {
+                                        bulkDeleteMutation.mutate(selectedScreens)
+                                    }
+                                }}
+                                className="h-9 px-6 rounded-full gap-2"
+                                loading={bulkDeleteMutation.isPending}
+                            >
+                                <IconTrash size={16} />
+                                Delete Selected
+                            </Button>
+                        </div>
+                    </div>
+                )}
             </Layout.Body>
         </Layout>
     )

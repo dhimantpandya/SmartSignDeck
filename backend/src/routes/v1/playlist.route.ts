@@ -1,6 +1,6 @@
 import express from "express";
 import validate from "../../middleware/validate";
-import { playlistValidation } from "../../validations";
+import { playlistValidation, bulkValidation } from "../../validations";
 import { playlistController } from "../../controllers";
 import auth from "../../middleware/auth";
 
@@ -17,6 +17,14 @@ router
         auth(),
         validate(playlistValidation.getPlaylists),
         playlistController.getPlaylists
+    );
+
+router
+    .route("/bulk-delete")
+    .post(
+        auth(),
+        validate(bulkValidation.bulkDelete),
+        playlistController.bulkDeletePlaylists
     );
 
 router

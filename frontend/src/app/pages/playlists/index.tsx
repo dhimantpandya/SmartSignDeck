@@ -12,6 +12,7 @@ import Loader from '@/components/loader'
 import { playlistService } from '@/api/playlist.service'
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
 import { Badge } from '@/components/ui/badge'
+import { Checkbox } from '@/components/ui/checkbox'
 import PlaylistForm from './components/playlist-form'
 import { useAuth } from '@/hooks/use-auth'
 
@@ -19,7 +20,16 @@ export default function Playlists() {
     const [showForm, setShowForm] = useState(false)
     const [editingPlaylist, setEditingPlaylist] = useState<any>(null)
     const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
+    const [selectedPlaylists, setSelectedPlaylists] = useState<string[]>([])
     const queryClient = useQueryClient()
+
+    const togglePlaylistSelection = (id: string) => {
+        setSelectedPlaylists(prev =>
+            prev.includes(id) ? prev.filter(pid => pid !== id) : [...prev, id]
+        )
+    }
+
+    const clearSelection = () => setSelectedPlaylists([])
     const { user } = useAuth()
 
     const { data, isLoading } = useQuery({
@@ -36,6 +46,26 @@ export default function Playlists() {
         },
         onError: (err: any) => {
             toast({ title: 'Failed to delete', description: err.message, variant: 'destructive' })
+        }
+    })
+
+    const bulkDeleteMutation = useMutation({
+        mutationFn: (ids: string[]) => playlistService.bulkDeletePlaylists(ids),
+        onSuccess: (data: any) => {
+            queryClient.invalidateQueries({ queryKey: ['playlists'] })
+            const deletedCount = data.deletedCount || selectedPlaylists.length
+            toast({
+                title: 'Bulk Action Completed',
+                description: `${deletedCount} playlists deleted successfully.`
+            })
+            clearSelection()
+        },
+        onError: (error: any) => {
+            toast({
+                title: 'Bulk Deletion Failed',
+                description: error?.response?.data?.message || 'Failed to delete some playlists.',
+                variant: 'destructive'
+            })
         }
     })
 
@@ -103,7 +133,14 @@ export default function Playlists() {
                                     <Card key={playlist.id} className="overflow-hidden">
                                         <CardHeader className="bg-muted/50 pb-4">
                                             <div className="flex items-center justify-between">
-                                                <CardTitle className="text-lg truncate" title={playlist.name}>{playlist.name}</CardTitle>
+                                                <div className="flex items-center gap-3">
+                                                    <Checkbox
+                                                        checked={selectedPlaylists.includes(playlist.id)}
+                                                        onCheckedChange={() => togglePlaylistSelection(playlist.id)}
+                                                        onClick={(e) => e.stopPropagation()}
+                                                    />
+                                                    <CardTitle className="text-lg truncate" title={playlist.name}>{playlist.name}</CardTitle>
+                                                </div>
                                                 <Badge variant="outline">{playlist.items.length} items</Badge>
                                             </div>
                                         </CardHeader>
@@ -169,6 +206,41 @@ export default function Playlists() {
                     onClose={() => setConfirmDelete(null)}
                 />
             </Layout.Body>
+
+            {selectedPlaylists.length > 0 && (
+                <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 bg-background border shadow-2xl rounded-full px-6 py-3 flex items-center gap-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
+                    <div className="flex items-center gap-2 border-r pr-6">
+                        <Badge variant="default" className="rounded-full h-6 w-6 flex items-center justify-center p-0">
+                            {selectedPlaylists.length}
+                        </Badge>
+                        <span className="text-sm font-medium">Items Selected</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={clearSelection}
+                            className="h-9 px-4 rounded-full"
+                        >
+                            Clear
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => {
+                                if (confirm(`${selectedPlaylists.length} items will be permanently deleted. Proceed?`)) {
+                                    bulkDeleteMutation.mutate(selectedPlaylists)
+                                }
+                            }}
+                            className="h-9 px-6 rounded-full gap-2"
+                            loading={bulkDeleteMutation.isPending}
+                        >
+                            <IconTrash size={16} />
+                            Delete Selected
+                        </Button>
+                    </div>
+                </div>
+            )}
         </Layout>
     )
 }

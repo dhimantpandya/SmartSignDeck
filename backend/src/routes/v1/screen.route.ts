@@ -3,6 +3,7 @@ import validate from "../../middleware/validate";
 import screenValidation from "../../validations/screen.validation";
 import screenController from "../../controllers/screen.controller";
 
+import { bulkValidation } from "../../validations";
 import auth from "../../middleware/auth";
 import optionalAuth from "../../middleware/optionalAuth";
 
@@ -19,6 +20,14 @@ router
     auth("getScreens"),
     validate(screenValidation.getScreens),
     screenController.getScreens,
+  );
+
+router
+  .route("/bulk-delete")
+  .post(
+    auth("manageScreens"),
+    validate(bulkValidation.bulkDelete),
+    screenController.bulkDeleteScreens
   );
 
 router

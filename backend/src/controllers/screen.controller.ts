@@ -65,6 +65,16 @@ const permanentDeleteScreen = catchAsync(async (req: Request, res: Response) => 
   res.status(httpStatus.NO_CONTENT).send();
 });
 
+const bulkDeleteScreens = catchAsync(async (req: Request, res: Response) => {
+  const result = await screenService.deleteScreensByIds(req.body.ids, req.user as any);
+  successResponse(
+    res,
+    "Screens processed for deletion",
+    httpStatus.OK,
+    result,
+  );
+});
+
 const cloneScreen = catchAsync(async (req: Request, res: Response) => {
   const screen = await screenService.cloneScreen(req.params.screenId, req.user as any);
   successResponse(
@@ -122,6 +132,7 @@ export default {
   getScreen,
   updateScreen,
   deleteScreen,
+  bulkDeleteScreens,
   restoreScreen,
   permanentDeleteScreen,
   pingScreen,

@@ -57,6 +57,10 @@ const cloneTemplate = async (id: string) => {
     return apiService.post<Template>(`/v1/templates/${id}/clone`, {})
 }
 
+const bulkDeleteTemplates = async (ids: string[]) => {
+    return apiService.post('/v1/templates/bulk-delete', { ids })
+}
+
 export const templateService = {
     getTemplates,
     getTemplate,
@@ -66,4 +70,5 @@ export const templateService = {
     restoreTemplate,
     permanentDeleteTemplate,
     cloneTemplate,
+    bulkDeleteTemplates,
 }

@@ -25,6 +25,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { Checkbox } from '@/components/ui/checkbox'
 
 
 export default function Templates() {
@@ -40,7 +41,16 @@ export default function Templates() {
     const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null)
     const [newGroupName, setNewGroupName] = useState('')
     const [newGroupDesc, setNewGroupDesc] = useState('')
+    const [selectedTemplates, setSelectedTemplates] = useState<string[]>([])
     const queryClient = useQueryClient()
+
+    const toggleTemplateSelection = (id: string) => {
+        setSelectedTemplates(prev =>
+            prev.includes(id) ? prev.filter(tid => tid !== id) : [...prev, id]
+        )
+    }
+
+    const clearSelection = () => setSelectedTemplates([])
 
     useEffect(() => {
         if (searchParams.get('create') === 'true') {
@@ -105,6 +115,27 @@ export default function Templates() {
             queryClient.invalidateQueries({ queryKey: ['dashboard'] }) // Update counts
             toast({ title: 'Template moved to Recycle Bin', description: 'You can restore it within 30 days.' })
         },
+    })
+
+    const bulkDeleteMutation = useMutation({
+        mutationFn: (ids: string[]) => templateService.bulkDeleteTemplates(ids),
+        onSuccess: (data: any) => {
+            queryClient.invalidateQueries({ queryKey: ['templates'] })
+            queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+            const deletedCount = data.deletedCount || selectedTemplates.length
+            toast({
+                title: 'Bulk Action Completed',
+                description: `${deletedCount} templates moved to Recycle Bin.`
+            })
+            clearSelection()
+        },
+        onError: (error: any) => {
+            toast({
+                title: 'Bulk Deletion Failed',
+                description: error?.response?.data?.message || 'Failed to delete some templates.',
+                variant: 'destructive'
+            })
+        }
     })
 
     const cloneMutation = useMutation({
@@ -194,7 +225,14 @@ export default function Templates() {
         <Card key={template.id} className="overflow-hidden">
             <CardHeader className="bg-muted/50 pb-4">
                 <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">{template.name}</CardTitle>
+                    <div className="flex items-center gap-3">
+                        <Checkbox
+                            checked={selectedTemplates.includes(template.id)}
+                            onCheckedChange={() => toggleTemplateSelection(template.id)}
+                            onClick={(e) => e.stopPropagation()}
+                        />
+                        <CardTitle className="text-lg">{template.name}</CardTitle>
+                    </div>
                     {template.isPublic ? <Badge variant="secondary" className="gap-1"><Globe size={10} /> Global</Badge> : <Badge variant="outline" className="gap-1"><Lock size={10} /> Private</Badge>}
                 </div>
             </CardHeader>
@@ -328,6 +366,41 @@ export default function Templates() {
                         </div>
                     )}
                 </div>
+
+                {selectedTemplates.length > 0 && (
+                    <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 bg-background border shadow-2xl rounded-full px-6 py-3 flex items-center gap-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
+                        <div className="flex items-center gap-2 border-r pr-6">
+                            <Badge variant="default" className="rounded-full h-6 w-6 flex items-center justify-center p-0">
+                                {selectedTemplates.length}
+                            </Badge>
+                            <span className="text-sm font-medium">Items Selected</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={clearSelection}
+                                className="h-9 px-4 rounded-full"
+                            >
+                                Clear
+                            </Button>
+                            <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => {
+                                    if (confirm(`${selectedTemplates.length} items will be moved to Recycle Bin. Proceed?`)) {
+                                        bulkDeleteMutation.mutate(selectedTemplates)
+                                    }
+                                }}
+                                className="h-9 px-6 rounded-full gap-2"
+                                loading={bulkDeleteMutation.isPending}
+                            >
+                                <IconTrash size={16} />
+                                Delete Selected
+                            </Button>
+                        </div>
+                    </div>
+                )}
 
                 {showEditor ? (
                     <TemplateEditor

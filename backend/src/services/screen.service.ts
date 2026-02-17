@@ -272,6 +272,44 @@ const updateScreenById = async (screenId: string, updateBody: any, user: IUser) 
 };
 
 /**
+ * Delete multiple screens by ids
+ * @param {string[]} ids
+ * @param {IUser} user
+ * @returns {Promise<Object>}
+ */
+const deleteScreensByIds = async (ids: string[], user: IUser) => {
+  const validIdsToDelete: string[] = [];
+  const errors: string[] = [];
+
+  for (const screenId of ids) {
+    const screen = await Screen.findById(screenId);
+    if (!screen) continue;
+
+    // Permission check
+    if (user.role !== "super_admin" && screen.companyId?.toString() !== user.companyId?.toString()) {
+      errors.push(`Screen ${screen.name}: Permission denied`);
+      continue;
+    }
+
+    validIdsToDelete.push(screenId);
+  }
+
+  if (validIdsToDelete.length === 0 && errors.length > 0) {
+    throw new ApiError(httpStatus.BAD_REQUEST, `Cannot delete selected screens: ${errors.join(", ")}`);
+  }
+
+  const result = await Screen.updateMany(
+    { _id: { $in: validIdsToDelete } },
+    { $set: { deletedAt: new Date() } }
+  );
+
+  return {
+    deletedCount: result.modifiedCount,
+    errors: errors.length > 0 ? errors : undefined
+  };
+};
+
+/**
  * Delete screen by id
  * @param {ObjectId} screenId
  * @param {IUser} user
@@ -389,6 +427,7 @@ export default {
   getScreenById,
   updateScreenById,
   deleteScreenById,
+  deleteScreensByIds,
   restoreScreenById,
   permanentDeleteScreenById,
   getScreensByTemplateId,

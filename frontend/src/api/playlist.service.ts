@@ -40,4 +40,8 @@ export const playlistService = {
     deletePlaylist: async (id: string) => {
         return apiService.delete(`/v1/playlists/${id}`)
     },
+
+    bulkDeletePlaylists: async (ids: string[]) => {
+        return apiService.post('/v1/playlists/bulk-delete', { ids })
+    },
 }
