@@ -6,15 +6,16 @@ import mongoose from 'mongoose';
  * Get signage analytics for the dashboard
  * @returns {Promise<Object>}
  */
-const getSignageStats = async (companyId: string, userId?: string) => {
-  const filter: any = { deletedAt: null };
+const getSignageStats = async (companyId: string, userId: string) => {
+  const filter: any = {
+    deletedAt: null,
+    createdBy: new mongoose.Types.ObjectId(userId)
+  };
 
-  // For Dashboard Stats, we stick to COMPANY ID if available to ensure team-wide visibility
+  // 🔒 Strict Personal Isolation: Primary filter is createdBy.
+  // We still include companyId for indexed performance if user has one.
   if (companyId && mongoose.Types.ObjectId.isValid(companyId)) {
     filter.companyId = new mongoose.Types.ObjectId(companyId);
-  } else if (userId && mongoose.Types.ObjectId.isValid(userId)) {
-    // Fallback if no company (e.g. personal account)
-    filter.createdBy = new mongoose.Types.ObjectId(userId);
   }
 
   console.log('[DEBUG] SignageStats Query Filter:', JSON.stringify(filter));
@@ -43,11 +44,15 @@ const getSignageStats = async (companyId: string, userId?: string) => {
 /**
  * Get active displays (Screens with designated content and linked templates)
  */
-const getActiveContent = async (companyId: string) => {
+const getActiveContent = async (companyId: string, userId: string) => {
   const filter: any = {
     deletedAt: null,
-    companyId: new mongoose.Types.ObjectId(companyId)
+    createdBy: new mongoose.Types.ObjectId(userId)
   };
+
+  if (companyId && mongoose.Types.ObjectId.isValid(companyId)) {
+    filter.companyId = new mongoose.Types.ObjectId(companyId);
+  }
 
   // Find screens that are linked to a template
   const screens = await Screen.find(filter)

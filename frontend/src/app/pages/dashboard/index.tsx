@@ -44,25 +44,27 @@ export default function Dashboard() {
     setSearchTerm(event.target.value)
 
   const { data: stats, isLoading: isStatsLoading } = useQuery({
-    queryKey: ['signage-stats', user?.companyId],
+    queryKey: ['signage-stats', user?.id],
     queryFn: () => signageService.getStats(),
-    enabled: !!user,
+    enabled: !!user?.id,
   })
 
   const { data: recentScreens, isLoading: isScreensLoading } = useQuery({
-    queryKey: ['recent-screens', user?.companyId],
-    queryFn: () => screenService.getScreens({ limit: 5, sortBy: 'created_at:desc' }),
+    queryKey: ['recent-screens', user?.id],
+    queryFn: () => screenService.getScreens({ createdBy: user?.id, limit: 5, sortBy: 'created_at:desc' }),
+    enabled: !!user?.id,
   })
 
   const { data: recentTemplates, isLoading: isTemplatesLoading } = useQuery({
-    queryKey: ['recent-templates', user?.companyId],
-    queryFn: () => templateService.getTemplates({ limit: 5, sortBy: 'created_at:desc' }),
+    queryKey: ['recent-templates', user?.id],
+    queryFn: () => templateService.getTemplates({ createdBy: user?.id, limit: 5, sortBy: 'created_at:desc' }),
+    enabled: !!user?.id,
   })
 
   const { data: activeContent, isLoading: isActiveContentLoading } = useQuery({
-    queryKey: ['active-content', user?.companyId],
+    queryKey: ['active-content', user?.id],
     queryFn: () => signageService.getActiveContent(),
-    enabled: !!user?.companyId
+    enabled: !!user?.id
   })
 
   const { data: timelineData } = useQuery({
