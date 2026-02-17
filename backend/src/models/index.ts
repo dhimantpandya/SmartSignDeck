@@ -9,4 +9,5 @@ export { default as Screen } from "./screen.model";
 export { default as Company } from "./company.model";
 export { default as AdminRequest } from "./adminRequest.model";
 export { default as Playlist } from "./playlist.model";
+export { default as TemplateGroup } from "./templateGroup.model";
 export * from "./social.model";

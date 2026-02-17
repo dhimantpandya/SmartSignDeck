@@ -18,9 +18,14 @@ import { Globe, Lock, User, Eye } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useSearchParams } from 'react-router-dom'
-import { useEffect } from 'react'
 import { PreviewModal } from '@/components/preview-modal'
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
+import { templateGroupService } from '@/api/template-group.service'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { FolderPlus, Folder, MoreVertical, Trash2 } from 'lucide-react'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 
 
 export default function Templates() {
@@ -29,8 +34,12 @@ export default function Templates() {
     const [showEditor, setShowEditor] = useState(false)
     const [editingTemplate, setEditingTemplate] = useState<any>(null)
     const [previewTemplate, setPreviewTemplate] = useState<any>(null)
-    const [activeTab, setActiveTab] = useState<'my-templates' | 'global'>('my-templates')
+    const [activeTab, setActiveTab] = useState<'my-templates' | 'global' | 'groups'>('my-templates')
     const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
+    const [isCreateGroupOpen, setIsCreateGroupOpen] = useState(false)
+    const [selectedGroup, setSelectedGroup] = useState<any>(null)
+    const [newGroupName, setNewGroupName] = useState('')
+    const [newGroupDesc, setNewGroupDesc] = useState('')
     const queryClient = useQueryClient()
 
     useEffect(() => {
@@ -50,11 +59,22 @@ export default function Templates() {
         enabled: !!user?.id,
     })
 
-    // Query for global public templates
-    const { data: globalTemplatesData, isLoading: isLoadingGlobal } = useQuery({
-        queryKey: ['templates', 'global'],
-        queryFn: () => templateService.getTemplates({ isPublic: true, sortBy: 'created_at:desc' }),
-        enabled: true,
+    // Query for template groups
+    const { data: groupsData, isLoading: isLoadingGroups } = useQuery({
+        queryKey: ['template-groups', user?.id],
+        queryFn: () => templateGroupService.getGroups({ createdBy: user?.id }),
+        enabled: !!user?.id,
+    })
+
+    const createGroupMutation = useMutation({
+        mutationFn: (data: { name: string; description?: string }) => templateGroupService.createGroup(data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['template-groups'] })
+            toast({ title: 'Group created', description: 'Template group created successfully.' })
+            setIsCreateGroupOpen(false)
+            setNewGroupName('')
+            setNewGroupDesc('')
+        },
     })
 
     const deleteMutation = useMutation({
@@ -78,6 +98,15 @@ export default function Templates() {
                 description: error?.response?.data?.message || 'Failed to save template',
                 variant: 'destructive',
             })
+        },
+    })
+
+    const assignToGroupMutation = useMutation({
+        mutationFn: (data: { groupId: string; templateId: string }) =>
+            templateGroupService.addTemplatesToGroup(data.groupId, [data.templateId]),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['template-groups'] })
+            toast({ title: 'Template assigned', description: 'Template added to group successfully.' })
         },
     })
 
@@ -148,31 +177,59 @@ export default function Templates() {
                     )}
                 </div>
             </CardContent>
-            <CardFooter className="flex justify-end gap-2 border-t bg-muted/20 px-4 py-2">
-                <Button variant="ghost" size="sm" onClick={() => setPreviewTemplate(template)}>
-                    <Eye size={16} className="mr-1" /> Preview
-                </Button>
-                {isOwner ? (
-                    <>
-                        <Button variant="ghost" size="sm" onClick={() => handleEdit(template)}>
-                            <IconEdit size={16} className="mr-1" /> Edit
-                        </Button>
-                        <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => {
-                            setConfirmDelete(template.id)
-                        }}>
-                            <IconTrash size={16} className="mr-1" /> Delete
-                        </Button>
-                    </>
-                ) : (
-                    <Button
-                        variant="default"
-                        size="sm"
-                        onClick={() => handleClone(template.id)}
-                        loading={cloneMutation.isPending}
-                    >
-                        <IconCopy size={16} className="mr-2" /> Use Template
+            <CardFooter className="flex justify-between border-t bg-muted/20 px-4 py-2">
+                <div className="flex gap-1">
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                <Folder className="h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start" className="w-56">
+                            <DropdownMenuLabel>Assign to Group</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            {groupsData?.results?.length > 0 ? (
+                                groupsData.results.map((group: any) => (
+                                    <DropdownMenuItem
+                                        key={group.id}
+                                        onClick={() => assignToGroupMutation.mutate({ groupId: group.id, templateId: template.id })}
+                                    >
+                                        <Folder className="mr-2 h-4 w-4" />
+                                        <span>{group.name}</span>
+                                    </DropdownMenuItem>
+                                ))
+                            ) : (
+                                <DropdownMenuItem disabled>No groups found</DropdownMenuItem>
+                            )}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
+                <div className="flex gap-2">
+                    <Button variant="ghost" size="sm" onClick={() => setPreviewTemplate(template)}>
+                        <Eye size={16} className="mr-1" /> Preview
                     </Button>
-                )}
+                    {isOwner ? (
+                        <>
+                            <Button variant="ghost" size="sm" onClick={() => handleEdit(template)}>
+                                <IconEdit size={16} className="mr-1" /> Edit
+                            </Button>
+                            <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => {
+                                setConfirmDelete(template.id)
+                            }}>
+                                <IconTrash size={16} className="mr-1" /> Delete
+                            </Button>
+                        </>
+                    ) : (
+                        <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => handleClone(template.id)}
+                            loading={cloneMutation.isPending}
+                        >
+                            <IconCopy size={16} className="mr-2" /> Use Template
+                        </Button>
+                    )}
+                </div>
             </CardFooter>
         </Card>
     )
@@ -206,10 +263,16 @@ export default function Templates() {
                         </p>
                     </div>
                     {!showEditor && (
-                        <Button onClick={handleCreate}>
-                            <IconPlus className='mr-2' size={18} />
-                            Create Template
-                        </Button>
+                        <div className="flex gap-2">
+                            <Button variant="outline" onClick={() => setIsCreateGroupOpen(true)}>
+                                <FolderPlus className='mr-2' size={18} />
+                                Create Group
+                            </Button>
+                            <Button onClick={handleCreate}>
+                                <IconPlus className='mr-2' size={18} />
+                                Create Template
+                            </Button>
+                        </div>
                     )}
                 </div>
 
@@ -227,6 +290,10 @@ export default function Templates() {
                             <TabsTrigger value="my-templates" className="gap-2">
                                 <User size={16} />
                                 My Templates ({myTemplates.length})
+                            </TabsTrigger>
+                            <TabsTrigger value="groups" className="gap-2">
+                                <Folder size={16} />
+                                Template Groups ({groupsData?.results?.length || 0})
                             </TabsTrigger>
                             <TabsTrigger value="global" className="gap-2">
                                 <Globe size={16} />
@@ -256,6 +323,83 @@ export default function Templates() {
                                 </div>
                             )}
                         </TabsContent>
+
+                        <TabsContent value="groups" className="mt-6">
+                            {isLoadingGroups ? (
+                                <div className="flex h-64 items-center justify-center">
+                                    <Loader />
+                                </div>
+                            ) : groupsData?.results?.length > 0 ? (
+                                <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
+                                    {groupsData.results.map((group: any) => (
+                                        <Card key={group.id} className="overflow-hidden border-dashed border-2 hover:border-primary transition-colors cursor-pointer group">
+                                            <CardHeader className="bg-muted/30 pb-4">
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-2">
+                                                        <Folder className="text-primary h-5 w-5" />
+                                                        <CardTitle className="text-lg">{group.name}</CardTitle>
+                                                    </div>
+                                                    <Badge variant="outline">{group.templates?.length || 0} Templates</Badge>
+                                                </div>
+                                            </CardHeader>
+                                            <CardContent className="pt-4 h-24">
+                                                <p className="text-sm text-muted-foreground line-clamp-2">
+                                                    {group.description || 'No description provided.'}
+                                                </p>
+                                            </CardContent>
+                                            <CardFooter className="flex justify-between border-t bg-muted/10 px-4 py-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">
+                                                    Topic Collection
+                                                </span>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="h-7 text-xs font-bold"
+                                                    onClick={() => setSelectedGroup(group)}
+                                                >
+                                                    View Group
+                                                </Button>
+                                            </CardFooter>
+                                        </Card>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className='flex flex-col items-center justify-center rounded-lg border border-dashed p-20 text-center'>
+                                    <Folder size={48} className='mb-4 text-muted-foreground' />
+                                    <h2 className='text-xl font-semibold'>No groups yet</h2>
+                                    <p className='mb-6 text-muted-foreground text-sm max-w-xs'>
+                                        Group related templates for topics like Hotels, Retail, or Events.
+                                    </p>
+                                    <Button onClick={() => setIsCreateGroupOpen(true)}>
+                                        Organize Now
+                                    </Button>
+                                </div>
+                            )}
+                        </TabsContent>
+
+                        {selectedGroup && (
+                            <div className="mt-8 pt-8 border-t border-dashed">
+                                <div className="flex items-center justify-between mb-4">
+                                    <div className="flex items-center gap-2">
+                                        <Folder className="text-primary h-6 w-6" />
+                                        <h2 className="text-xl font-bold">{selectedGroup.name} Collection</h2>
+                                        <Badge variant="secondary">{selectedGroup.templates?.length || 0} Templates</Badge>
+                                    </div>
+                                    <Button variant="ghost" size="sm" onClick={() => setSelectedGroup(null)}>
+                                        Close Collection
+                                    </Button>
+                                </div>
+                                {selectedGroup.templates?.length > 0 ? (
+                                    <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
+                                        {selectedGroup.templates.map((template: any) => renderTemplateCard(template, checkIsOwner(template)))}
+                                    </div>
+                                ) : (
+                                    <div className="p-12 text-center bg-muted/20 rounded-xl border border-dashed">
+                                        <p className="text-muted-foreground">No templates assigned to this group yet.</p>
+                                    </div>
+                                )}
+                            </div>
+                        )}
 
                         <TabsContent value="global" className="mt-6">
                             {isLoadingGlobal ? (
@@ -299,6 +443,46 @@ export default function Templates() {
                     }}
                     onClose={() => setConfirmDelete(null)}
                 />
+
+                <Dialog open={isCreateGroupOpen} onOpenChange={setIsCreateGroupOpen}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Create Template Group</DialogTitle>
+                            <DialogDescription>
+                                Group related templates for a specific project or topic.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="grid gap-4 py-4">
+                            <div className="grid gap-2">
+                                <Label htmlFor="name">Group Name</Label>
+                                <Input
+                                    id="name"
+                                    placeholder="e.g., Grand Hotel Digital Signage"
+                                    value={newGroupName}
+                                    onChange={(e) => setNewGroupName(e.target.value)}
+                                />
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="description">Description (Optional)</Label>
+                                <Input
+                                    id="description"
+                                    placeholder="Entrance screens, Menus, Information boards..."
+                                    value={newGroupDesc}
+                                    onChange={(e) => setNewGroupDesc(e.target.value)}
+                                />
+                            </div>
+                        </div>
+                        <DialogFooter>
+                            <Button variant="outline" onClick={() => setIsCreateGroupOpen(false)}>Cancel</Button>
+                            <Button
+                                onClick={() => createGroupMutation.mutate({ name: newGroupName, description: newGroupDesc })}
+                                disabled={!newGroupName || createGroupMutation.isPending}
+                            >
+                                {createGroupMutation.isPending ? 'Creating...' : 'Create Group'}
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
             </Layout.Body>
         </Layout>
     )
