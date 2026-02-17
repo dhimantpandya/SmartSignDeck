@@ -204,7 +204,9 @@ export default function Playlists() {
                                                 </Button>
                                             </CardFooter>
                                         </Card>
-                                    ))}`r`n                            </div>`r`n                            </>`r`n                        ) : (
+                                    ))}
+                                </div>
+                                ) : (
                                 <div className='flex flex-col items-center justify-center rounded-lg border border-dashed p-20 text-center mt-6'>
                                     <IconPlaylist size={48} className='mb-4 text-muted-foreground' />
                                     <h2 className='text-xl font-semibold'>No Playlists</h2>
