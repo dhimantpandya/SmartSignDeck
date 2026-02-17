@@ -1,9 +1,4 @@
-import { Layout } from '@/components/custom/layout'
-import ThemeSwitch from '@/components/theme-switch'
-import { UserNav } from '@/components/user-nav'
-import { NotificationBell } from '@/components/notification-bell'
-import { BreadcrumbNavigation } from '@/components/ui/breadcrumb-navigation'
-import { IconHome, IconDeviceTv, IconPlus, IconTrash, IconEdit, IconPlayerPlay, IconRefresh, IconCopy } from '@tabler/icons-react'
+import { IconHome, IconDeviceTv, IconPlus, IconTrash, IconEdit, IconPlayerPlay, IconRefresh, IconCopy, IconFolder } from '@tabler/icons-react'
 import { Button } from '@/components/custom/button'
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -11,13 +6,13 @@ import { io } from 'socket.io-client'
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
 import { toast } from '@/components/ui/use-toast'
 import Loader from '@/components/loader'
-import { apiService, screenService } from '@/api'
+import { apiService, screenService, templateGroupService } from '@/api'
 import ScreenForm from './components/screen-form'
 import { Badge } from '@/components/ui/badge'
 import { useAuth } from '@/hooks/use-auth'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Globe, User } from 'lucide-react'
+import { Globe, User, Folder, Folders } from 'lucide-react'
 import { useSearchParams } from 'react-router-dom'
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
 
@@ -26,7 +21,8 @@ export default function Screens() {
     const [searchParams, setSearchParams] = useSearchParams()
     const [showForm, setShowForm] = useState(false)
     const [editingScreen, setEditingScreen] = useState<any>(null)
-    const [activeTab, setActiveTab] = useState<'my-screens' | 'global'>('my-screens')
+    const [activeTab, setActiveTab] = useState<'my-screens' | 'global' | 'groups'>('my-screens')
+    const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null)
     const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
     const queryClient = useQueryClient()
 
@@ -71,6 +67,27 @@ export default function Screens() {
         enabled: true,
     })
 
+    // Query for template groups
+    const { data: groupsData, isLoading: isLoadingGroups } = useQuery({
+        queryKey: ['template-groups'],
+        queryFn: () => templateGroupService.getGroups({ limit: 100 }),
+        enabled: true,
+    })
+
+    // Query for selected group details (ensures reactive updates)
+    const { data: selectedGroup, isLoading: isLoadingSelectedGroup, isError: isGroupError } = useQuery({
+        queryKey: ['template-groups', 'detail', selectedGroupId],
+        queryFn: () => templateGroupService.getGroup(selectedGroupId!),
+        enabled: !!selectedGroupId,
+        retry: false,
+    })
+
+    useEffect(() => {
+        if (isGroupError) {
+            setSelectedGroupId(null)
+        }
+    }, [isGroupError])
+
     const deleteMutation = useMutation({
         mutationFn: (id: string) => screenService.deleteScreen(id),
         onSuccess: () => {
@@ -105,8 +122,12 @@ export default function Screens() {
         setShowForm(true)
     }
 
-    const handleCreate = () => {
-        setEditingScreen(null)
+    const handleCreate = (preselectedTemplate?: any) => {
+        if (preselectedTemplate) {
+            setEditingScreen({ templateId: preselectedTemplate })
+        } else {
+            setEditingScreen(null)
+        }
         setShowForm(true)
     }
 
@@ -248,14 +269,18 @@ export default function Screens() {
                     />
                 ) : (
                     <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="mt-6">
-                        <TabsList className="grid w-full max-w-md grid-cols-2">
+                        <TabsList className="grid w-full max-w-md grid-cols-3">
                             <TabsTrigger value="my-screens" className="gap-2">
                                 <User size={16} />
-                                My Screens ({myScreens.length})
+                                <span className="hidden sm:inline">My Screens</span> ({myScreens.length})
                             </TabsTrigger>
                             <TabsTrigger value="global" className="gap-2">
                                 <Globe size={16} />
-                                Global Library ({globalScreens.length})
+                                <span className="hidden sm:inline">Global Library</span> ({globalScreens.length})
+                            </TabsTrigger>
+                            <TabsTrigger value="groups" className="gap-2">
+                                <Folders size={16} />
+                                <span className="hidden sm:inline">Groups</span> ({groupsData?.results?.length || 0})
                             </TabsTrigger>
                         </TabsList>
 
@@ -298,6 +323,114 @@ export default function Screens() {
                                     <p className='text-muted-foreground'>
                                         Public screens from other users will appear here.
                                     </p>
+                                </div>
+                            )}
+                        </TabsContent>
+
+                        <TabsContent value="groups" className="mt-6">
+                            {isLoadingGroups ? (
+                                <div className="flex h-64 items-center justify-center">
+                                    <Loader />
+                                </div>
+                            ) : groupsData?.results?.length > 0 ? (
+                                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                                    {groupsData.results.map((group: any) => (
+                                        <Card
+                                            key={group.id}
+                                            className={`cursor-pointer transition-all hover:shadow-md ${selectedGroupId === group.id ? 'ring-2 ring-primary border-primary' : ''}`}
+                                            onClick={() => setSelectedGroupId(group.id)}
+                                        >
+                                            <CardHeader className="pb-2">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="rounded-lg bg-primary/10 p-2 text-primary">
+                                                        <Folder size={20} />
+                                                    </div>
+                                                    <div>
+                                                        <CardTitle className="text-sm font-bold truncate max-w-[120px]">{group.name}</CardTitle>
+                                                        <p className="text-[10px] text-muted-foreground">{group.templates?.length || 0} Templates</p>
+                                                    </div>
+                                                </div>
+                                            </CardHeader>
+                                            <CardFooter className="pt-0">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="h-7 w-full text-[10px] font-bold"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setSelectedGroupId(group.id);
+                                                    }}
+                                                >
+                                                    View Group
+                                                </Button>
+                                            </CardFooter>
+                                        </Card>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className='flex flex-col items-center justify-center rounded-lg border border-dashed p-20 text-center'>
+                                    <Folders size={48} className='mb-4 text-muted-foreground' />
+                                    <h2 className='text-xl font-semibold'>No template groups</h2>
+                                    <p className='text-muted-foreground'>
+                                        Organize templates into groups in the Templates section.
+                                    </p>
+                                </div>
+                            )}
+
+                            {selectedGroupId && (
+                                <div className="mt-8 pt-8 border-t border-dashed">
+                                    {isLoadingSelectedGroup ? (
+                                        <div className="flex h-32 items-center justify-center"><Loader /></div>
+                                    ) : selectedGroup ? (
+                                        <>
+                                            <div className="flex items-center justify-between mb-4">
+                                                <div className="flex items-center gap-2">
+                                                    <Folder className="text-primary h-6 w-6" />
+                                                    <h2 className="text-xl font-bold">{selectedGroup.name} Collection</h2>
+                                                    <Badge variant="secondary">{selectedGroup.templates?.length || 0} Templates</Badge>
+                                                </div>
+                                                <Button variant="ghost" size="sm" onClick={() => setSelectedGroupId(null)}>
+                                                    Close Collection
+                                                </Button>
+                                            </div>
+                                            {selectedGroup.templates?.length > 0 ? (
+                                                <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
+                                                    {selectedGroup.templates.map((template: any) => (
+                                                        <Card key={template.id} className="overflow-hidden bg-card/50 backdrop-blur-sm transition-all hover:shadow-lg h-full flex flex-col">
+                                                            <div className="relative aspect-video">
+                                                                <div className="absolute inset-0 flex items-center justify-center bg-muted/40 overflow-hidden">
+                                                                    <div className="scale-[0.15] pointer-events-none opacity-40">
+                                                                        <IconDeviceTv size={120} />
+                                                                    </div>
+                                                                    <div className="absolute inset-0 bg-gradient-to-t from-background/90 to-transparent" />
+                                                                </div>
+                                                                <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between">
+                                                                    <div className="flex flex-col">
+                                                                        <span className="text-sm font-bold truncate text-foreground">{template.name}</span>
+                                                                        <span className="text-[10px] text-muted-foreground">{template.resolution}</span>
+                                                                    </div>
+                                                                    <Badge variant="outline" className="text-[9px] bg-background/50">{template.zones?.length || 0} Zones</Badge>
+                                                                </div>
+                                                            </div>
+                                                            <CardFooter className="p-2 pt-0 mt-auto">
+                                                                <Button
+                                                                    variant="default"
+                                                                    className="w-full h-8 gap-1 text-[11px] font-bold shadow-sm"
+                                                                    onClick={() => handleCreate(template)}
+                                                                >
+                                                                    <IconPlus size={14} /> Create Screen
+                                                                </Button>
+                                                            </CardFooter>
+                                                        </Card>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <div className="p-12 text-center bg-muted/20 rounded-xl border border-dashed">
+                                                    <p className="text-muted-foreground">No templates assigned to this group yet.</p>
+                                                </div>
+                                            )}
+                                        </>
+                                    ) : null}
                                 </div>
                             )}
                         </TabsContent>
