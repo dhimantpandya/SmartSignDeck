@@ -46,7 +46,7 @@ export const TemplateSlider = ({ templates, isLoading, isNewUser }: TemplateSlid
                     <Card
                         className={cn(
                             "w-[260px] md:w-[300px] flex-shrink-0 snap-start border-2 border-dashed border-primary/20 hover:border-primary/40 transition-all cursor-pointer group/cta bg-primary/5 dark:bg-primary/10",
-                            !hasTemplates && "border-primary/40 bg-primary/10"
+                            isNewUser && "border-primary/40 bg-primary/10"
                         )}
                         onClick={() => navigate(`${Routes.TEMPLATES}?create=true`)}
                     >
@@ -54,8 +54,14 @@ export const TemplateSlider = ({ templates, isLoading, isNewUser }: TemplateSlid
                             <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center mb-4 group-hover/cta:scale-110 transition-transform">
                                 <IconPlus className="text-primary font-bold" size={24} />
                             </div>
-                            <h3 className="font-bold text-lg mb-1">Create New</h3>
-                            <p className="text-[11px] text-muted-foreground mb-4">Design a custom layout from scratch for your screens.</p>
+                            <h3 className="font-bold text-lg mb-1">
+                                {isNewUser ? "Create Your First" : "Create New"}
+                            </h3>
+                            <p className="text-[11px] text-muted-foreground mb-4">
+                                {isNewUser
+                                    ? "Start your digital signage journey with a beautiful layout."
+                                    : "Design a custom layout from scratch for your screens."}
+                            </p>
                             <Button size="sm" variant="outline" className="gap-2 group-hover/cta:bg-primary group-hover/cta:text-primary-foreground transition-all">
                                 Open Editor <IconArrowRight size={14} />
                             </Button>
