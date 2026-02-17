@@ -23,9 +23,17 @@ const getPlaylists = catchAsync(async (req: Request, res: Response) => {
         throw new ApiError(httpStatus.UNAUTHORIZED, "Please authenticate");
     }
     const user = req.user as any;
-    const filter = pick(req.query, ["name"]);
+    const filter = pick(req.query, ["name", "createdBy"]);
     // Enforce company isolation
-    filter.companyId = user.companyId;
+    if (user.role !== "super_admin") {
+        filter.companyId = user.companyId;
+
+        // 🔒 Personal Isolation: If frontend requests 'createdBy', honor it.
+        // Otherwise, regular users only see their own work in the personal model.
+        if (!filter.createdBy) {
+            filter.createdBy = user.id;
+        }
+    }
 
     const options = pick(req.query, ["sortBy", "limit", "page"]);
     const result = await playlistService.queryPlaylists(filter, options);

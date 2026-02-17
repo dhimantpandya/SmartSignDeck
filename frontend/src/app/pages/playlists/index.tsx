@@ -21,8 +21,9 @@ export default function Playlists() {
     const queryClient = useQueryClient()
 
     const { data, isLoading } = useQuery({
-        queryKey: ['playlists'],
-        queryFn: () => playlistService.getPlaylists({ limit: 100 }),
+        queryKey: ['playlists', user?.id],
+        queryFn: () => playlistService.getPlaylists({ createdBy: user?.id, limit: 100 }),
+        enabled: !!user?.id,
     })
 
     const deleteMutation = useMutation({

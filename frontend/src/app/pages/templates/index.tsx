@@ -43,10 +43,10 @@ export default function Templates() {
         }
     }, [searchParams, setSearchParams])
 
-    // Query for user's own templates (Private & Personal)
+    // Query for user's own templates (All personal work, public or private)
     const { data: myTemplatesData, isLoading: isLoadingMy } = useQuery({
         queryKey: ['templates', 'my', user?.id],
-        queryFn: () => templateService.getTemplates({ createdBy: user?.id, isPublic: false, sortBy: 'created_at:desc' }),
+        queryFn: () => templateService.getTemplates({ createdBy: user?.id, sortBy: 'created_at:desc' }),
         enabled: !!user?.id,
     })
 

@@ -1,0 +1,30 @@
+---DEEP_DIAGNOSTIC---
+Searching for assets for email: dhimant.pandya@technostacks.in
+Found 1 user record(s).
+User IDs to search for: 6980409f5f0b4d7e96411597
+
+---TEMPLATES FOUND (9)---
+T: New Template | ID: 698043645f0b4d7e96411604 | CreatedBy: 6980409f5f0b4d7e96411597 | Co: 698040e35f0b4d7e9641159e | Public: false
+T: New Template | ID: 69805904cb97513450637c62 | CreatedBy: 6980409f5f0b4d7e96411597 | Co: 698040e35f0b4d7e9641159e | Public: true
+T: Okay | ID: 698089973c9edec5bec1ca23 | CreatedBy: 698088727a88d2ad37ee1349 | Co: 698040e35f0b4d7e9641159e | Public: false
+T: Template888 | ID: 6981bf5b736c9ee728822100 | CreatedBy: 6980409f5f0b4d7e96411597 | Co: 698040e35f0b4d7e9641159e | Public: true
+T: Copy of Template888 | ID: 698307a88d6905b17602abbf | CreatedBy: 698088727a88d2ad37ee1349 | Co: 698040e35f0b4d7e9641159e | Public: false
+T: New Template | ID: 69832990c99cc410728ce58e | CreatedBy: 6980409f5f0b4d7e96411597 | Co: 698040e35f0b4d7e9641159e | Public: false
+T: New Templatehai | ID: 698446e9f6ca38f85f219b9d | CreatedBy: 698088727a88d2ad37ee1349 | Co: 698040e35f0b4d7e9641159e | Public: false
+T: Copy of Template888 | ID: 69845946ac8f0967f17f593b | CreatedBy: 698088727a88d2ad37ee1349 | Co: 698040e35f0b4d7e9641159e | Public: false
+T: Portrait1 | ID: 698460b0ac8f0967f17f5c74 | CreatedBy: 698088727a88d2ad37ee1349 | Co: 698040e35f0b4d7e9641159e | Public: false
+
+---SCREENS FOUND (8)---
+S: Home | ID: 69804ab25f0b4d7e96411709 | CreatedBy: 698088727a88d2ad37ee1349 | Co: 698040e35f0b4d7e9641159e
+S: ABC | ID: 698059fecb97513450637c96 | CreatedBy: 698088727a88d2ad37ee1349 | Co: 698040e35f0b4d7e9641159e
+S: ABC | ID: 69808a853c9edec5bec1ca45 | CreatedBy: 698088727a88d2ad37ee1349 | Co: 698040e35f0b4d7e9641159e
+S: Template888 | ID: 6981c072736c9ee728822168 | CreatedBy: 698088727a88d2ad37ee1349 | Co: 698040e35f0b4d7e9641159e
+S: Technostacks Screen | ID: 698307ca8d6905b17602ac5d | CreatedBy: 698088727a88d2ad37ee1349 | Co: 698040e35f0b4d7e9641159e
+S: Home23 | ID: 69844239f6ca38f85f2197f9 | CreatedBy: 698088727a88d2ad37ee1349 | Co: 698040e35f0b4d7e9641159e
+S: Home2345 | ID: 698449def0b8ec002e61a837 | CreatedBy: 698088727a88d2ad37ee1349 | Co: 698040e35f0b4d7e9641159e
+S: Lobby | ID: 698460eaac8f0967f17f5ce5 | CreatedBy: 698088727a88d2ad37ee1349 | Co: 698040e35f0b4d7e9641159e
+
+---PLAYLISTS FOUND (1)---
+P: Verification Playlist - Technostacks Scope | ID: 698434a8534e75d159247cdd | CreatedBy: 6980b18f38ffb60ed6d17300 | Co: 698040e35f0b4d7e9641159e
+
+---END_DEEP_DIAGNOSTIC---
