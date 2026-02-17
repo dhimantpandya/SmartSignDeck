@@ -41,6 +41,23 @@ export default function Screens() {
 
     const clearSelection = () => setSelectedScreens([])
 
+    const selectAll = (screens: any[]) => {
+        const ids = screens.map(s => s.id)
+        setSelectedScreens(ids)
+    }
+
+    const isAllSelected = (screens: any[]) => {
+        return screens.length > 0 && screens.every(s => selectedScreens.includes(s.id))
+    }
+
+    const toggleSelectAll = (screens: any[]) => {
+        if (isAllSelected(screens)) {
+            clearSelection()
+        } else {
+            selectAll(screens)
+        }
+    }
+
     useEffect(() => {
         const s = io(import.meta.env.VITE_APP_URL || 'http://localhost:5000')
         return () => { s.disconnect() }
@@ -333,9 +350,21 @@ export default function Screens() {
                                     <Loader />
                                 </div>
                             ) : myScreens.length > 0 ? (
-                                <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
-                                    {myScreens.map((screen: any) => renderScreenCard(screen, true))}
-                                </div>
+                                <>
+                                    <div className="flex items-center gap-2 mb-4 px-2 py-2 bg-muted/30 rounded-lg border">
+                                        <Checkbox
+                                            id="select-all-my-screens"
+                                            checked={isAllSelected(myScreens)}
+                                            onCheckedChange={() => toggleSelectAll(myScreens)}
+                                        />
+                                        <label htmlFor="select-all-my-screens" className="text-sm font-medium cursor-pointer flex-1">
+                                            Select All My Screens ({myScreens.length})
+                                        </label>
+                                    </div>
+                                    <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
+                                        {myScreens.map((screen: any) => renderScreenCard(screen, true))}
+                                    </div>
+                                </>
                             ) : (
                                 <div className='flex flex-col items-center justify-center rounded-lg border border-dashed p-20 text-center'>
                                     <IconDeviceTv size={48} className='mb-4 text-muted-foreground' />
@@ -356,9 +385,21 @@ export default function Screens() {
                                     <Loader />
                                 </div>
                             ) : globalScreens.length > 0 ? (
-                                <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
-                                    {globalScreens.map((screen: any) => renderScreenCard(screen, checkIsOwner(screen)))}
-                                </div>
+                                <>
+                                    <div className="flex items-center gap-2 mb-4 px-2 py-2 bg-muted/30 rounded-lg border">
+                                        <Checkbox
+                                            id="select-all-global-screens"
+                                            checked={isAllSelected(globalScreens)}
+                                            onCheckedChange={() => toggleSelectAll(globalScreens)}
+                                        />
+                                        <label htmlFor="select-all-global-screens" className="text-sm font-medium cursor-pointer flex-1">
+                                            Select All Global Screens ({globalScreens.length})
+                                        </label>
+                                    </div>
+                                    <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
+                                        {globalScreens.map((screen: any) => renderScreenCard(screen, checkIsOwner(screen)))}
+                                    </div>
+                                </>
                             ) : (
                                 <div className='flex flex-col items-center justify-center rounded-lg border border-dashed p-20 text-center'>
                                     <Globe size={48} className='mb-4 text-muted-foreground' />

@@ -52,6 +52,23 @@ export default function Templates() {
 
     const clearSelection = () => setSelectedTemplates([])
 
+    const selectAll = (templates: any[]) => {
+        const ids = templates.map(t => t.id)
+        setSelectedTemplates(ids)
+    }
+
+    const isAllSelected = (templates: any[]) => {
+        return templates.length > 0 && templates.every(t => selectedTemplates.includes(t.id))
+    }
+
+    const toggleSelectAll = (templates: any[]) => {
+        if (isAllSelected(templates)) {
+            clearSelection()
+        } else {
+            selectAll(templates)
+        }
+    }
+
     useEffect(() => {
         if (searchParams.get('create') === 'true') {
             setShowEditor(true)
