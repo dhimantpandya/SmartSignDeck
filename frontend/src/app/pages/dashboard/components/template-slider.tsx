@@ -18,14 +18,12 @@ interface TemplateSliderProps {
 const CARD_WIDTH = 340; // Reduced from 400
 const GAP = 24; // Reduced from 32
 const STEP = CARD_WIDTH + GAP;
-const STAGE_HEIGHT = 380; // Reduced from 450
 
 export const TemplateSlider = ({ templates, isLoading }: TemplateSliderProps) => {
     const navigate = useNavigate()
     const [isPaused, setIsPaused] = useState(false)
     const [isHoveringCenter, setIsHoveringCenter] = useState(false)
     const timeoutRef = useRef<any>(null)
-    const containerRef = useRef<HTMLDivElement>(null)
 
     // Inspiration Items Only (CTA removed per request)
     const baseItems = useMemo(() => {
@@ -81,7 +79,7 @@ export const TemplateSlider = ({ templates, isLoading }: TemplateSliderProps) =>
 
     if (isLoading) {
         return (
-            <div className="flex gap-6 items-center justify-center h-[STAGE_HEIGHT] w-full overflow-hidden">
+            <div className="flex gap-6 items-center justify-center h-[380px] w-full overflow-hidden">
                 <Skeleton className="h-[220px] w-[300px] rounded-3xl opacity-20" />
                 <Skeleton className="h-[300px] w-[420px] rounded-3xl opacity-60" />
                 <Skeleton className="h-[220px] w-[300px] rounded-3xl opacity-20" />
@@ -110,9 +108,8 @@ export const TemplateSlider = ({ templates, isLoading }: TemplateSliderProps) =>
                 </div>
             </div>
 
-            {/* Cinematic Stage Area */}
             <div
-                className="relative w-full group/main flex items-center justify-center select-none bg-transparent h-[STAGE_HEIGHT]"
+                className="relative w-full group/main flex items-center justify-center select-none bg-transparent h-[380px]"
                 onMouseEnter={() => setIsPaused(true)}
                 onMouseLeave={() => { setIsPaused(false); setIsHoveringCenter(false); }}
             >
