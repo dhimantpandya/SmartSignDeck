@@ -120,9 +120,6 @@ export default function Templates() {
             templateGroupService.addTemplatesToGroup(data.groupId, [data.templateId]),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['template-groups'] })
-            if (selectedGroup) {
-                templateGroupService.getGroup(selectedGroup.id).then(setSelectedGroup)
-            }
             toast({ title: 'Template assigned', description: 'Template added to group successfully.' })
         },
     })
@@ -132,10 +129,6 @@ export default function Templates() {
             templateGroupService.removeTemplatesFromGroup(data.groupId, [data.templateId]),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['template-groups'] })
-            if (selectedGroup) {
-                // Refresh the local view immediately
-                templateGroupService.getGroup(selectedGroup.id).then(setSelectedGroup)
-            }
             toast({ title: 'Removed from group', description: 'Template removed from this collection.' })
         },
     })
