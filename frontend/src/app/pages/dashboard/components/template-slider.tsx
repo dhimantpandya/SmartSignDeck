@@ -6,7 +6,7 @@ import { Routes } from '@/utilities/routes'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
 import { INSPIRATION_ITEMS, type InspirationItem } from './inspiration-data'
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 
 interface TemplateSliderProps {
     templates: any[]
@@ -14,37 +14,68 @@ interface TemplateSliderProps {
     isNewUser: boolean
 }
 
+const CARD_WIDTH = 320;
+const GAP = 24;
+
 export const TemplateSlider = ({ templates, isLoading }: TemplateSliderProps) => {
     const navigate = useNavigate()
-    const [activeIndex, setActiveIndex] = useState(1)
     const [isPaused, setIsPaused] = useState(false)
     const timeoutRef = useRef<any>(null)
 
+    // Raw items
     const displayItems = templates.length > 0 ? templates : INSPIRATION_ITEMS;
     const isShowingInspiration = templates.length === 0;
 
-    const combinedItems = [
-        ...displayItems.slice(0, 1),
+    // Combined list: [Item 0, CTA, Item 1, Item 2...]
+    const baseItems = useMemo(() => [
+        ...displayItems.slice(0, 5), // Put CTA after first 5 images for 20 total items
         { isCTA: true },
-        ...displayItems.slice(1)
-    ];
+        ...displayItems.slice(5)
+    ], [displayItems]);
 
-    const nextSlide = useCallback(() => {
-        setActiveIndex((prev) => (prev + 1) % combinedItems.length);
-    }, [combinedItems.length]);
+    // For infinite loop, we triple the items to handle seamless transitions
+    const infiniteItems = useMemo(() => [...baseItems, ...baseItems, ...baseItems], [baseItems]);
 
-    const prevSlide = useCallback(() => {
-        setActiveIndex((prev) => (prev - 1 + combinedItems.length) % combinedItems.length);
-    }, [combinedItems.length]);
+    // Start at the middle set of items
+    const [activeIndex, setActiveIndex] = useState(baseItems.length + 1);
+    const [isTransitioning, setIsTransitioning] = useState(true);
+
+    const handleNext = useCallback(() => {
+        setIsTransitioning(true);
+        setActiveIndex((prev) => prev + 1);
+    }, []);
+
+    const handlePrev = useCallback(() => {
+        setIsTransitioning(true);
+        setActiveIndex((prev) => prev - 1);
+    }, []);
+
+    // Infinite loop jump logic
+    useEffect(() => {
+        if (activeIndex >= baseItems.length * 2) {
+            const timer = setTimeout(() => {
+                setIsTransitioning(false);
+                setActiveIndex(activeIndex - baseItems.length);
+            }, 600); // Wait for transition animation
+            return () => clearTimeout(timer);
+        }
+        if (activeIndex < baseItems.length) {
+            const timer = setTimeout(() => {
+                setIsTransitioning(false);
+                setActiveIndex(activeIndex + baseItems.length);
+            }, 600);
+            return () => clearTimeout(timer);
+        }
+    }, [activeIndex, baseItems.length]);
 
     useEffect(() => {
         if (!isPaused) {
-            timeoutRef.current = setInterval(nextSlide, 3000);
+            timeoutRef.current = setInterval(handleNext, 3000);
         }
         return () => {
             if (timeoutRef.current) clearInterval(timeoutRef.current);
         };
-    }, [isPaused, nextSlide]);
+    }, [isPaused, handleNext]);
 
     if (isLoading) {
         return (
@@ -72,10 +103,10 @@ export const TemplateSlider = ({ templates, isLoading }: TemplateSliderProps) =>
                 </div>
                 <div className="flex items-center gap-4">
                     <div className="flex gap-1">
-                        <Button variant="outline" size="icon" className="h-8 w-8 rounded-full" onClick={prevSlide}>
+                        <Button variant="outline" size="icon" className="h-8 w-8 rounded-full" onClick={handlePrev}>
                             <IconChevronLeft size={16} />
                         </Button>
-                        <Button variant="outline" size="icon" className="h-8 w-8 rounded-full" onClick={nextSlide}>
+                        <Button variant="outline" size="icon" className="h-8 w-8 rounded-full" onClick={handleNext}>
                             <IconChevronRight size={16} />
                         </Button>
                     </div>
@@ -85,30 +116,35 @@ export const TemplateSlider = ({ templates, isLoading }: TemplateSliderProps) =>
                 </div>
             </div>
 
+            {/* Carousel Container */}
             <div
-                className="relative h-[280px] flex items-center justify-center overflow-hidden w-full group/main"
+                className="relative h-[280px] w-full group/main overflow-hidden"
                 onMouseEnter={() => setIsPaused(true)}
                 onMouseLeave={() => setIsPaused(false)}
             >
                 <div
-                    className="flex gap-4 transition-transform duration-700 ease-out"
+                    className={cn(
+                        "flex gap-[24px] absolute left-1/2 items-center h-full",
+                        isTransitioning ? "transition-transform duration-500 ease-in-out" : "transition-none"
+                    )}
                     style={{
-                        transform: `translateX(calc(-${activeIndex * (300 + 16)}px))`
+                        // Center active card: offset by card width + gap
+                        transform: `translateX(calc(-50% - ${activeIndex * (CARD_WIDTH + GAP)}px + ${(CARD_WIDTH + GAP) / 2}px))`
                     }}
                 >
-                    {combinedItems.map((item: any, idx) => {
+                    {infiniteItems.map((item: any, idx) => {
                         const isFocused = idx === activeIndex;
                         const id = item.id || item._id || `slider-item-${idx}`;
 
                         if (item.isCTA) {
                             return (
                                 <Card
-                                    key="cta-card"
+                                    key={`cta-${idx}`}
                                     className={cn(
-                                        "w-[300px] h-[220px] flex-shrink-0 transition-all duration-700 cursor-pointer border-2 border-dashed",
+                                        "w-[320px] h-[220px] flex-shrink-0 transition-all duration-500 cursor-pointer border-2 border-dashed",
                                         isFocused
                                             ? "scale-110 z-20 border-primary/50 bg-primary/10 shadow-xl opacity-100"
-                                            : "scale-90 z-10 border-primary/20 bg-primary/5 opacity-50 blur-[1px] hover:blur-0"
+                                            : "scale-90 z-10 border-primary/20 bg-primary/5 opacity-60"
                                     )}
                                     onClick={() => isFocused ? navigate(`${Routes.TEMPLATES}?create=true`) : setActiveIndex(idx)}
                                 >
@@ -167,12 +203,12 @@ export const TemplateSlider = ({ templates, isLoading }: TemplateSliderProps) =>
 
                         return (
                             <Card
-                                key={id}
+                                key={`${id}-${idx}`}
                                 className={cn(
-                                    "w-[300px] h-[220px] flex-shrink-0 transition-all duration-700 cursor-pointer overflow-hidden border-none",
+                                    "w-[320px] h-[220px] flex-shrink-0 transition-all duration-500 cursor-pointer overflow-hidden border-none",
                                     isFocused
                                         ? "scale-110 z-20 shadow-2xl opacity-100"
-                                        : "scale-90 z-10 opacity-50 blur-[1px] hover:blur-0 grayscale-[50%] hover:grayscale-0 shadow-lg"
+                                        : "scale-90 z-10 opacity-60 grayscale-[30%] shadow-lg"
                                 )}
                                 onClick={() => isFocused ? (isInspiration ? navigate(Routes.TEMPLATES) : navigate(`${Routes.TEMPLATES}?id=${id}`)) : setActiveIndex(idx)}
                             >
@@ -181,7 +217,7 @@ export const TemplateSlider = ({ templates, isLoading }: TemplateSliderProps) =>
                                         previewType === 'video' ? (
                                             <video src={previewUrl} className="absolute inset-0 w-full h-full object-cover" muted autoPlay loop />
                                         ) : (
-                                            <img src={previewUrl} alt={name} className="absolute inset-0 w-full h-full object-cover" />
+                                            <img src={previewUrl} alt={name} className="absolute inset-0 w-full h-full object-cover font-sans" />
                                         )
                                     ) : (
                                         <div className="absolute inset-0 bg-muted flex items-center justify-center">
@@ -221,15 +257,19 @@ export const TemplateSlider = ({ templates, isLoading }: TemplateSliderProps) =>
                 </div>
             </div>
 
+            {/* Pagination Dots (Representative Only) */}
             <div className="flex justify-center gap-2 pb-2">
-                {combinedItems.map((_, idx) => (
+                {baseItems.map((_, idx) => (
                     <button
                         key={idx}
                         className={cn(
                             "h-1.5 transition-all rounded-full",
-                            idx === activeIndex ? "w-8 bg-primary" : "w-1.5 bg-primary/20 hover:bg-primary/40"
+                            (activeIndex % baseItems.length) === idx ? "w-8 bg-primary" : "w-1.5 bg-primary/20 hover:bg-primary/40"
                         )}
-                        onClick={() => setActiveIndex(idx)}
+                        onClick={() => {
+                            setIsTransitioning(true);
+                            setActiveIndex(baseItems.length + idx);
+                        }}
                     />
                 ))}
             </div>
