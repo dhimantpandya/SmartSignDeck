@@ -14,8 +14,9 @@ import ThemeSwitch from '@/components/theme-switch'
 import { UserNav } from '@/components/user-nav'
 import { NotificationBell } from '@/components/notification-bell'
 import { RecentActivity } from './components/recent-sales'
-import { Overview } from './components/overview'
-import { useState, useRef } from 'react'
+import { useState, useRef, useMemo } from 'react'
+import { TemplateSlider } from './components/template-slider'
+import { Separator } from '@/components/ui/separator'
 import { BreadcrumbNavigation } from '@/components/ui/breadcrumb-navigation'
 import { IconHome, IconLayout, IconDeviceTv, IconCircleCheck } from '@tabler/icons-react'
 import { Analytics } from './components/analytics'
@@ -66,6 +67,12 @@ export default function Dashboard() {
     enabled: !!user?.companyId
   })
 
+  const { data: globalTemplates } = useQuery({
+    queryKey: ['global-templates-dashboard'],
+    queryFn: () => templateService.getTemplates({ limit: 5, isPublic: true }),
+  })
+
+
   // Combine and sort by date
   const recentActivity = [
     ...(recentScreens?.results || []).map(s => ({ ...s, type: 'screen' })),
@@ -96,6 +103,44 @@ export default function Dashboard() {
     }
   }
 
+  const getGreeting = () => {
+    const hour = new Date().getHours()
+    const name = user?.first_name || 'Designer'
+
+    // Heuristic for "First Time"
+    const isFirstTime = (stats?.totalTemplates ?? 0) === 0 && (stats?.totalScreens ?? 0) === 0
+    const prefix = isFirstTime ? 'Welcome to SmartSignDeck' : 'Welcome back'
+
+    const timeGreetings = [
+      { max: 12, text: 'Good morning' },
+      { max: 17, text: 'Good afternoon' },
+      { max: 24, text: 'Good evening' }
+    ]
+
+    const timeText = timeGreetings.find(g => hour < g.max)?.text || 'Hello'
+
+    // Random catchy phrases for returning users
+    const rotatingPhrases = [
+      "Ready to create something amazing?",
+      "Your workspace is looking good.",
+      "Let's light up your displays.",
+      "Time to make an impression.",
+      "Great to see you again!",
+      "What are we designing today?"
+    ]
+
+    // Use day of month to rotate so it feels consistent throughout the day
+    const phrase = rotatingPhrases[new Date().getDate() % rotatingPhrases.length]
+
+    return {
+      title: `${prefix}, ${name}!`,
+      subtitle: isFirstTime ? phrase : `${timeText}. ${phrase}`
+    }
+  }
+
+  const greeting = useMemo(getGreeting, [user?.first_name, stats?.totalTemplates, stats?.totalScreens])
+
+
   const breadcrumbItems = [
     { href: '/', icon: <IconHome size={18} /> },
     { label: 'Dashboard' },
@@ -119,15 +164,15 @@ export default function Dashboard() {
         <div ref={dashboardRef} className='p-1'>
           <BreadcrumbNavigation items={breadcrumbItems} />
 
-          <div className='mb-6 flex items-center justify-between space-y-2'>
+          <div className='mb-8 flex items-center justify-between space-y-2'>
             <div>
-              <h1 className='text-3xl font-bold tracking-tight'>Welcome back, {user?.first_name}!</h1>
-              <p className='text-muted-foreground'>
-                Here's what's happening with your workspace today.
+              <h1 className='text-3xl font-bold tracking-tight text-primary'>{greeting.title}</h1>
+              <p className='text-muted-foreground text-lg'>
+                {greeting.subtitle}
               </p>
             </div>
             <div className='flex items-center space-x-2'>
-              <Button onClick={handleDownload}>Download Reports</Button>
+              <Button onClick={handleDownload} variant="outline" className="border-primary/20 hover:bg-primary/5">Download Reports</Button>
             </div>
           </div>
 
@@ -154,128 +199,138 @@ export default function Dashboard() {
               </TabsList>
             </div>
 
-            <TabsContent value='overview' className='space-y-4'>
-              <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-4'>
-                <Analytics stats={stats} isLoading={isStatsLoading} />
-              </div>
-              <div className='grid grid-cols-1 gap-4 lg:grid-cols-7'>
-                <Card className='col-span-1 lg:col-span-4'>
+            <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-4'>
+              <Analytics stats={stats} isLoading={isStatsLoading} />
+            </div>
+
+            <div className="py-2">
+              <TemplateSlider
+                templates={(stats?.totalTemplates ?? 0) > 0 ? (recentTemplates?.results || []) : (globalTemplates?.results || [])}
+                isLoading={isTemplatesLoading}
+                isNewUser={(stats?.totalTemplates ?? 0) === 0}
+              />
+            </div>
+
+            <Separator className="opacity-50" />
+
+            <div className='grid grid-cols-1 gap-4 lg:grid-cols-7 pt-4'>
+              <Card className='col-span-1 lg:col-span-4'>
+                <CardHeader>
+                  <CardTitle>Weekly Impressions</CardTitle>
+                  <CardDescription>
+                    Total playback activity across all screens.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className='pl-2'>
+                  <Overview data={timelineData} />
+                </CardContent>
+              </Card>
+              <div className='col-span-1 lg:col-span-3 space-y-4'>
+                <Card>
                   <CardHeader>
-                    <CardTitle>Weekly Impressions</CardTitle>
-                    <CardDescription>
-                      Total playback activity across all screens.
-                    </CardDescription>
+                    <CardTitle>Quick Actions</CardTitle>
+                    <CardDescription>Standard operations for your signage.</CardDescription>
                   </CardHeader>
-                  <CardContent className='pl-2'>
-                    <Overview data={timelineData} />
+                  <CardContent className="grid grid-cols-2 gap-2">
+                    {user?.role !== 'advertiser' && (
+                      <Button variant="outline" className="flex flex-col h-20 gap-1" onClick={() => navigate(`${Routes.TEMPLATES}?create=true`)}>
+                        <IconLayout size={20} />
+                        <span className="text-xs">New Template</span>
+                      </Button>
+                    )}
+                    <Button variant="outline" className={cn("flex flex-col h-20 gap-1", user?.role === 'advertiser' && "col-span-2")} onClick={() => navigate(`${Routes.SCREENS}?create=true`)}>
+                      <IconDeviceTv size={20} />
+                      <span className="text-xs">Add Screen</span>
+                    </Button>
                   </CardContent>
                 </Card>
-                <div className='col-span-1 lg:col-span-3 space-y-4'>
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Quick Actions</CardTitle>
-                      <CardDescription>Standard operations for your signage.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="grid grid-cols-2 gap-2">
-                      {user?.role !== 'advertiser' && (
-                        <Button variant="outline" className="flex flex-col h-20 gap-1" onClick={() => navigate(`${Routes.TEMPLATES}?create=true`)}>
-                          <IconLayout size={20} />
-                          <span className="text-xs">New Template</span>
-                        </Button>
-                      )}
-                      <Button variant="outline" className={cn("flex flex-col h-20 gap-1", user?.role === 'advertiser' && "col-span-2")} onClick={() => navigate(`${Routes.SCREENS}?create=true`)}>
-                        <IconDeviceTv size={20} />
-                        <span className="text-xs">Add Screen</span>
-                      </Button>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Recent Activity</CardTitle>
-                      <CardDescription>
-                        Latest {recentActivity.length} items added to your workspace.
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <RecentActivity items={recentActivity} isLoading={isScreensLoading || isTemplatesLoading} />
-                    </CardContent>
-                  </Card>
-                </div>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Recent Activity</CardTitle>
+                    <CardDescription>
+                      Latest {recentActivity.length} items added to your workspace.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <RecentActivity items={recentActivity} isLoading={isScreensLoading || isTemplatesLoading} />
+                  </CardContent>
+                </Card>
               </div>
-            </TabsContent>
+            </div>
+          </TabsContent>
 
-            <TabsContent value='templates' className='space-y-4'>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <div>
-                    <CardTitle>Workspace Templates</CardTitle>
-                    <CardDescription>Your custom design layouts.</CardDescription>
+          <TabsContent value='templates' className='space-y-4'>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>Workspace Templates</CardTitle>
+                  <CardDescription>Your custom design layouts.</CardDescription>
+                </div>
+                <Button size="sm" onClick={() => navigate(Routes.TEMPLATES)}>
+                  <IconLayout size={16} className="mr-2" /> Manage All
+                </Button>
+              </CardHeader>
+              <CardContent>
+                <RecentActivity
+                  items={(recentTemplates?.results || []).map(t => ({ ...t, type: 'template' }))}
+                  isLoading={isTemplatesLoading}
+                />
+                {(recentTemplates?.results || []).length === 0 && (
+                  <div className="text-center py-10 border-2 border-dashed rounded-lg">
+                    <p className="text-muted-foreground mb-4">No templates found in your workspace.</p>
+                    <Button onClick={() => navigate(Routes.TEMPLATES)}>Create First Template</Button>
                   </div>
-                  <Button size="sm" onClick={() => navigate(Routes.TEMPLATES)}>
-                    <IconLayout size={16} className="mr-2" /> Manage All
-                  </Button>
-                </CardHeader>
-                <CardContent>
-                  <RecentActivity
-                    items={(recentTemplates?.results || []).map(t => ({ ...t, type: 'template' }))}
-                    isLoading={isTemplatesLoading}
-                  />
-                  {(recentTemplates?.results || []).length === 0 && (
-                    <div className="text-center py-10 border-2 border-dashed rounded-lg">
-                      <p className="text-muted-foreground mb-4">No templates found in your workspace.</p>
-                      <Button onClick={() => navigate(Routes.TEMPLATES)}>Create First Template</Button>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-            <TabsContent value='screens' className='space-y-4'>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <div>
-                    <CardTitle>Smart Screens</CardTitle>
-                    <CardDescription>All registered displays in your network.</CardDescription>
+          <TabsContent value='screens' className='space-y-4'>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>Smart Screens</CardTitle>
+                  <CardDescription>All registered displays in your network.</CardDescription>
+                </div>
+                <Button size="sm" onClick={() => navigate(Routes.SCREENS)}>
+                  <IconDeviceTv size={16} className="mr-2" /> Manage All
+                </Button>
+              </CardHeader>
+              <CardContent>
+                <RecentActivity
+                  items={(recentScreens?.results || []).map(s => ({ ...s, type: 'screen' }))}
+                  isLoading={isScreensLoading}
+                />
+                {(recentScreens?.results || []).length === 0 && (
+                  <div className="text-center py-10 border-2 border-dashed rounded-lg">
+                    <p className="text-muted-foreground mb-4">No screens registered yet.</p>
+                    <Button onClick={() => navigate(Routes.SCREENS)}>Add Your First Screen</Button>
                   </div>
-                  <Button size="sm" onClick={() => navigate(Routes.SCREENS)}>
-                    <IconDeviceTv size={16} className="mr-2" /> Manage All
-                  </Button>
-                </CardHeader>
-                <CardContent>
-                  <RecentActivity
-                    items={(recentScreens?.results || []).map(s => ({ ...s, type: 'screen' }))}
-                    isLoading={isScreensLoading}
-                  />
-                  {(recentScreens?.results || []).length === 0 && (
-                    <div className="text-center py-10 border-2 border-dashed rounded-lg">
-                      <p className="text-muted-foreground mb-4">No screens registered yet.</p>
-                      <Button onClick={() => navigate(Routes.SCREENS)}>Add Your First Screen</Button>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-            <TabsContent value='online' className='space-y-4'>
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-green-600">Active Screens</CardTitle>
-                  <CardDescription>Screens that are currently broadcasting content.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <RecentActivity
-                    items={(recentScreens?.results || []).filter(s => s.status === 'online').map(s => ({ ...s, type: 'screen' }))}
-                    isLoading={isScreensLoading}
-                  />
-                  {(recentScreens?.results || []).filter(s => s.status === 'online').length === 0 && (
-                    <p className="text-center py-10 text-muted-foreground">No screens are currently online.</p>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        </div>
-      </Layout.Body>
-    </Layout>
+          <TabsContent value='online' className='space-y-4'>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-green-600">Active Screens</CardTitle>
+                <CardDescription>Screens that are currently broadcasting content.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <RecentActivity
+                  items={(recentScreens?.results || []).filter(s => s.status === 'online').map(s => ({ ...s, type: 'screen' }))}
+                  isLoading={isScreensLoading}
+                />
+                {(recentScreens?.results || []).filter(s => s.status === 'online').length === 0 && (
+                  <p className="text-center py-10 text-muted-foreground">No screens are currently online.</p>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </Layout.Body>
+    </Layout >
   )
 }
