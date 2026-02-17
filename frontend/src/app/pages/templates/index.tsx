@@ -74,11 +74,18 @@ export default function Templates() {
     })
 
     // Query for selected group details (ensures reactive updates)
-    const { data: selectedGroup, isLoading: isLoadingSelectedGroup } = useQuery({
+    const { data: selectedGroup, isLoading: isLoadingSelectedGroup, isError: isGroupError } = useQuery({
         queryKey: ['template-groups', 'detail', selectedGroupId],
         queryFn: () => templateGroupService.getGroup(selectedGroupId!),
         enabled: !!selectedGroupId,
+        retry: false,
     })
+
+    useEffect(() => {
+        if (isGroupError) {
+            setSelectedGroupId(null)
+        }
+    }, [isGroupError])
 
     const createGroupMutation = useMutation({
         mutationFn: (data: { name: string; description?: string }) => templateGroupService.createGroup(data),

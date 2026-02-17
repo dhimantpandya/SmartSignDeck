@@ -44,7 +44,10 @@ const queryTemplateGroups = async (
  * @returns {Promise<ITemplateGroup | null>}
  */
 const getTemplateGroupById = async (id: string): Promise<ITemplateGroup | null> => {
-    return TemplateGroup.findById(id).populate('templates');
+    return TemplateGroup.findById(id).populate({
+        path: 'templates',
+        match: { deletedAt: null }
+    });
 };
 
 /**

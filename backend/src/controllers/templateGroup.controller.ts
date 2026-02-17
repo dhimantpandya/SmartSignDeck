@@ -14,7 +14,7 @@ const createTemplateGroup = catchAsync(async (req, res) => {
 });
 
 const getTemplateGroups = catchAsync(async (req, res) => {
-    const filter = pick(req.query, ["name", "createdBy", "companyId"]);
+    const filter = pick(req.query, ["name", "createdBy", "companyId", "trashed"]);
     const options = pick(req.query, ["sortBy", "limit", "page"]);
 
     // Ensure users only see groups from their company
@@ -26,7 +26,9 @@ const getTemplateGroups = catchAsync(async (req, res) => {
 
 const getTemplateGroup = catchAsync(async (req, res) => {
     const group = await templateGroupService.getTemplateGroupById(req.params.groupId);
-    if (!group || group.companyId.toString() !== (req as any).user.companyId.toString()) {
+    if (!group ||
+        group.companyId.toString() !== (req as any).user.companyId.toString() ||
+        group.deletedAt !== null) {
         throw new ApiError(httpStatus.NOT_FOUND, "Template group not found");
     }
     res.send(group);
