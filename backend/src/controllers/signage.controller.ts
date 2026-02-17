@@ -48,7 +48,7 @@ const getActiveContent = catchAsync(async (req: Request, res: Response) => {
   const companyId = user?.companyId?.toString();
 
   const userId = (user?.id || user?._id)?.toString();
-  const activeContent = await signageService.getActiveContent(companyId || \"\", userId);
+  const activeContent = await signageService.getActiveContent(companyId || "", userId);
 
   successResponse(
     res,
