@@ -337,9 +337,9 @@ export default function Screens() {
                                 <div className="flex h-64 items-center justify-center">
                                     <Loader />
                                 </div>
-                            ) : groupsData?.results?.length > 0 ? (
+                            ) : (groupsData?.results?.length ?? 0) > 0 ? (
                                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                                    {groupsData.results.map((group: any) => (
+                                    {groupsData?.results?.map((group: any) => (
                                         <Card
                                             key={group.id}
                                             className={`cursor-pointer transition-all hover:shadow-md ${selectedGroupId === group.id ? 'ring-2 ring-primary border-primary' : ''}`}
@@ -398,7 +398,7 @@ export default function Screens() {
                                                     Close Collection
                                                 </Button>
                                             </div>
-                                            {selectedGroup.templates?.length > 0 ? (
+                                            {selectedGroup.templates && selectedGroup.templates.length > 0 ? (
                                                 <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
                                                     {selectedGroup.templates.map((template: any) => (
                                                         <Card key={template.id} className="overflow-hidden bg-card/50 backdrop-blur-sm transition-all hover:shadow-lg h-full flex flex-col">
