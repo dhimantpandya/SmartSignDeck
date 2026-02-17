@@ -14,6 +14,7 @@ export const INSPIRATION_ITEMS: InspirationItem[] = [
         name: 'Modern Corporate Lobby',
         resolution: '1920x1080',
         zones: 4,
+        // Composite feeling image
         previewUrl: 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=95&w=1200',
         previewType: 'image',
         category: 'Corporate'
@@ -41,7 +42,8 @@ export const INSPIRATION_ITEMS: InspirationItem[] = [
         name: 'Airport Arrival Board',
         resolution: '1920x1080',
         zones: 4,
-        previewUrl: 'https://images.unsplash.com/photo-1436491865332-7a61a109c0f2?auto=format&fit=crop&q=95&w=1200',
+        // Fixed: Added working airport Arrival board image
+        previewUrl: 'https://images.unsplash.com/photo-1490430657723-4d607c1503fc?auto=format&fit=crop&q=95&w=1200',
         previewType: 'image',
         category: 'Travel'
     },
