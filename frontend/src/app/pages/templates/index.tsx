@@ -37,7 +37,7 @@ export default function Templates() {
     const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
     const [confirmDeleteGroup, setConfirmDeleteGroup] = useState<string | null>(null)
     const [isCreateGroupOpen, setIsCreateGroupOpen] = useState(false)
-    const [selectedGroup, setSelectedGroup] = useState<any>(null)
+    const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null)
     const [newGroupName, setNewGroupName] = useState('')
     const [newGroupDesc, setNewGroupDesc] = useState('')
     const queryClient = useQueryClient()
@@ -71,6 +71,13 @@ export default function Templates() {
         queryKey: ['templates', 'global'],
         queryFn: () => templateService.getTemplates({ isPublic: true, sortBy: 'created_at:desc' }),
         enabled: true,
+    })
+
+    // Query for selected group details (ensures reactive updates)
+    const { data: selectedGroup, isLoading: isLoadingSelectedGroup } = useQuery({
+        queryKey: ['template-groups', 'detail', selectedGroupId],
+        queryFn: () => templateGroupService.getGroup(selectedGroupId!),
+        enabled: !!selectedGroupId,
     })
 
     const createGroupMutation = useMutation({
@@ -135,8 +142,11 @@ export default function Templates() {
 
     const deleteGroupMutation = useMutation({
         mutationFn: (id: string) => templateGroupService.deleteGroup(id),
-        onSuccess: () => {
+        onSuccess: (_, id) => {
             queryClient.invalidateQueries({ queryKey: ['template-groups'] })
+            if (selectedGroupId === id) {
+                setSelectedGroupId(null)
+            }
             toast({ title: 'Group deleted', description: 'Template group moved to Recycle Bin.' })
         },
     })
@@ -215,7 +225,7 @@ export default function Templates() {
                             variant="ghost"
                             size="sm"
                             className="h-8 text-destructive hover:bg-destructive/10"
-                            onClick={() => removeFromGroupMutation.mutate({ groupId: selectedGroup.id, templateId: template.id })}
+                            onClick={() => removeFromGroupMutation.mutate({ groupId: selectedGroupId!, templateId: template.id })}
                             title="Remove from Group"
                         >
                             <FolderPlus className="h-4 w-4 rotate-45" />
@@ -411,14 +421,9 @@ export default function Templates() {
                                                     variant="ghost"
                                                     size="sm"
                                                     className="h-7 text-xs font-bold"
-                                                    onClick={async (e) => {
+                                                    onClick={(e) => {
                                                         e.stopPropagation();
-                                                        try {
-                                                            const fullGroup = await templateGroupService.getGroup(group.id);
-                                                            setSelectedGroup(fullGroup);
-                                                        } catch (error) {
-                                                            toast({ title: 'Error', description: 'Failed to load group details', variant: 'destructive' });
-                                                        }
+                                                        setSelectedGroupId(group.id);
                                                     }}
                                                 >
                                                     View Group
@@ -441,45 +446,51 @@ export default function Templates() {
                             )}
                         </TabsContent>
 
-                        {selectedGroup && (
+                        {selectedGroupId && (
                             <div className="mt-8 pt-8 border-t border-dashed">
-                                <div className="flex items-center justify-between mb-4">
-                                    <div className="flex items-center gap-2">
-                                        <Folder className="text-primary h-6 w-6" />
-                                        <h2 className="text-xl font-bold">{selectedGroup.name} Collection</h2>
-                                        <Badge variant="secondary">{selectedGroup.templates?.length || 0} Templates</Badge>
-                                    </div>
-                                    <div className="flex gap-2">
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            className="h-8 gap-1"
-                                            onClick={() => {
-                                                setEditingTemplate({
-                                                    name: `New Template for ${selectedGroup.name}`,
-                                                    resolution: '1920x1080',
-                                                    zones: [],
-                                                    autoAssignGroupId: selectedGroup.id
-                                                });
-                                                setShowEditor(true);
-                                            }}
-                                        >
-                                            <IconPlus size={14} /> Create Template
-                                        </Button>
-                                        <Button variant="ghost" size="sm" onClick={() => setSelectedGroup(null)}>
-                                            Close Collection
-                                        </Button>
-                                    </div>
-                                </div>
-                                {selectedGroup.templates?.length > 0 ? (
-                                    <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
-                                        {selectedGroup.templates.map((template: any) => renderTemplateCard(template, checkIsOwner(template), true))}
-                                    </div>
-                                ) : (
-                                    <div className="p-12 text-center bg-muted/20 rounded-xl border border-dashed">
-                                        <p className="text-muted-foreground">No templates assigned to this group yet.</p>
-                                    </div>
-                                )}
+                                {isLoadingSelectedGroup ? (
+                                    <div className="flex h-32 items-center justify-center"><Loader /></div>
+                                ) : selectedGroup ? (
+                                    <>
+                                        <div className="flex items-center justify-between mb-4">
+                                            <div className="flex items-center gap-2">
+                                                <Folder className="text-primary h-6 w-6" />
+                                                <h2 className="text-xl font-bold">{selectedGroup.name} Collection</h2>
+                                                <Badge variant="secondary">{selectedGroup.templates?.length || 0} Templates</Badge>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="h-8 gap-1"
+                                                    onClick={() => {
+                                                        setEditingTemplate({
+                                                            name: `New Template for ${selectedGroup.name}`,
+                                                            resolution: '1920x1080',
+                                                            zones: [],
+                                                            autoAssignGroupId: selectedGroup.id
+                                                        });
+                                                        setShowEditor(true);
+                                                    }}
+                                                >
+                                                    <IconPlus size={14} /> Create Template
+                                                </Button>
+                                                <Button variant="ghost" size="sm" onClick={() => setSelectedGroupId(null)}>
+                                                    Close Collection
+                                                </Button>
+                                            </div>
+                                        </div>
+                                        {selectedGroup.templates?.length > 0 ? (
+                                            <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
+                                                {selectedGroup.templates.map((template: any) => renderTemplateCard(template, checkIsOwner(template), true))}
+                                            </div>
+                                        ) : (
+                                            <div className="p-12 text-center bg-muted/20 rounded-xl border border-dashed">
+                                                <p className="text-muted-foreground">No templates assigned to this group yet.</p>
+                                            </div>
+                                        )}
+                                    </>
+                                ) : null}
                             </div>
                         )}
 

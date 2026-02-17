@@ -95,7 +95,7 @@ export const INSPIRATION_ITEMS: InspirationItem[] = [
         name: 'World Tech Summit',
         resolution: '1920x1080',
         zones: 4,
-        previewUrl: 'https://images.unsplash.com/photo-1540575861501-7ce0e220f2c5?auto=format&fit=crop&q=95&w=1600',
+        previewUrl: 'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&q=95&w=1600',
         previewType: 'image',
         category: 'Events'
     }
