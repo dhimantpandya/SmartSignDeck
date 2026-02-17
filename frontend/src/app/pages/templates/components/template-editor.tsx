@@ -14,6 +14,7 @@ import {
 } from '@tabler/icons-react'
 import { toast } from '@/components/ui/use-toast'
 import { templateService } from '@/api/template.service'
+import { templateGroupService } from '@/api/template-group.service'
 import { useQueryClient } from '@tanstack/react-query'
 import { Switch } from '@/components/ui/switch'
 import { Globe, Lock, Eye } from 'lucide-react'
@@ -329,7 +330,12 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
             if (initialData?.id || initialData?._id) {
                 await templateService.updateTemplate(initialData.id || initialData._id, payload)
             } else {
-                await templateService.createTemplate(payload)
+                const newTemplate = await templateService.createTemplate(payload)
+                // Auto-assign to group if requested
+                if (initialData?.autoAssignGroupId && newTemplate?.id) {
+                    await templateGroupService.addTemplatesToGroup(initialData.autoAssignGroupId, [newTemplate.id])
+                    queryClient.invalidateQueries({ queryKey: ['template-groups'] })
+                }
             }
 
             queryClient.invalidateQueries({ queryKey: ['templates'] })

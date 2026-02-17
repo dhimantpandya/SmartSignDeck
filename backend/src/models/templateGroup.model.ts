@@ -13,6 +13,7 @@ export interface ITemplateGroup extends Document {
     templates: mongoose.Schema.Types.ObjectId[];
     created_at: Date;
     updated_at: Date;
+    deletedAt?: Date | null;
 }
 
 export interface ITemplateGroupModel extends Model<ITemplateGroup> {
@@ -51,6 +52,11 @@ const templateGroupSchema = new Schema<ITemplateGroup, ITemplateGroupModel>(
                 ref: "Template",
             },
         ],
+        deletedAt: {
+            type: Date,
+            default: null,
+            index: true,
+        },
     },
     { timestamps: { createdAt: "created_at", updatedAt: "updated_at" } },
 );

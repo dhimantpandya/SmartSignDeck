@@ -24,7 +24,8 @@ const queryTemplateGroups = async (
     filter: FilterQuery<ITemplateGroup>,
     options: CustomPaginateOptions,
 ): Promise<CustomPaginateResult<ITemplateGroup>> => {
-    const groups = await TemplateGroup.paginate(filter, options);
+    const finalFilter = { ...filter, deletedAt: null };
+    const groups = await TemplateGroup.paginate(finalFilter, options);
     return groups;
 };
 
@@ -66,7 +67,8 @@ const deleteTemplateGroupById = async (groupId: string): Promise<ITemplateGroup 
     if (!group) {
         throw new ApiError(httpStatus.NOT_FOUND, "Template group not found");
     }
-    await group.deleteOne();
+    group.deletedAt = new Date();
+    await group.save();
     return group;
 };
 

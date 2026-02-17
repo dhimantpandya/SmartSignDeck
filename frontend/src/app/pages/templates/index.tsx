@@ -35,6 +35,7 @@ export default function Templates() {
     const [previewTemplate, setPreviewTemplate] = useState<any>(null)
     const [activeTab, setActiveTab] = useState<'my-templates' | 'global' | 'groups'>('my-templates')
     const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
+    const [confirmDeleteGroup, setConfirmDeleteGroup] = useState<string | null>(null)
     const [isCreateGroupOpen, setIsCreateGroupOpen] = useState(false)
     const [selectedGroup, setSelectedGroup] = useState<any>(null)
     const [newGroupName, setNewGroupName] = useState('')
@@ -113,6 +114,14 @@ export default function Templates() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['template-groups'] })
             toast({ title: 'Template assigned', description: 'Template added to group successfully.' })
+        },
+    })
+
+    const deleteGroupMutation = useMutation({
+        mutationFn: (id: string) => templateGroupService.deleteGroup(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['template-groups'] })
+            toast({ title: 'Group deleted', description: 'Template group moved to Recycle Bin.' })
         },
     })
 
@@ -292,7 +301,7 @@ export default function Templates() {
                     />
                 ) : (
                     <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="mt-6">
-                        <TabsList className="grid w-full max-w-md grid-cols-2">
+                        <TabsList className="grid w-full grid-cols-3">
                             <TabsTrigger value="my-templates" className="gap-2">
                                 <User size={16} />
                                 My Templates ({myTemplates.length})
@@ -345,7 +354,20 @@ export default function Templates() {
                                                         <Folder className="text-primary h-5 w-5" />
                                                         <CardTitle className="text-lg">{group.name}</CardTitle>
                                                     </div>
-                                                    <Badge variant="outline">{group.templates?.length || 0} Templates</Badge>
+                                                    <div className="flex items-center gap-2">
+                                                        <Badge variant="outline">{group.templates?.length || 0} Templates</Badge>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="h-7 w-7 p-0 text-destructive hover:bg-destructive/10"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setConfirmDeleteGroup(group.id);
+                                                            }}
+                                                        >
+                                                            <IconTrash size={14} />
+                                                        </Button>
+                                                    </div>
                                                 </div>
                                             </CardHeader>
                                             <CardContent className="pt-4 h-24">
@@ -361,7 +383,15 @@ export default function Templates() {
                                                     variant="ghost"
                                                     size="sm"
                                                     className="h-7 text-xs font-bold"
-                                                    onClick={() => setSelectedGroup(group)}
+                                                    onClick={async (e) => {
+                                                        e.stopPropagation();
+                                                        try {
+                                                            const fullGroup = await templateGroupService.getGroup(group.id);
+                                                            setSelectedGroup(fullGroup);
+                                                        } catch (error) {
+                                                            toast({ title: 'Error', description: 'Failed to load group details', variant: 'destructive' });
+                                                        }
+                                                    }}
                                                 >
                                                     View Group
                                                 </Button>
@@ -391,9 +421,27 @@ export default function Templates() {
                                         <h2 className="text-xl font-bold">{selectedGroup.name} Collection</h2>
                                         <Badge variant="secondary">{selectedGroup.templates?.length || 0} Templates</Badge>
                                     </div>
-                                    <Button variant="ghost" size="sm" onClick={() => setSelectedGroup(null)}>
-                                        Close Collection
-                                    </Button>
+                                    <div className="flex gap-2">
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="h-8 gap-1"
+                                            onClick={() => {
+                                                setEditingTemplate({
+                                                    name: `New Template for ${selectedGroup.name}`,
+                                                    resolution: '1920x1080',
+                                                    zones: [],
+                                                    autoAssignGroupId: selectedGroup.id
+                                                });
+                                                setShowEditor(true);
+                                            }}
+                                        >
+                                            <IconPlus size={14} /> Create Template
+                                        </Button>
+                                        <Button variant="ghost" size="sm" onClick={() => setSelectedGroup(null)}>
+                                            Close Collection
+                                        </Button>
+                                    </div>
                                 </div>
                                 {selectedGroup.templates?.length > 0 ? (
                                     <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
@@ -448,6 +496,21 @@ export default function Templates() {
                         setConfirmDelete(null)
                     }}
                     onClose={() => setConfirmDelete(null)}
+                />
+
+                <ConfirmationDialog
+                    isOpen={!!confirmDeleteGroup}
+                    title="Move Group to Recycle Bin"
+                    message="Are you sure you want to move this group to the Recycle Bin? Templates within the group will NOT be deleted."
+                    variant="destructive"
+                    confirmBtnText="Move Group to Trash"
+                    onConfirm={() => {
+                        if (confirmDeleteGroup) {
+                            deleteGroupMutation.mutate(confirmDeleteGroup)
+                        }
+                        setConfirmDeleteGroup(null)
+                    }}
+                    onClose={() => setConfirmDeleteGroup(null)}
                 />
 
                 <Dialog open={isCreateGroupOpen} onOpenChange={setIsCreateGroupOpen}>
