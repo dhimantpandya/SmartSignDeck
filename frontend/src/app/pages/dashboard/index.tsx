@@ -74,11 +74,6 @@ export default function Dashboard() {
     enabled: !!user?.companyId
   })
 
-  const { data: globalTemplates } = useQuery({
-    queryKey: ['global-templates-dashboard'],
-    queryFn: () => templateService.getTemplates({ limit: 5, isPublic: true }),
-  })
-
 
   // Combine and sort by date
   const recentActivity = [

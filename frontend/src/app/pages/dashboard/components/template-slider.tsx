@@ -1,9 +1,8 @@
 import { useNavigate } from 'react-router-dom'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/custom/button'
-import { IconLayout, IconPlus, IconArrowRight, IconCopy, IconEye as Eye } from '@tabler/icons-react'
+import { IconLayout, IconPlus, IconArrowRight, IconEye as Eye } from '@tabler/icons-react'
 import { Routes } from '@/utilities/routes'
-import { Template } from '@/api/template.service'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
 
@@ -76,11 +75,11 @@ export const TemplateSlider = ({ templates, isLoading, isNewUser }: TemplateSlid
 
                         // Content Extraction Logic
                         let previewUrl = '';
-                        let previewType: 'image' | 'video' | 'none' = 'none';
+                        let previewType: string = 'none';
 
                         if (screen.defaultContent) {
                             Object.values(screen.defaultContent).forEach((zone: any) => {
-                                if (previewUrl) return; // Already found one
+                                if (previewUrl) return;
 
                                 if (zone.sourceType === 'playlist' && zone.playlist?.[0]?.url) {
                                     previewUrl = zone.playlist[0].url;
