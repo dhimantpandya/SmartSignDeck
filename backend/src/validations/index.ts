@@ -6,4 +6,4 @@ export * as roleValidation from "./role.validation";
 export * as userValidation from "./user.validation";
 import * as playlistValidation from "./playlist.validation";
 export { playlistValidation };
-export * as bulkValidation from "./bulk.validation";
+export { default as bulkValidation } from "./bulk.validation";
