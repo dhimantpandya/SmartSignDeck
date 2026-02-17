@@ -18,7 +18,6 @@ interface TemplateSliderProps {
 const CARD_WIDTH = 400; // Base width for all items
 const GAP = 32;
 const STEP = CARD_WIDTH + GAP;
-const STAGE_HEIGHT = 450;
 
 export const TemplateSlider = ({ templates, isLoading }: TemplateSliderProps) => {
     const navigate = useNavigate()
@@ -87,7 +86,7 @@ export const TemplateSlider = ({ templates, isLoading }: TemplateSliderProps) =>
 
     if (isLoading) {
         return (
-            <div className="flex gap-8 items-center justify-center h-[STAGE_HEIGHT] w-full overflow-hidden">
+            <div className="flex gap-8 items-center justify-center h-[450px] w-full overflow-hidden">
                 <Skeleton className="h-[260px] w-[340px] rounded-3xl opacity-20" />
                 <Skeleton className="h-[340px] w-[500px] rounded-3xl opacity-60" />
                 <Skeleton className="h-[260px] w-[340px] rounded-3xl opacity-20" />

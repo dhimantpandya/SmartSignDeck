@@ -19,7 +19,7 @@ import { useState, useRef, useMemo } from 'react'
 import { TemplateSlider } from './components/template-slider'
 import { Separator } from '@/components/ui/separator'
 // Breadcrumb Navigation removed temporarily to resolve build conflict.
-import { IconHome, IconLayout, IconDeviceTv, IconCircleCheck } from '@tabler/icons-react'
+import { IconLayout, IconDeviceTv, IconCircleCheck } from '@tabler/icons-react'
 import { Analytics } from './components/analytics'
 import { useQuery } from '@tanstack/react-query'
 import { screenService, templateService, apiService } from '@/api'
