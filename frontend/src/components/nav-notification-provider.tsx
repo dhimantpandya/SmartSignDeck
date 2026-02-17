@@ -186,6 +186,13 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
                 setSuppressedChatSections(prev => {
                     const next = new Set(prev); next.delete('company'); return next;
                 })
+
+                // Only show toast if not actively looking at the board
+                toast({
+                    title: "New Company Board Message",
+                    description: `${data.senderName || 'Someone'} posted in the company board`,
+                    duration: 3000,
+                })
             } else if (data.type === 'private' || data.recipientId) {
                 // Skip if actively viewing this specific private chat
                 const senderId = msgSenderId
@@ -209,14 +216,12 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
                     })
                 }
 
-                // Only show toast if chat is closed
-                if (!isChatOpen) {
-                    toast({
-                        title: "New Message",
-                        description: `${data.senderName || 'Someone'} sent you a message`,
-                        duration: 3000,
-                    })
-                }
+                // Show toast with professional wording
+                toast({
+                    title: "New Message",
+                    description: `${data.senderName || 'Someone'} sent you a private message`,
+                    duration: 3000,
+                })
             }
         }
 

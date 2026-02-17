@@ -80,12 +80,6 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
         const handleNewChat = (data: any) => {
             console.log('[ChatSidebar] 🔵 new_chat arrived:', JSON.stringify(data, null, 2))
 
-            // DIAGNOSTIC TOAST
-            toast({
-                title: "Debug: Message Received",
-                description: `From: ${data.senderName || 'Unknown'} - ${data.text?.substring(0, 20)}`,
-                duration: 3000
-            })
 
             // 🛡️ Filter for company messages
             if (data.type === 'company' || data.companyId) {
