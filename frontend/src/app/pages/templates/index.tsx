@@ -42,6 +42,7 @@ export default function Templates() {
     const [newGroupName, setNewGroupName] = useState('')
     const [newGroupDesc, setNewGroupDesc] = useState('')
     const [selectedTemplates, setSelectedTemplates] = useState<string[]>([])
+    const [confirmBulkDelete, setConfirmBulkDelete] = useState(false)
     const queryClient = useQueryClient()
 
     const toggleTemplateSelection = (id: string) => {
@@ -129,8 +130,17 @@ export default function Templates() {
         mutationFn: (id: string) => templateService.deleteTemplate(id),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['templates'] })
+            queryClient.invalidateQueries({ queryKey: ['template-groups'] })
+            queryClient.invalidateQueries({ queryKey: ['template-groups', 'detail'] })
             queryClient.invalidateQueries({ queryKey: ['dashboard'] }) // Update counts
             toast({ title: 'Template moved to Recycle Bin', description: 'You can restore it within 30 days.' })
+        },
+        onError: (error: any) => {
+            toast({
+                title: 'Operation Failed',
+                description: error?.response?.data?.message || 'Failed to move template to Recycle Bin.',
+                variant: 'destructive',
+            })
         },
     })
 
@@ -138,12 +148,28 @@ export default function Templates() {
         mutationFn: (ids: string[]) => templateService.bulkDeleteTemplates(ids),
         onSuccess: (data: any) => {
             queryClient.invalidateQueries({ queryKey: ['templates'] })
+            queryClient.invalidateQueries({ queryKey: ['template-groups'] })
+            queryClient.invalidateQueries({ queryKey: ['template-groups', 'detail'] })
             queryClient.invalidateQueries({ queryKey: ['dashboard'] })
-            const deletedCount = data.deletedCount || selectedTemplates.length
-            toast({
-                title: 'Bulk Action Completed',
-                description: `${deletedCount} templates moved to Recycle Bin.`
-            })
+
+            const deletedCount = data.deletedCount || 0
+            const errors = data.errors || []
+
+            if (deletedCount > 0) {
+                toast({
+                    title: 'Bulk Action Completed',
+                    description: `${deletedCount} templates moved to Recycle Bin.${errors.length > 0 ? ` (${errors.length} failed)` : ''}`
+                })
+            }
+
+            if (errors.length > 0) {
+                toast({
+                    title: 'Partial Success',
+                    description: `Some templates couldn't be deleted: ${errors[0]}${errors.length > 1 ? ` and ${errors.length - 1} more` : ''}`,
+                    variant: 'destructive'
+                })
+            }
+
             clearSelection()
         },
         onError: (error: any) => {
@@ -404,11 +430,7 @@ export default function Templates() {
                             <Button
                                 variant="destructive"
                                 size="sm"
-                                onClick={() => {
-                                    if (confirm(`${selectedTemplates.length} items will be moved to Recycle Bin. Proceed?`)) {
-                                        bulkDeleteMutation.mutate(selectedTemplates)
-                                    }
-                                }}
+                                onClick={() => setConfirmBulkDelete(true)}
                                 className="h-9 px-6 rounded-full gap-2"
                                 loading={bulkDeleteMutation.isPending}
                             >
@@ -666,7 +688,7 @@ export default function Templates() {
                 <ConfirmationDialog
                     isOpen={!!confirmDeleteGroup}
                     title="Move Group to Recycle Bin"
-                    message="Are you sure you want to move this group to the Recycle Bin? Templates within the group will NOT be deleted."
+                    message="Are you sure you want to move this group to the Recycle Bin? All templates within this group will also be moved to the Recycle Bin."
                     variant="destructive"
                     confirmBtnText="Move Group to Trash"
                     onConfirm={() => {
@@ -676,6 +698,19 @@ export default function Templates() {
                         setConfirmDeleteGroup(null)
                     }}
                     onClose={() => setConfirmDeleteGroup(null)}
+                />
+
+                <ConfirmationDialog
+                    isOpen={confirmBulkDelete}
+                    title="Bulk Move to Trash"
+                    message={`Are you sure you want to move ${selectedTemplates.length} templates to the Recycle Bin?`}
+                    variant="destructive"
+                    confirmBtnText="Move to Trash"
+                    onConfirm={() => {
+                        bulkDeleteMutation.mutate(selectedTemplates)
+                        setConfirmBulkDelete(false)
+                    }}
+                    onClose={() => setConfirmBulkDelete(false)}
                 />
 
                 <Dialog open={isCreateGroupOpen} onOpenChange={setIsCreateGroupOpen}>

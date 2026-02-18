@@ -90,7 +90,7 @@ export default function RecycleBin() {
             queryClient.invalidateQueries({ queryKey: [key] })
             queryClient.invalidateQueries({ queryKey: ['dashboard'] })
             const displayType = type === 'screen' ? 'Screen' : type === 'template' ? 'Template' : 'Group'
-            toast({ title: `${ids.length > 1 ? `${displayType}s` : displayType} restored` })
+            toast({ title: `${ids.length > 1 ? (displayType === 'Group' ? 'Groups' : `${displayType}s`) : displayType} restored` })
             setSelectedIds([])
             setRestoringIds(prev => prev.filter(id => !ids.includes(id)))
         },
@@ -170,7 +170,10 @@ export default function RecycleBin() {
                                 variant="ghost"
                                 size="sm"
                                 className="text-primary hover:bg-primary/20 h-8"
-                                onClick={() => restoreMutation.mutate({ ids: selectedIds, type: activeTab as any })}
+                                onClick={() => restoreMutation.mutate({
+                                    ids: selectedIds,
+                                    type: activeTab === 'screens' ? 'screen' : activeTab === 'templates' ? 'template' : 'group'
+                                })}
                             >
                                 <IconRefresh size={16} className="mr-1" /> Restore
                             </Button>
@@ -178,7 +181,10 @@ export default function RecycleBin() {
                                 variant="ghost"
                                 size="sm"
                                 className="text-destructive hover:bg-destructive/10 h-8"
-                                onClick={() => setConfirmDelete({ id: selectedIds, type: activeTab as any })}
+                                onClick={() => setConfirmDelete({
+                                    id: selectedIds,
+                                    type: activeTab === 'screens' ? 'screen' : activeTab === 'templates' ? 'template' : 'group'
+                                })}
                             >
                                 <IconTrashX size={16} className="mr-1" /> Purge
                             </Button>
