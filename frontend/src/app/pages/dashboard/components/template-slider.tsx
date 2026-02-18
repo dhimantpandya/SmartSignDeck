@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils'
 import { INSPIRATION_ITEMS } from './inspiration-data'
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { Switch } from '@/components/ui/switch'
+import { toast } from '@/components/ui/use-toast'
 
 interface TemplateSliderProps {
     templates?: any[]
@@ -155,14 +156,52 @@ export const TemplateSlider = ({ templates, isLoading }: TemplateSliderProps) =>
                 </div>
 
                 <div className="flex items-center gap-6">
-                    <div className="flex items-center space-x-2">
-                        <span className={cn("text-xs font-bold uppercase tracking-wider cursor-pointer transition-colors", sliderMode === 'showcase' ? "text-muted-foreground" : "text-primary")} onClick={() => setSliderMode('inspiration')}>Inspiration</span>
-                        <Switch
-                            checked={sliderMode === 'showcase'}
-                            onCheckedChange={(checked) => setSliderMode(checked ? 'showcase' : 'inspiration')}
-                            className="data-[state=checked]:bg-primary"
-                        />
-                        <span className={cn("text-xs font-bold uppercase tracking-wider cursor-pointer transition-colors", sliderMode === 'inspiration' ? "text-muted-foreground" : "text-primary")} onClick={() => setSliderMode('showcase')}>My Work</span>
+                    <div className="flex items-center space-x-2 relative group-toggle">
+                        <span
+                            className={cn("text-xs font-bold uppercase tracking-wider cursor-pointer transition-colors",
+                                sliderMode === 'showcase' ? "text-muted-foreground" : "text-primary"
+                            )}
+                            onClick={() => setSliderMode('inspiration')}
+                        >
+                            Inspiration
+                        </span>
+
+                        <div className="relative flex items-center">
+                            <Switch
+                                checked={sliderMode === 'showcase'}
+                                onCheckedChange={(checked) => {
+                                    if (checked && (!templates || templates.length < 3)) {
+                                        toast({
+                                            title: "Section Locked",
+                                            description: `You need at least 3 screens to unlock 'My Work'. You currently have ${templates?.length || 0}.`,
+                                        });
+                                        return;
+                                    }
+                                    setSliderMode(checked ? 'showcase' : 'inspiration');
+                                }}
+                                className="data-[state=checked]:bg-primary"
+                                disabled={!templates || templates.length < 3}
+                            />
+                            {(!templates || templates.length < 3) && (
+                                <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black/80 text-white text-[8px] px-2 py-0.5 rounded opacity-0 group-toggle:hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none uppercase font-bold tracking-tighter">
+                                    Create 3 Screens to Unlock
+                                </div>
+                            )}
+                        </div>
+
+                        <span
+                            className={cn("text-xs font-bold uppercase tracking-wider transition-colors",
+                                (!templates || templates.length < 3) ? "text-muted-foreground/40 cursor-not-allowed" :
+                                    (sliderMode === 'inspiration' ? "text-muted-foreground cursor-pointer" : "text-primary")
+                            )}
+                            onClick={() => {
+                                if (templates && templates.length >= 3) {
+                                    setSliderMode('showcase');
+                                }
+                            }}
+                        >
+                            My Work {(!templates || templates.length < 3) && "🔒"}
+                        </span>
                     </div>
 
                     <Button variant="ghost" size="sm" onClick={() => navigate(isShowingInspiration ? Routes.TEMPLATES : Routes.SCREENS)} className="hidden sm:flex text-muted-foreground hover:text-primary font-bold transition-colors text-[10px] uppercase tracking-tighter">
@@ -227,7 +266,25 @@ export const TemplateSlider = ({ templates, isLoading }: TemplateSliderProps) =>
 
                             if (!isVisible) return <div key={`spacer-${idx}`} style={{ width: CARD_WIDTH }} className="flex-shrink-0" />;
 
-                            const previewUrl = item.previewUrl || (item.templateId?.previewUrl);
+                            // Smart Preview Resolution
+                            let previewUrl = item.previewUrl;
+
+                            // If it's a screen, try to get template preview or first media from defaultContent
+                            if (!isShowingInspiration && item.templateId) {
+                                previewUrl = item.templateId.previewUrl;
+
+                                // Fallback: If no template preview, check defaultContent for first available image
+                                if (!previewUrl && item.defaultContent) {
+                                    const firstZoneId = Object.keys(item.defaultContent)[0];
+                                    const content = item.defaultContent[firstZoneId];
+                                    if (content?.playlist?.[0]?.url) {
+                                        previewUrl = content.playlist[0].url;
+                                    } else if (content?.src) {
+                                        previewUrl = content.src;
+                                    }
+                                }
+                            }
+
                             const name = item.name || (item.templateId?.name) || 'Untitled Work';
                             const category = item.category || (item.templateId?.category || (isShowingInspiration ? 'Inspiration' : 'Screen'));
                             const resolution = item.resolution || (item.templateId?.resolution || '1920x1080');

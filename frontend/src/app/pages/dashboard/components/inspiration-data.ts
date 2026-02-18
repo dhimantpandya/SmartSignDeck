@@ -96,7 +96,7 @@ export const INSPIRATION_ITEMS: InspirationItem[] = [
         category: 'Corporate',
         resolution: '1920x1080',
         zones: 3,
-        previewUrl: 'https://images.unsplash.com/photo-1505373676884-374856942025?q=80&w=2000&auto=format&fit=crop',
+        previewUrl: 'https://images.unsplash.com/photo-1540575861501-7ad0582373f2?auto=format&fit=crop&q=95&w=1600',
         previewType: 'image'
     }
 ];

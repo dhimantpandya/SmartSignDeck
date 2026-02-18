@@ -802,7 +802,6 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
                                 <Select
                                     value={selectedTemplateId}
                                     onValueChange={setSelectedTemplateId}
-                                    disabled={!!initialData?.id}
                                 >
                                     <SelectTrigger className="w-full">
                                         <SelectValue placeholder="Select a template" />

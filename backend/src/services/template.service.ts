@@ -200,10 +200,10 @@ const deleteTemplatesByIds = async (ids: string[], user: IUser) => {
       continue;
     }
 
-    // Check for dependent screens
-    const screensUsingTemplate = await Screen.find({ templateId });
+    // Check for dependent screens (EXCLUDING trashed ones)
+    const screensUsingTemplate = await Screen.find({ templateId, deletedAt: null });
     if (screensUsingTemplate.length > 0) {
-      errors.push(`Template ${template.name}: Used by ${screensUsingTemplate.length} screen(s)`);
+      errors.push(`Template ${template.name}: Used by ${screensUsingTemplate.length} active screen(s)`);
       continue;
     }
 
@@ -244,7 +244,7 @@ const deleteTemplateById = async (templateId: string, user: IUser) => {
 
   // Check for dependent screens
   const { default: Screen } = await import("../models/screen.model");
-  const screensUsingTemplate = await Screen.find({ templateId });
+  const screensUsingTemplate = await Screen.find({ templateId, deletedAt: null });
 
   if (screensUsingTemplate.length > 0) {
     throw new ApiError(
