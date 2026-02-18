@@ -1,5 +1,6 @@
 import { type Request, type Response } from "express";
 import httpStatus from "http-status";
+import mongoose from "mongoose";
 import { MongooseQueryParser } from "mongoose-query-parser";
 import successResponse from "../helpers/responses/successResponse";
 import { type IUser } from "../models/user.model";
