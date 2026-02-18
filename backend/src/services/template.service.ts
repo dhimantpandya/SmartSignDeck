@@ -368,30 +368,54 @@ const bootstrapFromInspiration = async (name: string, user: IUser) => {
     createdBy: user._id,
   });
 
-  // 2. Create 3 templates with 4 zones each in a 2x2 grid
+  // 2. Create 3 templates with 4 zones each in the specific grid requested:
+  // TL(NW) Mixed, TR(NE) Photo, BL(SW) Text, BR(SE) Video
   const templates = [];
   const resolutions = ["1920x1080", "1920x1080", "1920x1080"];
 
   for (let i = 0; i < 3; i++) {
-    const zones = [];
-    // Create a 2x2 grid:
-    // Zone 1: TL, Zone 2: TR
-    // Zone 3: BL, Zone 4: BR
-    for (let j = 0; j < 4; j++) {
-      const row = Math.floor(j / 2); // 0 for first two, 1 for last two
-      const col = j % 2;             // 0 for even, 1 for odd
-
-      zones.push({
-        id: `zone-${j + 1}`,
-        name: `Zone ${j + 1}`,
+    const zones = [
+      {
+        id: 'zone-nw',
+        name: 'NW (Top-Left)',
         type: 'mixed',
-        x: col * 50,
-        y: row * 50,
+        x: 0,
+        y: 0,
+        width: 50,
+        height: 50,
+        mediaType: 'both',
+      },
+      {
+        id: 'zone-ne',
+        name: 'NE (Top-Right)',
+        type: 'image',
+        x: 50,
+        y: 0,
         width: 50,
         height: 50,
         mediaType: 'image',
-      });
-    }
+      },
+      {
+        id: 'zone-sw',
+        name: 'SW (Bottom-Left)',
+        type: 'text',
+        x: 0,
+        y: 50,
+        width: 50,
+        height: 50,
+        mediaType: 'both', // Text zones usually support mixed content or specific text media
+      },
+      {
+        id: 'zone-se',
+        name: 'SE (Bottom-Right)',
+        type: 'video',
+        x: 50,
+        y: 50,
+        width: 50,
+        height: 50,
+        mediaType: 'video',
+      }
+    ];
 
     const template = await Template.create({
       name: `${name} - Variant ${i + 1}`,

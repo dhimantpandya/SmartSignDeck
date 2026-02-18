@@ -14,6 +14,7 @@ import { generatePassword } from "../utils/passwordGenerator";
 import pick from "../utils/pick";
 import createSearchFilter from "../utils/search_filter";
 import ApiError from "../utils/ApiError";
+import { escapeRegExp } from "../utils/regex";
 
 const DEFAULT_ROLE: IUser["role"] = "user";
 
@@ -50,7 +51,7 @@ const getUsers = catchAsync(async (req: Request, res: Response) => {
   ]);
 
   if (filter?.search != null) {
-    const searchTerm = (filter.search as string).trim();
+    const searchTerm = escapeRegExp((filter.search as string).trim());
     if (searchTerm) {
       const searchTerms = searchTerm.split(/\s+/);
 
@@ -94,7 +95,7 @@ const getUsers = catchAsync(async (req: Request, res: Response) => {
       const company = await Company.findById(companyId);
       if (company) {
         const relatedCompanies = await Company.find({
-          name: { $regex: new RegExp(`^${company.name}$`, "i") }
+          name: { $regex: new RegExp(`^${escapeRegExp(company.name)}$`, "i") }
         });
         const companyIds = relatedCompanies.map(c => c._id);
         const companyNames = relatedCompanies.map(c => c.name);
@@ -102,7 +103,7 @@ const getUsers = catchAsync(async (req: Request, res: Response) => {
         filter.$or = [
           { companyId: { $in: companyIds } },
           { companyName: { $in: companyNames } },
-          { companyName: { $regex: new RegExp(`^${company.name}$`, "i") } }
+          { companyName: { $regex: new RegExp(`^${escapeRegExp(company.name)}$`, "i") } }
         ];
       } else {
         filter.$or = [
@@ -114,7 +115,7 @@ const getUsers = catchAsync(async (req: Request, res: Response) => {
       // If companyId is not a valid ObjectId, try matching it as a string name
       filter.$or = [
         { companyName: companyId },
-        { companyName: { $regex: new RegExp(`^${companyId}$`, "i") } }
+        { companyName: { $regex: new RegExp(`^${escapeRegExp(companyId as string)}$`, "i") } }
       ];
     }
     delete filter.companyId;
