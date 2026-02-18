@@ -212,6 +212,13 @@ export default function Templates() {
             queryClient.invalidateQueries({ queryKey: ['template-groups'] })
             toast({ title: 'Removed from group', description: 'Template removed from this collection.' })
         },
+        onError: (error: any) => {
+            toast({
+                title: 'Operation Failed',
+                description: error?.message || 'Failed to remove template from group.',
+                variant: 'destructive',
+            })
+        },
     })
 
     const deleteGroupMutation = useMutation({
@@ -222,6 +229,13 @@ export default function Templates() {
                 setSelectedGroupId(null)
             }
             toast({ title: 'Group deleted', description: 'Template group moved to Recycle Bin.' })
+        },
+        onError: (error: any) => {
+            toast({
+                title: 'Deletion Failed',
+                description: error?.message || 'Failed to delete template group.',
+                variant: 'destructive',
+            })
         },
     })
 

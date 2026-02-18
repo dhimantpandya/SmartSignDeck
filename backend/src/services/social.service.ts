@@ -21,10 +21,13 @@ const sendMessage = async (senderId: string, text: string, recipientId?: string,
  * Get messages for a company
  */
 const getCompanyMessages = async (companyId: string) => {
-    return await Message.find({ companyId })
+    const messages = await Message.find({ companyId })
         .sort({ created_at: -1 })
         .limit(50)
         .populate("senderId", "first_name last_name avatar");
+
+    // Defensive check: filter out messages where senderId couldn't be populated (deleted users?)
+    return messages.filter(m => m.senderId);
 };
 
 /**

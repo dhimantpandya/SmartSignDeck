@@ -41,7 +41,10 @@ const updateTemplateGroup = catchAsync(async (req, res) => {
 
 const deleteTemplateGroup = catchAsync(async (req, res) => {
     await templateGroupService.deleteTemplateGroupById(req.params.groupId);
-    res.status(httpStatus.NO_CONTENT).send();
+    res.status(httpStatus.OK).send({
+        status: "success",
+        message: "Template group moved to Recycle Bin"
+    });
 });
 
 const restoreTemplateGroup = catchAsync(async (req, res) => {
@@ -51,7 +54,10 @@ const restoreTemplateGroup = catchAsync(async (req, res) => {
 
 const permanentDeleteTemplateGroup = catchAsync(async (req, res) => {
     await templateGroupService.permanentDeleteTemplateGroupById(req.params.groupId);
-    res.status(httpStatus.NO_CONTENT).send();
+    res.status(httpStatus.OK).send({
+        status: "success",
+        message: "Template group permanently deleted"
+    });
 });
 
 const addTemplatesToGroup = catchAsync(async (req, res) => {

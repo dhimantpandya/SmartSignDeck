@@ -86,8 +86,10 @@ const deleteTemplateGroupById = async (groupId: string): Promise<ITemplateGroup 
 
     // Cascading delete: Trash all templates in this group
     if (group.templates && group.templates.length > 0) {
+        // Ensure we use the IDs even if templates were populated
+        const templateIds = group.templates.map(t => (t as any)._id || (t as any).id || t);
         await Template.updateMany(
-            { _id: { $in: group.templates } },
+            { _id: { $in: templateIds } },
             { $set: { deletedAt: now } }
         );
     }

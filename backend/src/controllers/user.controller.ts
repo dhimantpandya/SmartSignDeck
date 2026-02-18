@@ -89,23 +89,31 @@ const getUsers = catchAsync(async (req: Request, res: Response) => {
 
   if (filter.companyId) {
     const companyId = filter.companyId;
-    const company = await Company.findById(companyId);
-    if (company) {
-      const relatedCompanies = await Company.find({
-        name: { $regex: new RegExp(`^${company.name}$`, "i") }
-      });
-      const companyIds = relatedCompanies.map(c => c._id);
-      const companyNames = relatedCompanies.map(c => c.name);
+    if (mongoose.Types.ObjectId.isValid(companyId as string)) {
+      const company = await Company.findById(companyId);
+      if (company) {
+        const relatedCompanies = await Company.find({
+          name: { $regex: new RegExp(`^${company.name}$`, "i") }
+        });
+        const companyIds = relatedCompanies.map(c => c._id);
+        const companyNames = relatedCompanies.map(c => c.name);
 
-      filter.$or = [
-        { companyId: { $in: companyIds } },
-        { companyName: { $in: companyNames } },
-        { companyName: { $regex: new RegExp(`^${company.name}$`, "i") } }
-      ];
+        filter.$or = [
+          { companyId: { $in: companyIds } },
+          { companyName: { $in: companyNames } },
+          { companyName: { $regex: new RegExp(`^${company.name}$`, "i") } }
+        ];
+      } else {
+        filter.$or = [
+          { companyId: companyId },
+          { companyName: companyId }
+        ];
+      }
     } else {
+      // If companyId is not a valid ObjectId, try matching it as a string name
       filter.$or = [
-        { companyId: companyId },
-        { companyName: companyId }
+        { companyName: companyId },
+        { companyName: { $regex: new RegExp(`^${companyId}$`, "i") } }
       ];
     }
     delete filter.companyId;
@@ -279,7 +287,7 @@ const deleteUser = catchAsync(async (req: Request, res: Response) => {
   }
 
   await userService.deleteUserById(req.params.userId);
-  successResponse(res, userConstants.USER_DELETED, httpStatus.NO_CONTENT, {});
+  successResponse(res, userConstants.USER_DELETED, httpStatus.OK, {});
 });
 
 const fixCompanyMismatch = catchAsync(async (req: Request, res: Response) => {
