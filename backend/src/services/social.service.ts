@@ -139,28 +139,33 @@ const getFriends = async (userId: string) => {
     }).populate("fromId toId", "first_name last_name avatar email");
 
     return connections.map(c => {
-        const fromDoc = c.fromId as any;
-        const toDoc = c.toId as any;
+        try {
+            const fromDoc = c.fromId as any;
+            const toDoc = c.toId as any;
 
-        if (!fromDoc || !toDoc) return null;
+            if (!fromDoc || !toDoc) return null;
 
-        // Ensure we are comparing strings
-        const fromIdStr = (fromDoc._id || fromDoc.id || fromDoc).toString();
-        const myIdStr = userId.toString();
+            // Ensure we are comparing strings
+            const fromIdStr = (fromDoc._id || fromDoc.id || fromDoc).toString();
+            const myIdStr = userId.toString();
 
-        const other = fromIdStr === myIdStr ? toDoc : fromDoc;
+            const other = fromIdStr === myIdStr ? toDoc : fromDoc;
 
-        // Ensure the "other" user is properly formatted
-        if (!other) return null;
+            // Ensure the "other" user is properly formatted
+            if (!other || typeof other !== 'object') return null;
 
-        return {
-            id: other._id || other.id || other,
-            first_name: other.first_name,
-            last_name: other.last_name,
-            avatar: other.avatar,
-            email: other.email,
-            companyName: other.companyName || null
-        };
+            return {
+                id: (other._id || other.id || other).toString(),
+                first_name: other.first_name || 'User',
+                last_name: other.last_name || '',
+                avatar: other.avatar,
+                email: other.email,
+                companyName: other.companyName || null
+            };
+        } catch (err) {
+            console.error('[SOCIAL] Failed to map connection:', err);
+            return null;
+        }
     }).filter(Boolean);
 };
 

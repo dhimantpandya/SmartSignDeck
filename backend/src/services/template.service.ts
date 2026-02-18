@@ -368,21 +368,27 @@ const bootstrapFromInspiration = async (name: string, user: IUser) => {
     createdBy: user._id,
   });
 
-  // 2. Create 3 templates with 4 zones each
+  // 2. Create 3 templates with 4 zones each in a 2x2 grid
   const templates = [];
-  const resolutions = ["1920x1080", "1080x1920", "1920x1080"];
+  const resolutions = ["1920x1080", "1920x1080", "1920x1080"];
 
   for (let i = 0; i < 3; i++) {
     const zones = [];
+    // Create a 2x2 grid:
+    // Zone 1: TL, Zone 2: TR
+    // Zone 3: BL, Zone 4: BR
     for (let j = 0; j < 4; j++) {
+      const row = Math.floor(j / 2); // 0 for first two, 1 for last two
+      const col = j % 2;             // 0 for even, 1 for odd
+
       zones.push({
         id: `zone-${j + 1}`,
         name: `Zone ${j + 1}`,
         type: 'mixed',
-        x: 0,
-        y: 0,
-        width: 100,
-        height: 100,
+        x: col * 50,
+        y: row * 50,
+        width: 50,
+        height: 50,
         mediaType: 'image',
       });
     }

@@ -149,44 +149,45 @@ const getUsers = catchAsync(async (req: Request, res: Response) => {
   });
 
   // Map results to include companyName from populated companyId
-  if (result.results) {
+  if (result.results && Array.isArray(result.results)) {
     try {
       result.results = result.results.map((user: any, index: number) => {
         try {
-          // Use toJSON to get the proper serialized object
+          if (!user) return null;
+
+          // Use toJSON if available, otherwise assume it's already a POJO
           const userObj = user.toJSON ? user.toJSON() : user;
 
-          console.log(`[DEBUG] User ${index} - id:`, userObj.id || userObj._id, 'companyId:', userObj.companyId);
-
           // Extract company name if companyId is populated
-          // Handle cases where companyId might be an object (populated) or just an ID
-          let companyName = null;
-          let companyId = null;
+          let companyName = userObj.companyName || null;
+          let companyId = userObj.companyId || null;
 
           if (userObj.companyId && typeof userObj.companyId === 'object') {
+            // Mongoose creates a virtual 'id' for the string representation of '_id'
             companyName = userObj.companyId.name || userObj.companyName || null;
-            companyId = userObj.companyId.id || userObj.companyId._id || null;
-          } else {
-            companyName = userObj.companyName || null;
-            companyId = userObj.companyId || null;
+            companyId = userObj.companyId._id || userObj.companyId.id || userObj.companyId || null;
+
+            // Ensure companyId is a string if it's still an object (ObjectId)
+            if (companyId && typeof companyId === 'object' && companyId.toString) {
+              companyId = companyId.toString();
+            }
           }
 
           return {
             ...userObj,
+            id: userObj._id || userObj.id, // Explicit ID mapping
             companyName,
             companyId,
           };
         } catch (userError) {
           console.error(`[ERROR] Failed to transform user at index ${index}:`, userError);
-          // Return the original object if transformation fails for one user
           return user.toJSON ? user.toJSON() : user;
         }
-      });
+      }).filter(Boolean);
 
       console.log('[DEBUG] getUsers - transformed results count:', result.results.length);
     } catch (mapError) {
       console.error('[ERROR] Failed to map users:', mapError);
-      // Don't throw here, just return the result as is if mapping fails
     }
   }
 
