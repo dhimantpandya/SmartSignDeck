@@ -138,10 +138,13 @@ const getFriends = async (userId: string) => {
     return connections.map(c => {
         const fromDoc = c.fromId as any;
         const toDoc = c.toId as any;
-        const fromIdStr = (fromDoc.id || fromDoc._id || fromDoc).toString();
+
+        if (!fromDoc || !toDoc) return null;
+
+        const fromIdStr = (fromDoc._id || fromDoc.id || fromDoc).toString();
         const other = fromIdStr === userId ? toDoc : fromDoc;
         return other;
-    });
+    }).filter(Boolean);
 };
 
 const getPendingRequests = async (userId: string) => {

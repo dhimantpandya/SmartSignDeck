@@ -275,7 +275,7 @@ export default function Collaboration() {
                 filter: { search: query, role: [] }
             })
             // Safety check for user ID comparison
-            const usersWithIds = (res.data.users || []).map((u: any) => ({
+            const usersWithIds = ((res as any).data.users || []).map((u: any) => ({
                 ...u,
                 id: u.id || u._id
             }))

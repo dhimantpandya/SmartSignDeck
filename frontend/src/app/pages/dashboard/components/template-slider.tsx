@@ -10,6 +10,15 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { Switch } from '@/components/ui/switch'
 import { toast } from '@/components/ui/use-toast'
 
+const VITE_API_URL = import.meta.env.VITE_API_URL || '';
+
+const getFullUrl = (url: string | null | undefined) => {
+    if (!url) return '';
+    if (url.startsWith('http') || url.startsWith('data:')) return url;
+    const base = VITE_API_URL.replace(/\/v1\/?$/, '');
+    return `${base}${url.startsWith('/') ? '' : '/'}${url}`;
+};
+
 interface TemplateSliderProps {
     templates?: any[]
     isLoading: boolean
@@ -28,7 +37,7 @@ const SmartPreview = ({ url, type, name }: { url: string; type?: 'image' | 'vide
     if (type === 'video' || (url && url.match(/\.(mp4|webm|mov)(\?.*)?$/i))) {
         return (
             <video
-                src={url}
+                src={getFullUrl(url)}
                 className="absolute inset-0 w-full h-full object-cover"
                 autoPlay muted loop playsInline
                 onError={() => setHasError(true)}
@@ -48,7 +57,7 @@ const SmartPreview = ({ url, type, name }: { url: string; type?: 'image' | 'vide
 
     return (
         <img
-            src={url}
+            src={getFullUrl(url)}
             alt={name}
             className="absolute inset-0 w-full h-full object-cover transition-transform duration-[4000ms] group-hover/card:scale-110"
             onError={() => setHasError(true)}

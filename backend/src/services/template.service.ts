@@ -378,7 +378,7 @@ const bootstrapFromInspiration = async (name: string, user: IUser) => {
       zones.push({
         id: `zone-${j + 1}`,
         name: `Zone ${j + 1}`,
-        type: 'media',
+        type: 'mixed',
         x: (j % 2) * 50,
         y: Math.floor(j / 2) * 50,
         width: 50,
