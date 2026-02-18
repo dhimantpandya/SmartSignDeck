@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { apiService } from '@/api'
 import Loader from '@/components/loader'
@@ -606,35 +606,55 @@ function ZoneRenderer({ zone, content, screenId, templateId, secretKey }: { zone
     const item = playlist[currentIndex]
 
     // ERROR HANDLER: AUTO-SKIP
-    // If we have an error, we immediately try to go to next item
     useEffect(() => {
         if (hasError && playlist.length > 0) {
             console.warn('Media playback error, skipping to next:', item?.url)
-            // Short timeout to prevent rapid-fire loops if everything fails
             const timer = setTimeout(() => {
                 setHasError(false)
                 if (playlist.length > 1) {
                     setCurrentIndex((prev) => (prev + 1) % playlist.length)
                 }
-            }, 500) // 500ms delay before skip
+            }, 500)
             return () => clearTimeout(timer)
         }
     }, [hasError, playlist.length, item])
 
+    const mediaType = item.type || zone.type
+    const videoRef = useRef<HTMLVideoElement>(null)
+
+    // Robust Video Playback Trigger
+    useEffect(() => {
+        if (mediaType === 'video' && videoRef.current) {
+            const video = videoRef.current
+            video.muted = true // Double force mute for autoplay
+            video.play().catch(err => {
+                console.warn('[Player] Autoplay prevented, retrying with silent interaction fallback:', err)
+                // Attempt play on any user interaction if it failed
+                const forcePlay = () => {
+                    video.play()
+                    window.removeEventListener('click', forcePlay)
+                }
+                window.addEventListener('click', forcePlay)
+            })
+        }
+    }, [item.url, mediaType])
 
     if (!item) return null
-
-    const mediaType = item.type || zone.type
 
     return (
         <div className='w-full h-full bg-black relative'>
             {mediaType === 'video' ? (
                 <video
+                    ref={videoRef}
                     key={item.url}
                     src={item.url}
-                    autoPlay muted playsInline
+                    autoPlay
+                    muted
+                    playsInline
+                    preload="auto"
                     loop={playlist.length === 1}
                     className='h-full w-full object-cover'
+                    style={{ backgroundColor: 'black' }}
                     onError={() => setHasError(true)}
                     onEnded={() => {
                         if (playlist.length > 1) {
@@ -647,6 +667,7 @@ function ZoneRenderer({ zone, content, screenId, templateId, secretKey }: { zone
                     src={item.url}
                     alt=""
                     className='h-full w-full object-cover animate-in fade-in duration-500'
+                    style={{ backgroundColor: 'black' }}
                     onError={() => setHasError(true)}
                 />
             )}

@@ -27,21 +27,22 @@ export const TemplateSlider = ({ templates, isLoading }: TemplateSliderProps) =>
     const [isHoveringCenter, setIsHoveringCenter] = useState(false)
     const timeoutRef = useRef<any>(null)
 
-    // Default to 'showcase' if user has templates, otherwise 'inspiration'
+    // Default to 'showcase' only if user has 3+ screens, otherwise 'inspiration'
     const [sliderMode, setSliderMode] = useState<'inspiration' | 'showcase'>(
-        templates && templates.length > 0 ? 'showcase' : 'inspiration'
+        templates && templates.length >= 3 ? 'showcase' : 'inspiration'
     );
 
     // Sync initial state if data loads later
     useEffect(() => {
-        if (templates && templates.length > 0) {
-            // We don't forcibly switch back to showcase if the user has manually toggled, 
-            // but for initial load this default safe guard is fine. 
-            // For now, let's trust the user's manual control is key, 
-            // but we can default the *first* render based on prop.
-            // To avoid overriding user choice during re-renders, we won't put this in a dependency effect 
-            // that watches `templates` unless we want to auto-switch. 
-            // Let's leave it manual after mount.
+        if (templates && templates.length >= 3) {
+            // Auto-switch to showcase once data loads IF they have enough screens
+            // but only if they haven't manually switched to inspiration already.
+            // For now, let's keep it simple: if sliderMode is inspiration and they have 3+ screens, 
+            // maybe we want to show their work. But the user complained about it jumping, 
+            // so let's ONLY set it on the very first load or if they were empty before.
+        } else if (templates && templates.length < 3) {
+            // Force inspiration if they drop below 3 (e.g. deletion)
+            setSliderMode('inspiration');
         }
     }, [templates]);
 
@@ -166,7 +167,7 @@ export const TemplateSlider = ({ templates, isLoading }: TemplateSliderProps) =>
                             Inspiration
                         </span>
 
-                        <div className="relative flex items-center">
+                        <div className="relative flex items-center group/lock">
                             <Switch
                                 checked={sliderMode === 'showcase'}
                                 onCheckedChange={(checked) => {
@@ -183,8 +184,11 @@ export const TemplateSlider = ({ templates, isLoading }: TemplateSliderProps) =>
                                 disabled={!templates || templates.length < 3}
                             />
                             {(!templates || templates.length < 3) && (
-                                <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black/80 text-white text-[8px] px-2 py-0.5 rounded opacity-0 group-toggle:hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none uppercase font-bold tracking-tighter">
-                                    Create 3 Screens to Unlock
+                                <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-black/90 text-white text-[10px] px-3 py-1.5 rounded-md opacity-0 group-hover/lock:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none uppercase font-bold tracking-wider border border-white/10 shadow-xl translate-y-2 group-hover/lock:translate-y-0 z-[100]">
+                                    <div className="relative">
+                                        Create 3 screens to access My Work
+                                        <div className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 border-8 border-transparent border-t-black/90" />
+                                    </div>
                                 </div>
                             )}
                         </div>
