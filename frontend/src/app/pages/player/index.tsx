@@ -599,6 +599,9 @@ function ZoneRenderer({ zone, content, screenId, templateId, secretKey }: { zone
                 <IconAlertTriangle size={32} className='mb-2 text-gray-500' />
                 <p className='text-xs text-gray-400 font-mono'>No Content</p>
                 <p className='text-[10px] text-gray-600'>{zone.id}</p>
+                <div className="mt-2 text-[8px] opacity-60">
+                    Type: {zone.type || 'unknown'} | {zone.width}x{zone.height}
+                </div>
             </div>
         )
     }
@@ -608,13 +611,15 @@ function ZoneRenderer({ zone, content, screenId, templateId, secretKey }: { zone
     // ERROR HANDLER: AUTO-SKIP
     useEffect(() => {
         if (hasError && playlist.length > 0) {
-            console.warn('Media playback error, skipping to next:', item?.url)
+            console.error('[Player] ❌ Media playback error for item:', item?.url);
+            // Longer timeout to allow for transient network issues/slow loads
             const timer = setTimeout(() => {
                 setHasError(false)
                 if (playlist.length > 1) {
+                    console.log('[Player] ⏭️ Skipping to next item in playlist');
                     setCurrentIndex((prev) => (prev + 1) % playlist.length)
                 }
-            }, 500)
+            }, 2000) // Increased to 2s
             return () => clearTimeout(timer)
         }
     }, [hasError, playlist.length, item])
@@ -626,24 +631,32 @@ function ZoneRenderer({ zone, content, screenId, templateId, secretKey }: { zone
     useEffect(() => {
         if (mediaType === 'video' && videoRef.current) {
             const video = videoRef.current
-            video.muted = true // Double force mute for autoplay
-            video.play().catch(err => {
-                console.warn('[Player] Autoplay prevented, retrying with silent interaction fallback:', err)
-                // Attempt play on any user interaction if it failed
+            video.muted = true
+            console.log('[Player] 📹 Attempting manual play for:', item.url);
+            video.play().then(() => {
+                console.log('[Player] ✅ Manual play success for:', item.url);
+            }).catch(err => {
+                console.warn('[Player] ⚠️ Autoplay prevented, waiting for interaction:', err)
                 const forcePlay = () => {
-                    video.play()
+                    video.play().then(() => console.log('[Player] ✅ Interaction play success'))
                     window.removeEventListener('click', forcePlay)
+                    window.removeEventListener('keydown', forcePlay)
                 }
                 window.addEventListener('click', forcePlay)
+                window.addEventListener('keydown', forcePlay)
             })
         }
     }, [item.url, mediaType])
 
-    if (!item) return null
-
     return (
-        <div className='w-full h-full bg-black relative'>
-            {mediaType === 'video' ? (
+        <div className='w-full h-full bg-black relative flex items-center justify-center'>
+            {hasError ? (
+                <div className="flex flex-col items-center justify-center text-gray-500 animate-pulse p-4 text-center">
+                    <IconAlertTriangle size={48} className="mb-2 opacity-50" />
+                    <p className="text-xs font-bold uppercase tracking-widest">Media failed to load</p>
+                    <p className="text-[8px] mt-1 break-all max-w-[200px] opacity-40">{item.url}</p>
+                </div>
+            ) : mediaType === 'video' ? (
                 <video
                     ref={videoRef}
                     key={item.url}
@@ -655,7 +668,10 @@ function ZoneRenderer({ zone, content, screenId, templateId, secretKey }: { zone
                     loop={playlist.length === 1}
                     className='h-full w-full object-cover'
                     style={{ backgroundColor: 'black' }}
-                    onError={() => setHasError(true)}
+                    onError={() => {
+                        console.error('[Player] Video element onError triggered for:', item.url);
+                        setHasError(true);
+                    }}
                     onEnded={() => {
                         if (playlist.length > 1) {
                             setCurrentIndex((prev) => (prev + 1) % playlist.length)
@@ -668,7 +684,10 @@ function ZoneRenderer({ zone, content, screenId, templateId, secretKey }: { zone
                     alt=""
                     className='h-full w-full object-cover animate-in fade-in duration-500'
                     style={{ backgroundColor: 'black' }}
-                    onError={() => setHasError(true)}
+                    onError={() => {
+                        console.error('[Player] Image element onError triggered for:', item.url);
+                        setHasError(true);
+                    }}
                 />
             )}
         </div>
