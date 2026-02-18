@@ -1,15 +1,16 @@
 import { useNavigate } from 'react-router-dom'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/custom/button'
-import { IconLayout, IconArrowRight, IconEye as Eye, IconSparkles, IconChevronLeft, IconChevronRight } from '@tabler/icons-react'
+import { IconLayout, IconArrowRight, IconEye as Eye, IconSparkles, IconChevronLeft, IconChevronRight, IconDeviceTv } from '@tabler/icons-react'
 import { Routes } from '@/utilities/routes'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
 import { INSPIRATION_ITEMS } from './inspiration-data'
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { Switch } from '@/components/ui/switch'
 
 interface TemplateSliderProps {
-    templates: any[]
+    templates?: any[]
     isLoading: boolean
     isNewUser: boolean
 }
@@ -25,33 +26,76 @@ export const TemplateSlider = ({ templates, isLoading }: TemplateSliderProps) =>
     const [isHoveringCenter, setIsHoveringCenter] = useState(false)
     const timeoutRef = useRef<any>(null)
 
-    // Inspiration Items Only (CTA removed per request)
-    const baseItems = useMemo(() => {
-        const items = templates && templates.length > 0 ? templates : INSPIRATION_ITEMS;
-        return items.slice(0, 10);
+    // Default to 'showcase' if user has templates, otherwise 'inspiration'
+    const [sliderMode, setSliderMode] = useState<'inspiration' | 'showcase'>(
+        templates && templates.length > 0 ? 'showcase' : 'inspiration'
+    );
+
+    // Sync initial state if data loads later
+    useEffect(() => {
+        if (templates && templates.length > 0) {
+            // We don't forcibly switch back to showcase if the user has manually toggled, 
+            // but for initial load this default safe guard is fine. 
+            // For now, let's trust the user's manual control is key, 
+            // but we can default the *first* render based on prop.
+            // To avoid overriding user choice during re-renders, we won't put this in a dependency effect 
+            // that watches `templates` unless we want to auto-switch. 
+            // Let's leave it manual after mount.
+        }
     }, [templates]);
 
-    const isShowingInspiration = !templates || templates.length === 0;
 
-    // Triple buffer for infinite loop
-    const infiniteItems = useMemo(() => [...baseItems, ...baseItems, ...baseItems], [baseItems]);
+    // Determine items based on mode
+    const baseItems: any[] = useMemo(() => {
+        if (sliderMode === 'inspiration') {
+            return INSPIRATION_ITEMS.slice(0, 10);
+        }
+        return templates && templates.length > 0 ? templates : [];
+    }, [sliderMode, templates]);
 
-    // Start at middle set
-    const [activeIndex, setActiveIndex] = useState(baseItems.length);
+    // Derived state for display
+    const isShowingInspiration = sliderMode === 'inspiration';
+    const isEmptyShowcase = sliderMode === 'showcase' && baseItems.length === 0;
+
+    // Triple buffer for infinite loop (only if we have items)
+    const infiniteItems = useMemo(() => {
+        if (baseItems.length === 0) return [];
+        // If we have very few items, triple buffering might still be small, 
+        // but let's stick to the pattern.
+        return [...baseItems, ...baseItems, ...baseItems];
+    }, [baseItems]);
+
+    // Start at middle set if we have items
+    const [activeIndex, setActiveIndex] = useState(0);
+
+    // Reset index when items change drastically (e.g. mode switch)
+    useEffect(() => {
+        if (baseItems.length > 0) {
+            setActiveIndex(baseItems.length);
+        } else {
+            setActiveIndex(0);
+        }
+    }, [baseItems.length, sliderMode]);
+
+
     const [isTransitioning, setIsTransitioning] = useState(true);
 
     const handleNext = useCallback(() => {
+        if (isEmptyShowcase) return;
         setIsTransitioning(true);
         setActiveIndex((prev) => prev + 1);
-    }, []);
+    }, [isEmptyShowcase]);
 
     const handlePrev = useCallback(() => {
+        if (isEmptyShowcase) return;
         setIsTransitioning(true);
         setActiveIndex((prev) => prev - 1);
-    }, []);
+    }, [isEmptyShowcase]);
 
     // Seamless jump
     useEffect(() => {
+        if (isEmptyShowcase || baseItems.length === 0) return;
+
         if (activeIndex >= baseItems.length * 2) {
             const timer = setTimeout(() => {
                 setIsTransitioning(false);
@@ -66,16 +110,16 @@ export const TemplateSlider = ({ templates, isLoading }: TemplateSliderProps) =>
             }, 650);
             return () => clearTimeout(timer);
         }
-    }, [activeIndex, baseItems.length]);
+    }, [activeIndex, baseItems.length, isEmptyShowcase]);
 
     useEffect(() => {
-        if (!isPaused && !isLoading) {
+        if (!isPaused && !isLoading && !isEmptyShowcase && baseItems.length > 0) {
             timeoutRef.current = setInterval(handleNext, 4500);
         }
         return () => {
             if (timeoutRef.current) clearInterval(timeoutRef.current);
         };
-    }, [isPaused, handleNext, isLoading]);
+    }, [isPaused, handleNext, isLoading, isEmptyShowcase, baseItems.length]);
 
     if (isLoading) {
         return (
@@ -89,20 +133,39 @@ export const TemplateSlider = ({ templates, isLoading }: TemplateSliderProps) =>
 
     return (
         <div className="space-y-4 w-full">
-            <div className="flex items-center justify-between px-6">
-                <div className="flex items-center gap-3">
-                    <h2 className="text-xl font-black tracking-tight text-foreground/80 uppercase">
-                        {isShowingInspiration ? "Explore Inspiration" : "Recent Showcase"}
-                    </h2>
-                    {isShowingInspiration && (
-                        <div className="flex items-center gap-2 bg-primary/10 text-primary text-[9px] font-black px-3 py-1 rounded-full border border-primary/10 shadow-sm uppercase tracking-widest">
-                            <IconSparkles size={10} />
-                            Premium Selection
-                        </div>
-                    )}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-6 gap-4">
+                <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-3">
+                        <h2 className="text-xl font-black tracking-tight text-foreground/80 uppercase">
+                            {isShowingInspiration ? "Explore Inspiration" : "Recent Showcase"}
+                        </h2>
+                        {isShowingInspiration && (
+                            <div className="flex items-center gap-2 bg-primary/10 text-primary text-[9px] font-black px-3 py-1 rounded-full border border-primary/10 shadow-sm uppercase tracking-widest">
+                                <IconSparkles size={10} />
+                                Premium Selection
+                            </div>
+                        )}
+                        {!isShowingInspiration && (
+                            <div className="flex items-center gap-2 bg-muted text-muted-foreground text-[9px] font-black px-3 py-1 rounded-full border border-border shadow-sm uppercase tracking-widest">
+                                <IconDeviceTv size={10} />
+                                {baseItems.length} Items
+                            </div>
+                        )}
+                    </div>
                 </div>
-                <div className="flex items-center gap-4">
-                    <Button variant="ghost" size="sm" onClick={() => navigate(Routes.TEMPLATES)} className="text-muted-foreground hover:text-primary font-bold transition-colors text-[10px] uppercase tracking-tighter">
+
+                <div className="flex items-center gap-6">
+                    <div className="flex items-center space-x-2">
+                        <span className={cn("text-xs font-bold uppercase tracking-wider cursor-pointer transition-colors", sliderMode === 'showcase' ? "text-muted-foreground" : "text-primary")} onClick={() => setSliderMode('inspiration')}>Inspiration</span>
+                        <Switch
+                            checked={sliderMode === 'showcase'}
+                            onCheckedChange={(checked) => setSliderMode(checked ? 'showcase' : 'inspiration')}
+                            className="data-[state=checked]:bg-primary"
+                        />
+                        <span className={cn("text-xs font-bold uppercase tracking-wider cursor-pointer transition-colors", sliderMode === 'inspiration' ? "text-muted-foreground" : "text-primary")} onClick={() => setSliderMode('showcase')}>My Work</span>
+                    </div>
+
+                    <Button variant="ghost" size="sm" onClick={() => navigate(Routes.TEMPLATES)} className="hidden sm:flex text-muted-foreground hover:text-primary font-bold transition-colors text-[10px] uppercase tracking-tighter">
                         View Catalog <IconArrowRight size={12} className="ml-2" />
                     </Button>
                 </div>
@@ -113,135 +176,157 @@ export const TemplateSlider = ({ templates, isLoading }: TemplateSliderProps) =>
                 onMouseEnter={() => setIsPaused(true)}
                 onMouseLeave={() => { setIsPaused(false); setIsHoveringCenter(false); }}
             >
+                {/* Empty State for My Work */}
+                {isEmptyShowcase && (
+                    <div className="flex flex-col items-center justify-center w-full h-full space-y-4 bg-muted/5 rounded-xl border-2 border-dashed border-muted">
+                        <div className="p-4 bg-muted rounded-full">
+                            <IconLayout size={48} className="text-muted-foreground/50" />
+                        </div>
+                        <h3 className="text-lg font-bold text-muted-foreground">No Showcase Items Yet</h3>
+                        <Button onClick={() => navigate(`${Routes.TEMPLATES}?create=true`)} variant="outline" className="gap-2">
+                            Create Your First Template <IconArrowRight size={14} />
+                        </Button>
+                    </div>
+                )}
+
+
                 {/* Manual Navigation Overlay (Left) */}
-                <div className="absolute left-6 z-50 transition-all duration-300 opacity-0 group-hover/main:opacity-100 -translate-x-4 group-hover/main:translate-x-0">
-                    <Button variant="outline" size="icon" className="h-12 w-12 rounded-full shadow-2xl hover:bg-primary hover:text-white transition-all border-muted-foreground/10 bg-background/80 backdrop-blur-xl" onClick={handlePrev}>
-                        <IconChevronLeft size={24} />
-                    </Button>
-                </div>
+                {!isEmptyShowcase && (
+                    <div className="absolute left-6 z-50 transition-all duration-300 opacity-0 group-hover/main:opacity-100 -translate-x-4 group-hover/main:translate-x-0">
+                        <Button variant="outline" size="icon" className="h-12 w-12 rounded-full shadow-2xl hover:bg-primary hover:text-white transition-all border-muted-foreground/10 bg-background/80 backdrop-blur-xl" onClick={handlePrev}>
+                            <IconChevronLeft size={24} />
+                        </Button>
+                    </div>
+                )}
 
                 {/* Manual Navigation Overlay (Right) */}
-                <div className="absolute right-6 z-50 transition-all duration-300 opacity-0 group-hover/main:opacity-100 translate-x-4 group-hover/main:translate-x-0">
-                    <Button variant="outline" size="icon" className="h-12 w-12 rounded-full shadow-2xl hover:bg-primary hover:text-white transition-all border-muted-foreground/10 bg-background/80 backdrop-blur-xl" onClick={handleNext}>
-                        <IconChevronRight size={24} />
-                    </Button>
-                </div>
+                {!isEmptyShowcase && (
+                    <div className="absolute right-6 z-50 transition-all duration-300 opacity-0 group-hover/main:opacity-100 translate-x-4 group-hover/main:translate-x-0">
+                        <Button variant="outline" size="icon" className="h-12 w-12 rounded-full shadow-2xl hover:bg-primary hover:text-white transition-all border-muted-foreground/10 bg-background/80 backdrop-blur-xl" onClick={handleNext}>
+                            <IconChevronRight size={24} />
+                        </Button>
+                    </div>
+                )}
 
                 {/* Viewport - Shift container so activeIndex-th item is perfectly centered */}
-                <div
-                    className={cn(
-                        "flex absolute items-center transition-transform duration-700 ease-in-out",
-                        !isTransitioning && "transition-none"
-                    )}
-                    style={{
-                        gap: `${GAP}px`,
-                        transform: `translateX(calc(50% - ${activeIndex * STEP + CARD_WIDTH / 2}px))`
-                    }}
-                >
-                    {infiniteItems.map((item: any, idx) => {
-                        const isFocused = idx === activeIndex;
-                        const isVisible = Math.abs(idx - activeIndex) <= 2;
-                        const id = item.id || item._id || `item-${idx}`;
+                {!isEmptyShowcase && (
+                    <div
+                        className={cn(
+                            "flex absolute items-center transition-transform duration-700 ease-in-out",
+                            !isTransitioning && "transition-none"
+                        )}
+                        style={{
+                            gap: `${GAP}px`,
+                            transform: `translateX(calc(50% - ${activeIndex * STEP + CARD_WIDTH / 2}px))`
+                        }}
+                    >
+                        {infiniteItems.map((item: any, idx) => {
+                            const isFocused = idx === activeIndex;
+                            const isVisible = Math.abs(idx - activeIndex) <= 2;
+                            const id = item.id || item._id || `item-${idx}`;
 
-                        if (!isVisible) return <div key={`spacer-${idx}`} style={{ width: CARD_WIDTH }} className="flex-shrink-0" />;
+                            if (!isVisible) return <div key={`spacer-${idx}`} style={{ width: CARD_WIDTH }} className="flex-shrink-0" />;
 
-                        const previewUrl = item.previewUrl || (item.templateId?.previewUrl);
-                        const name = item.name || (item.templateId?.name);
-                        const category = item.category || (item.templateId?.category || 'Theme');
-                        const resolution = item.resolution || (item.templateId?.resolution || '1920x1080');
-                        const zones = 4;
+                            const previewUrl = item.previewUrl || (item.templateId?.previewUrl);
+                            const name = item.name || (item.templateId?.name) || 'Untitled Work';
+                            const category = item.category || (item.templateId?.category || 'Showcase');
+                            const resolution = item.resolution || (item.templateId?.resolution || 'HD');
+                            const zones = 4;
 
-                        return (
-                            <Card
-                                key={`${id}-${idx}`}
-                                className={cn(
-                                    "flex-shrink-0 transition-all duration-700 cursor-pointer overflow-hidden border-none relative group/card rounded-[1.5rem] bg-muted shadow-lg",
-                                    isFocused ? "z-30 shadow-[0_30px_60px_-12px_rgba(0,0,0,0.4)] scale-[1.25]" : "z-10 scale-100"
-                                )}
-                                style={{ width: `${CARD_WIDTH}px`, height: `240px` }}
-                                onMouseEnter={() => isFocused && setIsHoveringCenter(true)}
-                                onMouseLeave={() => isFocused && setIsHoveringCenter(false)}
-                                onClick={() => isFocused ? navigate(Routes.TEMPLATES) : setActiveIndex(idx)}
-                            >
-                                <CardContent className="p-0 h-full flex flex-col relative overflow-hidden">
-                                    {previewUrl ? (
-                                        <img src={previewUrl} alt={name} className="absolute inset-0 w-full h-full object-cover transition-transform duration-[4000ms] group-hover/card:scale-110" />
-                                    ) : (
-                                        <div className="absolute inset-0 flex items-center justify-center bg-muted/50">
-                                            <IconLayout size={40} className="text-primary/10" />
-                                        </div>
+                            return (
+                                <Card
+                                    key={`${id}-${idx}`}
+                                    className={cn(
+                                        "flex-shrink-0 transition-all duration-700 cursor-pointer overflow-hidden border-none relative group/card rounded-[1.5rem] bg-muted shadow-lg",
+                                        isFocused ? "z-30 shadow-[0_30px_60px_-12px_rgba(0,0,0,0.4)] scale-[1.25]" : "z-10 scale-100"
                                     )}
-
-                                    {/* Content Overlay */}
-                                    <div className={cn(
-                                        "absolute inset-0 transition-all duration-700",
-                                        isFocused
-                                            ? "bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-100"
-                                            : "bg-black/10 opacity-30 group-hover/card:opacity-50"
-                                    )} />
-
-                                    {/* Persistent Name Label (Always on center focus) */}
-                                    <div className={cn(
-                                        "absolute inset-0 p-6 flex flex-col justify-end transition-all duration-500",
-                                        isFocused ? "opacity-100" : "opacity-0"
-                                    )}>
-                                        <div className={cn(
-                                            "transition-all duration-500 transform",
-                                            isHoveringCenter ? "-translate-y-24" : "translate-y-0"
-                                        )}>
-                                            <div className="inline-block bg-primary px-2 py-0.5 rounded-[4px] text-[8px] font-black text-white uppercase tracking-widest mb-2 shadow-lg">
-                                                {category}
+                                    style={{ width: `${CARD_WIDTH}px`, height: `240px` }}
+                                    onMouseEnter={() => isFocused && setIsHoveringCenter(true)}
+                                    onMouseLeave={() => isFocused && setIsHoveringCenter(false)}
+                                    onClick={() => isFocused ? navigate(Routes.TEMPLATES) : setActiveIndex(idx)}
+                                >
+                                    <CardContent className="p-0 h-full flex flex-col relative overflow-hidden">
+                                        {previewUrl ? (
+                                            <img src={previewUrl} alt={name} className="absolute inset-0 w-full h-full object-cover transition-transform duration-[4000ms] group-hover/card:scale-110" />
+                                        ) : (
+                                            <div className="absolute inset-0 flex items-center justify-center bg-muted/50">
+                                                <IconLayout size={40} className="text-primary/10" />
                                             </div>
-                                            <h3 className="text-white font-black text-xl leading-tight drop-shadow-2xl tracking-tight max-w-[80%]">{name}</h3>
-                                        </div>
-                                    </div>
+                                        )}
 
-                                    {/* Hover-Only Metadata (Center card only) */}
-                                    {isFocused && (
+                                        {/* Content Overlay */}
                                         <div className={cn(
-                                            "absolute bottom-0 left-0 w-full p-6 space-y-3 transition-all duration-500 transform",
-                                            isHoveringCenter ? "translate-y-0 opacity-100" : "translate-y-full opacity-0"
+                                            "absolute inset-0 transition-all duration-700",
+                                            isFocused
+                                                ? "bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-100"
+                                                : "bg-black/10 opacity-30 group-hover/card:opacity-50"
+                                        )} />
+
+                                        {/* Persistent Name Label (Always on center focus) */}
+                                        <div className={cn(
+                                            "absolute inset-0 p-6 flex flex-col justify-end transition-all duration-500",
+                                            isFocused ? "opacity-100" : "opacity-0"
                                         )}>
-                                            <div className="flex items-center gap-3">
-                                                <div className="bg-white/10 backdrop-blur-xl px-2 py-0.5 rounded border border-white/20">
-                                                    <span className="text-white font-black text-[8px] uppercase">{resolution}</span>
+                                            <div className={cn(
+                                                "transition-all duration-500 transform",
+                                                isHoveringCenter ? "-translate-y-24" : "translate-y-0"
+                                            )}>
+                                                <div className="inline-block bg-primary px-2 py-0.5 rounded-[4px] text-[8px] font-black text-white uppercase tracking-widest mb-2 shadow-lg">
+                                                    {category}
                                                 </div>
-                                                <div className="bg-white/10 backdrop-blur-xl px-2 py-0.5 rounded border border-white/20">
-                                                    <span className="text-white font-black text-[8px] uppercase">{zones} Zones</span>
-                                                </div>
+                                                <h3 className="text-white font-black text-xl leading-tight drop-shadow-2xl tracking-tight max-w-[80%]">{name}</h3>
                                             </div>
-                                            <Button variant="default" size="sm" className="w-full h-8 gap-2 font-black text-[9px] uppercase tracking-tighter shadow-2xl bg-white text-black border-0 rounded-lg hover:scale-[1.02] transition-transform">
-                                                <Eye size={12} /> Preview Concept
-                                            </Button>
                                         </div>
-                                    )}
-                                </CardContent>
-                            </Card>
-                        );
-                    })}
-                </div>
+
+                                        {/* Hover-Only Metadata (Center card only) */}
+                                        {isFocused && (
+                                            <div className={cn(
+                                                "absolute bottom-0 left-0 w-full p-6 space-y-3 transition-all duration-500 transform",
+                                                isHoveringCenter ? "translate-y-0 opacity-100" : "translate-y-full opacity-0"
+                                            )}>
+                                                <div className="flex items-center gap-3">
+                                                    <div className="bg-white/10 backdrop-blur-xl px-2 py-0.5 rounded border border-white/20">
+                                                        <span className="text-white font-black text-[8px] uppercase">{resolution}</span>
+                                                    </div>
+                                                    <div className="bg-white/10 backdrop-blur-xl px-2 py-0.5 rounded border border-white/20">
+                                                        <span className="text-white font-black text-[8px] uppercase">{zones} Zones</span>
+                                                    </div>
+                                                </div>
+                                                <Button variant="default" size="sm" className="w-full h-8 gap-2 font-black text-[9px] uppercase tracking-tighter shadow-2xl bg-white text-black border-0 rounded-lg hover:scale-[1.02] transition-transform">
+                                                    <Eye size={12} /> Preview Concept
+                                                </Button>
+                                            </div>
+                                        )}
+                                    </CardContent>
+                                </Card>
+                            );
+                        })}
+                    </div>
+                )}
             </div>
 
             {/* Minimal Track */}
-            <div className="flex justify-center items-center py-2">
-                <div className="flex bg-muted/5 rounded-full p-1.5 gap-2 backdrop-blur-sm border border-muted-foreground/5">
-                    {baseItems.map((_, idx) => (
-                        <button
-                            key={idx}
-                            className={cn(
-                                "transition-all duration-500 rounded-full",
-                                (activeIndex % baseItems.length) === idx
-                                    ? "w-8 h-1 bg-primary/80"
-                                    : "w-1 h-1 bg-muted-foreground/10"
-                            )}
-                            onClick={() => {
-                                setIsTransitioning(true);
-                                setActiveIndex(baseItems.length + idx);
-                            }}
-                        />
-                    ))}
+            {!isEmptyShowcase && (
+                <div className="flex justify-center items-center py-2">
+                    <div className="flex bg-muted/5 rounded-full p-1.5 gap-2 backdrop-blur-sm border border-muted-foreground/5">
+                        {baseItems.map((_, idx) => (
+                            <button
+                                key={idx}
+                                className={cn(
+                                    "transition-all duration-500 rounded-full",
+                                    (activeIndex % baseItems.length) === idx
+                                        ? "w-8 h-1 bg-primary/80"
+                                        : "w-1 h-1 bg-muted-foreground/10"
+                                )}
+                                onClick={() => {
+                                    setIsTransitioning(true);
+                                    setActiveIndex(baseItems.length + idx);
+                                }}
+                            />
+                        ))}
+                    </div>
                 </div>
-            </div>
+            )}
         </div>
     );
 }
