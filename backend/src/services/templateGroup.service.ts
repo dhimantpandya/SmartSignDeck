@@ -1,5 +1,5 @@
 import httpStatus from "http-status";
-import { TemplateGroup } from "../models";
+import { TemplateGroup, Template } from "../models";
 import ApiError from "../utils/ApiError";
 import type { ITemplateGroup } from "../models/templateGroup.model";
 import type { FilterQuery } from "mongoose";
@@ -79,8 +79,19 @@ const deleteTemplateGroupById = async (groupId: string): Promise<ITemplateGroup 
     if (!group) {
         throw new ApiError(httpStatus.NOT_FOUND, "Template group not found");
     }
-    group.deletedAt = new Date();
+
+    const now = new Date();
+    group.deletedAt = now;
     await group.save();
+
+    // Cascading delete: Trash all templates in this group
+    if (group.templates && group.templates.length > 0) {
+        await Template.updateMany(
+            { _id: { $in: group.templates } },
+            { $set: { deletedAt: now } }
+        );
+    }
+
     return group;
 };
 

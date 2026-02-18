@@ -136,7 +136,7 @@ const Setup = () => {
               }),
             },
             {
-              path: Routes.SCREENS,
+              path: '/screens/:id?',
               lazy: async () => ({
                 Component: (await import('./pages/screens')).default,
               }),

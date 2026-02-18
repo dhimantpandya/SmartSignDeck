@@ -221,4 +221,38 @@
       background-position: 0% 50%;
     }
   }
+
+  .dustbin-fall {
+    animation: dustbin-fall 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+
+  @keyframes dustbin-fall {
+    0% {
+      transform: scale(1) rotate(0deg) translateY(0);
+      opacity: 1;
+    }
+    30% {
+      transform: scale(1.1) rotate(2deg);
+      opacity: 1;
+    }
+    100% {
+      transform: scale(0.1) rotate(15deg) translateY(100px);
+      opacity: 0;
+    }
+  }
+
+  .dustbin-rise {
+    animation: dustbin-rise 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+
+  @keyframes dustbin-rise {
+    0% {
+      transform: scale(0.1) rotate(-15deg) translateY(100px);
+      opacity: 0;
+    }
+    100% {
+      transform: scale(1) rotate(0deg) translateY(0);
+      opacity: 1;
+    }
+  }
 }

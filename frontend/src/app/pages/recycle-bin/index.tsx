@@ -22,8 +22,10 @@ import { cn } from '@/lib/utils'
 
 export default function RecycleBin() {
     const [activeTab, setActiveTabOriginal] = useState('screens')
-    const [confirmDelete, setConfirmDelete] = useState<{ id: string | string[], type: 'screen' | 'template' | 'group' } | null>(null)
+    const [confirmDelete, setConfirmDelete] = useState<{ id: string | string[], type: string } | null>(null)
     const [selectedIds, setSelectedIds] = useState<string[]>([])
+    const [restoringIds, setRestoringIds] = useState<string[]>([])
+    const [purgingIds, setPurgingIds] = useState<string[]>([])
     const queryClient = useQueryClient()
 
     const setActiveTab = (tab: string) => {
@@ -72,6 +74,9 @@ export default function RecycleBin() {
 
     const restoreMutation = useMutation({
         mutationFn: async ({ ids, type }: { ids: string[], type: string }) => {
+            setRestoringIds(prev => [...prev, ...ids])
+            // Wait for animation
+            await new Promise(resolve => setTimeout(resolve, 600))
             const promises = ids.map(id => {
                 if (type === 'screen') return screenService.restoreScreen(id)
                 if (type === 'template') return templateService.restoreTemplate(id)
@@ -80,17 +85,25 @@ export default function RecycleBin() {
             })
             return Promise.all(promises)
         },
-        onSuccess: (_, { type }) => {
+        onSuccess: (_, { ids, type }) => {
             const key = type === 'screen' ? 'screens' : type === 'template' ? 'templates' : 'template-groups'
             queryClient.invalidateQueries({ queryKey: [key] })
             queryClient.invalidateQueries({ queryKey: ['dashboard'] })
-            toast({ title: `${type.charAt(0).toUpperCase() + type.slice(1)}s restored` })
+            const displayType = type === 'screen' ? 'Screen' : type === 'template' ? 'Template' : 'Group'
+            toast({ title: `${ids.length > 1 ? `${displayType}s` : displayType} restored` })
             setSelectedIds([])
+            setRestoringIds(prev => prev.filter(id => !ids.includes(id)))
         },
+        onError: (_, { ids }) => {
+            setRestoringIds(prev => prev.filter(id => !ids.includes(id)))
+        }
     })
 
     const permanentDeleteMutation = useMutation({
         mutationFn: async ({ ids, type }: { ids: string[], type: string }) => {
+            setPurgingIds(prev => [...prev, ...ids])
+            // Wait for animation
+            await new Promise(resolve => setTimeout(resolve, 600))
             const promises = ids.map(id => {
                 if (type === 'screen') return screenService.permanentDeleteScreen(id)
                 if (type === 'template') return templateService.permanentDeleteTemplate(id)
@@ -99,13 +112,18 @@ export default function RecycleBin() {
             })
             return Promise.all(promises)
         },
-        onSuccess: (_, { type }) => {
+        onSuccess: (_, { ids, type }) => {
             const key = type === 'screen' ? 'screens' : type === 'template' ? 'templates' : 'template-groups'
             queryClient.invalidateQueries({ queryKey: [key] })
             queryClient.invalidateQueries({ queryKey: ['dashboard'] })
-            toast({ title: `${type.charAt(0).toUpperCase() + type.slice(1)}s permanently deleted` })
+            const displayType = type === 'screen' ? 'Screen' : type === 'template' ? 'Template' : 'Group'
+            toast({ title: `${ids.length > 1 ? `${displayType}s` : displayType} permanently deleted` })
             setSelectedIds([])
+            setPurgingIds(prev => prev.filter(id => !ids.includes(id)))
         },
+        onError: (_, { ids }) => {
+            setPurgingIds(prev => prev.filter(id => !ids.includes(id)))
+        }
     })
 
     const calculateDaysRemaining = (deletedAt: string | null | undefined) => {
@@ -215,8 +233,15 @@ export default function RecycleBin() {
                                 {screensData.results.map((screen: any) => {
                                     const daysRemaining = calculateDaysRemaining(screen.deletedAt)
                                     const isSelected = selectedIds.includes(screen.id)
+                                    const isAnimating = restoringIds.includes(screen.id) || purgingIds.includes(screen.id)
+                                    const animationClass = restoringIds.includes(screen.id) ? "dustbin-rise" : purgingIds.includes(screen.id) ? "dustbin-fall" : ""
+
                                     return (
-                                        <Card key={screen.id} className={cn("transition-all", isSelected && "ring-2 ring-primary border-primary")}>
+                                        <Card key={screen.id} className={cn(
+                                            "transition-all",
+                                            isSelected && "ring-2 ring-primary border-primary",
+                                            isAnimating && animationClass
+                                        )}>
                                             <CardHeader className="pb-2 relative">
                                                 <div className="absolute top-4 right-4 z-10">
                                                     <Checkbox
@@ -266,8 +291,15 @@ export default function RecycleBin() {
                                 {templatesData.results.map((template: any) => {
                                     const daysRemaining = calculateDaysRemaining(template.deletedAt)
                                     const isSelected = selectedIds.includes(template.id)
+                                    const isAnimating = restoringIds.includes(template.id) || purgingIds.includes(template.id)
+                                    const animationClass = restoringIds.includes(template.id) ? "dustbin-rise" : purgingIds.includes(template.id) ? "dustbin-fall" : ""
+
                                     return (
-                                        <Card key={template.id} className={cn("transition-all", isSelected && "ring-2 ring-primary border-primary")}>
+                                        <Card key={template.id} className={cn(
+                                            "transition-all",
+                                            isSelected && "ring-2 ring-primary border-primary",
+                                            isAnimating && animationClass
+                                        )}>
                                             <CardHeader className="pb-2 relative">
                                                 <div className="absolute top-4 right-4 z-10">
                                                     <Checkbox
@@ -317,8 +349,15 @@ export default function RecycleBin() {
                                 {groupsData.results.map((group: any) => {
                                     const daysRemaining = calculateDaysRemaining(group.deletedAt)
                                     const isSelected = selectedIds.includes(group.id)
+                                    const isAnimating = restoringIds.includes(group.id) || purgingIds.includes(group.id)
+                                    const animationClass = restoringIds.includes(group.id) ? "dustbin-rise" : purgingIds.includes(group.id) ? "dustbin-fall" : ""
+
                                     return (
-                                        <Card key={group.id} className={cn("transition-all", isSelected && "ring-2 ring-primary border-primary")}>
+                                        <Card key={group.id} className={cn(
+                                            "transition-all",
+                                            isSelected && "ring-2 ring-primary border-primary",
+                                            isAnimating && animationClass
+                                        )}>
                                             <CardHeader className="pb-2 relative">
                                                 <div className="absolute top-4 right-4 z-10">
                                                     <Checkbox

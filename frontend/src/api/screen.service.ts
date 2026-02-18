@@ -21,6 +21,10 @@ const deleteScreen = async (id: string) => {
     return apiService.delete(`/v1/screens/${id}`)
 }
 
+const getScreen = async (id: string) => {
+    return apiService.get<Screen>(`/v1/screens/${id}`)
+}
+
 const restoreScreen = async (id: string) => {
     return apiService.post(`/v1/screens/${id}/restore`, {})
 }
@@ -39,6 +43,7 @@ const bulkDeleteScreens = async (ids: string[]) => {
 
 export const screenService = {
     getScreens,
+    getScreen,
     deleteScreen,
     restoreScreen,
     permanentDeleteScreen,

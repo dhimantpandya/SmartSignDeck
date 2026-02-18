@@ -19,11 +19,12 @@ import { useAuth } from '@/hooks/use-auth'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Globe, User, Folder, Folders } from 'lucide-react'
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams, useParams } from 'react-router-dom'
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
 
 export default function Screens() {
     const { user } = useAuth()
+    const { id: routeId } = useParams()
     const [searchParams, setSearchParams] = useSearchParams()
     const [showForm, setShowForm] = useState(false)
     const [editingScreen, setEditingScreen] = useState<any>(null)
@@ -62,6 +63,24 @@ export default function Screens() {
         const s = io(import.meta.env.VITE_APP_URL || 'http://localhost:5000')
         return () => { s.disconnect() }
     }, [])
+
+    useEffect(() => {
+        if (routeId) {
+            // Find the screen in our data or fetch it
+            const findAndEdit = async () => {
+                try {
+                    const screen = await screenService.getScreen(routeId)
+                    if (screen) {
+                        setEditingScreen(screen)
+                        setShowForm(true)
+                    }
+                } catch (error) {
+                    console.error('Failed to load screen from route:', error)
+                }
+            }
+            findAndEdit()
+        }
+    }, [routeId])
 
     useEffect(() => {
         if (searchParams.get('create') === 'true') {
