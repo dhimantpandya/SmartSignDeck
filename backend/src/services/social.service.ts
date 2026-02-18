@@ -141,9 +141,23 @@ const getFriends = async (userId: string) => {
 
         if (!fromDoc || !toDoc) return null;
 
+        // Ensure we are comparing strings
         const fromIdStr = (fromDoc._id || fromDoc.id || fromDoc).toString();
-        const other = fromIdStr === userId ? toDoc : fromDoc;
-        return other;
+        const myIdStr = userId.toString();
+
+        const other = fromIdStr === myIdStr ? toDoc : fromDoc;
+
+        // Ensure the "other" user is properly formatted
+        if (!other) return null;
+
+        return {
+            id: other._id || other.id || other,
+            first_name: other.first_name,
+            last_name: other.last_name,
+            avatar: other.avatar,
+            email: other.email,
+            companyName: other.companyName || null
+        };
     }).filter(Boolean);
 };
 

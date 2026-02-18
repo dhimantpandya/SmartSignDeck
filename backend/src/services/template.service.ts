@@ -379,10 +379,10 @@ const bootstrapFromInspiration = async (name: string, user: IUser) => {
         id: `zone-${j + 1}`,
         name: `Zone ${j + 1}`,
         type: 'mixed',
-        x: (j % 2) * 50,
-        y: Math.floor(j / 2) * 50,
-        width: 50,
-        height: 50,
+        x: 0,
+        y: 0,
+        width: 100,
+        height: 100,
         mediaType: 'image',
       });
     }

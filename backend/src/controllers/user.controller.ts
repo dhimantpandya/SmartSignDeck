@@ -147,11 +147,20 @@ const getUsers = catchAsync(async (req: Request, res: Response) => {
           // Use toJSON to get the proper serialized object
           const userObj = user.toJSON ? user.toJSON() : user;
 
-          console.log(`[DEBUG] User ${index} - id:`, userObj.id, 'companyId:', userObj.companyId);
+          console.log(`[DEBUG] User ${index} - id:`, userObj.id || userObj._id, 'companyId:', userObj.companyId);
 
           // Extract company name if companyId is populated
-          const companyName = userObj.companyId?.name || null;
-          const companyId = userObj.companyId?.id || userObj.companyId || null;
+          // Handle cases where companyId might be an object (populated) or just an ID
+          let companyName = null;
+          let companyId = null;
+
+          if (userObj.companyId && typeof userObj.companyId === 'object') {
+            companyName = userObj.companyId.name || userObj.companyName || null;
+            companyId = userObj.companyId.id || userObj.companyId._id || null;
+          } else {
+            companyName = userObj.companyName || null;
+            companyId = userObj.companyId || null;
+          }
 
           return {
             ...userObj,
@@ -160,15 +169,15 @@ const getUsers = catchAsync(async (req: Request, res: Response) => {
           };
         } catch (userError) {
           console.error(`[ERROR] Failed to transform user at index ${index}:`, userError);
-          console.error('[ERROR] User data:', user);
-          throw userError;
+          // Return the original object if transformation fails for one user
+          return user.toJSON ? user.toJSON() : user;
         }
       });
 
       console.log('[DEBUG] getUsers - transformed results count:', result.results.length);
     } catch (mapError) {
       console.error('[ERROR] Failed to map users:', mapError);
-      throw mapError;
+      // Don't throw here, just return the result as is if mapping fails
     }
   }
 
@@ -186,8 +195,16 @@ const getUser = catchAsync(async (req: Request, res: Response) => {
   const userObj = user.toJSON ? user.toJSON() : user;
 
   // Extract company name if companyId is populated
-  const companyName = (userObj as any).companyId?.name || null;
-  const companyId = (userObj as any).companyId?.id || (userObj as any).companyId || null;
+  let companyName = null;
+  let companyId = null;
+
+  if ((userObj as any).companyId && typeof (userObj as any).companyId === 'object') {
+    companyName = (userObj as any).companyId.name || (userObj as any).companyName || null;
+    companyId = (userObj as any).companyId.id || (userObj as any).companyId._id || null;
+  } else {
+    companyName = (userObj as any).companyName || null;
+    companyId = (userObj as any).companyId || null;
+  }
 
   const result = {
     ...userObj,

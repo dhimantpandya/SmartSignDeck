@@ -439,7 +439,11 @@ export const TemplateSlider = ({ templates, isLoading }: TemplateSliderProps) =>
                                                     className="w-full h-8 gap-2 font-black text-[9px] uppercase tracking-tighter shadow-2xl bg-white text-black border-0 rounded-lg hover:scale-[1.02] transition-transform"
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        bootstrapMutation.mutate(name);
+                                                        if (isShowingInspiration) {
+                                                            bootstrapMutation.mutate(name);
+                                                        } else {
+                                                            navigate(`${Routes.SCREENS}/${item.id || item._id}`);
+                                                        }
                                                     }}
                                                     loading={bootstrapMutation.isPending}
                                                 >
