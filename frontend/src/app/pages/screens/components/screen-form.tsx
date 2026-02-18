@@ -518,16 +518,41 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
             }, {
                 insertHandler: (data: any) => {
                     if (data && data.assets) {
-                        const newPlaylistItems = data.assets.map((asset: any) => ({
-                            url: asset.secure_url,
-                            type: asset.resource_type === 'video' || asset.secure_url.match(/\.(mp4|mov)$/i) ? 'video' : 'image',
-                            duration: 10
-                        }))
+                        const zone = selectedTemplate?.zones.find((z: any) => z.id === zoneId || z.id.toLowerCase() === zoneId.toLowerCase());
+                        const zoneType = zone?.type || 'mixed';
 
-                        // Merge with existing
-                        const currentPlaylist = activeContent[zoneId]?.playlist || []
-                        handleZoneContentChange(zoneId, { playlist: [...currentPlaylist, ...newPlaylistItems] })
-                        toast({ title: `Added ${newPlaylistItems.length} items` })
+                        const newPlaylistItems: any[] = [];
+                        let skippedCount = 0;
+
+                        data.assets.forEach((asset: any) => {
+                            const assetType = asset.resource_type === 'video' || asset.secure_url.match(/\.(mp4|mov|webm)$/i) ? 'video' : 'image';
+
+                            // 🔒 Strict Type Guard
+                            if (zoneType !== 'mixed' && zoneType !== assetType) {
+                                skippedCount++;
+                                return;
+                            }
+
+                            newPlaylistItems.push({
+                                url: asset.secure_url,
+                                type: assetType,
+                                duration: assetType === 'video' ? (Math.round(Number(asset.duration)) || 10) : 10
+                            });
+                        });
+
+                        if (newPlaylistItems.length > 0) {
+                            const currentPlaylist = activeContent[zoneId]?.playlist || [];
+                            handleZoneContentChange(zoneId, { playlist: [...currentPlaylist, ...newPlaylistItems] });
+                            toast({ title: `Added ${newPlaylistItems.length} items` });
+                        }
+
+                        if (skippedCount > 0) {
+                            toast({
+                                title: `${skippedCount} items skipped`,
+                                description: `This is a ${zoneType}-only zone.`,
+                                variant: 'destructive'
+                            });
+                        }
                     }
                 }
             })

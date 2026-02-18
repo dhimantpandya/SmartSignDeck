@@ -91,12 +91,12 @@ export const INSPIRATION_ITEMS: InspirationItem[] = [
         category: 'Fashion'
     },
     {
-        id: 'world-tech-2024',
-        name: 'World Tech Summit',
-        category: 'Corporate',
+        id: 'insp-10',
+        name: 'Elite Sport Complex',
         resolution: '1920x1080',
-        zones: 3,
+        zones: 4,
         previewUrl: 'https://images.unsplash.com/photo-1540575861501-7ad0582373f2?auto=format&fit=crop&q=95&w=1600',
-        previewType: 'image'
+        previewType: 'image',
+        category: 'Health'
     }
 ];
