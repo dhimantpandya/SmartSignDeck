@@ -14,7 +14,7 @@ export const INSPIRATION_ITEMS: InspirationItem[] = [
         name: 'Executive Boardroom',
         resolution: '1920x1080',
         zones: 4,
-        previewUrl: 'https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&q=95&w=1600',
+        previewUrl: 'https://images.unsplash.com/photo-1542744094-24638eff58bb?auto=format&fit=crop&q=95&w=1600',
         previewType: 'image',
         category: 'Corporate'
     },
@@ -23,7 +23,7 @@ export const INSPIRATION_ITEMS: InspirationItem[] = [
         name: 'High-Street Fashion',
         resolution: '1080x1920',
         zones: 4,
-        previewUrl: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&q=95&w=1600',
+        previewUrl: 'https://images.unsplash.com/photo-1441984906356-d007dca2f5a8?auto=format&fit=crop&q=95&w=1600',
         previewType: 'image',
         category: 'Retail'
     },
@@ -32,7 +32,7 @@ export const INSPIRATION_ITEMS: InspirationItem[] = [
         name: 'Modern Italian Bistro',
         resolution: '1920x1080',
         zones: 4,
-        previewUrl: 'https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&q=95&w=1600',
+        previewUrl: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=95&w=1600',
         previewType: 'image',
         category: 'Hospitality'
     },
@@ -41,7 +41,7 @@ export const INSPIRATION_ITEMS: InspirationItem[] = [
         name: 'Global Arrival Gates',
         resolution: '1920x1080',
         zones: 4,
-        previewUrl: 'https://images.unsplash.com/photo-1495791185843-c73f2269f669?auto=format&fit=crop&q=95&w=1600',
+        previewUrl: 'https://images.unsplash.com/photo-1436491865332-7a61a109c0f2?auto=format&fit=crop&q=95&w=1600',
         previewType: 'image',
         category: 'Travel'
     },
@@ -59,7 +59,7 @@ export const INSPIRATION_ITEMS: InspirationItem[] = [
         name: 'Grand Resort Lobby',
         resolution: '1920x1080',
         zones: 4,
-        previewUrl: 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&q=95&w=1600',
+        previewUrl: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=95&w=1600',
         previewType: 'image',
         category: 'Hotel'
     },
@@ -68,7 +68,7 @@ export const INSPIRATION_ITEMS: InspirationItem[] = [
         name: 'Innovation Tech Park',
         resolution: '1920x1080',
         zones: 4,
-        previewUrl: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&q=95&w=1600',
+        previewUrl: 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=95&w=1600',
         previewType: 'image',
         category: 'Education'
     },
@@ -86,7 +86,7 @@ export const INSPIRATION_ITEMS: InspirationItem[] = [
         name: 'Luxury Fragrance Ad',
         resolution: '1080x1920',
         zones: 4,
-        previewUrl: 'https://images.unsplash.com/photo-1547887538-e3a2f32cb1cc?auto=format&fit=crop&q=95&w=1600',
+        previewUrl: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&q=95&w=1600',
         previewType: 'image',
         category: 'Fashion'
     },
@@ -95,7 +95,7 @@ export const INSPIRATION_ITEMS: InspirationItem[] = [
         name: 'Elite Sport Complex',
         resolution: '1920x1080',
         zones: 4,
-        previewUrl: 'https://images.unsplash.com/photo-1540575861501-7ad0582373f2?auto=format&fit=crop&q=95&w=1600',
+        previewUrl: 'https://images.unsplash.com/photo-1571260899304-425eee4c7efc?auto=format&fit=crop&q=95&w=1600',
         previewType: 'image',
         category: 'Health'
     }

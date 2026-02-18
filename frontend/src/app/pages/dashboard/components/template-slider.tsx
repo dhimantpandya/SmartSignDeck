@@ -16,10 +16,46 @@ interface TemplateSliderProps {
     isNewUser: boolean
 }
 
-// Polished Cinematic Geometry (Smaller, more "settled" look)
 const CARD_WIDTH = 340; // Reduced from 400
 const GAP = 24; // Reduced from 32
 const STEP = CARD_WIDTH + GAP;
+
+// --- ROBUST PREVIEW COMPONENT ---
+const SmartPreview = ({ url, type, name }: { url: string; type?: 'image' | 'video'; name: string }) => {
+    const [hasError, setHasError] = useState(false);
+    const [isLoaded, setIsLoaded] = useState(false);
+
+    if (!url || hasError) {
+        return (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-muted/40 border-2 border-dashed border-white/5">
+                <IconDeviceTv size={40} className="text-primary/10 mb-2" />
+                <span className="text-[8px] font-black uppercase text-white/20 tracking-widest">No Preview Available</span>
+            </div>
+        );
+    }
+
+    if (type === 'video' || url.match(/\.(mp4|webm|mov)$/i)) {
+        return (
+            <video
+                src={url}
+                className={cn("absolute inset-0 w-full h-full object-cover transition-opacity duration-1000", isLoaded ? "opacity-100" : "opacity-0")}
+                autoPlay muted loop playsInline
+                onLoadedData={() => setIsLoaded(true)}
+                onError={() => setHasError(true)}
+            />
+        );
+    }
+
+    return (
+        <img
+            src={url}
+            alt={name}
+            className={cn("absolute inset-0 w-full h-full object-cover transition-all duration-[4000ms] group-hover/card:scale-110", isLoaded ? "opacity-100" : "opacity-0")}
+            onLoad={() => setIsLoaded(true)}
+            onError={() => setHasError(true)}
+        />
+    );
+};
 
 export const TemplateSlider = ({ templates, isLoading }: TemplateSliderProps) => {
     const navigate = useNavigate()
@@ -272,19 +308,27 @@ export const TemplateSlider = ({ templates, isLoading }: TemplateSliderProps) =>
 
                             // Smart Preview Resolution
                             let previewUrl = item.previewUrl;
+                            let previewType = item.previewType || 'image';
 
-                            // If it's a screen, try to get template preview or first media from defaultContent
-                            if (!isShowingInspiration && item.templateId) {
-                                previewUrl = item.templateId.previewUrl;
+                            // If it's a screen, try to get template preview or search ALL zones for media
+                            if (!isShowingInspiration) {
+                                previewUrl = item.templateId?.previewUrl;
 
-                                // Fallback: If no template preview, check defaultContent for first available image
+                                // Fallback: Search ALL zones for any available media
                                 if (!previewUrl && item.defaultContent) {
-                                    const firstZoneId = Object.keys(item.defaultContent)[0];
-                                    const content = item.defaultContent[firstZoneId];
-                                    if (content?.playlist?.[0]?.url) {
-                                        previewUrl = content.playlist[0].url;
-                                    } else if (content?.src) {
-                                        previewUrl = content.src;
+                                    const zonesWithMedia = Object.values(item.defaultContent).filter((c: any) =>
+                                        (c.playlist && c.playlist.length > 0) || c.src
+                                    );
+
+                                    if (zonesWithMedia.length > 0) {
+                                        const firstZone: any = zonesWithMedia[0];
+                                        if (firstZone.playlist?.[0]?.url) {
+                                            previewUrl = firstZone.playlist[0].url;
+                                            previewType = firstZone.playlist[0].type || 'image';
+                                        } else if (firstZone.src) {
+                                            previewUrl = firstZone.src;
+                                            previewType = 'image';
+                                        }
                                     }
                                 }
                             }
@@ -317,13 +361,7 @@ export const TemplateSlider = ({ templates, isLoading }: TemplateSliderProps) =>
                                     }}
                                 >
                                     <CardContent className="p-0 h-full flex flex-col relative overflow-hidden">
-                                        {previewUrl ? (
-                                            <img src={previewUrl} alt={name} className="absolute inset-0 w-full h-full object-cover transition-transform duration-[4000ms] group-hover/card:scale-110" />
-                                        ) : (
-                                            <div className="absolute inset-0 flex items-center justify-center bg-muted/50">
-                                                <IconDeviceTv size={40} className="text-primary/10" />
-                                            </div>
-                                        )}
+                                        <SmartPreview url={previewUrl} type={previewType} name={name} />
 
                                         {/* Content Overlay */}
                                         <div className={cn(
