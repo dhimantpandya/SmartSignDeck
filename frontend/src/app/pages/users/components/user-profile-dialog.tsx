@@ -153,7 +153,7 @@ export const UserProfileDialog: FC<UserProfileDialogProps> = ({
                                     size="sm"
                                     variant={isSent || isReceived ? 'secondary' : 'default'}
                                     disabled={isSent || isMutationPending}
-                                    onClick={() => isReceived ? toast({ title: 'Go to Collaboration Hub to respond!' }) : sendFriendMutation.mutate(user.id || (user as any)._id)}
+                                    onClick={() => isReceived ? toast({ title: 'Go to Collaboration Hub to respond!' }) : sendFriendMutation(user.id || (user as any)._id)}
                                     className="gap-2"
                                 >
                                     {isSent ? 'Request Sent' : isReceived ? 'Respond to Request' : 'Add Friend'}
