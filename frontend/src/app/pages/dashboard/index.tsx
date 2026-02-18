@@ -15,7 +15,7 @@ import { UserNav } from '@/components/user-nav'
 import { NotificationBell } from '@/components/notification-bell'
 import { RecentActivity } from './components/recent-sales'
 import { Overview } from './components/overview'
-import { useState, useRef, useMemo } from 'react'
+import { useState, useRef, useMemo, ChangeEvent } from 'react'
 import { TemplateSlider } from './components/template-slider'
 import { Separator } from '@/components/ui/separator'
 // Breadcrumb Navigation removed temporarily to resolve build conflict.
@@ -40,7 +40,7 @@ export default function Dashboard() {
   const { toast } = useToast()
   const dashboardRef = useRef<HTMLDivElement>(null)
   const [searchTerm, setSearchTerm] = useState('')
-  const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) =>
+  const handleSearch = (event: ChangeEvent<HTMLInputElement>) =>
     setSearchTerm(event.target.value)
 
   const { data: stats, isLoading: isStatsLoading } = useQuery({

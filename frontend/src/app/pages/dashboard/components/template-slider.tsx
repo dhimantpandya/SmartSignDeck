@@ -165,8 +165,8 @@ export const TemplateSlider = ({ templates, isLoading }: TemplateSliderProps) =>
                         <span className={cn("text-xs font-bold uppercase tracking-wider cursor-pointer transition-colors", sliderMode === 'inspiration' ? "text-muted-foreground" : "text-primary")} onClick={() => setSliderMode('showcase')}>My Work</span>
                     </div>
 
-                    <Button variant="ghost" size="sm" onClick={() => navigate(Routes.TEMPLATES)} className="hidden sm:flex text-muted-foreground hover:text-primary font-bold transition-colors text-[10px] uppercase tracking-tighter">
-                        View Catalog <IconArrowRight size={12} className="ml-2" />
+                    <Button variant="ghost" size="sm" onClick={() => navigate(isShowingInspiration ? Routes.TEMPLATES : Routes.SCREENS)} className="hidden sm:flex text-muted-foreground hover:text-primary font-bold transition-colors text-[10px] uppercase tracking-tighter">
+                        {isShowingInspiration ? "View Catalog" : "Manage Screens"} <IconArrowRight size={12} className="ml-2" />
                     </Button>
                 </div>
             </div>
@@ -180,11 +180,11 @@ export const TemplateSlider = ({ templates, isLoading }: TemplateSliderProps) =>
                 {isEmptyShowcase && (
                     <div className="flex flex-col items-center justify-center w-full h-full space-y-4 bg-muted/5 rounded-xl border-2 border-dashed border-muted">
                         <div className="p-4 bg-muted rounded-full">
-                            <IconLayout size={48} className="text-muted-foreground/50" />
+                            <IconDeviceTv size={48} className="text-muted-foreground/50" />
                         </div>
-                        <h3 className="text-lg font-bold text-muted-foreground">No Showcase Items Yet</h3>
-                        <Button onClick={() => navigate(`${Routes.TEMPLATES}?create=true`)} variant="outline" className="gap-2">
-                            Create Your First Template <IconArrowRight size={14} />
+                        <h3 className="text-lg font-bold text-muted-foreground">No Active Screens Yet</h3>
+                        <Button onClick={() => navigate(`${Routes.SCREENS}?create=true`)} variant="outline" className="gap-2">
+                            Add Your First Screen <IconArrowRight size={14} />
                         </Button>
                     </div>
                 )}
@@ -229,9 +229,9 @@ export const TemplateSlider = ({ templates, isLoading }: TemplateSliderProps) =>
 
                             const previewUrl = item.previewUrl || (item.templateId?.previewUrl);
                             const name = item.name || (item.templateId?.name) || 'Untitled Work';
-                            const category = item.category || (item.templateId?.category || 'Showcase');
-                            const resolution = item.resolution || (item.templateId?.resolution || 'HD');
-                            const zones = 4;
+                            const category = item.category || (item.templateId?.category || (isShowingInspiration ? 'Inspiration' : 'Screen'));
+                            const resolution = item.resolution || (item.templateId?.resolution || '1920x1080');
+                            const zones = item.zones || (item.templateId?.zones?.length || (item.templateId?.numberOfZones) || 1);
 
                             return (
                                 <Card
@@ -243,14 +243,24 @@ export const TemplateSlider = ({ templates, isLoading }: TemplateSliderProps) =>
                                     style={{ width: `${CARD_WIDTH}px`, height: `240px` }}
                                     onMouseEnter={() => isFocused && setIsHoveringCenter(true)}
                                     onMouseLeave={() => isFocused && setIsHoveringCenter(false)}
-                                    onClick={() => isFocused ? navigate(Routes.TEMPLATES) : setActiveIndex(idx)}
+                                    onClick={() => {
+                                        if (isFocused) {
+                                            if (isShowingInspiration) {
+                                                navigate(Routes.TEMPLATES);
+                                            } else {
+                                                navigate(`${Routes.SCREENS}/${item.id || item._id}`);
+                                            }
+                                        } else {
+                                            setActiveIndex(idx);
+                                        }
+                                    }}
                                 >
                                     <CardContent className="p-0 h-full flex flex-col relative overflow-hidden">
                                         {previewUrl ? (
                                             <img src={previewUrl} alt={name} className="absolute inset-0 w-full h-full object-cover transition-transform duration-[4000ms] group-hover/card:scale-110" />
                                         ) : (
                                             <div className="absolute inset-0 flex items-center justify-center bg-muted/50">
-                                                <IconLayout size={40} className="text-primary/10" />
+                                                <IconDeviceTv size={40} className="text-primary/10" />
                                             </div>
                                         )}
 
@@ -289,11 +299,11 @@ export const TemplateSlider = ({ templates, isLoading }: TemplateSliderProps) =>
                                                         <span className="text-white font-black text-[8px] uppercase">{resolution}</span>
                                                     </div>
                                                     <div className="bg-white/10 backdrop-blur-xl px-2 py-0.5 rounded border border-white/20">
-                                                        <span className="text-white font-black text-[8px] uppercase">{zones} Zones</span>
+                                                        <span className="text-white font-black text-[8px] uppercase">{zones} {zones === 1 ? 'Zone' : 'Zones'}</span>
                                                     </div>
                                                 </div>
                                                 <Button variant="default" size="sm" className="w-full h-8 gap-2 font-black text-[9px] uppercase tracking-tighter shadow-2xl bg-white text-black border-0 rounded-lg hover:scale-[1.02] transition-transform">
-                                                    <Eye size={12} /> Preview Concept
+                                                    <Eye size={12} /> {isShowingInspiration ? 'Preview Concept' : 'View Screen Details'}
                                                 </Button>
                                             </div>
                                         )}
