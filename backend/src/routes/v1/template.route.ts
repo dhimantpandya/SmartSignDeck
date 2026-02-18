@@ -30,6 +30,13 @@ router
   );
 
 router
+  .route("/bootstrap-from-inspiration")
+  .post(
+    auth("createTemplates"),
+    templateController.bootstrapFromInspiration
+  );
+
+router
   .route("/:templateId")
   .get(
     auth("getTemplates"),

@@ -1,9 +1,7 @@
 import mongoose from "mongoose";
 import httpStatus from "http-status";
 import logger from "../config/logger";
-import Template from "../models/template.model";
-import Company from "../models/company.model";
-import User from "../models/user.model";
+import { Template, Company, User, TemplateGroup } from "../models";
 import ApiError from "../utils/ApiError";
 import { type CustomPaginateOptions } from "../models/plugins/paginate.plugin";
 import { type IUser } from "../models/user.model";
@@ -138,15 +136,19 @@ const queryTemplates = async (filter: any, options: CustomPaginateOptions, user:
  * @returns {Promise<Template>}
  */
 const getTemplateById = async (id: string, user?: IUser) => {
-  const template = await Template.findById(id);
+  const template = await Template.findById(id).populate({
+    path: "collaborators",
+    select: "id _id first_name last_name email avatar"
+  });
   if (!template) return null;
 
   // If user is provided, check read permissions
   if (user && user.role !== "super_admin") {
     const isOwner = template.companyId?.toString() === user.companyId?.toString();
     const isPublic = template.isPublic;
+    const isCollaborator = template.collaborators?.some(c => c._id.toString() === (user._id || (user as any).id).toString());
 
-    if (!isOwner && !isPublic) {
+    if (!isOwner && !isPublic && !isCollaborator) {
       throw new ApiError(httpStatus.FORBIDDEN, "You do not have permission to view this template");
     }
   }
@@ -168,7 +170,10 @@ const updateTemplateById = async (templateId: string, updateBody: any, user: IUs
   }
 
   // Permission Check
-  if (user.role !== "super_admin" && template.companyId?.toString() !== user.companyId?.toString()) {
+  const isOwner = template.companyId?.toString() === user.companyId?.toString();
+  const isCollaborator = (template.collaborators as any[])?.some(c => (c._id || c).toString() === (user._id || (user as any).id).toString());
+
+  if (user.role !== "super_admin" && !isOwner && !isCollaborator) {
     throw new ApiError(httpStatus.FORBIDDEN, "You do not have permission to update this template");
   }
 
@@ -347,6 +352,59 @@ const cloneTemplate = async (templateId: string, user: IUser) => {
   }
 };
 
+/**
+ * Bootstrap templates from an inspiration item
+ * @param {string} name - Inspiration item name
+ * @param {IUser} user
+ * @returns {Promise<ITemplateGroup>}
+ */
+const bootstrapFromInspiration = async (name: string, user: IUser) => {
+  await ensureUserCompany(user);
+
+  // 1. Create the Group
+  const group = await TemplateGroup.create({
+    name: name,
+    companyId: user.companyId,
+    createdBy: user._id,
+  });
+
+  // 2. Create 3 templates with 4 zones each
+  const templates = [];
+  const resolutions = ["1920x1080", "1080x1920", "1920x1080"];
+
+  for (let i = 0; i < 3; i++) {
+    const zones = [];
+    for (let j = 0; j < 4; j++) {
+      zones.push({
+        id: `zone-${j + 1}`,
+        name: `Zone ${j + 1}`,
+        type: 'media',
+        x: (j % 2) * 50,
+        y: Math.floor(j / 2) * 50,
+        width: 50,
+        height: 50,
+        mediaType: 'image',
+      });
+    }
+
+    const template = await Template.create({
+      name: `${name} - Variant ${i + 1}`,
+      resolution: resolutions[i],
+      zones,
+      companyId: user.companyId,
+      createdBy: user._id,
+      isPublic: false,
+    });
+    templates.push(template._id);
+  }
+
+  // 3. Link templates to group
+  group.templates = templates;
+  await group.save();
+
+  return group;
+};
+
 export default {
   createTemplate,
   queryTemplates,
@@ -357,4 +415,5 @@ export default {
   restoreTemplateById,
   permanentDeleteTemplateById,
   cloneTemplate,
+  bootstrapFromInspiration,
 };

@@ -76,6 +76,22 @@ const initSocket = (server: HttpServer | HttpsServer): Server => {
             socket.emit('room_joined', { room: `user_${uid}`, userId: uid });
         });
 
+        // --- TEMPLATE COLLABORATION ---
+        socket.on("join_template", (templateId: any) => {
+            const tid = cleanId(templateId);
+            if (!tid) return;
+            socket.join(`template_${tid}`);
+            logger.info(`[SOCKET] Socket ${socket.id} joined template room: template_${tid}`);
+        });
+
+        socket.on("template_edit", (data: { templateId: any, [key: string]: any }) => {
+            const tid = cleanId(data.templateId);
+            if (!tid) return;
+            // Broadcast to others in the same template room
+            socket.to(`template_${tid}`).emit("template_updated", data);
+            logger.info(`[SOCKET] Template update broadcast to room template_${tid}`);
+        });
+
         socket.on("disconnect", () => {
             logger.info(`Client disconnected: ${socket.id}`);
 
@@ -169,4 +185,11 @@ const broadcastChat = (data: {
     }
 }
 
-export { initSocket, getIO, emitToScreen, emitToUser, emitToCompany, broadcastChat, cleanId };
+const emitToTemplate = (templateId: string, event: string, data: any) => {
+    if (io) {
+        const tid = cleanId(templateId);
+        io.to(`template_${tid}`).emit(event, data);
+    }
+}
+
+export { initSocket, getIO, emitToScreen, emitToUser, emitToCompany, emitToTemplate, broadcastChat, cleanId };

@@ -20,6 +20,7 @@ export interface Template {
     companyId: string
     createdBy: string
     isActive: boolean
+    collaborators: any[] // User objects or IDs
     created_at: string
     updated_at: string
     deletedAt?: string | null
@@ -61,6 +62,10 @@ const bulkDeleteTemplates = async (ids: string[]) => {
     return apiService.post('/v1/templates/bulk-delete', { ids })
 }
 
+const bootstrapFromInspiration = async (name: string) => {
+    return apiService.post<any>('/v1/templates/bootstrap-from-inspiration', { name })
+}
+
 export const templateService = {
     getTemplates,
     getTemplate,
@@ -71,4 +76,5 @@ export const templateService = {
     permanentDeleteTemplate,
     cloneTemplate,
     bulkDeleteTemplates,
+    bootstrapFromInspiration,
 }

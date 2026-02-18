@@ -56,9 +56,33 @@ const SmartPreview = ({ url, type, name }: { url: string; type?: 'image' | 'vide
     );
 };
 
+import { templateService } from '@/api/template.service'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+
 export const TemplateSlider = ({ templates, isLoading }: TemplateSliderProps) => {
     const navigate = useNavigate()
+    const queryClient = useQueryClient()
     const [isPaused, setIsPaused] = useState(false)
+
+    const bootstrapMutation = useMutation({
+        mutationFn: (name: string) => templateService.bootstrapFromInspiration(name),
+        onSuccess: () => {
+            toast({
+                title: "Template Group Created",
+                description: "We've created a new group and 3 templates based on this inspiration. Redirecting to templates...",
+            });
+            queryClient.invalidateQueries({ queryKey: ['template-groups'] });
+            setTimeout(() => navigate(Routes.TEMPLATES), 1500);
+        },
+        onError: (err: any) => {
+            toast({
+                title: "Bootstrap Failed",
+                description: err.response?.data?.message || "Something went wrong while creating your templates.",
+                variant: "destructive",
+            });
+        }
+    });
+
     const [isHoveringCenter, setIsHoveringCenter] = useState(false)
     const timeoutRef = useRef<any>(null)
 
@@ -400,7 +424,16 @@ export const TemplateSlider = ({ templates, isLoading }: TemplateSliderProps) =>
                                                         <span className="text-white font-black text-[8px] uppercase">{zones} {zones === 1 ? 'Zone' : 'Zones'}</span>
                                                     </div>
                                                 </div>
-                                                <Button variant="default" size="sm" className="w-full h-8 gap-2 font-black text-[9px] uppercase tracking-tighter shadow-2xl bg-white text-black border-0 rounded-lg hover:scale-[1.02] transition-transform">
+                                                <Button
+                                                    variant="default"
+                                                    size="sm"
+                                                    className="w-full h-8 gap-2 font-black text-[9px] uppercase tracking-tighter shadow-2xl bg-white text-black border-0 rounded-lg hover:scale-[1.02] transition-transform"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        bootstrapMutation.mutate(name);
+                                                    }}
+                                                    loading={bootstrapMutation.isPending}
+                                                >
                                                     <Eye size={12} /> {isShowingInspiration ? 'Preview Concept' : 'View Screen Details'}
                                                 </Button>
                                             </div>

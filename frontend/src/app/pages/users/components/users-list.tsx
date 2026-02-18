@@ -1,7 +1,7 @@
 import { ChangeEvent, useState } from 'react'
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
 import { useReactTable, getCoreRowModel } from '@tanstack/react-table'
-import { userService, adminRequestService } from '@/api'
+import { userService, adminRequestService, socialService } from '@/api'
 import { useAuth } from '@/hooks/use-auth'
 import { useUserListTableColumns } from '../hooks/use-users-list-table-columns'
 import { User, UserListFilter } from '@/models/user.model'
@@ -74,15 +74,56 @@ export const UsersList = () => {
     queryFn: () => userService.getAllUsers(tableState),
   })
 
+  // Social Queries
+  const { data: friendsData } = useQuery({
+    queryKey: ['friends'],
+    queryFn: () => socialService.getFriends(),
+  })
+
+  const { data: sentRequestsData } = useQuery({
+    queryKey: ['sent-requests'],
+    queryFn: () => socialService.getSentRequests(),
+  })
+
+  const { data: receivedRequestsData } = useQuery({
+    queryKey: ['received-requests'],
+    queryFn: () => socialService.getReceivedRequests(),
+  })
+
+  const { mutate: sendFriendRequest } = useMutation({
+    mutationFn: (toId: string) => socialService.sendFriendRequest(toId),
+    onSuccess: () => {
+      toast({ title: 'Friend request sent!' })
+      queryClient.invalidateQueries({ queryKey: ['sent-requests'] })
+    },
+    onError: (err: any) => {
+      toast({
+        title: 'Failed to send request',
+        description: err.response?.data?.message || err.message,
+        variant: 'destructive',
+      })
+    },
+  })
+
   const getActionItems = (targetUser: User) => {
     const isSuperAdmin = user?.role === 'super_admin'
     const isAdmin = user?.role === 'admin'
+    const targetUserId = targetUser.id || (targetUser as any)._id
 
     // 1. Hide 3-dots for current user row
-    if (targetUser.id === user?.id) return null
+    if (targetUserId === user?.id) return null
 
     // 2. Hide for advertisers (Advertiser should not see user details/profile)
     if (user?.role === 'advertiser') return null
+
+    // Social Checks
+    const friendsList = friendsData || []
+    const sentReqs = sentRequestsData || []
+    const receivedReqs = receivedRequestsData || []
+
+    const isFriend = friendsList.some((f: any) => (f.id || f._id) === targetUserId)
+    const isSent = sentReqs.some((r: any) => (r.toId?.id || r.toId?._id || r.toId) === targetUserId)
+    const isReceived = receivedReqs.some((r: any) => (r.fromId?.id || r.fromId?._id || r.fromId) === targetUserId)
 
     // 3. Super Admin sees actions for everyone
     // 4. Admin only sees actions for same company
@@ -100,11 +141,6 @@ export const UsersList = () => {
 
     const canManage = isSuperAdmin || (isAdmin && sameCompany)
 
-    // For public profile, we don't necessarily need "management" rights
-    // but let's see. The user said "when i click on profile button", 
-    // implying it should probably be visible to everyone or at least admins.
-    // Let's make it visible to anyone who can see the user list.
-
     const actionItems = [
       {
         label: 'Profile',
@@ -114,6 +150,13 @@ export const UsersList = () => {
           setIsProfileOpen(true)
         },
       },
+      ...(!isFriend && !isSent && !isReceived ? [
+        {
+          label: 'Add Friend',
+          icon: <IconUserPlus className='mr-2' />,
+          onClick: () => sendFriendRequest(targetUserId),
+        }
+      ] : []),
       ...(canManage ? [
         {
           label: 'Edit',

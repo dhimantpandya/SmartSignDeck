@@ -28,6 +28,9 @@ import {
 } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { GLOBAL_SCALE } from '@/utilities/fabric-utils'
+import { useNotifications } from '@/components/nav-notification-provider'
+import { CollaborateDialog } from './collaborate-dialog'
+import { Users } from 'lucide-react'
 
 interface Zone {
     id: string
@@ -50,18 +53,87 @@ interface TemplateEditorProps {
 export default function TemplateEditor({ initialData, onCancel }: TemplateEditorProps) {
     const canvasContainerRef = useRef<HTMLDivElement>(null)
     const canvasRef = useRef<fabric.Canvas | null>(null)
+    const { socket } = useNotifications()
 
     // State
     const [zones, setZones] = useState<Zone[]>(initialData?.zones || [])
     const [templateName, setTemplateName] = useState(initialData?.name || 'New Template')
     const [isPublic, setIsPublic] = useState(initialData?.isPublic || false)
+    const [collaborators, setCollaborators] = useState<any[]>(initialData?.collaborators || [])
     const [selectedZoneId, setSelectedZoneId] = useState<string | null>(null)
     const [clipboard, setClipboard] = useState<Zone | null>(null)
     const [isSaving, setIsSaving] = useState(false)
     const [resolution, setResolution] = useState(initialData?.resolution || '1920x1080')
     const [isPreviewOpen, setIsPreviewOpen] = useState(false)
+    const [isCollaborateOpen, setIsCollaborateOpen] = useState(false)
 
     const queryClient = useQueryClient()
+
+    // --- SOCKET SYNC ---
+    useEffect(() => {
+        const templateId = initialData?.id || initialData?._id
+        if (!socket || !templateId) return
+
+        console.log('[COLLAB] Joining template room:', templateId)
+        socket.emit('join_template', templateId)
+
+        const handleRemoteUpdate = (data: any) => {
+            if (data.templateId !== templateId) return
+            console.log('[COLLAB] Remote update received:', data)
+
+            if (data.zones) {
+                setZones(data.zones)
+                // Update fabric canvas objects
+                if (canvasRef.current) {
+                    const canvas = canvasRef.current
+                    data.zones.forEach((remoteZone: Zone) => {
+                        const obj = canvas.getObjects().find((o: any) => o.id === remoteZone.id) as fabric.Rect
+                        if (obj) {
+                            obj.set({
+                                left: remoteZone.x * SCALE,
+                                top: remoteZone.y * SCALE,
+                                scaleX: (remoteZone.width * SCALE) / obj.width!,
+                                scaleY: (remoteZone.height * SCALE) / obj.height!,
+                            })
+                            obj.setCoords()
+                        } else {
+                            // Add missing zone
+                            addZoneToCanvas(canvas, remoteZone)
+                        }
+                    })
+
+                    // Remove deleted zones
+                    const remoteIds = new Set(data.zones.map((z: any) => z.id))
+                    canvas.getObjects().forEach((o: any) => {
+                        if (o.id && !remoteIds.has(o.id)) {
+                            canvas.remove(o)
+                        }
+                    })
+
+                    canvas.requestRenderAll()
+                }
+            }
+
+            if (data.name !== undefined) setTemplateName(data.name)
+            if (data.isPublic !== undefined) setIsPublic(data.isPublic)
+        }
+
+        socket.on('template_updated', handleRemoteUpdate)
+
+        return () => {
+            socket.off('template_updated', handleRemoteUpdate)
+        }
+    }, [socket, initialData])
+
+    const broadcastUpdate = (updates: any) => {
+        const templateId = initialData?.id || initialData?._id
+        if (!socket || !templateId) return
+
+        socket.emit('template_edit', {
+            templateId,
+            ...updates
+        })
+    }
 
     // Constants & Derived Values
     const RESOLUTIONS = [
@@ -229,6 +301,20 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
 
         if (canvasRef.current) canvasRef.current.requestRenderAll()
         syncToState(obj)
+
+        // Broadcast collab update
+        const id = obj.id
+        const newZones = zones.map(z => {
+            if (z.id !== id) return z
+            return {
+                ...z,
+                x: Math.round(obj.left / SCALE),
+                y: Math.round(obj.top / SCALE),
+                width: Math.round(obj.getScaledWidth() / SCALE),
+                height: Math.round(obj.getScaledHeight() / SCALE),
+            }
+        })
+        broadcastUpdate({ zones: newZones })
     }
 
     // ================= ACTIONS =================
@@ -250,7 +336,10 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
             lockedMediaType: null
         }
 
-        setZones([...zones, newZone])
+        const nextZones = [...zones, newZone]
+        setZones(nextZones)
+        broadcastUpdate({ zones: nextZones })
+
         if (canvasRef.current) {
             const rect = addZoneToCanvas(canvasRef.current, newZone)
                 ; (rect as any).bringToFront()
@@ -293,11 +382,15 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
             canvasRef.current.remove(...activeObjects)
             canvasRef.current.requestRenderAll()
 
-            setZones(prev => prev.filter(z => !idsToDelete.has(z.id)))
+            setZones(prev => {
+                const nextZones = prev.filter(z => !idsToDelete.has(z.id))
+                broadcastUpdate({ zones: nextZones })
+                return nextZones
+            })
             setSelectedZoneId(null)
             toast({ title: `${activeObjects.length} zone(s) removed` })
         }
-    }, [])
+    }, [socket, initialData, zones])
 
     const saveTemplate = async () => {
         if (zones.length === 0) {
@@ -691,7 +784,10 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                         </div>
                         <Input
                             value={templateName}
-                            onChange={(e) => setTemplateName(e.target.value)}
+                            onChange={(e) => {
+                                setTemplateName(e.target.value)
+                                broadcastUpdate({ name: e.target.value })
+                            }}
                             className='max-w-lg text-lg font-bold bg-background border-none shadow-none focus-visible:ring-1 focus-visible:ring-primary/20 p-0 text-foreground'
                             placeholder="Template Name"
                         />
@@ -709,12 +805,15 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                             <Switch
                                 id='is-public'
                                 checked={isPublic}
-                                onCheckedChange={setIsPublic}
+                                onCheckedChange={(val) => {
+                                    setIsPublic(val)
+                                    broadcastUpdate({ isPublic: val })
+                                }}
                                 className='data-[state=checked]:bg-primary h-4 w-8'
                             />
                         </div>
 
-                        {/* Right Group: Zoom & Preview */}
+                        {/* Right Group: Zoom, Collaborate & Preview */}
                         <div className="flex items-center gap-4">
                             {/* ZOOM CONTROLS */}
                             <div className="flex items-center gap-1 bg-background border rounded-md">
@@ -730,6 +829,22 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                                 </Button>
                             </div>
 
+                            {(initialData?.id || initialData?._id) && (
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-9 gap-2 bg-background border-primary/20 hover:bg-primary/5 shadow-sm px-4 font-bold text-xs"
+                                    onClick={() => setIsCollaborateOpen(true)}
+                                >
+                                    <Users size={16} className="text-primary" /> Collaborate
+                                    {collaborators.length > 0 && (
+                                        <Badge variant="secondary" className="ml-1 px-1 h-4 min-w-4 flex items-center justify-center text-[10px]">
+                                            {collaborators.length}
+                                        </Badge>
+                                    )}
+                                </Button>
+                            )}
+
                             <Button
                                 variant="outline"
                                 size="sm"
@@ -744,6 +859,23 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                         </div>
                     </div>
                 </div>
+
+                {/* SCROLLABLE CANVAS CONTAINER */}
+
+                <CollaborateDialog
+                    isOpen={isCollaborateOpen}
+                    onClose={async () => {
+                        setIsCollaborateOpen(false)
+                        // Refresh collaborators if needed
+                        const templateId = initialData?.id || initialData?._id
+                        if (templateId) {
+                            const updated = await templateService.getTemplate(templateId)
+                            if (updated.collaborators) setCollaborators(updated.collaborators)
+                        }
+                    }}
+                    templateId={initialData?.id || initialData?._id}
+                    currentCollaborators={collaborators}
+                />
 
                 {/* SCROLLABLE CANVAS CONTAINER */}
                 <div className='flex-1 overflow-auto bg-zinc-950 relative rounded-xl border border-white/5 shadow-2xl p-8'>

@@ -31,6 +31,7 @@ export interface ITemplate extends Document {
   createdBy: mongoose.Schema.Types.ObjectId;
   isPublic: boolean;
   isActive: boolean;
+  collaborators: mongoose.Schema.Types.ObjectId[];
   created_at: Date;
   updated_at: Date;
   deletedAt?: Date | null;
@@ -103,6 +104,12 @@ const templateSchema = new Schema<ITemplate, ITemplateModel>(
       default: true,
       index: true,
     },
+    collaborators: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
     deletedAt: {
       type: Date,
       default: null,

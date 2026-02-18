@@ -9,13 +9,15 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/custom/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { templateService, screenService } from '@/api'
+import { templateService, screenService, socialService } from '@/api'
 import { User } from '@/models/user.model'
 import { toast } from '@/components/ui/use-toast'
 import Loader from '@/components/loader'
-import { IconDeviceTv, IconLayout, IconPlayerPlay, IconCopy } from '@tabler/icons-react'
+import { IconDeviceTv, IconLayout, IconPlayerPlay, IconCopy, IconUserPlus } from '@tabler/icons-react'
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+
+import { useAuth } from '@/hooks/use-auth'
 
 interface UserProfileDialogProps {
     isOpen: boolean
@@ -26,10 +28,56 @@ interface UserProfileDialogProps {
 export const UserProfileDialog: FC<UserProfileDialogProps> = ({
     isOpen,
     handleClose,
-    user,
+    user: profileUser,
 }) => {
+    const { user: currentUser } = useAuth()
     const queryClient = useQueryClient()
     const [activeTab, setActiveTab] = useState<'screens' | 'templates'>('screens')
+
+    // Connection Status Queries
+    const { data: friendsData } = useQuery({
+        queryKey: ['friends'],
+        queryFn: () => socialService.getFriends(),
+        enabled: isOpen,
+    })
+
+    const { data: sentRequestsData } = useQuery({
+        queryKey: ['sent-requests'],
+        queryFn: () => socialService.getSentRequests(),
+        enabled: isOpen,
+    })
+
+    const { data: receivedRequestsData } = useQuery({
+        queryKey: ['received-requests'],
+        queryFn: () => socialService.getReceivedRequests(),
+        enabled: isOpen,
+    })
+
+    const { mutate: sendFriendMutation, isPending: isMutationPending } = useMutation({
+        mutationFn: (toId: string) => socialService.sendFriendRequest(toId),
+        onSuccess: () => {
+            toast({ title: 'Friend request sent!' })
+            queryClient.invalidateQueries({ queryKey: ['sent-requests'] })
+        },
+        onError: (err: any) => {
+            toast({
+                title: 'Failed to send request',
+                description: err.response?.data?.message || err.message,
+                variant: 'destructive',
+            })
+        },
+    })
+
+    const user = profileUser // Alias for existing code
+    const isMe = currentUser?.id === (user?.id || (user as any)._id)
+    const friendsList = friendsData || []
+    const sentReqs = sentRequestsData || []
+    const receivedReqs = receivedRequestsData || []
+
+    const targetUserId = user?.id || (user as any)?._id
+    const isFriend = friendsList.some((f: any) => (f.id || f._id) === targetUserId)
+    const isSent = sentReqs.some((r: any) => (r.toId?.id || r.toId?._id || r.toId) === targetUserId)
+    const isReceived = receivedReqs.some((r: any) => (r.fromId?.id || r.fromId?._id || r.fromId) === targetUserId)
 
     // Fetch public screens
     const { data: screensData, isLoading: isLoadingScreens } = useQuery({
@@ -83,19 +131,40 @@ export const UserProfileDialog: FC<UserProfileDialogProps> = ({
         <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
             <DialogContent className='max-w-4xl max-h-[90vh] overflow-y-auto'>
                 <DialogHeader>
-                    <div className="flex items-start gap-4">
-                        <Avatar className="h-16 w-16 border-2 border-primary/10">
-                            <AvatarImage src={user?.avatar} />
-                            <AvatarFallback className="text-xl bg-primary/5 text-primary">
-                                {user?.first_name?.[0]}{user?.last_name?.[0]}
-                            </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1">
-                            <DialogTitle className="flex items-center gap-2 text-2xl">
-                                {user?.first_name} {user?.last_name}'s Profile
-                                <Badge variant="outline" className="ml-2 font-normal">Public Items</Badge>
-                            </DialogTitle>
-                            <p className="text-muted-foreground mt-1">{user?.email}</p>
+                    <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-start gap-4">
+                            <Avatar className="h-16 w-16 border-2 border-primary/10">
+                                <AvatarImage src={user?.avatar} />
+                                <AvatarFallback className="text-xl bg-primary/5 text-primary">
+                                    {user?.first_name?.[0]}{user?.last_name?.[0]}
+                                </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1">
+                                <DialogTitle className="flex items-center gap-2 text-2xl">
+                                    {user?.first_name} {user?.last_name}'s Profile
+                                    <Badge variant="outline" className="ml-2 font-normal">Public Items</Badge>
+                                </DialogTitle>
+                                <p className="text-muted-foreground mt-1">{user?.email}</p>
+                            </div>
+                        </div>
+                        <div className="flex gap-2">
+                            {user && !isMe && !isFriend && (
+                                <Button
+                                    size="sm"
+                                    variant={isSent || isReceived ? 'secondary' : 'default'}
+                                    disabled={isSent || isMutationPending}
+                                    onClick={() => isReceived ? toast({ title: 'Go to Collaboration Hub to respond!' }) : sendFriendMutation.mutate(user.id || (user as any)._id)}
+                                    className="gap-2"
+                                >
+                                    {isSent ? 'Request Sent' : isReceived ? 'Respond to Request' : 'Add Friend'}
+                                    {!isSent && !isReceived && <IconUserPlus size={16} />}
+                                </Button>
+                            )}
+                            {isFriend && (
+                                <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 px-3 py-1">
+                                    Connected
+                                </Badge>
+                            )}
                         </div>
                     </div>
                 </DialogHeader>
@@ -172,6 +241,6 @@ export const UserProfileDialog: FC<UserProfileDialogProps> = ({
                     </TabsContent>
                 </Tabs>
             </DialogContent>
-        </Dialog>
+        </Dialog >
     )
 }

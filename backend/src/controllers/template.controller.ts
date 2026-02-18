@@ -110,6 +110,16 @@ const cloneTemplate = catchAsync(async (req: Request, res: Response) => {
     );
 });
 
+const bootstrapFromInspiration = catchAsync(async (req: Request, res: Response) => {
+    const group = await templateService.bootstrapFromInspiration(req.body.name, req.user as any);
+    successResponse(
+        res,
+        "Template group created from inspiration",
+        httpStatus.CREATED,
+        group as any,
+    );
+});
+
 export default {
     createTemplate,
     getTemplates,
@@ -120,4 +130,5 @@ export default {
     restoreTemplate,
     permanentDeleteTemplate,
     cloneTemplate,
+    bootstrapFromInspiration,
 };
