@@ -23,26 +23,26 @@ const STEP = CARD_WIDTH + GAP;
 // --- ROBUST PREVIEW COMPONENT ---
 const SmartPreview = ({ url, type, name }: { url: string; type?: 'image' | 'video'; name: string }) => {
     const [hasError, setHasError] = useState(false);
-    const [isLoaded, setIsLoaded] = useState(false);
 
-    if (!url || hasError) {
-        return (
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-muted/40 border-2 border-dashed border-white/5">
-                <IconDeviceTv size={40} className="text-primary/10 mb-2" />
-                <span className="text-[8px] font-black uppercase text-white/20 tracking-widest">No Preview Available</span>
-            </div>
-        );
-    }
-
-    if (type === 'video' || url.match(/\.(mp4|webm|mov)$/i)) {
+    // If explicitly video or looks like video, render video
+    if (type === 'video' || (url && url.match(/\.(mp4|webm|mov)(\?.*)?$/i))) {
         return (
             <video
                 src={url}
-                className={cn("absolute inset-0 w-full h-full object-cover transition-opacity duration-1000", isLoaded ? "opacity-100" : "opacity-0")}
+                className="absolute inset-0 w-full h-full object-cover"
                 autoPlay muted loop playsInline
-                onLoadedData={() => setIsLoaded(true)}
                 onError={() => setHasError(true)}
             />
+        );
+    }
+
+    // Fallback placeholder if broken or missing
+    if (!url || hasError) {
+        return (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-muted/40">
+                <IconDeviceTv size={40} className="text-primary/10 mb-2" />
+                <span className="text-[10px] font-bold uppercase text-white/20 tracking-wider">Preview Available Soon</span>
+            </div>
         );
     }
 
@@ -50,8 +50,7 @@ const SmartPreview = ({ url, type, name }: { url: string; type?: 'image' | 'vide
         <img
             src={url}
             alt={name}
-            className={cn("absolute inset-0 w-full h-full object-cover transition-all duration-[4000ms] group-hover/card:scale-110", isLoaded ? "opacity-100" : "opacity-0")}
-            onLoad={() => setIsLoaded(true)}
+            className="absolute inset-0 w-full h-full object-cover transition-transform duration-[4000ms] group-hover/card:scale-110"
             onError={() => setHasError(true)}
         />
     );
