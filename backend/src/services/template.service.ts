@@ -146,7 +146,7 @@ const getTemplateById = async (id: string, user?: IUser) => {
   if (user && user.role !== "super_admin") {
     const isOwner = template.companyId?.toString() === user.companyId?.toString();
     const isPublic = template.isPublic;
-    const isCollaborator = template.collaborators?.some(c => c._id.toString() === (user._id || (user as any).id).toString());
+    const isCollaborator = (template.collaborators as any[])?.some(c => (c._id || c).toString() === (user._id || (user as any).id).toString());
 
     if (!isOwner && !isPublic && !isCollaborator) {
       throw new ApiError(httpStatus.FORBIDDEN, "You do not have permission to view this template");
