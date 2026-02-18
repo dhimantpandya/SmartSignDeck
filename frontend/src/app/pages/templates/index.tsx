@@ -138,7 +138,7 @@ export default function Templates() {
         onError: (error: any) => {
             toast({
                 title: 'Operation Failed',
-                description: error?.response?.data?.message || 'Failed to move template to Recycle Bin.',
+                description: error?.message || 'Failed to move template to Recycle Bin.',
                 variant: 'destructive',
             })
         },
@@ -175,7 +175,7 @@ export default function Templates() {
         onError: (error: any) => {
             toast({
                 title: 'Bulk Deletion Failed',
-                description: error?.response?.data?.message || 'Failed to delete some templates.',
+                description: error?.message || 'Failed to delete some templates.',
                 variant: 'destructive'
             })
         }
