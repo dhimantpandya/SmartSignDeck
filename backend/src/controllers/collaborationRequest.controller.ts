@@ -2,6 +2,7 @@ import httpStatus from "http-status";
 import catchAsync from "../utils/catchAsync";
 import pick from "../utils/pick";
 import mongoose from "mongoose";
+import ApiError from "../utils/ApiError";
 import { collaborationRequestService } from "../services";
 
 const sendRequest = catchAsync(async (req, res) => {
