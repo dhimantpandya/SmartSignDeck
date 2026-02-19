@@ -98,7 +98,7 @@ const respondToRequest = async (requestId: string, userId: string, status: "acce
         const template = await Template.findById(request.templateId);
         if (template) {
             if (!template.collaborators) template.collaborators = [];
-            if (!template.collaborators.includes(request.recipient)) {
+            if (!template.collaborators.some(id => id.toString() === request.recipient.toString())) {
                 template.collaborators.push(request.recipient);
                 await template.save();
             }

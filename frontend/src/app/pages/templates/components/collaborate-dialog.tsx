@@ -60,7 +60,13 @@ export const CollaborateDialog: FC<CollaborateDialogProps> = ({
                 }
             })
             // Filter out self
-            return res.data.users.filter((u: any) => (u.id || u._id) !== currentUser?.id)
+            const myId = currentUser?.id || currentUser?._id;
+            if (!myId) return res.data.users;
+            const myIdStr = myId.toString().trim().toLowerCase();
+            return res.data.users.filter((u: any) => {
+                const uid = (u.id || u._id || '').toString().trim().toLowerCase();
+                return uid !== myIdStr;
+            });
         },
         enabled: isOpen && mode === 'company' && !!currentUser?.companyId,
     })

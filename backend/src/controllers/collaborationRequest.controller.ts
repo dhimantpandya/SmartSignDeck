@@ -1,6 +1,7 @@
 import httpStatus from "http-status";
 import catchAsync from "../utils/catchAsync";
 import pick from "../utils/pick";
+import mongoose from "mongoose";
 import { collaborationRequestService } from "../services";
 
 const sendRequest = catchAsync(async (req, res) => {
@@ -16,15 +17,18 @@ const getRequests = catchAsync(async (req, res) => {
     const userId = (req as any).user.id;
 
     if (status) filter.status = status;
-    if (templateId) filter.templateId = templateId;
+    if (templateId && mongoose.Types.ObjectId.isValid(templateId)) {
+        filter.templateId = new mongoose.Types.ObjectId(templateId);
+    }
 
     if (type === "incoming") {
-        filter.recipient = userId;
+        filter.recipient = new mongoose.Types.ObjectId(userId);
     } else if (type === "outgoing") {
-        filter.sender = userId;
+        filter.sender = new mongoose.Types.ObjectId(userId);
     } else {
         // Both
-        filter.$or = [{ recipient: userId }, { sender: userId }];
+        const userObjId = new mongoose.Types.ObjectId(userId);
+        filter.$or = [{ recipient: userObjId }, { sender: userObjId }];
     }
 
     const options = pick(req.query, ["sortBy", "limit", "page"]);

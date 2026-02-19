@@ -114,7 +114,7 @@ export default function Collaboration() {
         },
     })
 
-    const incomingRequestsNum = (incomingTemplatesData as any)?.results?.length || 0
+    const incomingRequestsNum = (incomingTemplatesData as any)?.results?.filter((r: any) => r.status === 'pending').length || 0
 
     const extractId = (obj: any): string => {
         if (!obj) return ''
