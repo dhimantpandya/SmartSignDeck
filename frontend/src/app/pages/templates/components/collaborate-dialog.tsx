@@ -72,9 +72,9 @@ export const CollaborateDialog: FC<CollaborateDialogProps> = ({
     })
 
     const { data: pendingRequests } = useQuery({
-        queryKey: ['collaboration-requests', 'outgoing', templateId],
+        queryKey: ['collaboration-requests', 'outgoing', templateId, currentUser?.id],
         queryFn: () => collaborationService.getRequests({ type: 'outgoing', status: 'pending', templateId }),
-        enabled: isOpen,
+        enabled: isOpen && !!currentUser?.id,
     })
 
     const sendRequestMutation = useMutation({
@@ -82,7 +82,7 @@ export const CollaborateDialog: FC<CollaborateDialogProps> = ({
             collaborationService.sendRequest(recipientId, templateId),
         onSuccess: () => {
             toast({ title: 'Collaboration request sent' })
-            queryClient.invalidateQueries({ queryKey: ['collaboration-requests', 'outgoing'] })
+            queryClient.invalidateQueries({ queryKey: ['collaboration-requests'] })
         },
         onError: (err: any) => {
             toast({
@@ -93,11 +93,19 @@ export const CollaborateDialog: FC<CollaborateDialogProps> = ({
         }
     })
 
+    const extractId = (obj: any): string => {
+        if (!obj) return ''
+        if (typeof obj === 'string') return obj.trim().toLowerCase()
+        const id = obj._id || obj.id || obj.userId || obj.friendId
+        if (id) return id.toString().trim().toLowerCase()
+        return ''
+    }
+
     const isPending = (targetId: string) => {
         if (!targetId || !pendingRequests?.results) return false;
         const tid = targetId.toString().trim().toLowerCase();
         return pendingRequests.results.some((r: any) => {
-            const recipientId = (r.recipient?._id || r.recipient?.id || r.recipient).toString().trim().toLowerCase();
+            const recipientId = extractId(r.recipient)
             return recipientId === tid;
         });
     }
@@ -106,7 +114,7 @@ export const CollaborateDialog: FC<CollaborateDialogProps> = ({
         if (!targetId || !currentCollaborators) return false;
         const tid = targetId.toString().trim().toLowerCase();
         return currentCollaborators.some(c => {
-            const cid = (c._id || c?.id || c).toString().trim().toLowerCase();
+            const cid = extractId(c)
             return cid === tid;
         });
     }

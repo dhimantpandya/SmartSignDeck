@@ -14,20 +14,26 @@ const sendRequest = catchAsync(async (req, res) => {
 const getRequests = catchAsync(async (req, res) => {
     const { type, status, templateId } = pick(req.query, ["type", "status", "templateId"]);
     const filter: any = {};
-    const userId = (req as any).user.id;
+    const userId = (req as any).user?._id || (req as any).user?.id;
+    if (!userId) {
+        throw new ApiError(httpStatus.UNAUTHORIZED, "User not found in request");
+    }
 
     if (status) filter.status = status;
     if (templateId && mongoose.Types.ObjectId.isValid(templateId)) {
         filter.templateId = new mongoose.Types.ObjectId(templateId);
     }
 
+    const userObjId = mongoose.Types.ObjectId.isValid(userId)
+        ? new mongoose.Types.ObjectId(userId)
+        : userId;
+
     if (type === "incoming") {
-        filter.recipient = new mongoose.Types.ObjectId(userId);
+        filter.recipient = userObjId;
     } else if (type === "outgoing") {
-        filter.sender = new mongoose.Types.ObjectId(userId);
+        filter.sender = userObjId;
     } else {
         // Both
-        const userObjId = new mongoose.Types.ObjectId(userId);
         filter.$or = [{ recipient: userObjId }, { sender: userObjId }];
     }
 

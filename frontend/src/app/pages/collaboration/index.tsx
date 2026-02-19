@@ -66,13 +66,15 @@ export default function Collaboration() {
     const queryClient = useQueryClient()
 
     const { data: incomingTemplatesData, isLoading: isLoadingIncomingTemplates } = useQuery({
-        queryKey: ['collaboration-requests', 'incoming'],
+        queryKey: ['collaboration-requests', 'incoming', user?.id],
         queryFn: () => collaborationService.getRequests({ type: 'incoming' }),
+        enabled: !!user?.id,
     })
 
     const { data: outgoingTemplatesData, isLoading: isLoadingOutgoingTemplates } = useQuery({
-        queryKey: ['collaboration-requests', 'outgoing'],
+        queryKey: ['collaboration-requests', 'outgoing', user?.id],
         queryFn: () => collaborationService.getRequests({ type: 'outgoing' }),
+        enabled: !!user?.id,
     })
 
     const respondTemplateMutation = useMutation({
@@ -140,7 +142,7 @@ export default function Collaboration() {
                 <CardHeader className="bg-muted/30 pb-4">
                     <div className="flex items-center justify-between">
                         <CardTitle className="text-sm font-bold truncate max-w-[180px]">
-                            {request.templateId?.name || 'Unknown Template'}
+                            {request.templateId?.name || (typeof request.templateId === 'string' ? `Template: ${request.templateId.slice(-6)}` : 'Unknown Template')}
                         </CardTitle>
                         <Badge
                             variant={
@@ -168,7 +170,7 @@ export default function Collaboration() {
                                     </AvatarFallback>
                                 </Avatar>
                                 <span className="text-xs font-medium truncate">
-                                    {otherUser?.first_name} {otherUser?.last_name}
+                                    {otherUser?.first_name ? `${otherUser.first_name} ${otherUser.last_name || ''}` : extractId(otherUser).slice(-8)}
                                 </span>
                             </div>
                         </div>
