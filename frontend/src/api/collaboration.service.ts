@@ -10,7 +10,7 @@ export const collaborationService = {
         return response;
     },
 
-    getRequests: async (params?: { type?: "incoming" | "outgoing"; status?: string; limit?: number; page?: number }) => {
+    getRequests: async (params?: { type?: "incoming" | "outgoing"; status?: string; limit?: number; page?: number; templateId?: string; sortBy?: string }) => {
         const response = await apiService.get<any>("/collaboration-requests", { params });
         return response;
     },
