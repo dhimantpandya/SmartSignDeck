@@ -13,6 +13,7 @@ const getRequests = {
     query: Joi.object().keys({
         status: Joi.string().valid("pending", "accepted", "declined", "cancelled"),
         type: Joi.string().valid("incoming", "outgoing"),
+        templateId: Joi.string().custom(objectId),
         sortBy: Joi.string(),
         limit: Joi.number().integer(),
         page: Joi.number().integer(),

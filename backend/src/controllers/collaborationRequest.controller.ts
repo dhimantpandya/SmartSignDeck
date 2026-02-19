@@ -11,11 +11,12 @@ const sendRequest = catchAsync(async (req, res) => {
 });
 
 const getRequests = catchAsync(async (req, res) => {
-    const { type, status } = pick(req.query, ["type", "status"]);
+    const { type, status, templateId } = pick(req.query, ["type", "status", "templateId"]);
     const filter: any = {};
     const userId = (req as any).user.id;
 
     if (status) filter.status = status;
+    if (templateId) filter.templateId = templateId;
 
     if (type === "incoming") {
         filter.recipient = userId;

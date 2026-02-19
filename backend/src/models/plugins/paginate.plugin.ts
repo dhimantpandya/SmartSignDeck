@@ -57,7 +57,7 @@ function paginate<T extends Document>(schema: Schema<T>): void {
       });
       sort = sortingCriteria.join(" ");
     } else {
-      sort = "-created_at";
+      sort = "-createdAt";
     }
 
     let docsQuery = this.find(filter)
