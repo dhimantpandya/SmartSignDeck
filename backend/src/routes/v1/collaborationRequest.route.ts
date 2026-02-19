@@ -1,6 +1,6 @@
 import express from "express";
-import auth from "../../middlewares/auth";
-import validate from "../../middlewares/validate";
+import auth from "../../middleware/auth";
+import validate from "../../middleware/validate";
 import collaborationRequestValidation from "../../validations/collaborationRequest.validation";
 import collaborationRequestController from "../../controllers/collaborationRequest.controller";
 

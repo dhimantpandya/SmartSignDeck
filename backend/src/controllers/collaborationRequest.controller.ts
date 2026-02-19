@@ -5,7 +5,7 @@ import { collaborationRequestService } from "../services";
 
 const sendRequest = catchAsync(async (req, res) => {
     const { recipientId, templateId, message } = req.body;
-    const senderId = req.user.id;
+    const senderId = (req as any).user.id;
     const request = await collaborationRequestService.sendRequest(senderId, recipientId, templateId, message);
     res.status(httpStatus.CREATED).send(request);
 });
@@ -13,16 +13,17 @@ const sendRequest = catchAsync(async (req, res) => {
 const getRequests = catchAsync(async (req, res) => {
     const { type, status } = pick(req.query, ["type", "status"]);
     const filter: any = {};
+    const userId = (req as any).user.id;
 
     if (status) filter.status = status;
 
     if (type === "incoming") {
-        filter.recipient = req.user.id;
+        filter.recipient = userId;
     } else if (type === "outgoing") {
-        filter.sender = req.user.id;
+        filter.sender = userId;
     } else {
         // Both
-        filter.$or = [{ recipient: req.user.id }, { sender: req.user.id }];
+        filter.$or = [{ recipient: userId }, { sender: userId }];
     }
 
     const options = pick(req.query, ["sortBy", "limit", "page"]);
@@ -34,14 +35,14 @@ const getRequests = catchAsync(async (req, res) => {
 const respondToRequest = catchAsync(async (req, res) => {
     const { requestId } = req.params;
     const { status } = req.body;
-    const userId = req.user.id;
+    const userId = (req as any).user.id;
     const request = await collaborationRequestService.respondToRequest(requestId, userId, status);
     res.send(request);
 });
 
 const cancelRequest = catchAsync(async (req, res) => {
     const { requestId } = req.params;
-    const userId = req.user.id;
+    const userId = (req as any).user.id;
     const request = await collaborationRequestService.cancelRequest(requestId, userId);
     res.send(request);
 });

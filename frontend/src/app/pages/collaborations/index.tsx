@@ -19,7 +19,6 @@ import { Link } from 'react-router-dom'
 import { Routes } from '@/utilities/routes'
 
 export default function Collaborations() {
-    const { user } = useAuth()
     const queryClient = useQueryClient()
     const [activeTab, setActiveTab] = useState<'incoming' | 'outgoing'>('incoming')
 
