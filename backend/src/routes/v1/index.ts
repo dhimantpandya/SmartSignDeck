@@ -20,6 +20,7 @@ import companyRoute from "./company.route";
 import playlistRoute from "./playlist.route";
 import notificationRoute from "./notification.route";
 import templateGroupRoute from "./templateGroup.route";
+import collaborationRequestRoute from "./collaborationRequest.route";
 // IMPORT ROUTE HERE
 
 const router: Router = express.Router();
@@ -60,6 +61,7 @@ const defaultRoutes: Route[] = [
   { path: "/playlists", route: playlistRoute },
   { path: "/notifications", route: notificationRoute },
   { path: "/template-groups", route: templateGroupRoute },
+  { path: "/collaboration-requests", route: collaborationRequestRoute },
   // ROUTE DECLARATION
 ];
 

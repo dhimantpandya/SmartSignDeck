@@ -10,4 +10,5 @@ export { default as Company } from "./company.model";
 export { default as AdminRequest } from "./adminRequest.model";
 export { default as Playlist } from "./playlist.model";
 export { default as TemplateGroup } from "./templateGroup.model";
+export { default as CollaborationRequest } from "./collaborationRequest.model";
 export * from "./social.model";

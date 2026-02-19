@@ -6,7 +6,7 @@ import { emitToUser, cleanId } from "./socket.service";
  */
 const createNotification = async (
     recipientId: string,
-    type: "friend_request" | "new_chat" | "company_invite" | "system_alert",
+    type: "friend_request" | "new_chat" | "company_invite" | "system_alert" | "collaboration_request",
     title: string,
     message: string,
     senderId?: string,

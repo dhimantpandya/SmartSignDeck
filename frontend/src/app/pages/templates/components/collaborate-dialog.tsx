@@ -1,6 +1,6 @@
 import { FC, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { socialService, templateService, userService } from '@/api'
+import { collaborationService, socialService, userService } from '@/api'
 import { useAuth } from '@/hooks/use-auth'
 import {
     Dialog,
@@ -65,35 +65,32 @@ export const CollaborateDialog: FC<CollaborateDialogProps> = ({
         enabled: isOpen && mode === 'company' && !!currentUser?.companyId,
     })
 
-    const updateMutation = useMutation({
-        mutationFn: (collaborators: string[]) =>
-            templateService.updateTemplate(templateId, { collaborators }),
+    const { data: pendingRequests } = useQuery({
+        queryKey: ['collaboration-requests', 'outgoing', templateId],
+        queryFn: () => collaborationService.getRequests({ type: 'outgoing', status: 'pending' }),
+        enabled: isOpen,
+    })
+
+    const sendRequestMutation = useMutation({
+        mutationFn: (recipientId: string) =>
+            collaborationService.sendRequest(recipientId, templateId),
         onSuccess: () => {
-            toast({ title: 'Collaborators updated' })
-            queryClient.invalidateQueries({ queryKey: ['templates'] })
-            queryClient.invalidateQueries({ queryKey: ['template', templateId] })
+            toast({ title: 'Collaboration request sent' })
+            queryClient.invalidateQueries({ queryKey: ['collaboration-requests', 'outgoing'] })
         },
         onError: (err: any) => {
             toast({
-                title: 'Update failed',
+                title: 'Request failed',
                 description: err.response?.data?.message || err.message,
                 variant: 'destructive'
             })
         }
     })
 
-    const toggleCollaborator = (targetId: string) => {
-        const collaboratorIds = currentCollaborators.map(c => c._id || c)
-        const isAlreadyCollaborator = collaboratorIds.includes(targetId)
-
-        let newCollaborators
-        if (isAlreadyCollaborator) {
-            newCollaborators = collaboratorIds.filter(id => id !== targetId)
-        } else {
-            newCollaborators = [...collaboratorIds, targetId]
-        }
-
-        updateMutation.mutate(newCollaborators)
+    const isPending = (targetId: string) => {
+        return pendingRequests?.results?.some((r: any) =>
+            (r.recipient._id || r.recipient?.id || r.recipient) === targetId
+        )
     }
 
     const isCollaborator = (targetId: string) => {
@@ -138,35 +135,44 @@ export const CollaborateDialog: FC<CollaborateDialogProps> = ({
                         <ScrollArea className="h-[300px] pr-4">
                             {usersList && usersList.length > 0 ? (
                                 <div className="space-y-4">
-                                    {usersList.map((u: any) => (
-                                        <div key={u.id || u._id} className="flex items-center justify-between group">
-                                            <div className="flex items-center gap-3">
-                                                <Avatar className="h-10 w-10 border border-primary/10">
-                                                    <AvatarImage src={u.avatar} />
-                                                    <AvatarFallback>
-                                                        {u.first_name?.[0]}{u.last_name?.[0]}
-                                                    </AvatarFallback>
-                                                </Avatar>
-                                                <div>
-                                                    <p className="text-sm font-semibold">{u.first_name} {u.last_name}</p>
-                                                    <p className="text-xs text-muted-foreground">{u.email}</p>
+                                    {usersList.map((u: any) => {
+                                        const userId = u.id || u._id
+                                        const alreadyShared = isCollaborator(userId)
+                                        const pending = isPending(userId)
+
+                                        return (
+                                            <div key={userId} className="flex items-center justify-between group">
+                                                <div className="flex items-center gap-3">
+                                                    <Avatar className="h-10 w-10 border border-primary/10">
+                                                        <AvatarImage src={u.avatar} />
+                                                        <AvatarFallback>
+                                                            {u.first_name?.[0]}{u.last_name?.[0]}
+                                                        </AvatarFallback>
+                                                    </Avatar>
+                                                    <div>
+                                                        <p className="text-sm font-semibold">{u.first_name} {u.last_name}</p>
+                                                        <p className="text-xs text-muted-foreground">{u.email}</p>
+                                                    </div>
                                                 </div>
+                                                <Button
+                                                    size="sm"
+                                                    variant={alreadyShared ? "secondary" : pending ? "outline" : "default"}
+                                                    className="h-8 gap-2"
+                                                    onClick={() => !alreadyShared && !pending && sendRequestMutation.mutate(userId)}
+                                                    loading={sendRequestMutation.isPending}
+                                                    disabled={alreadyShared || pending}
+                                                >
+                                                    {alreadyShared ? (
+                                                        <><IconCheck size={14} /> Shared</>
+                                                    ) : pending ? (
+                                                        <>Requested</>
+                                                    ) : (
+                                                        <><IconUserPlus size={14} /> Share</>
+                                                    )}
+                                                </Button>
                                             </div>
-                                            <Button
-                                                size="sm"
-                                                variant={isCollaborator(u.id || u._id) ? "secondary" : "default"}
-                                                className="h-8 gap-2"
-                                                onClick={() => toggleCollaborator(u.id || u._id)}
-                                                loading={updateMutation.isPending}
-                                            >
-                                                {isCollaborator(u.id || u._id) ? (
-                                                    <><IconCheck size={14} /> Shared</>
-                                                ) : (
-                                                    <><IconUserPlus size={14} /> Share</>
-                                                )}
-                                            </Button>
-                                        </div>
-                                    ))}
+                                        )
+                                    })}
                                 </div>
                             ) : (
                                 <div className="flex flex-col items-center justify-center h-full text-center p-6 bg-muted/30 rounded-xl border border-dashed">

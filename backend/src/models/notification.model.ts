@@ -3,7 +3,7 @@ import mongoose, { Schema, Document } from "mongoose";
 export interface INotification extends Document {
     recipientId: mongoose.Schema.Types.ObjectId;
     senderId?: mongoose.Schema.Types.ObjectId;
-    type: "friend_request" | "new_chat" | "company_invite" | "system_alert";
+    type: "friend_request" | "new_chat" | "company_invite" | "system_alert" | "collaboration_request";
     title: string;
     message: string;
     isRead: boolean;
@@ -18,7 +18,7 @@ const notificationSchema = new Schema(
         senderId: { type: Schema.Types.ObjectId, ref: "User" },
         type: {
             type: String,
-            enum: ["friend_request", "new_chat", "company_invite", "system_alert"],
+            enum: ["friend_request", "new_chat", "company_invite", "system_alert", "collaboration_request"],
             required: true,
         },
         title: { type: String, required: true },

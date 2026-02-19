@@ -11,3 +11,4 @@ export { playlistService };
 export { default as screenService } from "./screen.service";
 export { default as templateService } from "./template.service";
 export { default as seedService } from "./seed.service";
+export { default as collaborationRequestService } from "./collaborationRequest.service";

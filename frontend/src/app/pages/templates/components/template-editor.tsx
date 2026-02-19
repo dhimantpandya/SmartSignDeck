@@ -614,7 +614,7 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
     const resetZoom = () => setZoomLevel(1)
 
     return (
-        <div className='flex h-[calc(100vh-100px)] gap-6 overflow-hidden'>
+        <div className='flex h-[calc(100vh-40px)] gap-6 overflow-hidden'>
             <Card className='flex w-72 flex-col p-4 shadow-lg h-full overflow-hidden flex-shrink-0'>
                 {/* ... Sidebar content remains ... */}
                 <div className='flex flex-1 flex-col overflow-y-auto pr-2 custom-scrollbar'>
@@ -775,8 +775,8 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                 </div>
             </Card>
 
-            <div className='relative flex-1 flex flex-col overflow-hidden rounded-lg bg-muted/20 p-4 lg:p-8'>
-                <div className='mb-6 flex flex-col gap-4 bg-background/50 p-4 rounded-xl border border-primary/10 shadow-sm'>
+            <div className='relative flex-1 flex flex-col overflow-hidden rounded-lg bg-muted/20 p-2 lg:p-4'>
+                <div className='mb-2 flex flex-col gap-2 bg-background/50 p-3 rounded-xl border border-primary/10 shadow-sm'>
                     {/* Top Row: Title ONLY */}
                     <div className='flex items-center gap-4 w-full'>
                         <div className="bg-primary/10 p-2 rounded-lg shrink-0">
@@ -794,7 +794,7 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                     </div>
 
                     {/* Bottom Row: All Controls */}
-                    <div className='flex flex-wrap items-center justify-between gap-4 w-full border-t border-primary/5 pt-4'>
+                    <div className='flex flex-wrap items-center justify-between gap-4 w-full border-t border-primary/5 pt-2'>
 
                         {/* Left Group: Public Toggle */}
                         <div className='flex items-center gap-3 bg-background px-4 py-2 rounded-full border border-primary/20 shadow-sm hover:border-primary/40'>
@@ -878,7 +878,7 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                 />
 
                 {/* SCROLLABLE CANVAS CONTAINER */}
-                <div className='flex-1 overflow-auto bg-zinc-950 relative rounded-xl border border-white/5 shadow-2xl p-8'>
+                <div className='flex-1 overflow-auto bg-zinc-950 relative rounded-xl border border-white/5 shadow-2xl p-4'>
                     <div className="flex items-center justify-center min-w-full min-h-full">
                         {/* Visual Border Container - Screen Mockup */}
                         <div
