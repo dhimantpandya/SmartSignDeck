@@ -160,12 +160,6 @@ const Setup = () => {
               }),
             },
             {
-              path: Routes.COLLABORATIONS,
-              lazy: async () => ({
-                Component: (await import('./pages/collaborations')).default,
-              }),
-            },
-            {
               path: Routes.ADMIN_REQUESTS,
               lazy: async () => ({
                 Component: (await import('./pages/admin-requests')).default,

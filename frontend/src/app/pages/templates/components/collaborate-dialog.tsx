@@ -94,7 +94,12 @@ export const CollaborateDialog: FC<CollaborateDialogProps> = ({
     }
 
     const isCollaborator = (targetId: string) => {
-        return currentCollaborators.some(c => (c._id || c) === targetId)
+        if (!targetId || !currentCollaborators) return false;
+        const tid = targetId.toString().trim().toLowerCase();
+        return currentCollaborators.some(c => {
+            const cid = (c._id || c?.id || c).toString().trim().toLowerCase();
+            return cid === tid;
+        });
     }
 
     const isLoading = mode === 'friends' ? isLoadingFriends : isLoadingCompany

@@ -101,6 +101,13 @@ export default function Templates() {
         enabled: true,
     })
 
+    // Query for templates shared with the user (where user is a collaborator)
+    const { data: sharedTemplatesData, isLoading: isLoadingShared } = useQuery({
+        queryKey: ['templates', 'shared', user?.id],
+        queryFn: () => templateService.getTemplates({ collaborators: user?.id, sortBy: 'created_at:desc' }),
+        enabled: !!user?.id,
+    })
+
     // Query for selected group details (ensures reactive updates)
     const { data: selectedGroup, isLoading: isLoadingSelectedGroup, isError: isGroupError } = useQuery({
         queryKey: ['template-groups', 'detail', selectedGroupId],
@@ -465,10 +472,14 @@ export default function Templates() {
                     />
                 ) : (
                     <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="mt-6">
-                        <TabsList className="grid w-full grid-cols-3">
+                        <TabsList className="grid w-full grid-cols-4">
                             <TabsTrigger value="my-templates" className="gap-2">
                                 <User size={16} />
                                 My Templates ({myTemplates.length})
+                            </TabsTrigger>
+                            <TabsTrigger value="shared" className="gap-2">
+                                <Users size={16} />
+                                Shared with Me ({sharedTemplatesData?.results?.length || 0})
                             </TabsTrigger>
                             <TabsTrigger value="groups" className="gap-2">
                                 <Folder size={16} />
@@ -511,6 +522,28 @@ export default function Templates() {
                                     <Button onClick={handleCreate}>
                                         Get Started
                                     </Button>
+                                </div>
+                            )}
+                        </TabsContent>
+
+                        <TabsContent value="shared" className="mt-6">
+                            {isLoadingShared ? (
+                                <div className="flex h-64 items-center justify-center">
+                                    <Loader />
+                                </div>
+                            ) : (sharedTemplatesData?.results?.length || 0) > 0 ? (
+                                <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
+                                    {sharedTemplatesData?.results.map((template: any) =>
+                                        renderTemplateCard(template, checkIsOwner(template), false)
+                                    )}
+                                </div>
+                            ) : (
+                                <div className='flex flex-col items-center justify-center rounded-lg border border-dashed p-20 text-center'>
+                                    <Users size={48} className='mb-4 text-muted-foreground' />
+                                    <h2 className='text-xl font-semibold'>No shared templates</h2>
+                                    <p className='text-muted-foreground text-sm max-w-xs'>
+                                        Templates shared with you by others will appear here.
+                                    </p>
                                 </div>
                             )}
                         </TabsContent>

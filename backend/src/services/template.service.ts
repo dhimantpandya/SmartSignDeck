@@ -106,17 +106,30 @@ const queryTemplates = async (filter: any, options: CustomPaginateOptions, user:
       // We don't add companyId to the filter here.
     } else {
       // 🔒 Account Isolation: Strictly same company ONLY (whether public or private)
+      // EXCEPT when the user is a collaborator (Cross-company collaboration)
+      const userId = new mongoose.Types.ObjectId(userIdStr);
+
+      const securityConditions: any[] = [];
+
       if (companyIdStr && mongoose.Types.ObjectId.isValid(companyIdStr)) {
-        finalFilter.companyId = new mongoose.Types.ObjectId(companyIdStr);
+        securityConditions.push({ companyId: new mongoose.Types.ObjectId(companyIdStr) });
       } else if (userIdStr && mongoose.Types.ObjectId.isValid(userIdStr)) {
-        // Fallback to own content if no companyId
-        finalFilter.createdBy = new mongoose.Types.ObjectId(userIdStr);
+        securityConditions.push({ createdBy: userId });
       }
+
+      // 🤝 Add Collaboration access
+      securityConditions.push({ collaborators: userId });
+
+      finalFilter.$or = securityConditions;
 
       // 👤 Strict User Isolation: Honor the 'createdBy' filter if provided by the frontend.
       // This ensures the "My Templates" tab matches Dashboard counts.
       if (isQueryingOwn && userIdStr && mongoose.Types.ObjectId.isValid(userIdStr)) {
-        finalFilter.createdBy = new mongoose.Types.ObjectId(userIdStr);
+        // If we have a specific createdBy filter, it should be AND-ed with our security OR
+        // However, since we're using $or for security, we need to be careful.
+        // If the user specifically asks for 'my' templates, we should probably stick to createdBy.
+        delete finalFilter.$or;
+        finalFilter.createdBy = userId;
       }
     }
   }

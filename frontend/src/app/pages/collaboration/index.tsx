@@ -4,7 +4,7 @@ import ThemeSwitch from '@/components/theme-switch'
 import { UserNav } from '@/components/user-nav'
 import { NotificationBell } from '@/components/notification-bell'
 import { useNotifications } from '@/components/nav-notification-provider'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/custom/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
@@ -19,18 +19,28 @@ import {
 import { UserProfileDialog } from '@/app/pages/users/components/user-profile-dialog'
 import { socialService } from '@/api/social.service'
 import { userService } from '@/api/user.service'
+import { collaborationService } from '@/api/collaboration.service'
 import { useAuth } from '@/hooks/use-auth'
 import { toast } from '@/components/ui/use-toast'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
     Users,
     UserPlus,
     MessageSquare,
     Building2,
     Search as SearchIcon,
-    Send
+    Send,
+    FileText,
+    Check,
+    X,
+    Trash,
+    ExternalLink
 } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { Routes } from '@/utilities/routes'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
+import Loader from '@/components/loader'
 
 export default function Collaboration() {
     const { user } = useAuth()
@@ -53,6 +63,59 @@ export default function Collaboration() {
     const [companyMembers, setCompanyMembers] = useState<any[]>([])
     const [onlineUserIds, setOnlineUserIds] = useState<Set<string>>(new Set())
 
+    const queryClient = useQueryClient()
+
+    const { data: incomingTemplatesData, isLoading: isLoadingIncomingTemplates } = useQuery({
+        queryKey: ['collaboration-requests', 'incoming'],
+        queryFn: () => collaborationService.getRequests({ type: 'incoming' }),
+    })
+
+    const { data: outgoingTemplatesData, isLoading: isLoadingOutgoingTemplates } = useQuery({
+        queryKey: ['collaboration-requests', 'outgoing'],
+        queryFn: () => collaborationService.getRequests({ type: 'outgoing' }),
+    })
+
+    const respondTemplateMutation = useMutation({
+        mutationFn: ({ requestId, status }: { requestId: string; status: 'accepted' | 'declined' }) =>
+            collaborationService.respondToRequest(requestId, status),
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({ queryKey: ['collaboration-requests'] })
+            queryClient.invalidateQueries({ queryKey: ['templates'] })
+            queryClient.invalidateQueries({ queryKey: ['notifications'] })
+            toast({
+                title: `Request ${variables.status}`,
+                description: `You have ${variables.status} the collaboration request.`,
+            })
+        },
+        onError: (error: any) => {
+            toast({
+                title: 'Action Failed',
+                description: error?.response?.data?.message || 'Failed to respond to request.',
+                variant: 'destructive',
+            })
+        },
+    })
+
+    const cancelTemplateMutation = useMutation({
+        mutationFn: (requestId: string) => collaborationService.cancelRequest(requestId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['collaboration-requests'] })
+            toast({
+                title: 'Request Cancelled',
+                description: 'The collaboration request has been cancelled.',
+            })
+        },
+        onError: (error: any) => {
+            toast({
+                title: 'Action Failed',
+                description: error?.response?.data?.message || 'Failed to cancel request.',
+                variant: 'destructive',
+            })
+        },
+    })
+
+    const incomingRequestsNum = (incomingTemplatesData as any)?.results?.length || 0
+
     const extractId = (obj: any): string => {
         if (!obj) return ''
         if (typeof obj === 'string') return obj.trim().toLowerCase()
@@ -67,6 +130,105 @@ export default function Collaboration() {
         const s2 = extractId(id2)
         return !!s1 && !!s2 && s1 === s2
     }
+
+    const renderTemplateInviteCard = (request: any, isIncoming: boolean) => {
+        const otherUser = isIncoming ? request.sender : request.recipient;
+        const status = request.status || 'pending';
+
+        return (
+            <Card key={request.id} className="overflow-hidden border-primary/10 hover:shadow-md transition-shadow">
+                <CardHeader className="bg-muted/30 pb-4">
+                    <div className="flex items-center justify-between">
+                        <CardTitle className="text-sm font-bold truncate max-w-[180px]">
+                            {request.templateId?.name || 'Unknown Template'}
+                        </CardTitle>
+                        <Badge
+                            variant={
+                                status === 'pending' ? 'outline' :
+                                    status === 'accepted' ? 'default' :
+                                        'secondary'
+                            }
+                            className="text-[10px] h-5"
+                        >
+                            {status.toUpperCase()}
+                        </Badge>
+                    </div>
+                </CardHeader>
+                <CardContent className="pt-4 pb-2">
+                    <div className="flex flex-col gap-3">
+                        <div className="flex items-center gap-2">
+                            <span className="text-[10px] text-muted-foreground uppercase font-semibold">
+                                {isIncoming ? 'From' : 'To'}
+                            </span>
+                            <div className="flex items-center gap-2 min-w-0">
+                                <Avatar className="h-5 w-5">
+                                    <AvatarImage src={otherUser?.avatar} />
+                                    <AvatarFallback className="text-[8px]">
+                                        {otherUser?.first_name?.[0]}
+                                    </AvatarFallback>
+                                </Avatar>
+                                <span className="text-xs font-medium truncate">
+                                    {otherUser?.first_name} {otherUser?.last_name}
+                                </span>
+                            </div>
+                        </div>
+
+                        {request.message && (
+                            <div className="bg-primary/5 p-2 rounded text-[11px] italic text-muted-foreground line-clamp-2">
+                                "{request.message}"
+                            </div>
+                        )}
+
+                        <div className="text-[10px] text-muted-foreground">
+                            Sent {new Date(request.createdAt).toLocaleDateString()}
+                        </div>
+                    </div>
+                </CardContent>
+                <CardFooter className="flex justify-end gap-2 border-t bg-muted/10 px-4 py-2 mt-2">
+                    {status === 'pending' ? (
+                        isIncoming ? (
+                            <>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-7 text-[11px] px-2 text-destructive border-destructive/20 hover:bg-destructive/5"
+                                    onClick={() => respondTemplateMutation.mutate({ requestId: request.id, status: 'declined' })}
+                                    disabled={respondTemplateMutation.isPending}
+                                >
+                                    <X size={12} className="mr-1" /> Decline
+                                </Button>
+                                <Button
+                                    variant="default"
+                                    size="sm"
+                                    className="h-7 text-[11px] px-2"
+                                    onClick={() => respondTemplateMutation.mutate({ requestId: request.id, status: 'accepted' })}
+                                    disabled={respondTemplateMutation.isPending}
+                                >
+                                    <Check size={12} className="mr-1" /> Accept
+                                </Button>
+                            </>
+                        ) : (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 text-[11px] px-2 text-destructive hover:bg-destructive/5"
+                                onClick={() => cancelTemplateMutation.mutate(request.id)}
+                                disabled={cancelTemplateMutation.isPending}
+                            >
+                                <Trash size={12} className="mr-1" /> Cancel
+                            </Button>
+                        )
+                    ) : status === 'accepted' ? (
+                        <Button variant="ghost" size="sm" asChild className="h-7 text-[11px] px-2">
+                            <Link to={Routes.TEMPLATES}>
+                                <ExternalLink size={12} className="mr-1" /> View
+                            </Link>
+                        </Button>
+                    ) : null}
+                </CardFooter>
+            </Card>
+        );
+    };
 
     // Fetch company members
     useEffect(() => {
@@ -434,10 +596,19 @@ export default function Collaboration() {
                                 </TabsTrigger>
                                 <TabsTrigger value="requests" className="justify-center md:justify-start gap-3 px-4 py-3 h-auto data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-xl transition-all hover:bg-primary/10 relative flex-shrink-0 whitespace-nowrap">
                                     <UserPlus size={18} />
-                                    <span className="font-medium">Requests</span>
+                                    <span className="font-medium">Friend Requests</span>
                                     {receivedRequests.length > 0 && (
                                         <Badge variant="destructive" className="ml-auto px-1.5 py-0.5 min-w-[1.25rem] h-5 justify-center text-[10px] animate-pulse">
                                             {receivedRequests.length}
+                                        </Badge>
+                                    )}
+                                </TabsTrigger>
+                                <TabsTrigger value="template-requests" className="justify-center md:justify-start gap-3 px-4 py-3 h-auto data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-xl transition-all hover:bg-primary/10 relative flex-shrink-0 whitespace-nowrap">
+                                    <FileText size={18} />
+                                    <span className="font-medium">Template Invites</span>
+                                    {incomingRequestsNum > 0 && (
+                                        <Badge variant="destructive" className="ml-auto px-1.5 py-0.5 min-w-[1.25rem] h-5 justify-center text-[10px] animate-pulse">
+                                            {incomingRequestsNum}
                                         </Badge>
                                     )}
                                 </TabsTrigger>
@@ -625,6 +796,76 @@ export default function Collaboration() {
                                         </div>
                                     </CardContent>
                                 </Card>
+                            </TabsContent>
+
+                            <TabsContent value="template-requests" className="mt-0">
+                                <div className="space-y-6">
+                                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-background/50 backdrop-blur-md p-4 rounded-2xl border border-primary/10 shadow-sm">
+                                        <div>
+                                            <h2 className="text-lg font-bold">Template Invitations</h2>
+                                            <p className="text-xs text-muted-foreground">Manage collaboration requests for templates.</p>
+                                        </div>
+                                    </div>
+
+                                    <Tabs defaultValue="incoming-tm" className="w-full">
+                                        <TabsList className="bg-muted/30 p-1 rounded-xl">
+                                            <TabsTrigger value="incoming-tm" className="rounded-lg px-6">
+                                                Incoming ({incomingRequestsNum})
+                                            </TabsTrigger>
+                                            <TabsTrigger value="outgoing-tm" className="rounded-lg px-6">
+                                                Outgoing {(outgoingTemplatesData as any)?.results?.length || 0}
+                                            </TabsTrigger>
+                                        </TabsList>
+
+                                        <TabsContent value="incoming-tm" className="mt-6">
+                                            {isLoadingIncomingTemplates ? (
+                                                <div className="flex h-40 items-center justify-center">
+                                                    <Loader />
+                                                </div>
+                                            ) : (incomingTemplatesData as any)?.results?.length > 0 ? (
+                                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                                    {(incomingTemplatesData as any).results.map((request: any) =>
+                                                        renderTemplateInviteCard(request, true)
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <div className="flex flex-col items-center justify-center py-20 px-4 rounded-2xl border border-dashed border-primary/20 bg-primary/5 text-center">
+                                                    <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                                                        <FileText size={32} className="text-primary/40" />
+                                                    </div>
+                                                    <h3 className="text-lg font-semibold text-foreground">No incoming invites</h3>
+                                                    <p className="text-sm text-muted-foreground max-w-xs mt-1">
+                                                        When someone invites you to collaborate on a template, it will appear here.
+                                                    </p>
+                                                </div>
+                                            )}
+                                        </TabsContent>
+
+                                        <TabsContent value="outgoing-tm" className="mt-6">
+                                            {isLoadingOutgoingTemplates ? (
+                                                <div className="flex h-40 items-center justify-center">
+                                                    <Loader />
+                                                </div>
+                                            ) : (outgoingTemplatesData as any)?.results?.length > 0 ? (
+                                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                                    {(outgoingTemplatesData as any).results.map((request: any) =>
+                                                        renderTemplateInviteCard(request, false)
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <div className="flex flex-col items-center justify-center py-20 px-4 rounded-2xl border border-dashed border-primary/20 bg-primary/5 text-center">
+                                                    <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                                                        <Send size={32} className="text-primary/40" />
+                                                    </div>
+                                                    <h3 className="text-lg font-semibold text-foreground">No outgoing requests</h3>
+                                                    <p className="text-sm text-muted-foreground max-w-xs mt-1">
+                                                        Templates you've invited others to collaborate on will show up here.
+                                                    </p>
+                                                </div>
+                                            )}
+                                        </TabsContent>
+                                    </Tabs>
+                                </div>
                             </TabsContent>
 
                             <TabsContent value="company" className="mt-0">

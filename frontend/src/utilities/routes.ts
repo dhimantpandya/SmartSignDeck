@@ -12,7 +12,6 @@ export const Routes = {
   SCREENS: '/screens',
   ANALYTICS: '/analytics',
   COLLABORATION: '/collaboration',
-  COLLABORATIONS: '/collaborations',
   PLAYLISTS: '/playlists',
   ADMIN_COMPANIES: '/admin/companies',
   ADMIN_REQUESTS: '/admin/requests',
