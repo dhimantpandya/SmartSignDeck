@@ -17,6 +17,17 @@ const createRequest = catchAsync(async (req: Request, res: Response) => {
         throw new ApiError(httpStatus.BAD_REQUEST, "Requester must belong to a company");
     }
 
+    // 🔒 Restriction: Admin cannot request role change for another Admin of the same company
+    const targetUser = await User.findById(targetUserId);
+    if (!targetUser) {
+        throw new ApiError(httpStatus.NOT_FOUND, "Target user not found");
+    }
+
+    const requesterRole = (req.user as any).role;
+    if (requesterRole === 'admin' && targetUser.role === 'admin' && targetUser.companyId?.toString() === companyId.toString()) {
+        throw new ApiError(httpStatus.FORBIDDEN, "Admins cannot send role change requests for other admins of the same company.");
+    }
+
     const request = await AdminRequest.create({
         requesterId,
         targetUserId,
