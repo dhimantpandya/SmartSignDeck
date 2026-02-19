@@ -88,6 +88,7 @@ const updateTemplate = {
       ),
       isActive: Joi.boolean(),
       isPublic: Joi.boolean(),
+      collaborators: Joi.array().items(Joi.string()),
     })
     .min(1),
 };

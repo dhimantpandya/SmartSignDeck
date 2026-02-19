@@ -1,6 +1,7 @@
-import { FC } from 'react'
+import { FC, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { socialService, templateService } from '@/api'
+import { socialService, templateService, userService } from '@/api'
+import { useAuth } from '@/hooks/use-auth'
 import {
     Dialog,
     DialogContent,
@@ -13,7 +14,8 @@ import { Button } from '@/components/custom/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Badge } from '@/components/ui/badge'
 import { toast } from '@/components/ui/use-toast'
-import { IconUsers, IconUserPlus, IconCheck } from '@tabler/icons-react'
+import { IconUsers, IconUserPlus, IconCheck, IconBuildingCommunity, IconUserHeart } from '@tabler/icons-react'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import Loader from '@/components/loader'
 
 interface CollaborateDialogProps {
@@ -29,12 +31,34 @@ export const CollaborateDialog: FC<CollaborateDialogProps> = ({
     templateId,
     currentCollaborators = [],
 }) => {
+    const { user: currentUser } = useAuth()
     const queryClient = useQueryClient()
+    const [mode, setMode] = useState<'company' | 'friends'>('company')
 
-    const { data: friends, isLoading } = useQuery({
+    const { data: friends, isLoading: isLoadingFriends } = useQuery({
         queryKey: ['friends'],
         queryFn: () => socialService.getFriends(),
-        enabled: isOpen,
+        enabled: isOpen && mode === 'friends',
+    })
+
+    const { data: companyUsers, isLoading: isLoadingCompany } = useQuery({
+        queryKey: ['company-users', currentUser?.companyId],
+        queryFn: async () => {
+            const getCompId = (c: any) => {
+                if (!c) return null
+                if (typeof c === 'object') return (c?._id || c?.id || '').toString()
+                return c.toString()
+            }
+            const cid = getCompId(currentUser?.companyId)
+            if (!cid) return []
+            const res = await userService.getAllUsers({
+                pagination: { pageIndex: 0, pageSize: 100 },
+                filter: { companyId: cid }
+            })
+            // Filter out self
+            return res.data.users.filter((u: any) => (u.id || u._id) !== currentUser?.id)
+        },
+        enabled: isOpen && mode === 'company' && !!currentUser?.companyId,
     })
 
     const updateMutation = useMutation({
@@ -54,23 +78,26 @@ export const CollaborateDialog: FC<CollaborateDialogProps> = ({
         }
     })
 
-    const toggleCollaborator = (friendId: string) => {
+    const toggleCollaborator = (targetId: string) => {
         const collaboratorIds = currentCollaborators.map(c => c._id || c)
-        const isAlreadyCollaborator = collaboratorIds.includes(friendId)
+        const isAlreadyCollaborator = collaboratorIds.includes(targetId)
 
         let newCollaborators
         if (isAlreadyCollaborator) {
-            newCollaborators = collaboratorIds.filter(id => id !== friendId)
+            newCollaborators = collaboratorIds.filter(id => id !== targetId)
         } else {
-            newCollaborators = [...collaboratorIds, friendId]
+            newCollaborators = [...collaboratorIds, targetId]
         }
 
         updateMutation.mutate(newCollaborators)
     }
 
-    const isCollaborator = (friendId: string) => {
-        return currentCollaborators.some(c => (c._id || c) === friendId)
+    const isCollaborator = (targetId: string) => {
+        return currentCollaborators.some(c => (c._id || c) === targetId)
     }
+
+    const isLoading = mode === 'friends' ? isLoadingFriends : isLoadingCompany
+    const usersList = mode === 'friends' ? friends : companyUsers
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
@@ -83,41 +110,52 @@ export const CollaborateDialog: FC<CollaborateDialogProps> = ({
                         <DialogTitle>Collaborate</DialogTitle>
                     </div>
                     <DialogDescription>
-                        Invite your friends to edit this template with you in real-time.
+                        Invite others to edit this template with you in real-time.
                     </DialogDescription>
                 </DialogHeader>
 
-                <div className="mt-4">
+                <div className="mt-4 space-y-4">
+                    <Tabs value={mode} onValueChange={(val: any) => setMode(val)} className="w-full">
+                        <TabsList className="grid w-full grid-cols-2">
+                            <TabsTrigger value="company" className="gap-2">
+                                <IconBuildingCommunity size={16} /> My Company
+                            </TabsTrigger>
+                            <TabsTrigger value="friends" className="gap-2">
+                                <IconUserHeart size={16} /> Friends
+                            </TabsTrigger>
+                        </TabsList>
+                    </Tabs>
+
                     {isLoading ? (
                         <div className="flex h-40 items-center justify-center">
                             <Loader />
                         </div>
                     ) : (
                         <ScrollArea className="h-[300px] pr-4">
-                            {friends && friends.length > 0 ? (
+                            {usersList && usersList.length > 0 ? (
                                 <div className="space-y-4">
-                                    {friends.map((friend: any) => (
-                                        <div key={friend.id || friend._id} className="flex items-center justify-between group">
+                                    {usersList.map((u: any) => (
+                                        <div key={u.id || u._id} className="flex items-center justify-between group">
                                             <div className="flex items-center gap-3">
                                                 <Avatar className="h-10 w-10 border border-primary/10">
-                                                    <AvatarImage src={friend.avatar} />
+                                                    <AvatarImage src={u.avatar} />
                                                     <AvatarFallback>
-                                                        {friend.first_name?.[0]}{friend.last_name?.[0]}
+                                                        {u.first_name?.[0]}{u.last_name?.[0]}
                                                     </AvatarFallback>
                                                 </Avatar>
                                                 <div>
-                                                    <p className="text-sm font-semibold">{friend.first_name} {friend.last_name}</p>
-                                                    <p className="text-xs text-muted-foreground">{friend.email}</p>
+                                                    <p className="text-sm font-semibold">{u.first_name} {u.last_name}</p>
+                                                    <p className="text-xs text-muted-foreground">{u.email}</p>
                                                 </div>
                                             </div>
                                             <Button
                                                 size="sm"
-                                                variant={isCollaborator(friend.id || friend._id) ? "secondary" : "default"}
+                                                variant={isCollaborator(u.id || u._id) ? "secondary" : "default"}
                                                 className="h-8 gap-2"
-                                                onClick={() => toggleCollaborator(friend.id || friend._id)}
+                                                onClick={() => toggleCollaborator(u.id || u._id)}
                                                 loading={updateMutation.isPending}
                                             >
-                                                {isCollaborator(friend.id || friend._id) ? (
+                                                {isCollaborator(u.id || u._id) ? (
                                                     <><IconCheck size={14} /> Shared</>
                                                 ) : (
                                                     <><IconUserPlus size={14} /> Share</>
@@ -128,8 +166,10 @@ export const CollaborateDialog: FC<CollaborateDialogProps> = ({
                                 </div>
                             ) : (
                                 <div className="flex flex-col items-center justify-center h-full text-center p-6 bg-muted/30 rounded-xl border border-dashed">
-                                    <p className="text-sm font-medium">No friends found</p>
-                                    <p className="text-xs text-muted-foreground mt-1">Connect with other users to collaborate.</p>
+                                    <p className="text-sm font-medium">No {mode} found</p>
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                        {mode === 'friends' ? 'Connect with other users to collaborate.' : 'Invite team members to your company.'}
+                                    </p>
                                 </div>
                             )}
                         </ScrollArea>

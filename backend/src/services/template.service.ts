@@ -170,11 +170,11 @@ const updateTemplateById = async (templateId: string, updateBody: any, user: IUs
   }
 
   // Permission Check
-  const isOwner = template.companyId?.toString() === user.companyId?.toString();
+  const isCreator = template.createdBy?.toString() === (user._id || (user as any).id).toString();
   const isCollaborator = (template.collaborators as any[])?.some(c => (c._id || c).toString() === (user._id || (user as any).id).toString());
 
-  if (user.role !== "super_admin" && !isOwner && !isCollaborator) {
-    throw new ApiError(httpStatus.FORBIDDEN, "You do not have permission to update this template");
+  if (user.role !== "super_admin" && !isCreator && !isCollaborator) {
+    throw new ApiError(httpStatus.FORBIDDEN, "You do not have permission to update this template. Only the creator and invited collaborators can edit.");
   }
 
   Object.assign(template, updateBody);
