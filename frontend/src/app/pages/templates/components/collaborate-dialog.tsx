@@ -53,7 +53,11 @@ export const CollaborateDialog: FC<CollaborateDialogProps> = ({
             if (!cid) return []
             const res = await userService.getAllUsers({
                 pagination: { pageIndex: 0, pageSize: 100 },
-                filter: { companyId: cid }
+                filter: {
+                    companyId: cid,
+                    role: [],
+                    search: ''
+                }
             })
             // Filter out self
             return res.data.users.filter((u: any) => (u.id || u._id) !== currentUser?.id)
