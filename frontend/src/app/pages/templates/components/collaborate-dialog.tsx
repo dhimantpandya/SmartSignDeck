@@ -60,7 +60,7 @@ export const CollaborateDialog: FC<CollaborateDialogProps> = ({
                 }
             })
             // Filter out self
-            const myId = currentUser?.id || currentUser?._id;
+            const myId = (currentUser as any)?.id || (currentUser as any)?._id;
             if (!myId) return res.data.users;
             const myIdStr = myId.toString().trim().toLowerCase();
             return res.data.users.filter((u: any) => {
