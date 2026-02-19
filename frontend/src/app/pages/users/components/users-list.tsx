@@ -140,6 +140,7 @@ export const UsersList = () => {
       (user?.companyName && targetUser.companyName && user.companyName.toLowerCase() === targetUser.companyName.toLowerCase())
 
     const canManage = isSuperAdmin || (isAdmin && sameCompany)
+    const isAdminTarget = targetUser.role === 'admin'
 
     const actionItems = [
       {
@@ -150,14 +151,28 @@ export const UsersList = () => {
           setIsProfileOpen(true)
         },
       },
-      ...(!isFriend && !isSent && !isReceived ? [
+      ...(isFriend ? [
+        {
+          label: 'Friend',
+          icon: <IconUserPlus className='mr-2 text-green-500' />,
+          disabled: true,
+          onClick: () => { },
+        }
+      ] : isSent || isReceived ? [
+        {
+          label: 'Pending',
+          icon: <IconUserPlus className='mr-2 text-yellow-500' />,
+          disabled: true,
+          onClick: () => { },
+        }
+      ] : [
         {
           label: 'Add Friend',
           icon: <IconUserPlus className='mr-2' />,
           onClick: () => sendFriendRequest(targetUserId),
         }
-      ] : []),
-      ...(canManage ? [
+      ]),
+      ...(canManage && !(isAdmin && isAdminTarget) ? [
         {
           label: 'Edit',
           icon: <IconEdit className='mr-2' />,
