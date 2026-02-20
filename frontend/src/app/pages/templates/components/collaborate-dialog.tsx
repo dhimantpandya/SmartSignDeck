@@ -71,7 +71,7 @@ export const CollaborateDialog: FC<CollaborateDialogProps> = ({
         enabled: isOpen && mode === 'company' && !!currentUser?.companyId,
     })
 
-    const { data: pendingRequests, isLoading: isLoadingPending } = useQuery({
+    const { data: pendingRequests } = useQuery({
         queryKey: ['collaboration-requests', 'outgoing', templateId, currentUser?.id],
         queryFn: () => collaborationService.getRequests({ type: 'outgoing', status: 'pending', templateId }),
         enabled: isOpen && !!currentUser?.id,
