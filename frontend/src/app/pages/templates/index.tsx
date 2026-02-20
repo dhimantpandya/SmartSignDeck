@@ -104,7 +104,12 @@ export default function Templates() {
     // Query for templates shared with the user (where user is a collaborator)
     const { data: sharedWithMeData, isLoading: isLoadingSharedWithMe } = useQuery({
         queryKey: ['templates', 'shared-with-me', user?.id],
-        queryFn: () => templateService.getTemplates({ collaborators: user?.id, sortBy: 'created_at:desc' }),
+        queryFn: async () => {
+            console.log('[DEBUG] Fetching shared-with-me for user:', user?.id);
+            const res = await templateService.getTemplates({ collaborators: user?.id, sortBy: 'created_at:desc' });
+            console.log('[DEBUG] shared-with-me results:', res.results);
+            return res;
+        },
         enabled: !!user?.id,
     })
 
@@ -112,11 +117,13 @@ export default function Templates() {
     const { data: sharedByMeData, isLoading: isLoadingSharedByMe } = useQuery({
         queryKey: ['templates', 'shared-by-me', user?.id],
         queryFn: async () => {
+            console.log('[DEBUG] Fetching shared-by-me for user:', user?.id);
             const result = await templateService.getTemplates({ createdBy: user?.id, sortBy: 'created_at:desc' })
             // Filter only those that have at least one collaborator
             if (result.results) {
                 result.results = result.results.filter((t: any) => t.collaborators && t.collaborators.length > 0)
             }
+            console.log('[DEBUG] shared-by-me results (after filter):', result.results);
             return result
         },
         enabled: !!user?.id,
@@ -388,6 +395,15 @@ export default function Templates() {
                                 <IconTrash size={16} className="mr-1" /> Delete
                             </Button>
                         </>
+                    ) : template.collaborators?.some((c: any) => (c.id || c._id || c) === user?.id) ? (
+                        <Button
+                            variant="default"
+                            size="sm"
+                            className="bg-indigo-600 hover:bg-indigo-700"
+                            onClick={() => handleEdit(template)}
+                        >
+                            <Users size={16} className="mr-2" /> Edit Together
+                        </Button>
                     ) : (
                         <Button
                             variant="default"
