@@ -67,7 +67,15 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
     const [isPreviewOpen, setIsPreviewOpen] = useState(false)
     const [isCollaborateOpen, setIsCollaborateOpen] = useState(false)
 
+    const zonesRef = useRef<Zone[]>(zones)
+    const lastBroadcastRef = useRef<number>(0)
+    const THROTTLE_MS = 50 // 20fps sync for smooth movement
+
     const queryClient = useQueryClient()
+
+    useEffect(() => {
+        zonesRef.current = zones
+    }, [zones])
 
     // --- SOCKET SYNC ---
     useEffect(() => {
@@ -82,40 +90,54 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
             console.log('[COLLAB] Remote update received:', data)
 
             if (data.zones) {
-                setZones(data.zones)
-                if (canvasRef.current) {
-                    const canvas = canvasRef.current
+                // Determine if we should update React state
+                // Only update zones that are NOT currently being interacted with locally
+                const canvas = canvasRef.current
+                const activeObjId = (canvas?.getActiveObject() as any)?.id
+
+                setZones(prev => {
+                    const nextZones = [...prev]
                     data.zones.forEach((remoteZone: Zone) => {
-                        // Find the object (now a Group) by its custom id
+                        const index = nextZones.findIndex(z => z.id === remoteZone.id)
+                        if (index !== -1) {
+                            // Only update state if this isn't the one we are dragging
+                            if (remoteZone.id !== activeObjId) {
+                                nextZones[index] = remoteZone
+                            }
+                        } else {
+                            nextZones.push(remoteZone)
+                        }
+                    })
+
+                    // Handle removals
+                    const remoteIds = new Set(data.zones.map((z: any) => z.id))
+                    return nextZones.filter(z => remoteIds.has(z.id) || z.id === activeObjId)
+                })
+
+                if (canvas) {
+                    data.zones.forEach((remoteZone: Zone) => {
+                        // Skip if this object is currently being dragged locally
+                        if (remoteZone.id === activeObjId) return
+
                         const obj = canvas.getObjects().find((o: any) => o.id === remoteZone.id) as any
                         if (obj) {
-                            // Update group instance directly
+                            // Smoothly update position and scale
                             obj.set({
                                 left: remoteZone.x * SCALE,
                                 top: remoteZone.y * SCALE,
-                                scaleX: (remoteZone.width * SCALE) / (obj.width * (obj.scaleX || 1) / (obj.scaleX || 1)), // preserve original base width logic if needed
-                                scaleY: (remoteZone.height * SCALE) / (obj.height * (obj.scaleY || 1) / (obj.scaleY || 1)),
+                                scaleX: (remoteZone.width * SCALE) / obj.width,
+                                scaleY: (remoteZone.height * SCALE) / obj.height,
                             })
-
-                            // For Groups, we just set the scale relative to their current size
-                            // If it's a Group containing a Rect(width) and Text, the Group's width is the Rect's width
-                            const baseWidth = obj.width || 100
-                            const baseHeight = obj.height || 100
-
-                            obj.set({
-                                scaleX: (remoteZone.width * SCALE) / baseWidth,
-                                scaleY: (remoteZone.height * SCALE) / baseHeight
-                            })
-
                             obj.setCoords()
                         } else {
                             addZoneToCanvas(canvas, remoteZone)
                         }
                     })
 
+                    // Remove objects that were deleted remotely
                     const remoteIds = new Set(data.zones.map((z: any) => z.id))
                     canvas.getObjects().forEach((o: any) => {
-                        if (o.id && !remoteIds.has(o.id)) {
+                        if (o.id && !remoteIds.has(o.id) && o.id !== activeObjId) {
                             canvas.remove(o)
                         }
                     })
@@ -299,9 +321,25 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
 
 
     const handleRealtimeUpdate = (obj: any) => {
-        if (!obj || !canvasRef.current) return
+        if (!obj || !canvasRef.current || !obj.id) return
         constrainObject(obj)
         canvasRef.current.requestRenderAll()
+
+        const now = Date.now()
+        if (now - lastBroadcastRef.current > THROTTLE_MS) {
+            lastBroadcastRef.current = now
+            const updatedZones = zonesRef.current.map(z => {
+                if (z.id !== obj.id) return z
+                return {
+                    ...z,
+                    x: Math.round(obj.left / SCALE),
+                    y: Math.round(obj.top / SCALE),
+                    width: Math.round(obj.getScaledWidth() / SCALE),
+                    height: Math.round(obj.getScaledHeight() / SCALE),
+                }
+            })
+            broadcastUpdate({ zones: updatedZones })
+        }
     }
 
     const syncToState = (obj: any) => {
@@ -330,26 +368,27 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
         // 2. Then constrain strictly (boundaries)
         constrainObject(obj)
 
-        // 3. Last valid position tracking (optional now, but good for other bounds)
+        // 3. Last valid position tracking
         obj._lastValidLeft = obj.left
         obj._lastValidTop = obj.top
 
         if (canvasRef.current) canvasRef.current.requestRenderAll()
-        syncToState(obj)
 
-        // Broadcast collab update
-        const id = obj.id
-        const newZones = zones.map(z => {
-            if (z.id !== id) return z
-            return {
-                ...z,
-                x: Math.round(obj.left / SCALE),
-                y: Math.round(obj.top / SCALE),
-                width: Math.round(obj.getScaledWidth() / SCALE),
-                height: Math.round(obj.getScaledHeight() / SCALE),
-            }
+        // Update state and broadcast final position
+        setZones(currentZones => {
+            const nextZones = currentZones.map(z => {
+                if (z.id !== obj.id) return z
+                return {
+                    ...z,
+                    x: Math.round(obj.left / SCALE),
+                    y: Math.round(obj.top / SCALE),
+                    width: Math.round(obj.getScaledWidth() / SCALE),
+                    height: Math.round(obj.getScaledHeight() / SCALE),
+                }
+            })
+            broadcastUpdate({ zones: nextZones })
+            return nextZones
         })
-        broadcastUpdate({ zones: newZones })
     }
 
     // ================= ACTIONS =================
