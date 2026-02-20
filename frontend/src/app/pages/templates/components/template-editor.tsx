@@ -69,6 +69,7 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
 
     const zonesRef = useRef<Zone[]>(zones)
     const lastBroadcastRef = useRef<number>(0)
+    const transformingIdRef = useRef<string | null>(null)
     const THROTTLE_MS = 50 // 20fps sync for smooth movement
 
     const queryClient = useQueryClient()
@@ -91,17 +92,17 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
 
             if (data.zones) {
                 // Determine if we should update React state
-                // Only update zones that are NOT currently being interacted with locally
+                // Only update zones that are NOT currently being TRANSFORMED locally
                 const canvas = canvasRef.current
-                const activeObjId = (canvas?.getActiveObject() as any)?.id
+                const activeTransformId = transformingIdRef.current
 
                 setZones(prev => {
                     const nextZones = [...prev]
                     data.zones.forEach((remoteZone: Zone) => {
                         const index = nextZones.findIndex(z => z.id === remoteZone.id)
                         if (index !== -1) {
-                            // Only update state if this isn't the one we are dragging
-                            if (remoteZone.id !== activeObjId) {
+                            // Only update state if this isn't the one we are actively dragging/scaling
+                            if (remoteZone.id !== activeTransformId) {
                                 nextZones[index] = remoteZone
                             }
                         } else {
@@ -111,13 +112,13 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
 
                     // Handle removals
                     const remoteIds = new Set(data.zones.map((z: any) => z.id))
-                    return nextZones.filter(z => remoteIds.has(z.id) || z.id === activeObjId)
+                    return nextZones.filter(z => remoteIds.has(z.id) || z.id === activeTransformId)
                 })
 
                 if (canvas) {
                     data.zones.forEach((remoteZone: Zone) => {
-                        // Skip if this object is currently being dragged locally
-                        if (remoteZone.id === activeObjId) return
+                        // Skip if this object is currently being transformed locally
+                        if (remoteZone.id === activeTransformId) return
 
                         const obj = canvas.getObjects().find((o: any) => o.id === remoteZone.id) as any
                         if (obj) {
@@ -137,7 +138,7 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                     // Remove objects that were deleted remotely
                     const remoteIds = new Set(data.zones.map((z: any) => z.id))
                     canvas.getObjects().forEach((o: any) => {
-                        if (o.id && !remoteIds.has(o.id) && o.id !== activeObjId) {
+                        if (o.id && !remoteIds.has(o.id) && o.id !== activeTransformId) {
                             canvas.remove(o)
                         }
                     })
@@ -322,6 +323,7 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
 
     const handleRealtimeUpdate = (obj: any) => {
         if (!obj || !canvasRef.current || !obj.id) return
+        transformingIdRef.current = obj.id // Track active transform
         constrainObject(obj)
         canvasRef.current.requestRenderAll()
 
@@ -359,6 +361,7 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
 
     const handleObjectModified = (obj: any) => {
         if (!obj) return
+        transformingIdRef.current = null // Clear transform on modified (end of drag/scale)
 
         // 1. Snap to grid
         let left = Math.round(obj.left / GRID_SIZE) * GRID_SIZE
@@ -583,7 +586,10 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                     if (obj.id) setSelectedZoneId(obj.id)
                 }
             })
-            canvas.on('selection:cleared', () => setSelectedZoneId(null))
+            canvas.on('selection:cleared', () => {
+                setSelectedZoneId(null)
+                transformingIdRef.current = null // Also clear if selection is dropped
+            })
 
         } catch (error) {
             console.error('Fabric init error:', error)
