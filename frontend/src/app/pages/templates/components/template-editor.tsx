@@ -170,20 +170,39 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
         const color = getZoneColor(zone.type, '40')
         const borderColor = getZoneColor(zone.type, '80').replace('0.8', '1')
 
+        const width = zone.width * SCALE
+        const height = zone.height * SCALE
+
         const rect = new fabric.Rect({
-            left: zone.x * SCALE,
-            top: zone.y * SCALE,
-            width: zone.width * SCALE,
-            height: zone.height * SCALE,
+            width: width,
+            height: height,
             fill: color,
             stroke: borderColor,
             strokeWidth: 2,
             strokeUniform: true,
-            cornerColor: '#ffffff',
-            cornerStrokeColor: borderColor,
-            cornerSize: 10,
-            cornerStyle: 'circle',
-            transparentCorners: false,
+            originX: 'center',
+            originY: 'center',
+        })
+
+        const labelText = (zone.type || 'mixed').toUpperCase() + ' ZONE'
+        const text = new fabric.Text(labelText, {
+            fontSize: 12,
+            fontFamily: 'Inter, sans-serif',
+            fontWeight: 'bold',
+            fill: 'rgba(255, 255, 255, 0.9)',
+            originX: 'center',
+            originY: 'center',
+            shadow: new fabric.Shadow({
+                color: 'rgba(0,0,0,0.5)',
+                blur: 4,
+                offsetX: 1,
+                offsetY: 1
+            })
+        })
+
+        const group = new fabric.Group([rect, text], {
+            left: zone.x * SCALE,
+            top: zone.y * SCALE,
             originX: 'left',
             originY: 'top',
             // @ts-ignore
@@ -192,22 +211,28 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
             zoneType: zone.type,
             lockRotation: true,
             hasRotatingPoint: false,
+            transparentCorners: false,
+            cornerColor: '#ffffff',
+            cornerStrokeColor: borderColor,
+            cornerSize: 10,
+            cornerStyle: 'circle',
+            borderColor: borderColor,
         })
 
         // Enable all 8 resize handles
-        rect.setControlsVisibility({
+        group.setControlsVisibility({
             mt: true, mb: true, ml: true, mr: true,
             tl: true, tr: true, bl: true, br: true,
             mtr: false
         })
 
-        canvas.add(rect)
+        canvas.add(group)
         // Set initial valid position
         // @ts-ignore
-        rect._lastValidLeft = rect.left
+        group._lastValidLeft = group.left
         // @ts-ignore
-        rect._lastValidTop = rect.top
-        return rect
+        group._lastValidTop = group.top
+        return group
     }
 
     const constrainObject = (obj: any) => {
@@ -704,14 +729,25 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                                     key={zone.id}
                                     className={`group flex items-center justify-between rounded-md px-2 py-1.5 text-sm transition-colors cursor-pointer ${selectedZoneId === zone.id ? 'bg-primary text-primary-foreground' : 'hover:bg-muted font-medium'}`}
                                     onClick={() => {
-                                        const obj = canvasRef.current?.getObjects().find((o: any) => o.id === zone.id)
-                                        if (obj && canvasRef.current) {
-                                            canvasRef.current.setActiveObject(obj)
-                                            canvasRef.current.renderAll()
+                                        const canvas = canvasRef.current
+                                        if (!canvas) return
+                                        const obj = canvas.getObjects().find((o: any) => o.id === zone.id)
+                                        if (obj) {
+                                            canvas.setActiveObject(obj)
+                                            obj.bringToFront()
+                                            obj.setCoords()
+                                            canvas.requestRenderAll()
+                                            setSelectedZoneId(zone.id)
                                         }
                                     }}
                                 >
-                                    <span className='truncate flex-1'>{zone.name || zone.type}</span>
+                                    <div className='flex items-center gap-2 truncate flex-1'>
+                                        <div
+                                            className="w-2.5 h-2.5 rounded-full border border-black/10 shadow-sm"
+                                            style={{ backgroundColor: getZoneColor(zone.type, '80').replace('0.8', '1') }}
+                                        />
+                                        <span className='truncate font-bold'>{zone.name || (zone.type.charAt(0).toUpperCase() + zone.type.slice(1) + ' Zone')}</span>
+                                    </div>
                                 </div>
                             ))}
                         </div>
