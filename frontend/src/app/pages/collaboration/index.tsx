@@ -122,7 +122,7 @@ export default function Collaboration() {
         if (!obj) return ''
         if (typeof obj === 'string') return obj.trim().toLowerCase()
         // Check standard valid ID fields
-        const id = obj._id || obj.id || obj.userId || obj.friendId
+        const id = obj._id || obj.id || obj.userId || obj.friendId || (obj.sender && obj.sender._id) || (obj.recipient && obj.recipient._id)
         if (id) return id.toString().trim().toLowerCase()
         return ''
     }
@@ -815,7 +815,7 @@ export default function Collaboration() {
                                                 Incoming ({incomingRequestsNum})
                                             </TabsTrigger>
                                             <TabsTrigger value="outgoing-tm" className="rounded-lg px-6">
-                                                Outgoing {(outgoingTemplatesData as any)?.results?.length || 0}
+                                                Outgoing ({(outgoingTemplatesData as any)?.results?.filter((r: any) => r.status === 'pending').length || 0})
                                             </TabsTrigger>
                                         </TabsList>
 
@@ -824,11 +824,13 @@ export default function Collaboration() {
                                                 <div className="flex h-40 items-center justify-center">
                                                     <Loader />
                                                 </div>
-                                            ) : (incomingTemplatesData as any)?.results?.length > 0 ? (
+                                            ) : incomingRequestsNum > 0 ? (
                                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                                    {(incomingTemplatesData as any).results.map((request: any) =>
-                                                        renderTemplateInviteCard(request, true)
-                                                    )}
+                                                    {(incomingTemplatesData as any).results
+                                                        .filter((r: any) => r.status === 'pending')
+                                                        .map((request: any) =>
+                                                            renderTemplateInviteCard(request, true)
+                                                        )}
                                                 </div>
                                             ) : (
                                                 <div className="flex flex-col items-center justify-center py-20 px-4 rounded-2xl border border-dashed border-primary/20 bg-primary/5 text-center">
@@ -848,11 +850,13 @@ export default function Collaboration() {
                                                 <div className="flex h-40 items-center justify-center">
                                                     <Loader />
                                                 </div>
-                                            ) : (outgoingTemplatesData as any)?.results?.length > 0 ? (
+                                            ) : (outgoingTemplatesData as any)?.results?.filter((r: any) => r.status === 'pending').length > 0 ? (
                                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                                    {(outgoingTemplatesData as any).results.map((request: any) =>
-                                                        renderTemplateInviteCard(request, false)
-                                                    )}
+                                                    {(outgoingTemplatesData as any).results
+                                                        .filter((r: any) => r.status === 'pending')
+                                                        .map((request: any) =>
+                                                            renderTemplateInviteCard(request, false)
+                                                        )}
                                                 </div>
                                             ) : (
                                                 <div className="flex flex-col items-center justify-center py-20 px-4 rounded-2xl border border-dashed border-primary/20 bg-primary/5 text-center">

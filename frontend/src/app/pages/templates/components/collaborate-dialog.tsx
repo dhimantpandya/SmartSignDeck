@@ -98,7 +98,7 @@ export const CollaborateDialog: FC<CollaborateDialogProps> = ({
     const extractId = (obj: any): string => {
         if (!obj) return ''
         if (typeof obj === 'string') return obj.trim().toLowerCase()
-        const id = obj._id || obj.id || obj.userId || obj.friendId
+        const id = obj._id || obj.id || obj.userId || obj.friendId || (obj.sender && obj.sender._id) || (obj.recipient && obj.recipient._id)
         if (id) return id.toString().trim().toLowerCase()
         return ''
     }
