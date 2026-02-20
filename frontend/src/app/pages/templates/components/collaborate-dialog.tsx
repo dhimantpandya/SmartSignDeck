@@ -71,7 +71,7 @@ export const CollaborateDialog: FC<CollaborateDialogProps> = ({
         enabled: isOpen && mode === 'company' && !!currentUser?.companyId,
     })
 
-    const { data: pendingRequests } = useQuery({
+    const { data: pendingRequests, isLoading: isLoadingPending } = useQuery({
         queryKey: ['collaboration-requests', 'outgoing', templateId, currentUser?.id],
         queryFn: () => collaborationService.getRequests({ type: 'outgoing', status: 'pending', templateId }),
         enabled: isOpen && !!currentUser?.id,
@@ -107,8 +107,16 @@ export const CollaborateDialog: FC<CollaborateDialogProps> = ({
         if (!targetId || !pendingRequests?.results) return false;
         const tid = targetId.toString().trim().toLowerCase();
         return pendingRequests.results.some((r: any) => {
-            const recipientId = extractId(r.recipient)
-            return recipientId === tid;
+            if (!r || !r.recipient) return false;
+            let recipientId = ''
+            if (typeof r.recipient === 'string') {
+                recipientId = r.recipient
+            } else if (r.recipient?._id) {
+                recipientId = r.recipient._id.toString()
+            } else if (r.recipient?.id) {
+                recipientId = r.recipient.id.toString()
+            }
+            return recipientId.trim().toLowerCase() === tid;
         });
     }
 

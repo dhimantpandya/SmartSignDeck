@@ -66,14 +66,14 @@ export default function Collaboration() {
     const queryClient = useQueryClient()
 
     const { data: incomingTemplatesData, isLoading: isLoadingIncomingTemplates } = useQuery({
-        queryKey: ['collaboration-requests', 'incoming', user?.id],
-        queryFn: () => collaborationService.getRequests({ type: 'incoming' }),
+        queryKey: ['collaboration-requests', 'incoming', user?.id, 'pending'],
+        queryFn: () => collaborationService.getRequests({ type: 'incoming', status: 'pending' }),
         enabled: !!user?.id,
     })
 
     const { data: outgoingTemplatesData, isLoading: isLoadingOutgoingTemplates } = useQuery({
-        queryKey: ['collaboration-requests', 'outgoing', user?.id],
-        queryFn: () => collaborationService.getRequests({ type: 'outgoing' }),
+        queryKey: ['collaboration-requests', 'outgoing', user?.id, 'pending'],
+        queryFn: () => collaborationService.getRequests({ type: 'outgoing', status: 'pending' }),
         enabled: !!user?.id,
     })
 
