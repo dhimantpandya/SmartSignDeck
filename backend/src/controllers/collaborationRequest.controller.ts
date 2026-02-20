@@ -17,17 +17,17 @@ const getRequests = catchAsync(async (req, res) => {
     const filter: any = {};
     const userId = (req as any).user?._id || (req as any).user?.id;
     if (!userId) {
-        throw new ApiError(httpStatus.UNAUTHORIZED, "User not found in request");
+        throw new ApiError(httpStatus.UNAUTHORIZED, "Please authenticate");
     }
+
+    const userObjId = mongoose.Types.ObjectId.isValid(userId.toString())
+        ? new mongoose.Types.ObjectId(userId.toString())
+        : userId;
 
     if (status) filter.status = status;
-    if (templateId && mongoose.Types.ObjectId.isValid(templateId)) {
-        filter.templateId = new mongoose.Types.ObjectId(templateId);
+    if (templateId && mongoose.Types.ObjectId.isValid(templateId.toString())) {
+        filter.templateId = new mongoose.Types.ObjectId(templateId.toString());
     }
-
-    const userObjId = mongoose.Types.ObjectId.isValid(userId)
-        ? new mongoose.Types.ObjectId(userId)
-        : userId;
 
     if (type === "incoming") {
         filter.recipient = userObjId;
@@ -39,7 +39,11 @@ const getRequests = catchAsync(async (req, res) => {
     }
 
     const options = pick(req.query, ["sortBy", "limit", "page"]);
-    options.populate = "sender,recipient,templateId";
+    options.populate = [
+        { path: 'sender', select: 'id _id first_name last_name avatar email' },
+        { path: 'recipient', select: 'id _id first_name last_name avatar email' },
+        { path: 'templateId', select: 'id _id name' }
+    ];
     const result = await collaborationRequestService.queryRequests(filter, options);
     res.send(result);
 });

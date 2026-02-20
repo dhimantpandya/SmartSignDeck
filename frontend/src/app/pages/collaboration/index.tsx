@@ -116,13 +116,16 @@ export default function Collaboration() {
         },
     })
 
-    const incomingRequestsNum = (incomingTemplatesData as any)?.results?.filter((r: any) => r.status === 'pending').length || 0
+    const incomingRequestsNum = (incomingTemplatesData as any)?.results?.filter((r: any) => {
+        if (!r) return false;
+        return r.status === 'pending' || r.status === 'pending'; // redundant but safe
+    }).length || 0
 
     const extractId = (obj: any): string => {
         if (!obj) return ''
         if (typeof obj === 'string') return obj.trim().toLowerCase()
-        // Check standard valid ID fields
-        const id = obj._id || obj.id || obj.userId || obj.friendId || (obj.sender && obj.sender._id) || (obj.recipient && obj.recipient._id)
+        // Check standard valid ID fields from populated OR raw objects
+        const id = obj._id || obj.id || obj.userId || obj.friendId || (obj.sender && (obj.sender._id || obj.sender.id)) || (obj.recipient && (obj.recipient._id || obj.recipient.id))
         if (id) return id.toString().trim().toLowerCase()
         return ''
     }

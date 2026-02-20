@@ -83,7 +83,10 @@ export const CollaborateDialog: FC<CollaborateDialogProps> = ({
             collaborationService.sendRequest(recipientId, templateId),
         onSuccess: () => {
             toast({ title: 'Collaboration request sent' })
+            // Invalidate all collaboration and notification related queries
             queryClient.invalidateQueries({ queryKey: ['collaboration-requests'] })
+            queryClient.invalidateQueries({ queryKey: ['notifications'] })
+            queryClient.refetchQueries({ queryKey: ['collaboration-requests'] })
         },
         onError: (err: any) => {
             toast({
@@ -108,20 +111,21 @@ export const CollaborateDialog: FC<CollaborateDialogProps> = ({
         const tid = targetId.toString().trim().toLowerCase();
 
         const pending = pendingRequests.results.some((r: any) => {
-            if (!r || !r.recipient) return false;
+            if (!r) return false;
 
-            // Robust unwrapping for recipient ID
-            let recipientId = ''
-            if (typeof r.recipient === 'string') {
-                recipientId = r.recipient
-            } else if (r.recipient?._id) {
-                recipientId = r.recipient._id.toString()
-            } else if (r.recipient?.id) {
-                recipientId = r.recipient.id.toString()
+            // Extract recipient ID from various possible structures
+            const recipientData = r.recipient;
+            let rid = '';
+            if (!recipientData) return false;
+
+            if (typeof recipientData === 'string') {
+                rid = recipientData;
+            } else {
+                rid = recipientData._id || recipientData.id || '';
             }
 
-            const match = recipientId.trim().toLowerCase() === tid;
-            if (match) console.log(`[CollabDebug] Found Pending match for ${tid}`);
+            const match = rid.toString().trim().toLowerCase() === tid;
+            if (match) console.log(`[CollabDebug] Match found! Target: ${tid}, Request recipient: ${rid}`);
             return match;
         });
 
