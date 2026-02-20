@@ -34,7 +34,7 @@ export default function Templates() {
     const [showEditor, setShowEditor] = useState(false)
     const [editingTemplate, setEditingTemplate] = useState<any>(null)
     const [previewTemplate, setPreviewTemplate] = useState<any>(null)
-    const [activeTab, setActiveTab] = useState<'my-templates' | 'global' | 'groups'>('my-templates')
+    const [activeTab, setActiveTab] = useState<'my-templates' | 'shared' | 'global' | 'groups'>('my-templates')
     const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
     const [confirmDeleteGroup, setConfirmDeleteGroup] = useState<string | null>(null)
     const [isCreateGroupOpen, setIsCreateGroupOpen] = useState(false)
@@ -102,9 +102,23 @@ export default function Templates() {
     })
 
     // Query for templates shared with the user (where user is a collaborator)
-    const { data: sharedTemplatesData, isLoading: isLoadingShared } = useQuery({
-        queryKey: ['templates', 'shared', user?.id],
+    const { data: sharedWithMeData, isLoading: isLoadingSharedWithMe } = useQuery({
+        queryKey: ['templates', 'shared-with-me', user?.id],
         queryFn: () => templateService.getTemplates({ collaborators: user?.id, sortBy: 'created_at:desc' }),
+        enabled: !!user?.id,
+    })
+
+    // Query for templates shared BY the user (owned by user and have collaborators)
+    const { data: sharedByMeData, isLoading: isLoadingSharedByMe } = useQuery({
+        queryKey: ['templates', 'shared-by-me', user?.id],
+        queryFn: async () => {
+            const result = await templateService.getTemplates({ createdBy: user?.id, sortBy: 'created_at:desc' })
+            // Filter only those that have at least one collaborator
+            if (result.results) {
+                result.results = result.results.filter((t: any) => t.collaborators && t.collaborators.length > 0)
+            }
+            return result
+        },
         enabled: !!user?.id,
     })
 
@@ -479,15 +493,15 @@ export default function Templates() {
                             </TabsTrigger>
                             <TabsTrigger value="shared" className="gap-2">
                                 <Users size={16} />
-                                Shared with Me ({sharedTemplatesData?.results?.length || 0})
+                                Shared ({(sharedWithMeData?.results?.length || 0) + (sharedByMeData?.results?.length || 0)})
                             </TabsTrigger>
                             <TabsTrigger value="groups" className="gap-2">
                                 <Folder size={16} />
-                                Template Groups ({groupsData?.results?.length || 0})
+                                Groups ({groupsData?.results?.length || 0})
                             </TabsTrigger>
                             <TabsTrigger value="global" className="gap-2">
                                 <Globe size={16} />
-                                Global Library ({globalTemplates.length})
+                                Global ({globalTemplates.length})
                             </TabsTrigger>
                         </TabsList>
 
@@ -527,25 +541,60 @@ export default function Templates() {
                         </TabsContent>
 
                         <TabsContent value="shared" className="mt-6">
-                            {isLoadingShared ? (
-                                <div className="flex h-64 items-center justify-center">
-                                    <Loader />
-                                </div>
-                            ) : (sharedTemplatesData?.results?.length || 0) > 0 ? (
-                                <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
-                                    {sharedTemplatesData?.results.map((template: any) =>
-                                        renderTemplateCard(template, checkIsOwner(template), false)
+                            <Tabs defaultValue="received" className="w-full">
+                                <TabsList className="bg-muted/50 p-1 rounded-xl mb-6">
+                                    <TabsTrigger value="received" className="rounded-lg px-6">
+                                        Received ({sharedWithMeData?.results?.length || 0})
+                                    </TabsTrigger>
+                                    <TabsTrigger value="sent" className="rounded-lg px-6">
+                                        Sent ({sharedByMeData?.results?.length || 0})
+                                    </TabsTrigger>
+                                </TabsList>
+
+                                <TabsContent value="received">
+                                    {isLoadingSharedWithMe ? (
+                                        <div className="flex h-64 items-center justify-center">
+                                            <Loader />
+                                        </div>
+                                    ) : (sharedWithMeData?.results?.length || 0) > 0 ? (
+                                        <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
+                                            {sharedWithMeData?.results.map((template: any) =>
+                                                renderTemplateCard(template, checkIsOwner(template), false)
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <div className='flex flex-col items-center justify-center rounded-lg border border-dashed p-20 text-center'>
+                                            <Users size={48} className='mb-4 text-muted-foreground' />
+                                            <h2 className='text-xl font-semibold'>No received templates</h2>
+                                            <p className='text-muted-foreground text-sm max-w-xs'>
+                                                Templates shared with you by others will appear here.
+                                            </p>
+                                        </div>
                                     )}
-                                </div>
-                            ) : (
-                                <div className='flex flex-col items-center justify-center rounded-lg border border-dashed p-20 text-center'>
-                                    <Users size={48} className='mb-4 text-muted-foreground' />
-                                    <h2 className='text-xl font-semibold'>No shared templates</h2>
-                                    <p className='text-muted-foreground text-sm max-w-xs'>
-                                        Templates shared with you by others will appear here.
-                                    </p>
-                                </div>
-                            )}
+                                </TabsContent>
+
+                                <TabsContent value="sent">
+                                    {isLoadingSharedByMe ? (
+                                        <div className="flex h-64 items-center justify-center">
+                                            <Loader />
+                                        </div>
+                                    ) : (sharedByMeData?.results?.length || 0) > 0 ? (
+                                        <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
+                                            {sharedByMeData?.results.map((template: any) =>
+                                                renderTemplateCard(template, true, false)
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <div className='flex flex-col items-center justify-center rounded-lg border border-dashed p-20 text-center'>
+                                            <Users size={48} className='mb-4 text-muted-foreground' />
+                                            <h2 className='text-xl font-semibold'>No sent shares</h2>
+                                            <p className='text-muted-foreground text-sm max-w-xs'>
+                                                Templates you have shared with others will appear here.
+                                            </p>
+                                        </div>
+                                    )}
+                                </TabsContent>
+                            </Tabs>
                         </TabsContent>
 
                         <TabsContent value="groups" className="mt-6">

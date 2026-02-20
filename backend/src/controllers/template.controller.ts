@@ -19,7 +19,7 @@ const createTemplate = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getTemplates = catchAsync(async (req: Request, res: Response) => {
-    const filter: any = pick(req.query, ["name", "createdBy", "isPublic", "trashed"]);
+    const filter: any = pick(req.query, ["name", "createdBy", "isPublic", "trashed", "collaborators"]);
 
     // Handle boolean strings
     if (filter.isPublic === 'true') filter.isPublic = true;

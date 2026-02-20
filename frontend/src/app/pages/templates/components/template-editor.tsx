@@ -83,26 +83,36 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
 
             if (data.zones) {
                 setZones(data.zones)
-                // Update fabric canvas objects
                 if (canvasRef.current) {
                     const canvas = canvasRef.current
                     data.zones.forEach((remoteZone: Zone) => {
-                        const obj = canvas.getObjects().find((o: any) => o.id === remoteZone.id) as fabric.Rect
+                        // Find the object (now a Group) by its custom id
+                        const obj = canvas.getObjects().find((o: any) => o.id === remoteZone.id) as any
                         if (obj) {
+                            // Update group instance directly
                             obj.set({
                                 left: remoteZone.x * SCALE,
                                 top: remoteZone.y * SCALE,
-                                scaleX: (remoteZone.width * SCALE) / obj.width!,
-                                scaleY: (remoteZone.height * SCALE) / obj.height!,
+                                scaleX: (remoteZone.width * SCALE) / (obj.width * (obj.scaleX || 1) / (obj.scaleX || 1)), // preserve original base width logic if needed
+                                scaleY: (remoteZone.height * SCALE) / (obj.height * (obj.scaleY || 1) / (obj.scaleY || 1)),
                             })
+
+                            // For Groups, we just set the scale relative to their current size
+                            // If it's a Group containing a Rect(width) and Text, the Group's width is the Rect's width
+                            const baseWidth = obj.width || 100
+                            const baseHeight = obj.height || 100
+
+                            obj.set({
+                                scaleX: (remoteZone.width * SCALE) / baseWidth,
+                                scaleY: (remoteZone.height * SCALE) / baseHeight
+                            })
+
                             obj.setCoords()
                         } else {
-                            // Add missing zone
                             addZoneToCanvas(canvas, remoteZone)
                         }
                     })
 
-                    // Remove deleted zones
                     const remoteIds = new Set(data.zones.map((z: any) => z.id))
                     canvas.getObjects().forEach((o: any) => {
                         if (o.id && !remoteIds.has(o.id)) {
