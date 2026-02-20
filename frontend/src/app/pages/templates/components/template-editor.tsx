@@ -10,7 +10,9 @@ import {
     IconLetterT,
     IconDeviceTv,
     IconTrash,
-    IconDeviceFloppy
+    IconDeviceFloppy,
+    IconMenu2,
+    IconX
 } from '@tabler/icons-react'
 import { toast } from '@/components/ui/use-toast'
 import { templateService } from '@/api/template.service'
@@ -66,6 +68,7 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
     const [resolution, setResolution] = useState(initialData?.resolution || '1920x1080')
     const [isPreviewOpen, setIsPreviewOpen] = useState(false)
     const [isCollaborateOpen, setIsCollaborateOpen] = useState(false)
+    const [showSidebar, setShowSidebar] = useState(false) // For mobile
 
     const zonesRef = useRef<Zone[]>(zones)
     const lastBroadcastRef = useRef<number>(0)
@@ -707,8 +710,18 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
     const resetZoom = () => setZoomLevel(1)
 
     return (
-        <div className='flex h-[calc(100vh-40px)] gap-6 overflow-hidden'>
-            <Card className='flex w-72 flex-col p-4 shadow-lg h-full overflow-hidden flex-shrink-0'>
+        <div className='flex flex-col lg:flex-row h-[calc(100vh-40px)] gap-4 lg:gap-6 overflow-hidden relative'>
+            <Card className={cn(
+                'flex w-full lg:w-72 flex-col p-4 shadow-lg h-full overflow-hidden flex-shrink-0 transition-all duration-300 z-50',
+                'absolute inset-y-0 left-0 lg:relative lg:translate-x-0 bg-background',
+                !showSidebar && '-translate-x-full lg:translate-x-0'
+            )}>
+                <div className="flex items-center justify-between lg:hidden mb-4 border-b pb-2">
+                    <h2 className="font-bold">Editor Controls</h2>
+                    <Button variant="ghost" size="icon" onClick={() => setShowSidebar(false)}>
+                        <IconX size={20} />
+                    </Button>
+                </div>
                 {/* ... Sidebar content remains ... */}
                 <div className='flex flex-1 flex-col overflow-y-auto pr-2 custom-scrollbar'>
                     <h3 className='mb-4 text-xs font-bold uppercase tracking-widest text-muted-foreground'>Resolution Preset</h3>
@@ -882,9 +895,16 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
 
             <div className='relative flex-1 flex flex-col overflow-hidden rounded-lg bg-muted/20 p-2 lg:p-4'>
                 <div className='mb-2 flex flex-col gap-2 bg-background/50 p-3 rounded-xl border border-primary/10 shadow-sm'>
-                    {/* Top Row: Title ONLY */}
-                    <div className='flex items-center gap-4 w-full'>
-                        <div className="bg-primary/10 p-2 rounded-lg shrink-0">
+                    <div className='flex items-center gap-2 lg:gap-4 w-full'>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="lg:hidden shrink-0"
+                            onClick={() => setShowSidebar(true)}
+                        >
+                            <IconMenu2 size={24} />
+                        </Button>
+                        <div className="bg-primary/10 p-2 rounded-lg shrink-0 hidden sm:block">
                             <IconDeviceTv className="text-primary" size={20} />
                         </div>
                         <Input
@@ -919,17 +939,17 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                         </div>
 
                         {/* Right Group: Zoom, Collaborate & Preview */}
-                        <div className="flex items-center gap-4">
+                        <div className="flex flex-wrap items-center gap-2 lg:gap-4">
                             {/* ZOOM CONTROLS */}
-                            <div className="flex items-center gap-1 bg-background border rounded-md">
-                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleZoom(-0.1)}>
+                            <div className="flex items-center gap-1 bg-background border rounded-md shrink-0">
+                                <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8" onClick={() => handleZoom(-0.1)}>
                                     -
                                 </Button>
-                                <span className="text-xs w-12 text-center font-mono">{(zoomLevel * 100).toFixed(0)}%</span>
-                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleZoom(0.1)}>
+                                <span className="text-[10px] sm:text-xs w-8 sm:w-12 text-center font-mono">{(zoomLevel * 100).toFixed(0)}%</span>
+                                <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8" onClick={() => handleZoom(0.1)}>
                                     +
                                 </Button>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 text-xs" onClick={resetZoom} title="Reset Zoom">
+                                <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8 text-[10px] sm:text-xs" onClick={resetZoom} title="Reset Zoom">
                                     ↺
                                 </Button>
                             </div>

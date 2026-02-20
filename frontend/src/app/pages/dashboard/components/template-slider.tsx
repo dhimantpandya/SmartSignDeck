@@ -15,6 +15,7 @@ const VITE_API_URL = import.meta.env.VITE_API_URL || '';
 const getFullUrl = (url: string | null | undefined) => {
     if (!url) return '';
     if (url.startsWith('http') || url.startsWith('data:')) return url;
+    // Handle relative paths from backend
     const base = VITE_API_URL.replace(/\/v1\/?$/, '');
     return `${base}${url.startsWith('/') ? '' : '/'}${url}`;
 };
@@ -25,22 +26,28 @@ interface TemplateSliderProps {
     isNewUser: boolean
 }
 
-const CARD_WIDTH = 340; // Reduced from 400
-const GAP = 24; // Reduced from 32
-const STEP = CARD_WIDTH + GAP;
-
 // --- ROBUST PREVIEW COMPONENT ---
 const SmartPreview = ({ url, type, name }: { url: string; type?: 'image' | 'video'; name: string }) => {
     const [hasError, setHasError] = useState(false);
 
     // If explicitly video or looks like video, render video
-    if (type === 'video' || (url && url.match(/\.(mp4|webm|mov)(\?.*)?$/i))) {
+    const isVideo = type === 'video' || (url && url.match(/\.(mp4|webm|mov|ogg|m4v)(\?.*)?$/i));
+
+    if (isVideo && url) {
         return (
             <video
+                key={url} // Force re-mount if URL changes
                 src={getFullUrl(url)}
                 className="absolute inset-0 w-full h-full object-cover"
-                autoPlay muted loop playsInline
-                onError={() => setHasError(true)}
+                autoPlay
+                muted
+                loop
+                playsInline
+                preload="auto"
+                onError={() => {
+                    console.error("Video preview failed to load:", url);
+                    setHasError(true);
+                }}
             />
         );
     }
@@ -72,6 +79,22 @@ export const TemplateSlider = ({ templates, isLoading }: TemplateSliderProps) =>
     const navigate = useNavigate()
     const queryClient = useQueryClient()
     const [isPaused, setIsPaused] = useState(false)
+
+    // --- RESPONSIVE DIMENSIONS ---
+    const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
+
+    useEffect(() => {
+        const handleResize = () => setWindowWidth(window.innerWidth);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    const isMobile = windowWidth < 640;
+    const isTablet = windowWidth >= 640 && windowWidth < 1024;
+
+    const CARD_WIDTH = isMobile ? 280 : (isTablet ? 300 : 340);
+    const GAP = isMobile ? 16 : 24;
+    const STEP = CARD_WIDTH + GAP;
 
     const bootstrapMutation = useMutation({
         mutationFn: (name: string) => templateService.bootstrapFromInspiration(name),
@@ -283,7 +306,10 @@ export const TemplateSlider = ({ templates, isLoading }: TemplateSliderProps) =>
             </div>
 
             <div
-                className="relative w-full group/main flex items-center justify-center select-none bg-transparent h-[380px]"
+                className={cn(
+                    "relative w-full group/main flex items-center justify-center select-none bg-transparent transition-all duration-300",
+                    isMobile ? "h-[300px]" : "h-[380px]"
+                )}
                 onMouseEnter={() => setIsPaused(true)}
                 onMouseLeave={() => { setIsPaused(false); setIsHoveringCenter(false); }}
             >
@@ -375,9 +401,11 @@ export const TemplateSlider = ({ templates, isLoading }: TemplateSliderProps) =>
                                     key={`${id}-${idx}`}
                                     className={cn(
                                         "flex-shrink-0 transition-all duration-700 cursor-pointer overflow-hidden border-none relative group/card rounded-[1.5rem] bg-muted shadow-lg",
-                                        isFocused ? "z-30 shadow-[0_30px_60px_-12px_rgba(0,0,0,0.4)] scale-[1.25]" : "z-10 scale-100"
+                                        isFocused
+                                            ? cn("z-30 shadow-[0_30px_60px_-12px_rgba(0,0,0,0.4)]", isMobile ? "scale-[1.15]" : "scale-[1.25]")
+                                            : "z-10 scale-100"
                                     )}
-                                    style={{ width: `${CARD_WIDTH}px`, height: `240px` }}
+                                    style={{ width: `${CARD_WIDTH}px`, height: isMobile ? '180px' : '240px' }}
                                     onMouseEnter={() => isFocused && setIsHoveringCenter(true)}
                                     onMouseLeave={() => isFocused && setIsHoveringCenter(false)}
                                     onClick={() => {

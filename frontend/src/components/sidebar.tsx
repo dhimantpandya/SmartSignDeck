@@ -144,12 +144,13 @@ export default function Sidebar({
                 strokeLinejoin='round'
                 strokeWidth='16'
               ></line>
-              <span className='sr-only'>My Website</span>
+              <span className='sr-only'>SmartSignDeck</span>
             </svg>
             <div
-              className={`flex flex-col justify-end truncate ${isCollapsed ? 'invisible w-0' : 'visible w-auto'}`}
+              className={`flex flex-col justify-end truncate transition-all ${isCollapsed ? 'invisible w-0' : 'visible w-auto ml-2'}`}
             >
-              <span className='font-medium'> {formatRole(user?.role)}</span>
+              <span className='font-bold text-sm tracking-tight'> {formatRole(user?.role)}</span>
+              <span className='text-[10px] opacity-50 font-medium uppercase'>SmartSignDeck</span>
             </div>
           </div>
 
@@ -191,7 +192,7 @@ export default function Sidebar({
             className={`h-5 w-5 ${isCollapsed ? 'rotate-180' : ''}`}
           />
         </Button>
-      </Layout>
-    </aside>
+      </Layout >
+    </aside >
   )
 }

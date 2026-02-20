@@ -168,15 +168,15 @@ export default function Dashboard() {
         <div ref={dashboardRef} className='p-1'>
           {/* <BreadcrumbNavigation items={breadcrumbItems} /> */}
 
-          <div className='mb-8 flex items-center justify-between space-y-2'>
-            <div>
-              <h1 className='text-3xl font-bold tracking-tight text-primary'>{greeting.title}</h1>
-              <p className='text-muted-foreground text-lg'>
+          <div className='mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4'>
+            <div className="space-y-1">
+              <h1 className='text-2xl sm:text-3xl font-bold tracking-tight text-primary leading-tight'>{greeting.title}</h1>
+              <p className='text-muted-foreground text-sm sm:text-lg max-w-[90%]'>
                 {greeting.subtitle}
               </p>
             </div>
-            <div className='flex items-center space-x-2'>
-              <Button onClick={handleDownload} variant="outline" className="border-primary/20 hover:bg-primary/5">Download Reports</Button>
+            <div className='flex items-center space-x-2 w-full sm:w-auto'>
+              <Button onClick={handleDownload} variant="outline" className="w-full sm:w-auto border-primary/20 hover:bg-primary/5 text-xs sm:text-sm h-9 sm:h-10">Download Reports</Button>
             </div>
           </div>
 
