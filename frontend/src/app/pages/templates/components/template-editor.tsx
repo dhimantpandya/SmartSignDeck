@@ -734,6 +734,7 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                                         const obj = canvas.getObjects().find((o: any) => o.id === zone.id)
                                         if (obj) {
                                             canvas.setActiveObject(obj)
+                                            // @ts-ignore
                                             obj.bringToFront()
                                             obj.setCoords()
                                             canvas.requestRenderAll()
