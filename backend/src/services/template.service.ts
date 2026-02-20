@@ -86,9 +86,13 @@ const queryTemplates = async (filter: any, options: CustomPaginateOptions, user:
     // 🔒 Robust ID Check
     const userIdStr = (user._id || (user as any).id || "").toString();
     const companyIdStr = (user.companyId || "").toString();
+    const userId = mongoose.Types.ObjectId.isValid(userIdStr) ? new mongoose.Types.ObjectId(userIdStr) : null;
+
     const requestedCreatedBy = (filter.createdBy || "").toString();
+    const requestedCollaborators = (filter.collaborators || "").toString();
 
     const isQueryingOwn = requestedCreatedBy && userIdStr && requestedCreatedBy === userIdStr;
+    const isQueryingShared = requestedCollaborators && userIdStr && requestedCollaborators === userIdStr;
     const isRecycleBinQuery = finalFilter.deletedAt !== null;
     const isQueryingPublic = finalFilter.isPublic === true;
     const isQueryingByCreator = !!finalFilter.createdBy;
@@ -97,42 +101,41 @@ const queryTemplates = async (filter: any, options: CustomPaginateOptions, user:
       // 🗑️ Recycle Bin Isolation: Strictly same company ONLY
       if (companyIdStr && mongoose.Types.ObjectId.isValid(companyIdStr)) {
         finalFilter.companyId = new mongoose.Types.ObjectId(companyIdStr);
-      } else {
-        finalFilter.createdBy = new mongoose.Types.ObjectId(userIdStr);
+      } else if (userId) {
+        finalFilter.createdBy = userId;
       }
     } else if (isQueryingPublic && isQueryingByCreator) {
       // 🌍 Global Profile View: Allow bypass if specifically looking for PUBLIC items by a CREATOR
-      // This enables the "Users -> Profile" modal to work across companies.
-      // We don't add companyId to the filter here.
+    } else if (isQueryingShared && userId) {
+      // 🤝 Explicit Shared Query: Just stick to the collaborators filter
+      finalFilter.collaborators = userId;
     } else {
       // 🔒 Account Isolation: Strictly same company ONLY (whether public or private)
       // EXCEPT when the user is a collaborator (Cross-company collaboration)
-      const userId = new mongoose.Types.ObjectId(userIdStr);
-
       const securityConditions: any[] = [];
 
       if (companyIdStr && mongoose.Types.ObjectId.isValid(companyIdStr)) {
         securityConditions.push({ companyId: new mongoose.Types.ObjectId(companyIdStr) });
-      } else if (userIdStr && mongoose.Types.ObjectId.isValid(userIdStr)) {
+      } else if (userId) {
         securityConditions.push({ createdBy: userId });
       }
 
       // 🤝 Add Collaboration access
-      securityConditions.push({ collaborators: userId });
+      if (userId) {
+        securityConditions.push({ collaborators: userId });
+      }
 
       finalFilter.$or = securityConditions;
 
       // 👤 Strict User Isolation: Honor the 'createdBy' filter if provided by the frontend.
-      // This ensures the "My Templates" tab matches Dashboard counts.
-      if (isQueryingOwn && userIdStr && mongoose.Types.ObjectId.isValid(userIdStr)) {
-        // If we have a specific createdBy filter, it should be AND-ed with our security OR
-        // However, since we're using $or for security, we need to be careful.
-        // If the user specifically asks for 'my' templates, we should probably stick to createdBy.
+      if (isQueryingOwn && userId) {
         delete finalFilter.$or;
         finalFilter.createdBy = userId;
       }
     }
   }
+
+  console.log(`[TEMPLATE_QUERY] Final Filter for user ${user._id || (user as any).id}:`, JSON.stringify(finalFilter, null, 2));
 
   const templates = await Template.paginate(finalFilter, {
     ...options,

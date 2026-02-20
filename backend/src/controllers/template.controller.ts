@@ -7,6 +7,7 @@ import catchAsync from "../utils/catchAsync";
 import templateService from "../services/template.service";
 import screenService from "../services/screen.service";
 import { emitToScreen } from "../services/socket.service";
+import mongoose from "mongoose";
 
 const createTemplate = catchAsync(async (req: Request, res: Response) => {
     const template = await templateService.createTemplate(req.body, req.user as any);
@@ -26,6 +27,15 @@ const getTemplates = catchAsync(async (req: Request, res: Response) => {
     if (filter.isPublic === 'false') filter.isPublic = false;
     if (filter.trashed === 'true') filter.trashed = true;
     if (filter.trashed === 'false') filter.trashed = false;
+
+    // Explicit ObjectId casting for filters
+    if (filter.createdBy && mongoose.Types.ObjectId.isValid(filter.createdBy)) {
+        filter.createdBy = new mongoose.Types.ObjectId(filter.createdBy);
+    }
+    if (filter.collaborators && mongoose.Types.ObjectId.isValid(filter.collaborators)) {
+        filter.collaborators = new mongoose.Types.ObjectId(filter.collaborators);
+    }
+    console.log('[TEMPLATE_CONTROLLER] Filter:', JSON.stringify(filter, null, 2));
 
     const options = pick(req.query, ["sortBy", "limit", "page"]);
     const result = await templateService.queryTemplates(filter, options, req.user as any);

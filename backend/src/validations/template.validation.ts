@@ -36,6 +36,7 @@ const getTemplates = {
     limit: Joi.number().integer(),
     page: Joi.number().integer(),
     trashed: Joi.boolean(),
+    collaborators: Joi.string(),
   }),
 };
 
