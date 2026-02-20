@@ -106,8 +106,11 @@ export const CollaborateDialog: FC<CollaborateDialogProps> = ({
     const isPending = (targetId: string) => {
         if (!targetId || !pendingRequests?.results) return false;
         const tid = targetId.toString().trim().toLowerCase();
-        return pendingRequests.results.some((r: any) => {
+
+        const pending = pendingRequests.results.some((r: any) => {
             if (!r || !r.recipient) return false;
+
+            // Robust unwrapping for recipient ID
             let recipientId = ''
             if (typeof r.recipient === 'string') {
                 recipientId = r.recipient
@@ -116,21 +119,31 @@ export const CollaborateDialog: FC<CollaborateDialogProps> = ({
             } else if (r.recipient?.id) {
                 recipientId = r.recipient.id.toString()
             }
-            return recipientId.trim().toLowerCase() === tid;
+
+            const match = recipientId.trim().toLowerCase() === tid;
+            if (match) console.log(`[CollabDebug] Found Pending match for ${tid}`);
+            return match;
         });
+
+        return pending;
     }
 
     const isCollaborator = (targetId: string) => {
         if (!targetId || !currentCollaborators) return false;
         const tid = targetId.toString().trim().toLowerCase();
+
         return currentCollaborators.some(c => {
-            const cid = extractId(c)
-            return cid === tid;
+            const cid = extractId(c);
+            const match = cid === tid;
+            if (match) console.log(`[CollabDebug] Found Collaborator match for ${tid}`);
+            return match;
         });
     }
 
     const isLoading = mode === 'friends' ? isLoadingFriends : isLoadingCompany
     const usersList = mode === 'friends' ? friends : companyUsers
+
+    console.log(`[CollabDebug] Dialog State - isOpen: ${isOpen}, pendingCount: ${pendingRequests?.results?.length || 0}`);
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
