@@ -75,6 +75,7 @@ export const CollaborateDialog: FC<CollaborateDialogProps> = ({
         queryKey: ['collaboration-requests', 'outgoing', templateId, currentUser?.id],
         queryFn: () => collaborationService.getRequests({ type: 'outgoing', status: 'pending', templateId }),
         enabled: isOpen && !!currentUser?.id,
+        refetchOnMount: 'always',
     })
 
     const sendRequestMutation = useMutation({
@@ -90,6 +91,7 @@ export const CollaborateDialog: FC<CollaborateDialogProps> = ({
                 description: err.response?.data?.message || err.message,
                 variant: 'destructive'
             })
+            queryClient.invalidateQueries({ queryKey: ['collaboration-requests'] })
         }
     })
 
@@ -187,7 +189,7 @@ export const CollaborateDialog: FC<CollaborateDialogProps> = ({
                                                     {alreadyShared ? (
                                                         <><IconCheck size={14} /> Shared</>
                                                     ) : pending ? (
-                                                        <>Requested</>
+                                                        <>Pending</>
                                                     ) : (
                                                         <><IconUserPlus size={14} /> Share</>
                                                     )}
