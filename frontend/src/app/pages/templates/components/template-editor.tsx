@@ -499,14 +499,25 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
             canvas.on('object:moving', (e) => handleRealtimeUpdate(e.target))
             canvas.on('object:scaling', (e) => handleRealtimeUpdate(e.target))
             canvas.on('object:modified', (e) => handleObjectModified(e.target))
+
+            canvas.on('mouse:down', (options) => {
+                if (options.target) {
+                    const obj = options.target as any
+                    obj.setCoords()
+                    canvas.renderAll()
+                }
+            })
+
             canvas.on('selection:created', (e) => {
                 const obj = e.selected?.[0] as any
                 if (obj) {
                     obj._lastValidLeft = obj.left
                     obj._lastValidTop = obj.top
+                    // @ts-ignore
                     obj.bringToFront()
                     constrainObject(obj)
-                    canvas.requestRenderAll()
+                    obj.setCoords()
+                    canvas.renderAll()
                     if (obj.id) setSelectedZoneId(obj.id)
                 }
             })
@@ -515,9 +526,11 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                 if (obj) {
                     obj._lastValidLeft = obj.left
                     obj._lastValidTop = obj.top
+                    // @ts-ignore
                     obj.bringToFront()
                     constrainObject(obj)
-                    canvas.requestRenderAll()
+                    obj.setCoords()
+                    canvas.renderAll()
                     if (obj.id) setSelectedZoneId(obj.id)
                 }
             })
@@ -737,7 +750,7 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                                             // @ts-ignore
                                             obj.bringToFront()
                                             obj.setCoords()
-                                            canvas.requestRenderAll()
+                                            canvas.renderAll()
                                             setSelectedZoneId(zone.id)
                                         }
                                     }}
