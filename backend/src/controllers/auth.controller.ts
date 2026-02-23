@@ -15,7 +15,7 @@ import {
 import ApiError from "../utils/ApiError";
 import Company from "../models/company.model";
 import notificationService from "../services/notification.service";
-import User from "../models/user.model";
+import User, { type RoleType } from "../models/user.model";
 
 // ===== REGISTER =====
 export const register = async (req: Request, res: Response) => {
@@ -408,7 +408,7 @@ export const verifyOtp = async (req: Request, res: Response) => {
         companyName: pendingSignup.companyName,
         authProvider: pendingSignup.authProvider,
         googleId: pendingSignup.googleId,
-        role: pendingSignup.role || "user",
+        role: (pendingSignup.role as RoleType) || "user",
         is_email_verified: true,
         onboardingCompleted: !!pendingSignup.companyName, // Completed only if company was provided
       });

@@ -110,8 +110,8 @@ const changePassword = async (data: ChangePasswordRequest) => {
 }
 
 /* ================= FIREBASE LOGIN ================= */
-const firebaseLogin = async (idToken: string, mode: 'login' | 'register' = 'login') => {
-  return apiService.post<any>('/v1/auth/firebase', { idToken, mode })
+const firebaseLogin = async (idToken: string, mode: 'login' | 'register' = 'login', role?: string) => {
+  return apiService.post<any>('/v1/auth/firebase', { idToken, mode, role })
 }
 
 const getAccessToken = async (refreshToken: string) => {
