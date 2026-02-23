@@ -1,4 +1,5 @@
 import httpStatus from "http-status";
+import mongoose from "mongoose";
 import { type Request, type Response } from "express";
 import successResponse from "../helpers/responses/successResponse";
 import * as authService from "../services/auth.service";
@@ -442,7 +443,7 @@ export const verifyOtp = async (req: Request, res: Response) => {
         googleId: pendingSignup.googleId,
         role: (pendingSignup.role as RoleType) || "user",
         is_email_verified: true,
-        companyId: pendingSignup.companyId, // Link to existing company if provided
+        companyId: pendingSignup.companyId ? new mongoose.Types.ObjectId(pendingSignup.companyId) : undefined, // Link to existing company if provided
         onboardingCompleted: !!(pendingSignup.companyName || pendingSignup.companyId), // Completed if company name OR ID exists
       });
 
