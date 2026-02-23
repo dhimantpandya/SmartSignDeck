@@ -7,6 +7,7 @@ export interface IPendingSignup extends Document {
     last_name: string;
     password?: string;
     companyName?: string;
+    companyId?: string;
     authProvider: "local" | "google";
     googleId?: string;
     otp: string;
@@ -40,6 +41,10 @@ const pendingSignupSchema = new Schema<IPendingSignup>(
             trim: true,
         },
         companyName: {
+            type: String,
+            trim: true,
+        },
+        companyId: {
             type: String,
             trim: true,
         },

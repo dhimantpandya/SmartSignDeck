@@ -58,6 +58,7 @@ export const register = async (req: Request, res: Response) => {
       first_name,
       last_name,
       companyName: companyName || "My Workspace",
+      companyId, // Added companyId from invite
       authProvider: "local",
       otp,
       otpExpires,
@@ -231,6 +232,7 @@ export const firebaseLogin = async (req: Request, res: Response) => {
           otp,
           otpExpires,
           role: role || "user",
+          companyId, // Added companyId from invite
           createdAt: new Date(),
         };
 
@@ -440,11 +442,26 @@ export const verifyOtp = async (req: Request, res: Response) => {
         googleId: pendingSignup.googleId,
         role: (pendingSignup.role as RoleType) || "user",
         is_email_verified: true,
-        onboardingCompleted: !!pendingSignup.companyName, // Completed only if company was provided
+        companyId: pendingSignup.companyId, // Link to existing company if provided
+        onboardingCompleted: !!(pendingSignup.companyName || pendingSignup.companyId), // Completed if company name OR ID exists
       });
 
       // Handle Company generation/linking
-      if (pendingSignup.companyName) {
+      if (pendingSignup.companyId) {
+        // User joined via invite - companyId is already set in createUser
+        const company = await Company.findById(pendingSignup.companyId);
+        if (company) {
+          console.log(`[AuthDebug] User ${user.email} joined existing company via invite: "${company.name}" (ID: ${company._id})`);
+
+          const { default: User } = await import("../models/user.model");
+          if (User) {
+            await User.findByIdAndUpdate(user._id, {
+              companyName: company.name
+            });
+            (user as any).companyName = company.name;
+          }
+        }
+      } else if (pendingSignup.companyName) {
         const normalizedName = pendingSignup.companyName.trim().toLowerCase();
         let company = await Company.findOne({ name: normalizedName });
 
