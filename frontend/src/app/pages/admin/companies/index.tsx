@@ -12,6 +12,25 @@ import Loader from '@/components/loader'
 import { userService } from '@/api/user.service'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
+import {
+    Building2,
+    Plus,
+    Edit,
+    Trash,
+    Settings as SettingsIcon,
+    ShieldCheck,
+    Globe,
+    ChevronRight,
+    ChevronDown,
+    User as UserIcon,
+    CreditCard
+} from 'lucide-react'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
 
 // --- Management Modal Component ---
 function ManageCompanyModal({ company, isOpen, onClose }: { company: Company, isOpen: boolean, onClose: () => void }) {
@@ -19,7 +38,7 @@ function ManageCompanyModal({ company, isOpen, onClose }: { company: Company, is
         queryKey: ['company-users', company.id],
         queryFn: () => userService.getAllUsers({
             pagination: { pageIndex: 0, pageSize: 100 },
-            filter: { companyId: company.id }
+            filter: { companyId: company.id, role: [], search: '' }
         }),
         enabled: !!company.id && isOpen
     })
@@ -264,7 +283,6 @@ export default function AdminCompanies() {
                                 {groupNames.map((groupName) => {
                                     const group = groupedCompanies[groupName]
                                     const isExpanded = expandedGroups[groupName]
-                                    const primaryCompany = group[0]
 
                                     return (
                                         <>
@@ -384,7 +402,7 @@ export default function AdminCompanies() {
                                 <Input
                                     id="name"
                                     value={editingCompany?.name || ''}
-                                    onChange={e => setEditingCompany({ ...editingCompany!, name: e.target.value })}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditingCompany({ ...editingCompany!, name: e.target.value })}
                                     placeholder="e.g. Acme Corp"
                                 />
                             </div>
@@ -393,7 +411,7 @@ export default function AdminCompanies() {
                                 <Input
                                     id="desc"
                                     value={editingCompany?.description || ''}
-                                    onChange={e => setEditingCompany({ ...editingCompany!, description: e.target.value })}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditingCompany({ ...editingCompany!, description: e.target.value })}
                                     placeholder="Organization purpose..."
                                 />
                             </div>
@@ -403,7 +421,7 @@ export default function AdminCompanies() {
                                     <Input
                                         id="owner"
                                         value={editingCompany?.ownerId || ''}
-                                        onChange={e => setEditingCompany({ ...editingCompany!, ownerId: e.target.value })}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditingCompany({ ...editingCompany!, ownerId: e.target.value })}
                                         placeholder="MongoID of the first admin..."
                                     />
                                 </div>
