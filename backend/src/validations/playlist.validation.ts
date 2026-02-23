@@ -18,6 +18,7 @@ const createPlaylist = {
 const getPlaylists = {
     query: Joi.object().keys({
         name: Joi.string(),
+        createdBy: Joi.string(),
         sortBy: Joi.string(),
         limit: Joi.number().integer(),
         page: Joi.number().integer(),
