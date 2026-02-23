@@ -331,15 +331,37 @@ export const UsersList = () => {
           <div className='flex items-center gap-2'>
             <select
               className='h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50'
-              onChange={(e) => {
+              onChange={async (e) => {
                 const role = e.target.value
-                const inviteLink = `${window.location.origin}${Routes.SIGN_UP}?companyId=${user?.companyId}${role ? `&role=${role}` : ''}`
-                navigator.clipboard.writeText(inviteLink)
-                toast({ title: 'Invite link copied!', description: `Invite link for ${role || 'user'} role copied to clipboard.` })
+                if (!role) return
+
+                try {
+                  const compId = (user?.companyId as any)?._id || user?.companyId
+                  if (!compId) {
+                    toast({ title: 'Error', description: 'Company ID not found.', variant: 'destructive' })
+                    return
+                  }
+
+                  const response = await authService.getInviteToken(compId.toString(), role)
+                  const token = response.data.token
+                  const inviteLink = `${window.location.origin}${Routes.SIGN_UP}?inviteToken=${token}`
+
+                  navigator.clipboard.writeText(inviteLink)
+                  toast({
+                    title: 'Secure link copied!',
+                    description: `Secure invite link for ${role} role copied to clipboard.`,
+                  })
+                } catch (error: any) {
+                  toast({
+                    title: 'Failed to generate link',
+                    description: error.response?.data?.message || 'Server error',
+                    variant: 'destructive',
+                  })
+                }
               }}
-              defaultValue=""
+              defaultValue=''
             >
-              <option value="">Select Role to Copy Link</option>
+              <option value=''>Select Role to Copy Link</option>
               {roleOptions.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}

@@ -110,8 +110,12 @@ const changePassword = async (data: ChangePasswordRequest) => {
 }
 
 /* ================= FIREBASE LOGIN ================= */
-const firebaseLogin = async (idToken: string, mode: 'login' | 'register' = 'login', role?: string) => {
-  return apiService.post<any>('/v1/auth/firebase', { idToken, mode, role })
+const firebaseLogin = async (idToken: string, mode: 'login' | 'register' = 'login', role?: string, inviteToken?: string) => {
+  return apiService.post<any>('/v1/auth/firebase', { idToken, mode, role, inviteToken })
+}
+
+const getInviteToken = async (companyId: string, role: string) => {
+  return apiService.get<{ token: string }>(`/v1/auth/invite-token?companyId=${companyId}&role=${role}`)
 }
 
 const getAccessToken = async (refreshToken: string) => {
@@ -147,4 +151,5 @@ export const authService = {
   resetPassword,
   changePassword,
   deleteAccount,
+  getInviteToken,
 }

@@ -25,6 +25,11 @@ import auth from "../../middleware/auth";
 const router = Router();
 
 // ===== REGISTER =====
+router.get(
+  "/invite-token",
+  auth("super_admin", "admin"),
+  authController.generateInviteToken
+);
 router.post("/register", validate(register), authController.register);
 
 // ===== LOGIN =====

@@ -35,6 +35,7 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
   const queryParams = new URLSearchParams(location.search)
   const inviteCompanyId = queryParams.get('companyId')
   const inviteRole = queryParams.get('role')
+  const inviteToken = queryParams.get('inviteToken')
 
   const form = useForm<SignupRequest>({
     resolver: zodResolver(signupSchema),
@@ -66,7 +67,12 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
     }, 5000);
 
     try {
-      await authService.register(data)
+      const response = await authService.register({
+        ...data,
+        companyId: data.companyId || inviteCompanyId || undefined,
+        role: data.role || inviteRole || undefined,
+        inviteToken: inviteToken || undefined,
+      })
       const expiresIn = 600 // 10 minutes
       localStorage.setItem('otp_expires_at', (Date.now() + expiresIn * 1000).toString())
       toast({ title: 'Registration successful! Check your email for OTP.' })
@@ -261,11 +267,15 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
 
                   const result = await signInWithPopup(auth, googleProvider);
                   const idToken = await result.user.getIdToken();
-                  const role = form.getValues('role');
+                  const role = inviteRole || 'user';
 
                   // Call backend API with mode 'register'
-                  const response = await authService.firebaseLogin(idToken, 'register', role);
-
+                  const response = await authService.firebaseLogin(
+                    idToken,
+                    'register',
+                    role,
+                    inviteToken || undefined
+                  );
 
 
                   const expiresIn = 600; // 10 minutes

@@ -21,9 +21,9 @@ const createUser = async (userBody: Partial<IUser>): Promise<IUser> => {
     delete userData.companyId;
   }
 
-  // Safety: If it's a social login (googleId present) and password is empty, remove it
+  // Safety: If it's a social login (googleId present) and password is empty or undefined, remove it
   // Mongoose validates minlength even if the field is not required but present as ""
-  if (userData.googleId && (userData.password === "" || userData.password === null)) {
+  if (userData.googleId && (!userData.password || userData.password === "" || userData.password === null)) {
     delete userData.password;
   }
 

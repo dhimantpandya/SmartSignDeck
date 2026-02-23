@@ -8,6 +8,7 @@ const tokenTypes: {
   REFRESH: "refresh",
   RESET_PASSWORD: "resetPassword",
   VERIFY_EMAIL: "verifyEmail",
+  INVITATION: "invitation",
 };
 
 export { tokenTypes };

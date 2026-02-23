@@ -195,12 +195,43 @@ const generateVerifyEmailOtp = async (
   return { verifyEmailToken, otp };
 };
 
+/**
+ * Generate a signed invitation token (JWT)
+ */
+const generateInviteToken = (companyId: string, role: string): string => {
+  const expires = moment().add(7, 'days'); // Invites valid for 7 days
+  const payload = {
+    companyId,
+    role,
+    type: tokenTypes.INVITATION,
+    iat: moment().unix(),
+    exp: expires.unix(),
+  };
+  return jwt.sign(payload, config.jwt.secret);
+};
+
+/**
+ * Verify an invitation token
+ */
+const verifyInviteToken = (token: string): { companyId: string, role: string } => {
+  const payload = jwt.verify(token, config.jwt.secret) as any;
+  if (payload.type !== tokenTypes.INVITATION) {
+    throw new Error("Invalid token type");
+  }
+  return {
+    companyId: payload.companyId,
+    role: payload.role,
+  };
+};
+
 export {
   generateAuthTokens,
   generateResetPasswordToken,
   generateToken,
   generateVerifyEmailToken,
   generateVerifyEmailOtp,
+  generateInviteToken,
+  verifyInviteToken,
   removeTokens,
   saveToken,
   verifyToken,

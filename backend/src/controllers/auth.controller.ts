@@ -20,8 +20,23 @@ import User, { type RoleType } from "../models/user.model";
 // ===== REGISTER =====
 export const register = async (req: Request, res: Response) => {
   try {
-    const { email, password, first_name, last_name, companyName, companyId, role } = req.body;
+    let { email, password, first_name, last_name, companyName, companyId, role, inviteToken } = req.body;
     console.log(`[AuthDebug] Registration attempt for email: "${email}"`);
+
+    // Secure Invite check
+    if (inviteToken) {
+      try {
+        const inviteData = tokenService.verifyInviteToken(inviteToken as string);
+        companyId = inviteData.companyId;
+        role = inviteData.role;
+        console.log(`[AuthDebug] Valid invite token verified for ${email}. Overriding role to: ${role}`);
+      } catch (e: any) {
+        return res.status(httpStatus.BAD_REQUEST).json({
+          status: "fail",
+          message: "Invalid or expired invitation link. Please request a new one.",
+        });
+      }
+    }
 
     // Check if user already exists in DB
     const existingUser = await userService.getUserByEmail(email);
@@ -98,9 +113,24 @@ export const register = async (req: Request, res: Response) => {
 export const firebaseLogin = async (req: Request, res: Response) => {
   try {
     console.log(`[AuthDebug] Received Firebase login request at ${new Date().toISOString()}`);
-    const { idToken, mode, role } = req.body;
+    let { idToken, mode, role, inviteToken, companyId } = req.body;
     const clientIp = req.ip || req.socket.remoteAddress || 'unknown';
     console.log(`[AuthDebug] Firebase login attempt from IP: ${clientIp}, Mode: "${mode}"`);
+
+    // Secure Invite check
+    if (inviteToken && mode === "register") {
+      try {
+        const inviteData = tokenService.verifyInviteToken(inviteToken as string);
+        companyId = inviteData.companyId;
+        role = inviteData.role;
+        console.log(`[AuthDebug] Valid invite token verified for Google signup. Overriding role to: ${role}`);
+      } catch (e: any) {
+        return res.status(httpStatus.BAD_REQUEST).json({
+          status: "fail",
+          message: "Invalid or expired invitation link. Please request a new one.",
+        });
+      }
+    }
 
     // Import admin dynamically or check if initialized
     const firebaseModule = await import("../config/firebase");
@@ -511,6 +541,26 @@ export const verifyOtp = async (req: Request, res: Response) => {
     const status = err.statusCode || httpStatus.INTERNAL_SERVER_ERROR;
     const message = err.message || "OTP verification failed";
     res.status(status).json({ status: "error", message });
+  }
+};
+
+// ===== GENERATE INVITE TOKEN =====
+export const generateInviteToken = async (req: Request, res: Response) => {
+  try {
+    const { companyId, role } = req.query;
+
+    if (!companyId || !role) {
+      throw new ApiError(httpStatus.BAD_REQUEST, "companyId and role are required");
+    }
+
+    const token = tokenService.generateInviteToken(companyId as string, role as string);
+    successResponse(res, "Invite token generated successfully", httpStatus.OK, { token });
+  } catch (err: any) {
+    console.error("[GenerateInviteToken Error]", err);
+    res.status(err.statusCode || httpStatus.INTERNAL_SERVER_ERROR).json({
+      status: "error",
+      message: err.message || "Failed to generate invite token",
+    });
   }
 };
 

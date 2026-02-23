@@ -10,11 +10,16 @@ interface RegisterBody {
   companyId?: string;
   role?: string;
   confirmPassword: string;
+  inviteToken?: string;
 }
 
 interface LoginBody {
   email: string;
   password: string;
+  idToken?: string;
+  mode?: "login" | "register";
+  inviteToken?: string;
+  companyId?: string;
 }
 
 interface LogoutBody {
@@ -108,6 +113,7 @@ const register: { body: ObjectSchema<RegisterBody & { companyId?: string }> } = 
     companyName: Joi.string().trim().allow("", null).label("Company Name"),
     companyId: Joi.string().trim().allow("", null).label("Company ID"),
     role: Joi.string().trim().allow("", null).label("Role"),
+    inviteToken: Joi.string().trim().allow("", null).label("Invite Token"),
     confirmPassword: Joi.string()
       .required()
       .valid(Joi.ref("password"))
@@ -128,6 +134,8 @@ const login: {
       email: Joi.string().trim().label("Email").custom(toLowerCase),
       password: Joi.string().trim().label("Password"),
       idToken: Joi.string(),
+      inviteToken: Joi.string().trim().allow("", null),
+      companyId: Joi.string().trim().allow("", null),
       mode: Joi.string().valid("login", "register").default("login"), // Intent flag
     })
     .xor("email", "idToken"),
@@ -221,6 +229,18 @@ const updateProfile: { body: ObjectSchema } = {
     .min(1),
 };
 
+interface GenerateInviteTokenQuery {
+  companyId: string;
+  role: string;
+}
+
+const generateInviteToken: { query: ObjectSchema<GenerateInviteTokenQuery> } = {
+  query: Joi.object<GenerateInviteTokenQuery>().keys({
+    role: Joi.string().trim().required().label("Role"),
+    companyId: Joi.string().trim().required().label("Company ID"),
+  }),
+};
+
 export {
   changePassword,
   forgotPassword,
@@ -234,4 +254,5 @@ export {
   verifyOtp,
   resendOtp,
   updateProfile,
+  generateInviteToken,
 };
