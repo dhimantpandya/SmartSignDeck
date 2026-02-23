@@ -9,7 +9,8 @@ import {
     IconArrowRight,
     IconUsers,
     IconMessageCircle,
-    IconWorld
+    IconWorld,
+    IconBrandLinkedin
 } from '@tabler/icons-react'
 import { cn } from '@/lib/utils'
 import { useState, useEffect } from 'react'
@@ -99,18 +100,15 @@ export default function LandingPage() {
                         muted
                         loop
                         playsInline
-                        className='w-full h-full object-cover opacity-60'
+                        className='w-full h-full object-cover opacity-70 scale-105'
                     >
-                        <source src="https://assets.mixkit.co/videos/preview/mixkit-digital-circuit-board-background-27464-large.mp4" type="video/mp4" />
+                        <source src="https://assets.mixkit.co/videos/preview/mixkit-stars-in-the-night-sky-loop-9710-large.mp4" type="video/mp4" />
                     </video>
-                    <div className='absolute inset-0 bg-gradient-to-b from-background/40 via-background/60 to-background z-10' />
+                    <div className='absolute inset-0 bg-gradient-to-b from-background/20 via-background/40 to-background z-10' />
                 </div>
 
-                <div className='container mx-auto px-6 relative z-20 text-center space-y-8 max-w-4xl'>
-                    <div className='inline-flex items-center gap-2 bg-primary/10 border border-primary/20 px-4 py-1.5 rounded-full mb-4 animate-bounce'>
-                        <IconSparkles size={16} className='text-primary' />
-                        <span className='text-[10px] font-black uppercase tracking-[0.2em] text-primary'>Revolutionizing Signage</span>
-                    </div>
+                <div className='container mx-auto px-6 relative z-20 text-center space-y-8 max-w-5xl'>
+
 
                     <h1 className='text-5xl md:text-8xl font-black tracking-tighter leading-[0.9] uppercase italic'>
                         Your Message, <br />
@@ -125,8 +123,13 @@ export default function LandingPage() {
                         <Button size='lg' onClick={() => navigate(Routes.SIGN_UP)} className='h-16 px-10 rounded-2xl text-md font-black uppercase tracking-widest gap-3 w-full sm:w-auto shadow-2xl'>
                             Try for Free <IconArrowRight size={20} />
                         </Button>
-                        <Button variant='outline' size='lg' className='h-16 px-10 rounded-2xl text-md font-black uppercase tracking-widest w-full sm:w-auto bg-background/50 backdrop-blur-xl border-white/10'>
-                            Book a Demo
+                        <Button
+                            variant='outline'
+                            size='lg'
+                            className='h-16 px-10 rounded-2xl text-md font-black uppercase tracking-widest w-full sm:w-auto bg-background/50 backdrop-blur-xl border-white/10'
+                            onClick={() => document.getElementById('solutions')?.scrollIntoView({ behavior: 'smooth' })}
+                        >
+                            Explore Solutions
                         </Button>
                     </div>
                 </div>
@@ -265,6 +268,9 @@ export default function LandingPage() {
                         <div className='space-y-4'>
                             <h4 className='font-black uppercase tracking-[0.2em] text-[10px] text-muted-foreground'>Follow</h4>
                             <div className='flex gap-4'>
+                                <a href="https://linkedin.com/in/dhimant-pandya-083b4b271" target="_blank" rel="noopener noreferrer" className='bg-muted p-2 rounded-lg hover:bg-primary/20 cursor-pointer transition-colors'>
+                                    <IconBrandLinkedin size={20} className="text-primary" />
+                                </a>
                                 <div className='bg-muted p-2 rounded-lg hover:bg-primary/20 cursor-pointer transition-colors'><IconWorld size={20} /></div>
                                 <div className='bg-muted p-2 rounded-lg hover:bg-primary/20 cursor-pointer transition-colors'><IconMessageCircle size={20} /></div>
                             </div>
