@@ -1,4 +1,5 @@
 export const Routes = {
+  LANDING: '/',
   NOTIFICATION: '/notification',
   SIGN_IN: '/sign-in',
   SIGN_UP: '/sign-up',

@@ -15,12 +15,18 @@ const Setup = () => {
   const routers = useMemo(
     () =>
       createBrowserRouter([
-        // Root redirect based on auth state
+        // Root route
         {
-          path: '/',
+          path: Routes.LANDING,
+          lazy: async () => ({
+            Component: (await import('./pages/landing')).default,
+          }),
           loader: () => {
             const refreshToken = tokenStore.getRefreshToken();
-            return refreshToken ? redirect(Routes.DASHBOARD) : redirect(Routes.SIGN_IN);
+            if (refreshToken) {
+              return redirect(Routes.DASHBOARD);
+            }
+            return null;
           },
         },
         // ===== AUTH ROUTES =====
