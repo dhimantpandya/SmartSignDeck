@@ -20,7 +20,8 @@ const createPlaybackLog = catchAsync(async (req: Request, res: Response) => {
 
     const payload = {
         ...req.body,
-        companyId: screen.companyId
+        companyId: screen.companyId,
+        userId: (req.user as any)?._id || screen.createdBy // Tie to active user or screen owner
     };
 
     const log = await playbackLogService.createPlaybackLog(payload);

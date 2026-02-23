@@ -65,7 +65,7 @@ export const sidelinks: SideLink[] = [
     label: '',
     href: Routes.COLLABORATION,
     icon: <IconUsers size={18} />,
-    requiredRoles: ['user', 'admin', 'super_admin'],
+    requiredRoles: ['user', 'admin', 'super_admin', 'advertiser'],
   },
   {
     title: 'Users',

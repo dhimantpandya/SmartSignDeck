@@ -41,6 +41,7 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
     const [name, setName] = useState(initialData?.name || '')
     const [selectedTemplateId, setSelectedTemplateId] = useState(getInitialTemplateId())
     const [defaultContent, setDefaultContent] = useState<any>(initialData?.defaultContent || {})
+    const [isPublic, setIsPublic] = useState(initialData?.isPublic || false)
 
     // Debug
     useEffect(() => {
@@ -427,6 +428,7 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
                 templateId: selectedTemplateId,
                 defaultContent,
                 schedules,
+                isPublic,
             }
 
             if (initialData?.id || initialData?._id) {
@@ -846,6 +848,19 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
                                         ))}
                                     </SelectContent>
                                 </Select>
+                            </div>
+                            <div className='flex items-center gap-2 pt-8'>
+                                <Checkbox
+                                    id='isPublic'
+                                    checked={isPublic}
+                                    onCheckedChange={(checked) => setIsPublic(!!checked)}
+                                />
+                                <div className="grid gap-1.5 leading-none">
+                                    <Label htmlFor='isPublic' className="cursor-pointer">Global Screen</Label>
+                                    <p className="text-[10px] text-muted-foreground">
+                                        Make this screen visible in the company's global library.
+                                    </p>
+                                </div>
                             </div>
                         </div>
 

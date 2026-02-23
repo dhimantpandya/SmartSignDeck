@@ -244,10 +244,17 @@ export default function Screens() {
                         />
                         <CardTitle className="text-lg">{screen.name}</CardTitle>
                     </div>
-                    <Badge variant="secondary" className="flex items-center gap-1">
-                        <span className={`h-2 w-2 rounded-full ${getStatusColor(screen.status)}`} />
-                        {screen.status}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                        {screen.isPublic && (
+                            <Badge variant="outline" className="bg-blue-500/10 text-blue-500 border-blue-500/20 gap-1 text-[10px]">
+                                <Globe size={10} /> Global
+                            </Badge>
+                        )}
+                        <Badge variant="secondary" className="flex items-center gap-1">
+                            <span className={`h-2 w-2 rounded-full ${getStatusColor(screen.status)}`} />
+                            {screen.status}
+                        </Badge>
+                    </div>
                 </div>
             </CardHeader>
             <CardContent className="pt-4">
