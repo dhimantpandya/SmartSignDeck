@@ -14,7 +14,7 @@ export interface IUser extends Document {
   first_name: string;
   last_name: string;
   email: string;
-  companyId?: mongoose.Schema.Types.ObjectId;
+  companyId?: mongoose.Types.ObjectId;
   companyName?: string;
   googleId?: string;
   authProvider: "local" | "google";
