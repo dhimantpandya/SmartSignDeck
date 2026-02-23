@@ -250,7 +250,7 @@ export default function ScreenPlayer() {
     }
 
     const { templateId: template } = data
-    const { content, source, rule } = determineActiveContent()
+    const { content } = determineActiveContent()
     const resolution = template?.resolution || '1920x1080'
     const [targetWidth, targetHeight] = resolution.split('x').map(Number)
 
