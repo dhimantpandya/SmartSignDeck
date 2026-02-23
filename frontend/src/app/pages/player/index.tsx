@@ -31,18 +31,6 @@ export default function ScreenPlayer() {
         return `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`
     })
 
-    // Debug State
-    const [showDebug, setShowDebug] = useState(true) // Default to true for user demo
-
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key.toLowerCase() === 'd') setShowDebug(prev => !prev)
-        }
-        window.addEventListener('keydown', handleKeyDown)
-        return () => window.removeEventListener('keydown', handleKeyDown)
-    }, [])
-
-    // Update window size on resize
     useEffect(() => {
         const handleResize = () => {
             setWindowSize({ width: window.innerWidth, height: window.innerHeight })
@@ -366,36 +354,6 @@ export default function ScreenPlayer() {
     return (
         <div className='fixed inset-0 bg-black overflow-hidden'>
 
-            {/* Debug Overlay - Hidden on mobile/tablet */}
-            {showDebug && (
-                <div className="hidden md:block absolute top-4 left-4 z-50 bg-black/80 text-white p-4 rounded-lg border border-white/20 shadow-xl max-w-sm font-mono text-xs backdrop-blur-sm pointer-events-none select-none">
-                    <h3 className="font-bold border-b border-white/20 pb-2 mb-2 text-sm text-green-400">⚡ Smart Logic Debugger</h3>
-
-                    <div className="space-y-3">
-                        {/* Schedule Status */}
-                        <div className={`p-2 rounded ${source === 'schedule' ? 'bg-orange-500/20 border border-orange-500/50' : 'bg-white/5'}`}>
-                            <div className="flex justify-between mb-1">
-                                <span className="text-orange-300 font-bold">1. Schedule (Time)</span>
-                                {source === 'schedule' && <span className="text-orange-400">ACTIVE</span>}
-                            </div>
-                            <div className="pl-2 border-l-2 border-white/10">
-                                <div className="mb-1">Time: {currentTime}</div>
-                                <div>Current Rule: {source === 'schedule' ? rule?.name : 'Inactive'}</div>
-                            </div>
-                        </div>
-                        {/* Snap Status */}
-                        <div className="p-2 rounded bg-blue-500/10 border border-blue-500/30 mt-2">
-                            <div className="text-blue-300 font-bold mb-1">2. Auto-Layout (Fixed)</div>
-                            <div className="opacity-70">Zones processed: {optimizedZones.length}</div>
-                            <div className="opacity-70">Gap Snapping: Active</div>
-                        </div>
-
-                        <div className="text-[10px] text-center opacity-40 pt-2 border-t border-white/10">
-                            Press 'D' to toggle this menu
-                        </div>
-                    </div>
-                </div>
-            )}
 
             {/* Fullscreen Toggle Overlay (visible on hover or when not fullscreen) */}
             <div className={`absolute top-4 right-4 z-50 transition-opacity duration-300 ${isFullscreen ? 'opacity-0 hover:opacity-100' : 'opacity-100'}`}>

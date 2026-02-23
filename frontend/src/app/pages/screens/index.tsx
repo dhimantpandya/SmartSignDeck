@@ -24,11 +24,12 @@ import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
 
 export default function Screens() {
     const { user } = useAuth()
+    const isAdvertiser = (user as any)?.role === 'advertiser'
     const { id: routeId } = useParams()
     const [searchParams, setSearchParams] = useSearchParams()
     const [showForm, setShowForm] = useState(false)
     const [editingScreen, setEditingScreen] = useState<any>(null)
-    const [activeTab, setActiveTab] = useState<'my-screens' | 'global' | 'groups'>('my-screens')
+    const [activeTab, setActiveTab] = useState<'my-screens' | 'global' | 'groups'>(isAdvertiser ? 'global' : 'my-screens')
     const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null)
     const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
     const [selectedScreens, setSelectedScreens] = useState<string[]>([])
@@ -98,18 +99,6 @@ export default function Screens() {
         queryFn: () => screenService.getScreens({ createdBy: user?.id }),
         enabled: !!user?.id,
     })
-
-    // DEBUG: Inspect Screen Data
-    useEffect(() => {
-        if (myScreensData?.results) {
-            console.log('[Screens] Loaded myScreens:', myScreensData.results);
-            myScreensData.results.forEach((s: any) => {
-                if (s.secretKey && s.secretKey.length > 32) {
-                    console.error('[Screens] CORRUPTED KEY DETECTED:', s.id, s.secretKey);
-                }
-            });
-        }
-    }, [myScreensData]);
 
     // Query for global public screens
     const { data: globalScreensData, isLoading: isLoadingGlobal } = useQuery({
@@ -237,11 +226,13 @@ export default function Screens() {
             <CardHeader className="bg-muted/50 pb-4">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <Checkbox
-                            checked={selectedScreens.includes(screen.id)}
-                            onCheckedChange={() => toggleScreenSelection(screen.id)}
-                            onClick={(e) => e.stopPropagation()}
-                        />
+                        {!isAdvertiser && (
+                            <Checkbox
+                                checked={selectedScreens.includes(screen.id)}
+                                onCheckedChange={() => toggleScreenSelection(screen.id)}
+                                onClick={(e) => e.stopPropagation()}
+                            />
+                        )}
                         <CardTitle className="text-lg">{screen.name}</CardTitle>
                     </div>
                     <div className="flex items-center gap-2">
@@ -278,11 +269,13 @@ export default function Screens() {
                 </div>
             </CardContent>
             <CardFooter className="flex justify-end gap-2 border-t bg-muted/20 px-4 py-2">
-                {isOwner ? (
+                {/* Preview is always available */}
+                <Button variant="ghost" size="sm" onClick={() => window.open(`/player/${screen.id}${screen.secretKey ? `?key=${screen.secretKey}` : ''}`, '_blank')}>
+                    <IconPlayerPlay size={16} className="mr-1" /> Preview
+                </Button>
+                {/* Owner controls (non-advertiser) */}
+                {isOwner && !isAdvertiser && (
                     <>
-                        <Button variant="ghost" size="sm" onClick={() => window.open(`/player/${screen.id}${screen.secretKey ? `?key=${screen.secretKey}` : ''}`, '_blank')}>
-                            <IconPlayerPlay size={16} className="mr-1" /> Preview
-                        </Button>
                         <Button variant="ghost" size="sm" onClick={() => handleForceRefresh(screen.id)}>
                             <IconRefresh size={16} className="mr-1" /> Refresh
                         </Button>
@@ -295,20 +288,17 @@ export default function Screens() {
                             <IconTrash size={16} className="mr-1" /> Delete
                         </Button>
                     </>
-                ) : (
-                    <>
-                        <Button variant="ghost" size="sm" onClick={() => window.open(`/player/${screen.id}${screen.secretKey ? `?key=${screen.secretKey}` : ''}`, '_blank')}>
-                            <IconPlayerPlay size={16} className="mr-1" /> Preview
-                        </Button>
-                        <Button
-                            variant="default"
-                            size="sm"
-                            onClick={() => handleClone(screen.id)}
-                            loading={cloneMutation.isPending}
-                        >
-                            <IconCopy size={16} className="mr-2" /> Use Screen
-                        </Button>
-                    </>
+                )}
+                {/* Use Screen — only for non-owners who are NOT advertisers */}
+                {!isOwner && !isAdvertiser && (
+                    <Button
+                        variant="default"
+                        size="sm"
+                        onClick={() => handleClone(screen.id)}
+                        loading={cloneMutation.isPending}
+                    >
+                        <IconCopy size={16} className="mr-2" /> Use Screen
+                    </Button>
                 )}
             </CardFooter>
         </Card>
@@ -337,7 +327,7 @@ export default function Screens() {
                             Manage your physical displays and content binding.
                         </p>
                     </div>
-                    {!showForm && (
+                    {!showForm && !isAdvertiser && (
                         <Button onClick={handleCreate}>
                             <IconPlus className='mr-2' size={18} />
                             Add Screen
@@ -355,20 +345,30 @@ export default function Screens() {
                     />
                 ) : (
                     <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="mt-6">
-                        <TabsList className="grid w-full max-w-md grid-cols-3">
-                            <TabsTrigger value="my-screens" className="gap-2">
-                                <User size={16} />
-                                <span className="hidden sm:inline">My Screens</span> ({myScreens.length})
-                            </TabsTrigger>
-                            <TabsTrigger value="global" className="gap-2">
-                                <Globe size={16} />
-                                <span className="hidden sm:inline">Global Library</span> ({globalScreens.length})
-                            </TabsTrigger>
-                            <TabsTrigger value="groups" className="gap-2">
-                                <Folders size={16} />
-                                <span className="hidden sm:inline">Groups</span> ({groupsData?.results?.length || 0})
-                            </TabsTrigger>
-                        </TabsList>
+                        {/* Advertisers only see Global Library */}
+                        {isAdvertiser ? (
+                            <TabsList className="grid w-full max-w-xs grid-cols-1">
+                                <TabsTrigger value="global" className="gap-2">
+                                    <Globe size={16} />
+                                    <span>Global Library</span> ({globalScreens.length})
+                                </TabsTrigger>
+                            </TabsList>
+                        ) : (
+                            <TabsList className="grid w-full max-w-md grid-cols-3">
+                                <TabsTrigger value="my-screens" className="gap-2">
+                                    <User size={16} />
+                                    <span className="hidden sm:inline">My Screens</span> ({myScreens.length})
+                                </TabsTrigger>
+                                <TabsTrigger value="global" className="gap-2">
+                                    <Globe size={16} />
+                                    <span className="hidden sm:inline">Global Library</span> ({globalScreens.length})
+                                </TabsTrigger>
+                                <TabsTrigger value="groups" className="gap-2">
+                                    <Folders size={16} />
+                                    <span className="hidden sm:inline">Groups</span> ({groupsData?.results?.length || 0})
+                                </TabsTrigger>
+                            </TabsList>
+                        )}
 
                         <TabsContent value="my-screens" className="mt-6">
                             {isLoadingMy ? (
