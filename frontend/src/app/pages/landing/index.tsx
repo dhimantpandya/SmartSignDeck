@@ -14,10 +14,17 @@ import {
 } from '@tabler/icons-react'
 import { cn } from '@/lib/utils'
 import { useState, useEffect } from 'react'
+import { motion, useScroll, useTransform, useSpring } from 'framer-motion'
 
 export default function LandingPage() {
     const navigate = useNavigate()
     const [isScrolled, setIsScrolled] = useState(false)
+    const { scrollYProgress } = useScroll()
+    const scaleX = useSpring(scrollYProgress, {
+        stiffness: 100,
+        damping: 30,
+        restDelta: 0.001
+    })
 
     useEffect(() => {
         const handleScroll = () => setIsScrolled(window.scrollY > 50)
@@ -57,264 +64,308 @@ export default function LandingPage() {
         }
     ]
 
+    // Scroll-linked transforms for Hero
+    const heroOpacity = useTransform(scrollYProgress, [0, 0.2], [1, 0])
+    const heroScale = useTransform(scrollYProgress, [0, 0.2], [1, 0.8])
+    const heroY = useTransform(scrollYProgress, [0, 0.2], [0, -100])
+
     return (
         <div className='min-h-screen bg-background text-foreground selection:bg-primary selection:text-white font-sans overflow-x-hidden'>
+            {/* Scroll Progress Bar */}
+            <motion.div
+                className="fixed top-0 left-0 right-0 h-1 bg-primary z-[200] origin-left"
+                style={{ scaleX }}
+            />
+
             {/* Navigation */}
             <nav className={cn(
                 'fixed top-0 w-full z-[100] transition-all duration-500 border-b border-white/5',
                 isScrolled ? 'bg-background/80 backdrop-blur-xl py-4 shadow-2xl' : 'bg-transparent py-6'
             )}>
                 <div className='container mx-auto px-6 flex items-center justify-between'>
-                    <div className='flex items-center gap-2 group cursor-pointer' onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+                    <motion.div
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        className='flex items-center gap-2 group cursor-pointer'
+                        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                    >
                         <div className='bg-primary/20 p-2 rounded-xl group-hover:scale-110 transition-transform'>
                             <IconDeviceTv className='text-primary h-6 w-6' />
                         </div>
                         <span className='text-xl font-black tracking-tighter uppercase italic'>
                             SmartSign<span className='text-primary'>Deck</span>
                         </span>
-                    </div>
+                    </motion.div>
 
                     <div className='hidden md:flex items-center gap-8'>
-                        <a href="#features" className='text-sm font-bold uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors'>Features</a>
-                        <a href="#solutions" className='text-sm font-bold uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors'>Solutions</a>
-                        <a href="#contact" className='text-sm font-bold uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors'>Contact</a>
+                        {['Features', 'Solutions', 'Contact'].map((item) => (
+                            <motion.a
+                                key={item}
+                                href={`#${item.toLowerCase()}`}
+                                whileHover={{ scale: 1.1, color: 'hsl(var(--primary))' }}
+                                className='text-sm font-bold uppercase tracking-widest text-muted-foreground transition-colors'
+                            >
+                                {item}
+                            </motion.a>
+                        ))}
                     </div>
 
                     <div className='flex items-center gap-4'>
                         <Button variant='ghost' onClick={() => navigate(Routes.SIGN_IN)} className='font-bold uppercase tracking-widest text-xs h-10 px-6'>
                             Login
                         </Button>
-                        <Button onClick={() => navigate(Routes.SIGN_UP)} className='font-bold uppercase tracking-widest text-xs h-10 px-6 shadow-[0_0_30px_-5px_hsl(var(--primary))] hover:shadow-[0_0_50px_-5px_hsl(var(--primary))] transition-all'>
-                            Get Started
-                        </Button>
+                        <motion.div
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                        >
+                            <Button onClick={() => navigate(Routes.SIGN_UP)} className='font-bold uppercase tracking-widest text-xs h-10 px-6 shadow-[0_0_30px_-5px_hsl(var(--primary))] hover:shadow-[0_0_50px_-5px_hsl(var(--primary))] transition-all'>
+                                Get Started
+                            </Button>
+                        </motion.div>
                     </div>
                 </div>
             </nav>
 
             {/* Hero Section */}
-            <section className='relative h-screen flex items-center justify-center overflow-hidden'>
-                {/* Video Background */}
-                <div className='absolute inset-0 z-0'>
-                    <video
-                        autoPlay
-                        muted
-                        loop
-                        playsInline
-                        className='w-full h-full object-cover opacity-60 scale-105'
-                    >
-                        <source src="https://assets.mixkit.co/videos/preview/mixkit-digital-connection-background-23058-large.mp4" type="video/mp4" />
-                    </video>
+            <motion.section
+                style={{ opacity: heroOpacity, scale: heroScale, y: heroY }}
+                className='relative h-screen flex items-center justify-center overflow-hidden'
+            >
+                {/* High-Quality Tech Background with Motion */}
+                <div className='absolute inset-0 z-0 overflow-hidden'>
+                    <motion.img
+                        initial={{ scale: 1.2 }}
+                        animate={{ scale: 1 }}
+                        transition={{ duration: 10, repeat: Infinity, repeatType: "reverse", ease: "linear" }}
+                        src="https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=80&w=2000"
+                        className='w-full h-full object-cover opacity-60'
+                    />
                     <div className='absolute inset-0 bg-gradient-to-b from-background/10 via-background/30 to-background z-10' />
                 </div>
 
                 <div className='container mx-auto px-6 relative z-20 text-center space-y-8 max-w-5xl'>
-
-
-                    <h1 className='text-5xl md:text-8xl font-black tracking-tighter leading-[0.9] uppercase italic'>
+                    <motion.h1
+                        initial={{ opacity: 0, y: 50, rotateX: 45 }}
+                        animate={{ opacity: 1, y: 0, rotateX: 0 }}
+                        transition={{ duration: 1, ease: "easeOut" }}
+                        className='text-5xl md:text-8xl font-black tracking-tighter leading-[0.9] uppercase italic perspective-1000'
+                    >
                         Your Message, <br />
                         <span className='text-primary drop-shadow-[0_0_20px_hsla(var(--primary),0.3)]'>Across Every Screen.</span>
-                    </h1>
+                    </motion.h1>
 
-                    <p className='text-lg md:text-xl text-muted-foreground/80 max-w-2xl mx-auto font-medium leading-relaxed'>
+                    <motion.p
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.5, duration: 1 }}
+                        className='text-lg md:text-xl text-muted-foreground/80 max-w-2xl mx-auto font-medium leading-relaxed'
+                    >
                         Smart and powerful digital signage that lets you focus on what’s important — your message. Cloud-based management for a digital world.
-                    </p>
+                    </motion.p>
 
-                    <div className='flex flex-col sm:flex-row items-center justify-center gap-4 pt-10'>
-                        <Button size='lg' onClick={() => navigate(Routes.SIGN_UP)} className='h-16 px-10 rounded-2xl text-md font-black uppercase tracking-widest gap-3 w-full sm:w-auto shadow-2xl'>
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.8 }}
+                        className='flex flex-col sm:flex-row items-center justify-center gap-4 pt-10'
+                    >
+                        <Button size='lg' onClick={() => navigate(Routes.SIGN_UP)} className='h-16 px-10 rounded-2xl text-md font-black uppercase tracking-widest gap-3 w-full sm:w-auto shadow-2xl hover:bg-primary/90 transition-all'>
                             Try for Free <IconArrowRight size={20} />
                         </Button>
                         <Button
                             variant='outline'
                             size='lg'
-                            className='h-16 px-10 rounded-2xl text-md font-black uppercase tracking-widest w-full sm:w-auto bg-background/50 backdrop-blur-xl border-white/10'
-                            onClick={() => document.getElementById('solutions')?.scrollIntoView({ behavior: 'smooth' })}
+                            className='h-16 px-10 rounded-2xl text-md font-black uppercase tracking-widest w-full sm:w-auto bg-background/50 backdrop-blur-xl border-white/10 hover:border-primary/50 transition-all'
+                            onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
                         >
                             Explore Solutions
                         </Button>
+                    </motion.div>
+                </div>
+            </motion.section>
+
+            {/* Features Section - Sticky Scrollytelling */}
+            <section id="features" className='relative min-h-screen py-32'>
+                <div className='sticky top-0 h-screen w-full flex items-center justify-center overflow-hidden z-0'>
+                    <motion.img
+                        initial={{ scale: 1.1, opacity: 0.2 }}
+                        animate={{ scale: 1, opacity: 0.3 }}
+                        transition={{ duration: 15, repeat: Infinity, repeatType: "reverse", ease: "linear" }}
+                        src="https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=80&w=2000"
+                        className='w-full h-full object-cover grayscale brightness-50'
+                    />
+                    <div className='absolute inset-0 bg-background/80 backdrop-blur-3xl' />
+                </div>
+
+                <div className='container mx-auto px-6 relative z-10 -mt-[100vh]'>
+                    <div className='min-h-screen flex flex-col justify-center items-center'>
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            whileInView={{ opacity: 1, scale: 1 }}
+                            viewport={{ once: false, amount: 0.5 }}
+                            className='text-center space-y-4 mb-20'
+                        >
+                            <h2 className='text-4xl md:text-7xl font-black tracking-tighter uppercase italic'>Powerful Features</h2>
+                            <div className='h-2 w-32 bg-primary mx-auto rounded-full' />
+                            <p className='text-muted-foreground/80 max-w-xl mx-auto text-xl'>Experience the next generation of content management.</p>
+                        </motion.div>
+
+                        <div className='grid md:grid-cols-2 lg:grid-cols-4 gap-8'>
+                            {features.map((f, i) => (
+                                <motion.div
+                                    key={i}
+                                    initial={{ opacity: 0, y: 100 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.5, delay: i * 0.1 }}
+                                    viewport={{ once: false, amount: 0.2 }}
+                                    className='p-8 rounded-[2rem] bg-background/40 backdrop-blur-xl border border-white/10 hover:bg-primary/5 hover:border-primary/20 transition-all duration-500 group shadow-2xl relative'
+                                >
+                                    <div className='bg-primary/20 w-16 h-16 rounded-2xl flex items-center justify-center mb-6 border border-primary/30 group-hover:scale-125 group-hover:rotate-6 transition-transform'>
+                                        {f.icon}
+                                    </div>
+                                    <h3 className='text-2xl font-bold mb-4 uppercase tracking-tight text-foreground'>{f.title}</h3>
+                                    <p className='text-muted-foreground/90 leading-relaxed font-medium'>{f.description}</p>
+                                </motion.div>
+                            ))}
+                        </div>
                     </div>
                 </div>
             </section>
 
-            {/* Features Section */}
-            <section id="features" className='relative py-32 overflow-hidden'>
-                {/* Background Video for Features */}
-                <div className='absolute inset-0 z-0'>
-                    <video
-                        autoPlay
-                        muted
-                        loop
-                        playsInline
-                        className='w-full h-full object-cover opacity-30 grayscale brightness-50'
-                    >
-                        <source src="https://assets.mixkit.co/videos/preview/mixkit-digital-animation-of-a-circuit-board-11005-large.mp4" type="video/mp4" />
-                    </video>
-                    <div className='absolute inset-0 bg-background/80 backdrop-blur-3xl z-10' />
-                </div>
 
-                <div className='container mx-auto px-6 relative z-20'>
-                    <div className='text-center space-y-4 mb-20'>
-                        <h2 className='text-3xl md:text-5xl font-black tracking-tighter uppercase italic'>Powerful Features</h2>
-                        <div className='h-1.5 w-24 bg-primary mx-auto rounded-full' />
-                        <p className='text-muted-foreground/80 max-w-xl mx-auto text-lg'>Experience the next generation of content management.</p>
-                    </div>
-
-                    <div className='grid md:grid-cols-2 lg:grid-cols-4 gap-8'>
-                        {features.map((f, i) => (
-                            <div key={i} className='p-8 rounded-[2rem] bg-background/40 backdrop-blur-xl border border-white/10 hover:bg-primary/5 hover:border-primary/20 transition-all duration-500 group shadow-2xl'>
-                                <div className='bg-primary/20 w-14 h-14 rounded-2xl flex items-center justify-center mb-6 border border-primary/30 group-hover:scale-110 transition-transform'>
-                                    {f.icon}
-                                </div>
-                                <h3 className='text-xl font-bold mb-4 uppercase tracking-tight text-foreground'>{f.title}</h3>
-                                <p className='text-muted-foreground/90 leading-relaxed font-medium'>{f.description}</p>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-
-            {/* Solutions Section */}
+            {/* Solutions Section - Interactive Scroll */}
             <section id="solutions" className='relative py-32 overflow-hidden border-y border-white/5'>
-                {/* Background Video for Solutions */}
-                <div className='absolute inset-0 z-0'>
-                    <video
-                        autoPlay
-                        muted
-                        loop
-                        playsInline
-                        className='w-full h-full object-cover opacity-20 grayscale brightness-75'
-                    >
-                        <source src="https://assets.mixkit.co/videos/preview/mixkit-group-of-people-looking-at-a-digital-screen-large.mp4" type="video/mp4" />
-                    </video>
-                    <div className='absolute inset-0 bg-gradient-to-r from-background via-background/80 to-transparent z-10' />
-                </div>
-
                 <div className='container mx-auto px-6 relative z-20'>
                     <div className='flex flex-col lg:flex-row items-center gap-20'>
-                        <div className='lg:w-1/2 space-y-8'>
-                            <h2 className='text-4xl md:text-6xl font-black tracking-tighter uppercase italic leading-tight'>
-                                Solutions for Every <br /> <span className='text-primary drop-shadow-2xl'>Industry.</span>
+                        <motion.div
+                            initial={{ opacity: 0, x: -100 }}
+                            whileInView={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.8 }}
+                            viewport={{ once: false, amount: 0.3 }}
+                            className='lg:w-1/2 space-y-8'
+                        >
+                            <h2 className='text-5xl md:text-8xl font-black tracking-tighter uppercase italic leading-tight'>
+                                Solutions for <br /> Every <span className='text-primary drop-shadow-2xl'>Industry.</span>
                             </h2>
-                            <p className='text-xl text-muted-foreground/90 leading-relaxed font-medium'>
-                                SmartSignDeck is versatile and scales perfectly to fit any professional environment, ensuring your message is heard.
+                            <p className='text-2xl text-muted-foreground/90 leading-relaxed font-medium'>
+                                SmartSignDeck is versatile and scales perfectly to fit any professional environment.
                             </p>
 
                             <div className='grid grid-cols-2 gap-4'>
                                 {industries.map((ind, i) => (
-                                    <div key={i} className='flex items-center gap-3 p-4 bg-background/60 backdrop-blur-md rounded-2xl border border-white/10 shadow-xl hover:border-primary/30 transition-all group'>
-                                        <div className='text-primary group-hover:scale-110 transition-transform'>{ind.icon}</div>
+                                    <motion.div
+                                        key={i}
+                                        whileHover={{ scale: 1.05, border: '1px solid hsla(var(--primary), 0.5)' }}
+                                        className='flex items-center gap-3 p-5 bg-background/60 backdrop-blur-md rounded-2xl border border-white/10 shadow-xl transition-all group cursor-pointer'
+                                    >
+                                        <div className='text-primary group-hover:scale-125 transition-transform'>{ind.icon}</div>
                                         <span className='font-bold text-sm uppercase tracking-wider'>{ind.name}</span>
-                                    </div>
+                                    </motion.div>
                                 ))}
                             </div>
 
-                            <Button variant='link' className='gap-2 text-primary font-bold p-0 text-lg uppercase tracking-tighter hover:gap-4 transition-all'>
-                                Explore all industries <IconArrowRight size={18} />
+                            <Button variant='link' className='gap-2 text-primary font-bold p-0 text-xl uppercase tracking-tighter hover:gap-6 transition-all'>
+                                Explore all industries <IconArrowRight size={24} />
                             </Button>
-                        </div>
+                        </motion.div>
 
-                        <div className='lg:w-1/2 relative'>
-                            <div className='absolute -inset-10 bg-primary/20 blur-[100px] rounded-full animate-pulse' />
-                            <div className='relative rounded-[3rem] overflow-hidden border-8 border-white/10 shadow-2xl skew-y-3 hover:skew-y-0 hover:scale-105 hover:rotate-2 transition-all duration-700 group cursor-pointer'>
-                                <img
-                                    src="https://images.unsplash.com/photo-1542744094-24638eff58bb?auto=format&fit=crop&q=80&w=1000"
+                        <motion.div
+                            initial={{ opacity: 0, rotate: 10, scale: 0.8 }}
+                            whileInView={{ opacity: 1, rotate: 0, scale: 1 }}
+                            transition={{ duration: 1, type: "spring" }}
+                            viewport={{ once: false, amount: 0.3 }}
+                            className='lg:w-1/2 relative'
+                        >
+                            <div className='absolute -inset-20 bg-primary/20 blur-[150px] rounded-full animate-pulse' />
+                            <div className='relative rounded-[4rem] overflow-hidden border-[12px] border-white/10 shadow-[0_0_100px_rgba(0,0,0,0.5)] group cursor-pointer'>
+                                <motion.img
+                                    whileHover={{ scale: 1.1 }}
+                                    transition={{ duration: 1 }}
+                                    src="https://images.unsplash.com/photo-1542744094-24638eff58bb?auto=format&fit=crop&q=80&w=1200"
                                     alt="Dashboard Preview"
-                                    className='w-full grayscale group-hover:grayscale-0 transition-all duration-1000 scale-110 group-hover:scale-100'
+                                    className='w-full grayscale brightness-75 group-hover:grayscale-0 group-hover:brightness-100 transition-all duration-1000'
                                 />
-                                <div className='absolute inset-0 bg-primary/10 group-hover:bg-transparent transition-colors' />
-                                <div className='absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-t from-primary/20 to-transparent' />
+                                <div className='absolute inset-0 bg-primary/5 group-hover:bg-transparent transition-colors' />
+                                <div className='absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-t from-primary/30 to-transparent' />
                             </div>
-                        </div>
+                        </motion.div>
                     </div>
                 </div>
             </section>
 
 
             {/* CTA Section */}
-            <section id="contact" className='py-32 overflow-hidden relative'>
-                <div className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-full bg-primary/5 -rotate-3 z-0' />
+            <section id="contact" className='py-48 overflow-hidden relative'>
+                <motion.div
+                    initial={{ scaleX: 0 }}
+                    whileInView={{ scaleX: 1 }}
+                    transition={{ duration: 1.5, ease: "circOut" }}
+                    className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[150%] h-full bg-primary/5 -rotate-2 z-0 origin-center'
+                />
                 <div className='container mx-auto px-6 relative z-10'>
-                    <div className='bg-primary/95 text-white rounded-[2.5rem] p-12 md:p-20 text-center space-y-10 shadow-[0_50px_100px_-20px_hsla(var(--primary),0.5)]'>
-                        <h2 className='text-4xl md:text-7xl font-black tracking-tighter uppercase italic leading-none'>
-                            Ready to transform <br /> your communication?
+                    <motion.div
+                        initial={{ opacity: 0, y: 50 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.8 }}
+                        className='bg-primary/95 text-white rounded-[4rem] p-16 md:p-32 text-center space-y-12 shadow-[0_50px_150px_-30px_hsla(var(--primary),0.6)] border border-white/10 backdrop-blur-3xl'
+                    >
+                        <h2 className='text-5xl md:text-9xl font-black tracking-tighter uppercase italic leading-none'>
+                            Ready to <br /> <span className='text-white/40'>transform?</span>
                         </h2>
-                        <p className='text-xl text-white/80 max-w-2xl mx-auto font-medium'>
-                            Join thousands of businesses using SmartSignDeck to power their visual displays. Start your 14-day free trial today.
+                        <p className='text-2xl text-white/70 max-w-3xl mx-auto font-medium'>
+                            Join the elite businesses using SmartSignDeck. Start your 14-day premium trial today and see the difference.
                         </p>
-                        <div className='flex flex-col sm:flex-row items-center justify-center gap-6'>
-                            <Button size='lg' onClick={() => navigate(Routes.SIGN_UP)} className='bg-white text-black hover:bg-white/90 h-16 px-12 rounded-2xl font-black uppercase tracking-widest text-md w-full sm:w-auto'>
+                        <div className='flex flex-col sm:flex-row items-center justify-center gap-8'>
+                            <Button size='lg' onClick={() => navigate(Routes.SIGN_UP)} className='bg-white text-black hover:bg-white/90 h-20 px-16 rounded-3xl font-black uppercase tracking-widest text-lg w-full sm:w-auto shadow-2xl'>
                                 Start Free Trial
                             </Button>
-                            <Button size='lg' variant='outline' className='h-16 px-12 rounded-2xl font-black uppercase tracking-widest text-md bg-transparent border-white/40 hover:bg-white/10 w-full sm:w-auto'>
+                            <Button size='lg' variant='outline' className='h-20 px-16 rounded-3xl font-black uppercase tracking-widest text-lg bg-transparent border-white/40 hover:bg-white/10 w-full sm:w-auto mt-4 sm:mt-0'>
                                 Contact Sales
                             </Button>
                         </div>
-                    </div>
+                    </motion.div>
                 </div>
             </section>
 
             {/* Footer */}
-            <footer className='py-20 bg-background border-t border-white/5'>
+            <footer className='py-32 bg-background border-t border-white/5'>
                 <div className='container mx-auto px-6'>
-                    <div className='grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-12'>
-                        <div className='col-span-2 space-y-6'>
-                            <div className='flex items-center gap-2'>
-                                <IconDeviceTv className='text-primary h-8 w-8' />
-                                <span className='text-2xl font-black tracking-tighter uppercase italic'>SmartSign<span className='text-primary'>Deck</span></span>
+                    <div className='grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-20'>
+                        <div className='col-span-2 space-y-8'>
+                            <div className='flex items-center gap-3'>
+                                <IconDeviceTv className='text-primary h-10 w-10' />
+                                <span className='text-3xl font-black tracking-tighter uppercase italic'>SmartSign<span className='text-primary'>Deck</span></span>
                             </div>
-                            <p className='text-muted-foreground/60 max-w-xs leading-relaxed'>
+                            <p className='text-muted-foreground/60 max-w-sm text-lg leading-relaxed'>
                                 The industry standard for cloud-based digital signage management. Built for performance, designed for ease.
                             </p>
-                        </div>
-
-                        <div className='space-y-4'>
-                            <h4 className='font-black uppercase tracking-[0.2em] text-[10px] text-muted-foreground'>Product</h4>
-                            <ul className='space-y-2 text-sm text-muted-foreground/80'>
-                                <li className='hover:text-primary cursor-pointer'>Features</li>
-                                <li className='hover:text-primary cursor-pointer'>Integrations</li>
-                                <li className='hover:text-primary cursor-pointer'>Security</li>
-                                <li className='hover:text-primary cursor-pointer'>Pricing</li>
-                            </ul>
-                        </div>
-
-                        <div className='space-y-4'>
-                            <h4 className='font-black uppercase tracking-[0.2em] text-[10px] text-muted-foreground'>Support</h4>
-                            <ul className='space-y-2 text-sm text-muted-foreground/80'>
-                                <li className='hover:text-primary cursor-pointer'>Help Center</li>
-                                <li className='hover:text-primary cursor-pointer'>API Docs</li>
-                                <li className='hover:text-primary cursor-pointer'>Training</li>
-                                <li className='hover:text-primary cursor-pointer'>Status</li>
-                            </ul>
-                        </div>
-
-                        <div className='space-y-4'>
-                            <h4 className='font-black uppercase tracking-[0.2em] text-[10px] text-muted-foreground'>Company</h4>
-                            <ul className='space-y-2 text-sm text-muted-foreground/80'>
-                                <li className='hover:text-primary cursor-pointer'>About</li>
-                                <li className='hover:text-primary cursor-pointer'>Careers</li>
-                                <li className='hover:text-primary cursor-pointer'>Contact</li>
-                                <li className='hover:text-primary cursor-pointer'>Legal</li>
-                            </ul>
-                        </div>
-
-                        <div className='space-y-4'>
-                            <h4 className='font-black uppercase tracking-[0.2em] text-[10px] text-muted-foreground'>Follow</h4>
-                            <div className='flex gap-4'>
-                                <a href="https://linkedin.com/in/dhimant-pandya-083b4b271" target="_blank" rel="noopener noreferrer" className='bg-muted p-2 rounded-lg hover:bg-primary/20 cursor-pointer transition-colors'>
-                                    <IconBrandLinkedin size={20} className="text-primary" />
-                                </a>
-                                <div className='bg-muted p-2 rounded-lg hover:bg-primary/20 cursor-pointer transition-colors'><IconWorld size={20} /></div>
-                                <div className='bg-muted p-2 rounded-lg hover:bg-primary/20 cursor-pointer transition-colors'><IconMessageCircle size={20} /></div>
+                            <div className='flex gap-6'>
+                                <motion.a whileHover={{ y: -5, color: 'hsl(var(--primary))' }} href="https://linkedin.com/in/dhimant-pandya-083b4b271" target="_blank" rel="noopener noreferrer" className='bg-muted p-3 rounded-2xl hover:bg-primary/20 cursor-pointer transition-colors'>
+                                    <IconBrandLinkedin size={24} className="text-primary" />
+                                </motion.a>
+                                <motion.div whileHover={{ y: -5, color: 'hsl(var(--primary))' }} className='bg-muted p-3 rounded-2xl hover:bg-primary/20 cursor-pointer transition-colors'><IconWorld size={24} /></motion.div>
+                                <motion.div whileHover={{ y: -5, color: 'hsl(var(--primary))' }} className='bg-muted p-3 rounded-2xl hover:bg-primary/20 cursor-pointer transition-colors'><IconMessageCircle size={24} /></motion.div>
                             </div>
                         </div>
+
+                        {['Product', 'Support', 'Company', 'Legal'].map((title, i) => (
+                            <div key={i} className='space-y-6'>
+                                <h4 className='font-black uppercase tracking-[0.3em] text-xs text-muted-foreground'>{title}</h4>
+                                <ul className='space-y-4 text-md text-muted-foreground/80'>
+                                    {['Link 1', 'Link 2', 'Link 3', 'Link 4'].map((link, j) => (
+                                        <motion.li key={j} whileHover={{ x: 5, color: 'hsl(var(--primary))' }} className='cursor-pointer transition-colors'>{link}</motion.li>
+                                    ))}
+                                </ul>
+                            </div>
+                        ))}
                     </div>
 
-                    <div className='mt-20 pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between gap-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/40'>
-                        <span>© 2026 SmartSignDeck. All rights reserved.</span>
-                        <div className='flex gap-8'>
+                    <div className='mt-32 pt-10 border-t border-white/5 flex flex-col md:flex-row justify-between gap-8 text-xs font-bold uppercase tracking-widest text-muted-foreground/30'>
+                        <span>© 2026 SmartSignDeck. Mastered with Precision.</span>
+                        <div className='flex gap-12'>
                             <span>Privacy Policy</span>
                             <span>Terms of Service</span>
-                            <span>Cookie Policy</span>
+                            <span>Direct Management</span>
                         </div>
                     </div>
                 </div>
