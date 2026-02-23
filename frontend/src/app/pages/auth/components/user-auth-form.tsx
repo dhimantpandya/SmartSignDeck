@@ -158,7 +158,15 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
 
   const onSubmit = (data: LoginRequest) => {
     setIsLoading(true)
-    mutation.mutate(data)
+
+    // 5s safety timeout
+    const timeoutId = setTimeout(() => {
+      setIsLoading(false);
+    }, 5000);
+
+    mutation.mutate(data, {
+      onSettled: () => clearTimeout(timeoutId)
+    })
   }
 
   return (
@@ -224,8 +232,12 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
               type='button'
               disabled={isLoading}
               onClick={async () => {
+                let timeoutId: any;
                 try {
                   setIsLoading(true);
+                  // 5s safety timeout for loading state
+                  timeoutId = setTimeout(() => setIsLoading(false), 5000);
+
                   form.clearErrors();
 
                   console.log('Starting Google Sign-In...');
@@ -327,6 +339,7 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
                   const errorMessage = error?.message || (typeof error === 'string' ? error : 'Google Sign-In failed');
                   toast({ variant: 'destructive', title: 'Sign-In Failed', description: errorMessage });
                 } finally {
+                  if (timeoutId) clearTimeout(timeoutId);
                   setIsLoading(false);
                 }
               }}
@@ -346,11 +359,24 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
             </Button>
 
 
-            <div className="mt-4 text-center text-sm">
-              Don&apos;t have an account?{' '}
-              <Link to="/sign-up" className="underline hover:text-primary">
-                Sign up
-              </Link>
+            <div className='mt-4 flex flex-col items-center gap-2 text-center text-sm'>
+              <div>
+                Don&apos;t have an account?{' '}
+                <Link to='/sign-up' className='underline hover:text-primary transition-colors'>
+                  Sign up
+                </Link>
+              </div>
+              <div className='flex items-center gap-2 text-muted-foreground'>
+                <span className='h-[1px] w-4 bg-muted' />
+                <span>or</span>
+                <span className='h-[1px] w-4 bg-muted' />
+              </div>
+              <div>
+                Have an invitation?{' '}
+                <Link to={Routes.INVITED} className='font-medium underline hover:text-primary transition-colors'>
+                  Join workspace
+                </Link>
+              </div>
             </div>
           </div>
         </form>

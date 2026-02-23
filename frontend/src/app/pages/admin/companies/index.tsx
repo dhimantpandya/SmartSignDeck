@@ -320,9 +320,35 @@ export default function AdminCompanies() {
                                                     </div>
                                                 </TableCell>
                                                 <TableCell className="text-right">
-                                                    <Button variant="ghost" size="sm" onClick={() => toggleGroup(groupName)} className="text-xs font-bold gap-1 text-primary hover:text-primary hover:bg-primary/5">
-                                                        {isExpanded ? 'Hide Details' : 'View Group'}
-                                                    </Button>
+                                                    <div className="flex justify-end gap-1.5 px-2">
+                                                        <Button
+                                                            variant="outline"
+                                                            size="icon"
+                                                            className="h-8 w-8 hover:bg-primary/10 hover:text-primary transition-all shadow-sm"
+                                                            onClick={() => handleOpenEdit(group[0])}
+                                                            title="Edit Organization"
+                                                        >
+                                                            <Edit size={14} />
+                                                        </Button>
+                                                        <Button
+                                                            variant="outline"
+                                                            size="icon"
+                                                            className="h-8 w-8 hover:bg-blue-500/10 hover:text-blue-500 transition-all shadow-sm"
+                                                            onClick={() => setManagingCompany(group[0])}
+                                                            title="Manage Organization"
+                                                        >
+                                                            <SettingsIcon size={14} />
+                                                        </Button>
+                                                        <Button
+                                                            variant="outline"
+                                                            size="icon"
+                                                            className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive transition-all shadow-sm"
+                                                            onClick={() => setConfirmDelete(group[0].id)}
+                                                            title="Delete Organization"
+                                                        >
+                                                            <Trash size={14} />
+                                                        </Button>
+                                                    </div>
                                                 </TableCell>
                                             </TableRow>
                                             {isExpanded && group.map((company, idx) => (
