@@ -1,7 +1,7 @@
 import { ChangeEvent, useState } from 'react'
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
 import { useReactTable, getCoreRowModel } from '@tanstack/react-table'
-import { userService, adminRequestService, socialService } from '@/api'
+import { userService, adminRequestService, socialService, authService } from '@/api'
 import { useAuth } from '@/hooks/use-auth'
 import { useUserListTableColumns } from '../hooks/use-users-list-table-columns'
 import { User, UserListFilter } from '@/models/user.model'

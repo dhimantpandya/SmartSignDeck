@@ -67,7 +67,7 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
     }, 5000);
 
     try {
-      const response = await authService.register({
+      await authService.register({
         ...data,
         companyId: data.companyId || inviteCompanyId || undefined,
         role: data.role || inviteRole || undefined,

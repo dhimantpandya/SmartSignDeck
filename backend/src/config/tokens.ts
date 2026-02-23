@@ -3,6 +3,7 @@ const tokenTypes: {
   REFRESH: string;
   RESET_PASSWORD: string;
   VERIFY_EMAIL: string;
+  INVITATION: string;
 } = {
   ACCESS: "access",
   REFRESH: "refresh",
