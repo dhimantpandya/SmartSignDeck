@@ -7,16 +7,19 @@ import {
 import { AnalyticsCard } from './analytics-card'
 import { Skeleton } from '@/components/ui/skeleton'
 
+import { useAuth } from '@/hooks/use-auth'
+
 interface AnalyticsProps {
   stats?: any
   isLoading?: boolean
 }
 
 export const Analytics = ({ stats, isLoading }: AnalyticsProps) => {
+  const { user } = useAuth()
   if (isLoading) {
     return (
       <>
-        <Skeleton className='h-32 rounded-xl' />
+        {user?.role !== 'advertiser' && <Skeleton className='h-32 rounded-xl' />}
         <Skeleton className='h-32 rounded-xl' />
         <Skeleton className='h-32 rounded-xl' />
         <Skeleton className='h-32 rounded-xl' />
@@ -31,14 +34,16 @@ export const Analytics = ({ stats, isLoading }: AnalyticsProps) => {
 
   return (
     <>
-      <AnalyticsCard
-        title='Total Templates'
-        value={String(stats?.totalTemplates ?? 0)}
-        percentageChange='100%'
-        icon={
-          <IconLayout className='h-4 w-4 text-muted-foreground' />
-        }
-      />
+      {user?.role !== 'advertiser' && (
+        <AnalyticsCard
+          title='Total Templates'
+          value={String(stats?.totalTemplates ?? 0)}
+          percentageChange='100%'
+          icon={
+            <IconLayout className='h-4 w-4 text-muted-foreground' />
+          }
+        />
+      )}
       <AnalyticsCard
         title='Total Screens'
         value={String(stats?.totalScreens ?? 0)}

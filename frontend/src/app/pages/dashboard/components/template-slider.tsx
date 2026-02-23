@@ -9,6 +9,7 @@ import { INSPIRATION_ITEMS } from './inspiration-data'
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { Switch } from '@/components/ui/switch'
 import { toast } from '@/components/ui/use-toast'
+import { useAuth } from '@/hooks/use-auth'
 
 const VITE_API_URL = import.meta.env.VITE_API_URL || '';
 
@@ -77,6 +78,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 
 export const TemplateSlider = ({ templates, isLoading }: TemplateSliderProps) => {
     const navigate = useNavigate()
+    const { user } = useAuth()
     const queryClient = useQueryClient()
     const [isPaused, setIsPaused] = useState(false)
 
@@ -247,62 +249,65 @@ export const TemplateSlider = ({ templates, isLoading }: TemplateSliderProps) =>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-6">
-                    <div className="flex items-center space-x-2 relative group-toggle">
-                        <span
-                            className={cn("text-xs font-bold uppercase tracking-wider cursor-pointer transition-colors",
-                                sliderMode === 'showcase' ? "text-muted-foreground" : "text-primary"
-                            )}
-                            onClick={() => setSliderMode('inspiration')}
-                        >
-                            Inspiration
-                        </span>
+                {/* --- CENTER SECTION: NAVIGATION --- */}
+                {user?.role !== 'advertiser' && (
+                    <div className="flex items-center gap-6">
+                        <div className="flex items-center space-x-2 relative group-toggle">
+                            <span
+                                className={cn("text-xs font-bold uppercase tracking-wider cursor-pointer transition-colors",
+                                    sliderMode === 'showcase' ? "text-muted-foreground" : "text-primary"
+                                )}
+                                onClick={() => setSliderMode('inspiration')}
+                            >
+                                Inspiration
+                            </span>
 
-                        <div className="relative flex items-center group/lock">
-                            <Switch
-                                checked={sliderMode === 'showcase'}
-                                onCheckedChange={(checked) => {
-                                    if (checked && (!templates || templates.length < 3)) {
-                                        toast({
-                                            title: "Section Locked",
-                                            description: `You need at least 3 screens to unlock 'My Work'. You currently have ${templates?.length || 0}.`,
-                                        });
-                                        return;
-                                    }
-                                    setSliderMode(checked ? 'showcase' : 'inspiration');
-                                }}
-                                className="data-[state=checked]:bg-primary"
-                                disabled={!templates || templates.length < 3}
-                            />
-                            {(!templates || templates.length < 3) && (
-                                <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-black/90 text-white text-[10px] px-3 py-1.5 rounded-md opacity-0 group-hover/lock:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none uppercase font-bold tracking-wider border border-white/10 shadow-xl translate-y-2 group-hover/lock:translate-y-0 z-[100]">
-                                    <div className="relative">
-                                        Create 3 screens to access My Work
-                                        <div className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 border-8 border-transparent border-t-black/90" />
+                            <div className="relative flex items-center group/lock">
+                                <Switch
+                                    checked={sliderMode === 'showcase'}
+                                    onCheckedChange={(checked) => {
+                                        if (checked && (!templates || templates.length < 3)) {
+                                            toast({
+                                                title: "Section Locked",
+                                                description: `You need at least 3 screens to unlock 'My Work'. You currently have ${templates?.length || 0}.`,
+                                            });
+                                            return;
+                                        }
+                                        setSliderMode(checked ? 'showcase' : 'inspiration');
+                                    }}
+                                    className="data-[state=checked]:bg-primary"
+                                    disabled={!templates || templates.length < 3}
+                                />
+                                {(!templates || templates.length < 3) && (
+                                    <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-black/90 text-white text-[10px] px-3 py-1.5 rounded-md opacity-0 group-hover/lock:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none uppercase font-bold tracking-wider border border-white/10 shadow-xl translate-y-2 group-hover/lock:translate-y-0 z-[100]">
+                                        <div className="relative">
+                                            Create 3 screens to access My Work
+                                            <div className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 border-8 border-transparent border-t-black/90" />
+                                        </div>
                                     </div>
-                                </div>
-                            )}
+                                )}
+                            </div>
+
+                            <span
+                                className={cn("text-xs font-bold uppercase tracking-wider transition-colors",
+                                    (!templates || templates.length < 3) ? "text-muted-foreground/40 cursor-not-allowed" :
+                                        (sliderMode === 'inspiration' ? "text-muted-foreground cursor-pointer" : "text-primary")
+                                )}
+                                onClick={() => {
+                                    if (templates && templates.length >= 3) {
+                                        setSliderMode('showcase');
+                                    }
+                                }}
+                            >
+                                My Work {(!templates || templates.length < 3) && "🔒"}
+                            </span>
                         </div>
 
-                        <span
-                            className={cn("text-xs font-bold uppercase tracking-wider transition-colors",
-                                (!templates || templates.length < 3) ? "text-muted-foreground/40 cursor-not-allowed" :
-                                    (sliderMode === 'inspiration' ? "text-muted-foreground cursor-pointer" : "text-primary")
-                            )}
-                            onClick={() => {
-                                if (templates && templates.length >= 3) {
-                                    setSliderMode('showcase');
-                                }
-                            }}
-                        >
-                            My Work {(!templates || templates.length < 3) && "🔒"}
-                        </span>
+                        <Button variant="ghost" size="sm" onClick={() => navigate(isShowingInspiration ? Routes.TEMPLATES : Routes.SCREENS)} className="hidden sm:flex text-muted-foreground hover:text-primary font-bold transition-colors text-[10px] uppercase tracking-tighter">
+                            {isShowingInspiration ? "View Catalog" : "Manage Screens"} <IconArrowRight size={12} className="ml-2" />
+                        </Button>
                     </div>
-
-                    <Button variant="ghost" size="sm" onClick={() => navigate(isShowingInspiration ? Routes.TEMPLATES : Routes.SCREENS)} className="hidden sm:flex text-muted-foreground hover:text-primary font-bold transition-colors text-[10px] uppercase tracking-tighter">
-                        {isShowingInspiration ? "View Catalog" : "Manage Screens"} <IconArrowRight size={12} className="ml-2" />
-                    </Button>
-                </div>
+                )}
             </div>
 
             <div
@@ -461,22 +466,24 @@ export const TemplateSlider = ({ templates, isLoading }: TemplateSliderProps) =>
                                                         <span className="text-white font-black text-[8px] uppercase">{zones} {zones === 1 ? 'Zone' : 'Zones'}</span>
                                                     </div>
                                                 </div>
-                                                <Button
-                                                    variant="default"
-                                                    size="sm"
-                                                    className="w-full h-8 gap-2 font-black text-[9px] uppercase tracking-tighter shadow-2xl bg-white text-black border-0 rounded-lg hover:scale-[1.02] transition-transform"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        if (isShowingInspiration) {
-                                                            bootstrapMutation.mutate(name);
-                                                        } else {
-                                                            navigate(`${Routes.SCREENS}/${item.id || item._id}`);
-                                                        }
-                                                    }}
-                                                    loading={bootstrapMutation.isPending}
-                                                >
-                                                    <Eye size={12} /> {isShowingInspiration ? 'Preview Concept' : 'View Screen Details'}
-                                                </Button>
+                                                {user?.role !== 'advertiser' && (
+                                                    <Button
+                                                        variant="default"
+                                                        size="sm"
+                                                        className="w-full h-8 gap-2 font-black text-[9px] uppercase tracking-tighter shadow-2xl bg-white text-black border-0 rounded-lg hover:scale-[1.02] transition-transform"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            if (isShowingInspiration) {
+                                                                bootstrapMutation.mutate(name);
+                                                            } else {
+                                                                navigate(`${Routes.SCREENS}/${item.id || item._id}`);
+                                                            }
+                                                        }}
+                                                        loading={bootstrapMutation.isPending}
+                                                    >
+                                                        <Eye size={12} /> {isShowingInspiration ? 'Preview Concept' : 'View Screen Details'}
+                                                    </Button>
+                                                )}
                                             </div>
                                         )}
                                     </CardContent>

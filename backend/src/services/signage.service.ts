@@ -6,11 +6,14 @@ import mongoose from 'mongoose';
  * Get signage analytics for the dashboard
  * @returns {Promise<Object>}
  */
-const getSignageStats = async (companyId: string, userId: string) => {
+const getSignageStats = async (companyId: string, userId?: string) => {
   const filter: any = {
-    deletedAt: null,
-    createdBy: new mongoose.Types.ObjectId(userId)
+    deletedAt: null
   };
+
+  if (userId && mongoose.Types.ObjectId.isValid(userId)) {
+    filter.createdBy = new mongoose.Types.ObjectId(userId);
+  }
 
   // 🔒 Strict Personal Isolation: Primary filter is createdBy.
   // We still include companyId for indexed performance if user has one.
@@ -44,11 +47,14 @@ const getSignageStats = async (companyId: string, userId: string) => {
 /**
  * Get active displays (Screens with designated content and linked templates)
  */
-const getActiveContent = async (companyId: string, userId: string) => {
+const getActiveContent = async (companyId: string, userId?: string) => {
   const filter: any = {
-    deletedAt: null,
-    createdBy: new mongoose.Types.ObjectId(userId)
+    deletedAt: null
   };
+
+  if (userId && mongoose.Types.ObjectId.isValid(userId)) {
+    filter.createdBy = new mongoose.Types.ObjectId(userId);
+  }
 
   if (companyId && mongoose.Types.ObjectId.isValid(companyId)) {
     filter.companyId = new mongoose.Types.ObjectId(companyId);

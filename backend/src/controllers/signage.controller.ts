@@ -13,9 +13,13 @@ const getStats = catchAsync(async (req: Request, res: Response) => {
   let stats;
   const userId = (user?.id || user?._id)?.toString();
 
+  const userRole = user?.role;
+  const isCompanyWide = (userRole === "admin" || userRole === "advertiser" || userRole === "super_admin") && !!companyId;
+  const targetUserId = isCompanyWide ? undefined : userId;
+
   if (!companyId && user?.role === "super_admin") {
     // Super-admin without company sees everything
-    stats = await signageService.getSignageStats("", userId);
+    stats = await signageService.getSignageStats("", targetUserId as string);
   } else if (!companyId) {
     // Fallback if somehow companyId is missing for regular users
     stats = {
@@ -25,7 +29,7 @@ const getStats = catchAsync(async (req: Request, res: Response) => {
       offlineScreens: 0,
     };
   } else {
-    stats = await signageService.getSignageStats(companyId, userId);
+    stats = await signageService.getSignageStats(companyId, targetUserId as string);
   }
 
   successResponse(
