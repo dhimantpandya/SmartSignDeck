@@ -203,7 +203,7 @@ export default function Dashboard() {
               </TabsList>
             </div>
 
-            <TabsContent value='overview' className='space-y-4'>
+            <TabsContent value='overview' className='space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500'>
               <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-4'>
                 <Analytics stats={stats} isLoading={isStatsLoading} />
               </div>
@@ -219,7 +219,7 @@ export default function Dashboard() {
               <Separator className="opacity-50" />
 
               <div className='grid grid-cols-1 gap-4 lg:grid-cols-7 pt-4'>
-                <Card className='col-span-1 lg:col-span-4'>
+                <Card className='col-span-1 lg:col-span-4 hover:shadow-xl transition-shadow duration-500 border-primary/5'>
                   <CardHeader>
                     <CardTitle>Weekly Impressions</CardTitle>
                     <CardDescription>
@@ -231,25 +231,25 @@ export default function Dashboard() {
                   </CardContent>
                 </Card>
                 <div className='col-span-1 lg:col-span-3 space-y-4'>
-                  <Card>
+                  <Card className='hover:shadow-lg transition-shadow duration-500 border-primary/5'>
                     <CardHeader>
                       <CardTitle>Quick Actions</CardTitle>
                       <CardDescription>Standard operations for your signage.</CardDescription>
                     </CardHeader>
                     <CardContent className="grid grid-cols-2 gap-2">
                       {user?.role !== 'advertiser' && (
-                        <Button variant="outline" className="flex flex-col h-20 gap-1" onClick={() => navigate(`${Routes.TEMPLATES}?create=true`)}>
-                          <IconLayout size={20} />
+                        <Button variant="outline" className="flex flex-col h-20 gap-1 hover:bg-primary/5 hover:border-primary/30 transition-all group/action" onClick={() => navigate(`${Routes.TEMPLATES}?create=true`)}>
+                          <IconLayout size={20} className="group-hover/action:scale-110 transition-transform" />
                           <span className="text-xs">New Template</span>
                         </Button>
                       )}
-                      <Button variant="outline" className={cn("flex flex-col h-20 gap-1", user?.role === 'advertiser' && "col-span-2")} onClick={() => navigate(`${Routes.SCREENS}?create=true`)}>
-                        <IconDeviceTv size={20} />
+                      <Button variant="outline" className={cn("flex flex-col h-20 gap-1 hover:bg-primary/5 hover:border-primary/30 transition-all group/action", user?.role === 'advertiser' && "col-span-2")} onClick={() => navigate(`${Routes.SCREENS}?create=true`)}>
+                        <IconDeviceTv size={20} className="group-hover/action:scale-110 transition-transform" />
                         <span className="text-xs">Add Screen</span>
                       </Button>
                     </CardContent>
                   </Card>
-                  <Card>
+                  <Card className='hover:shadow-lg transition-shadow duration-500 border-primary/5'>
                     <CardHeader>
                       <CardTitle>Recent Activity</CardTitle>
                       <CardDescription>

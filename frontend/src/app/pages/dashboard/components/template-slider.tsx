@@ -405,10 +405,10 @@ export const TemplateSlider = ({ templates, isLoading }: TemplateSliderProps) =>
                                 <Card
                                     key={`${id}-${idx}`}
                                     className={cn(
-                                        "flex-shrink-0 transition-all duration-700 cursor-pointer overflow-hidden border-none relative group/card rounded-[1.5rem] bg-muted shadow-lg",
+                                        "flex-shrink-0 transition-all duration-700 cursor-pointer overflow-hidden border-none relative group/card rounded-[1.5rem] bg-muted shadow-lg hover:shadow-2xl",
                                         isFocused
-                                            ? cn("z-30 shadow-[0_30px_60px_-12px_rgba(0,0,0,0.4)]", isMobile ? "scale-[1.15]" : "scale-[1.25]")
-                                            : "z-10 scale-100"
+                                            ? cn("z-30 shadow-[0_30px_60px_-12px_rgba(0,0,0,0.4)] hover:shadow-primary/20", isMobile ? "scale-[1.15]" : "scale-[1.25]")
+                                            : "z-10 scale-100 opacity-60 hover:opacity-100"
                                     )}
                                     style={{ width: `${CARD_WIDTH}px`, height: isMobile ? '180px' : '240px' }}
                                     onMouseEnter={() => isFocused && setIsHoveringCenter(true)}

@@ -100,11 +100,11 @@ export default function LandingPage() {
                         muted
                         loop
                         playsInline
-                        className='w-full h-full object-cover opacity-70 scale-105'
+                        className='w-full h-full object-cover opacity-60 scale-105'
                     >
-                        <source src="https://assets.mixkit.co/videos/preview/mixkit-stars-in-the-night-sky-loop-9710-large.mp4" type="video/mp4" />
+                        <source src="https://assets.mixkit.co/videos/preview/mixkit-digital-connection-background-23058-large.mp4" type="video/mp4" />
                     </video>
-                    <div className='absolute inset-0 bg-gradient-to-b from-background/20 via-background/40 to-background z-10' />
+                    <div className='absolute inset-0 bg-gradient-to-b from-background/10 via-background/30 to-background z-10' />
                 </div>
 
                 <div className='container mx-auto px-6 relative z-20 text-center space-y-8 max-w-5xl'>
@@ -175,14 +175,18 @@ export default function LandingPage() {
 
             {/* Solutions Section */}
             <section id="solutions" className='relative py-32 overflow-hidden border-y border-white/5'>
-                {/* Background Image for Solutions */}
+                {/* Background Video for Solutions */}
                 <div className='absolute inset-0 z-0'>
-                    <img
-                        src="https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=2000"
-                        alt="Corporate Background"
-                        className='w-full h-full object-cover opacity-20 filter grayscale contrast-125'
-                    />
-                    <div className='absolute inset-0 bg-gradient-to-r from-background via-background/90 to-transparent z-10' />
+                    <video
+                        autoPlay
+                        muted
+                        loop
+                        playsInline
+                        className='w-full h-full object-cover opacity-20 grayscale brightness-75'
+                    >
+                        <source src="https://assets.mixkit.co/videos/preview/mixkit-group-of-people-looking-at-a-digital-screen-large.mp4" type="video/mp4" />
+                    </video>
+                    <div className='absolute inset-0 bg-gradient-to-r from-background via-background/80 to-transparent z-10' />
                 </div>
 
                 <div className='container mx-auto px-6 relative z-20'>
@@ -210,14 +214,15 @@ export default function LandingPage() {
                         </div>
 
                         <div className='lg:w-1/2 relative'>
-                            <div className='absolute -inset-10 bg-primary/20 blur-[100px] rounded-full' />
-                            <div className='relative rounded-[3rem] overflow-hidden border-8 border-white/10 shadow-2xl skew-y-3 hover:skew-y-0 transition-transform duration-1000 group'>
+                            <div className='absolute -inset-10 bg-primary/20 blur-[100px] rounded-full animate-pulse' />
+                            <div className='relative rounded-[3rem] overflow-hidden border-8 border-white/10 shadow-2xl skew-y-3 hover:skew-y-0 hover:scale-105 hover:rotate-2 transition-all duration-700 group cursor-pointer'>
                                 <img
                                     src="https://images.unsplash.com/photo-1542744094-24638eff58bb?auto=format&fit=crop&q=80&w=1000"
                                     alt="Dashboard Preview"
-                                    className='w-full grayscale group-hover:grayscale-0 transition-all duration-1000'
+                                    className='w-full grayscale group-hover:grayscale-0 transition-all duration-1000 scale-110 group-hover:scale-100'
                                 />
                                 <div className='absolute inset-0 bg-primary/10 group-hover:bg-transparent transition-colors' />
+                                <div className='absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-t from-primary/20 to-transparent' />
                             </div>
                         </div>
                     </div>
