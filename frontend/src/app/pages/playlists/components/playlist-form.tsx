@@ -28,8 +28,8 @@ export default function PlaylistForm({ initialData, onCancel }: PlaylistFormProp
             }
             return playlistService.createPlaylist(data)
         },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['playlists'] })
+        onSuccess: async () => {
+            await queryClient.invalidateQueries({ queryKey: ['playlists'] })
             toast({ title: initialData ? 'Playlist updated' : 'Playlist created' })
             onCancel()
         },
@@ -43,13 +43,18 @@ export default function PlaylistForm({ initialData, onCancel }: PlaylistFormProp
         }
     })
 
-    const handleSave = () => {
+    const handleSave = async () => {
         if (!name.trim()) return toast({ title: 'Name required', variant: 'destructive' })
         if (items.length === 0) return toast({ title: 'Playlist cannot be empty', variant: 'destructive' })
 
         setIsSaving(true)
-        saveMutation.mutate({ name, items })
-        setIsSaving(false)
+        try {
+            await saveMutation.mutateAsync({ name, items })
+        } catch (e) {
+            // handled in mutation onError
+        } finally {
+            setIsSaving(false)
+        }
     }
 
     // Dummy zone to allow mixed content in the reused editor

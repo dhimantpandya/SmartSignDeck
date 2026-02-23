@@ -55,14 +55,15 @@ export default function PlaylistEditor({ zone, items, onChange }: PlaylistEditor
             }
 
             // Validation check against Zone Type
-            if (zone?.type !== 'mixed' && zone?.type !== type) {
+            const zType = zone?.type?.toLowerCase() || 'mixed';
+            if (zType !== 'mixed' && zType !== type) {
                 rejectedCount++;
-                rejectReason = `This is a ${zone?.type || 'media'}-only zone`;
+                rejectReason = `This is a ${zType || 'media'}-only zone`;
                 return;
             }
 
             // Validation check against User Lock
-            if (zone?.type === 'mixed' && mediaTypeLock !== 'both' && mediaTypeLock !== type) {
+            if (zType === 'mixed' && mediaTypeLock !== 'both' && mediaTypeLock !== type) {
                 rejectedCount++;
                 rejectReason = `Locked to ${mediaTypeLock}s only`;
                 return;

@@ -522,7 +522,7 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
                 insertHandler: (data: any) => {
                     if (data && data.assets) {
                         const zone = selectedTemplate?.zones.find((z: any) => z.id === zoneId || z.id.toLowerCase() === zoneId.toLowerCase());
-                        const zoneType = zone?.type || 'mixed';
+                        const zoneType = zone?.type?.toLowerCase() || 'mixed';
 
                         const newPlaylistItems: any[] = [];
                         let skippedCount = 0;
