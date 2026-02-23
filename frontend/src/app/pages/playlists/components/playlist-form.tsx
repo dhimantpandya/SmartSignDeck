@@ -29,7 +29,7 @@ export default function PlaylistForm({ initialData, onCancel }: PlaylistFormProp
             return playlistService.createPlaylist(data)
         },
         onSuccess: async () => {
-            await queryClient.invalidateQueries({ queryKey: ['playlists'] })
+            await queryClient.invalidateQueries({ queryKey: ['playlists'], refetchType: 'all' })
             toast({ title: initialData ? 'Playlist updated' : 'Playlist created' })
             onCancel()
         },

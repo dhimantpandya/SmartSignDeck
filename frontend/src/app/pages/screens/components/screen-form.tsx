@@ -439,7 +439,7 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
                 await apiService.post('/v1/screens', payload)
                 toast({ title: 'Screen created' })
             }
-            queryClient.invalidateQueries({ queryKey: ['screens'] })
+            await queryClient.invalidateQueries({ queryKey: ['screens'], refetchType: 'all' })
             onCancel()
         } catch (error: any) {
             console.error(error)
@@ -763,9 +763,12 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
                                                         onChange={(e) => handleZoneContentChange(selectedZoneId, { playlistId: e.target.value })}
                                                     >
                                                         <option value="">-- Choose a Playlist --</option>
-                                                        {playlistsData?.results?.map((p: Playlist) => (
-                                                            <option key={p.id} value={p.id}>{p.name} ({p.items.length} items)</option>
-                                                        ))}
+                                                        {playlistsData?.results?.map((p: Playlist) => {
+                                                            const zType = zone?.type?.toLowerCase() || 'mixed';
+                                                            const isCompatible = zType === 'mixed' || p.items.every(item => item.type === zType);
+                                                            if (!isCompatible) return null;
+                                                            return <option key={p.id} value={p.id}>{p.name} ({p.items.length} items)</option>
+                                                        })}
                                                     </select>
                                                 </div>
                                             </div>
