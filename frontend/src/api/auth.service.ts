@@ -12,6 +12,7 @@ export interface SignupRequest {
   confirmPassword: string
   companyName?: string
   companyId?: string
+  role?: string
 }
 
 export interface LoginRequest {
@@ -67,6 +68,7 @@ export const signupSchema = z
     confirmPassword: z.string().min(6, 'Confirm Password must be at least 6 characters'),
     companyName: z.string().min(1, 'Company Name is required'),
     companyId: z.string().optional(),
+    role: z.string().optional(),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: 'Passwords do not match',

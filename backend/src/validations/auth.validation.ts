@@ -8,6 +8,7 @@ interface RegisterBody {
   last_name: string;
   companyName?: string;
   companyId?: string;
+  role?: string;
   confirmPassword: string;
 }
 
@@ -106,6 +107,7 @@ const register: { body: ObjectSchema<RegisterBody & { companyId?: string }> } = 
     last_name: Joi.string().trim().required().min(2).max(50).label("Last name"),
     companyName: Joi.string().trim().allow("", null).label("Company Name"),
     companyId: Joi.string().trim().allow("", null).label("Company ID"),
+    role: Joi.string().trim().allow("", null).label("Role"),
     confirmPassword: Joi.string()
       .required()
       .valid(Joi.ref("password"))

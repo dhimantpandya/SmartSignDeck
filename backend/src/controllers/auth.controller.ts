@@ -20,7 +20,7 @@ import User from "../models/user.model";
 // ===== REGISTER =====
 export const register = async (req: Request, res: Response) => {
   try {
-    const { email, password, first_name, last_name, companyName, companyId } = req.body;
+    const { email, password, first_name, last_name, companyName, companyId, role } = req.body;
     console.log(`[AuthDebug] Registration attempt for email: "${email}"`);
 
     // Check if user already exists in DB
@@ -46,6 +46,7 @@ export const register = async (req: Request, res: Response) => {
       authProvider: "local",
       otp,
       otpExpires,
+      role: role || "user",
       createdAt: new Date(),
     } as any);
 
@@ -97,7 +98,7 @@ export const register = async (req: Request, res: Response) => {
 export const firebaseLogin = async (req: Request, res: Response) => {
   try {
     console.log(`[AuthDebug] Received Firebase login request at ${new Date().toISOString()}`);
-    const { idToken, mode } = req.body;
+    const { idToken, mode, role } = req.body;
     const clientIp = req.ip || req.socket.remoteAddress || 'unknown';
     console.log(`[AuthDebug] Firebase login attempt from IP: ${clientIp}, Mode: "${mode}"`);
 
@@ -199,6 +200,7 @@ export const firebaseLogin = async (req: Request, res: Response) => {
           googleId: decodedToken.uid || decodedToken.sub,
           otp,
           otpExpires,
+          role: role || "user",
           createdAt: new Date(),
         };
 
@@ -406,7 +408,7 @@ export const verifyOtp = async (req: Request, res: Response) => {
         companyName: pendingSignup.companyName,
         authProvider: pendingSignup.authProvider,
         googleId: pendingSignup.googleId,
-        role: "user",
+        role: pendingSignup.role || "user",
         is_email_verified: true,
         onboardingCompleted: !!pendingSignup.companyName, // Completed only if company was provided
       });

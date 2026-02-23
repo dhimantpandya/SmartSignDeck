@@ -74,6 +74,12 @@ const Setup = () => {
                 Component: (await import('./pages/auth/google-callback')).default,
               }),
             },
+            {
+              path: Routes.INVITED,
+              lazy: async () => ({
+                Component: (await import('./pages/auth/invited')).default,
+              }),
+            },
           ]
         },
 
@@ -169,6 +175,12 @@ const Setup = () => {
               path: Routes.RECYCLE_BIN,
               lazy: async () => ({
                 Component: (await import('./pages/recycle-bin')).default,
+              }),
+            },
+            {
+              path: Routes.ADMIN_COMPANIES,
+              lazy: async () => ({
+                Component: (await import('./pages/admin/companies')).default,
               }),
             },
           ],

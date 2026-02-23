@@ -17,6 +17,7 @@ export const Routes = {
   ADMIN_REQUESTS: '/admin/requests',
   PLAYER: '/player/:screenId',
   RECYCLE_BIN: '/recycle-bin',
+  INVITED: '/invited',
   ERROR: {
     GENERAL: '/500',
     NOT_FOUND: '/404',

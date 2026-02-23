@@ -328,17 +328,25 @@ export const UsersList = () => {
 
         <div className='flex flex-row items-center gap-2'>
           <DataTableViewOptions table={tableProps} />
-          <Button
-            variant='outline'
-            onClick={() => {
-              const inviteLink = `${window.location.origin}${Routes.SIGN_UP}?companyId=${user?.companyId}`
-              navigator.clipboard.writeText(inviteLink)
-              toast({ title: 'Invite link copied!', description: 'Share this link with your team.' })
-            }}
-            className='h-9 px-4 hidden md:flex'
-          >
-            Copy Invite Link
-          </Button>
+          <div className='flex items-center gap-2'>
+            <select
+              className='h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50'
+              onChange={(e) => {
+                const role = e.target.value
+                const inviteLink = `${window.location.origin}${Routes.SIGN_UP}?companyId=${user?.companyId}${role ? `&role=${role}` : ''}`
+                navigator.clipboard.writeText(inviteLink)
+                toast({ title: 'Invite link copied!', description: `Invite link for ${role || 'user'} role copied to clipboard.` })
+              }}
+              defaultValue=""
+            >
+              <option value="">Select Role to Copy Link</option>
+              {roleOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
           {user?.role === 'super_admin' && (
             <Button
               variant='default'

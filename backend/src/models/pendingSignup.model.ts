@@ -11,6 +11,7 @@ export interface IPendingSignup extends Document {
     googleId?: string;
     otp: string;
     otpExpires: Date;
+    role?: string;
     created_at: Date;
     updated_at: Date;
 }
@@ -58,6 +59,10 @@ const pendingSignupSchema = new Schema<IPendingSignup>(
         otpExpires: {
             type: Date,
             required: true,
+        },
+        role: {
+            type: String,
+            trim: true,
         },
     },
     {

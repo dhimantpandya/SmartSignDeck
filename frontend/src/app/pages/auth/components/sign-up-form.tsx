@@ -33,6 +33,7 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
 
   const queryParams = new URLSearchParams(location.search)
   const inviteCompanyId = queryParams.get('companyId')
+  const inviteRole = queryParams.get('role')
 
   const form = useForm<SignupRequest>({
     resolver: zodResolver(signupSchema),
@@ -44,6 +45,7 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
       confirmPassword: '',
       companyName: '',
       companyId: inviteCompanyId || '',
+      role: inviteRole || '',
     },
   })
 
@@ -247,9 +249,10 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
 
                   const result = await signInWithPopup(auth, googleProvider);
                   const idToken = await result.user.getIdToken();
+                  const role = form.getValues('role');
 
                   // Call backend API with mode 'register'
-                  const response = await authService.firebaseLogin(idToken, 'register');
+                  const response = await authService.firebaseLogin(idToken, 'register', role);
 
 
 
