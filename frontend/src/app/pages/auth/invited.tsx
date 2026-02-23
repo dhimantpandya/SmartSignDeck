@@ -19,15 +19,27 @@ export default function Invited() {
 
             const url = new URL(link)
             const params = new URLSearchParams(url.search)
+            const inviteToken = params.get('inviteToken')
             const companyId = params.get('companyId')
             const role = params.get('role')
 
-            if (!companyId) {
-                toast({ title: 'Invalid invite link', description: 'Company ID not found in the link.', variant: 'destructive' })
+            if (!inviteToken && !companyId) {
+                toast({
+                    title: 'Invalid invite link',
+                    description: 'No valid invitation details found in the link.',
+                    variant: 'destructive'
+                })
                 return
             }
 
-            const signUpUrl = `${Routes.SIGN_UP}?companyId=${companyId}${role ? `&role=${role}` : ''}`
+            // Construct registration URL based on what we have
+            let signUpUrl = Routes.SIGN_UP
+            if (inviteToken) {
+                signUpUrl += `?inviteToken=${inviteToken}`
+            } else {
+                signUpUrl += `?companyId=${companyId}${role ? `&role=${role}` : ''}`
+            }
+
             navigate(signUpUrl)
         } catch (error) {
             toast({ title: 'Invalid URL', description: 'Please make sure you paste the full invite link.', variant: 'destructive' })
