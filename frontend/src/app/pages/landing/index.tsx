@@ -136,67 +136,94 @@ export default function LandingPage() {
             </section>
 
             {/* Features Section */}
-            <section id="features" className='py-32 relative'>
-                <div className='container mx-auto px-6'>
+            <section id="features" className='relative py-32 overflow-hidden'>
+                {/* Background Video for Features */}
+                <div className='absolute inset-0 z-0'>
+                    <video
+                        autoPlay
+                        muted
+                        loop
+                        playsInline
+                        className='w-full h-full object-cover opacity-30 grayscale brightness-50'
+                    >
+                        <source src="https://assets.mixkit.co/videos/preview/mixkit-digital-animation-of-a-circuit-board-11005-large.mp4" type="video/mp4" />
+                    </video>
+                    <div className='absolute inset-0 bg-background/80 backdrop-blur-3xl z-10' />
+                </div>
+
+                <div className='container mx-auto px-6 relative z-20'>
                     <div className='text-center space-y-4 mb-20'>
                         <h2 className='text-3xl md:text-5xl font-black tracking-tighter uppercase italic'>Powerful Features</h2>
                         <div className='h-1.5 w-24 bg-primary mx-auto rounded-full' />
-                        <p className='text-muted-foreground max-w-xl mx-auto text-lg'>Experience the next generation of content management.</p>
+                        <p className='text-muted-foreground/80 max-w-xl mx-auto text-lg'>Experience the next generation of content management.</p>
                     </div>
 
                     <div className='grid md:grid-cols-2 lg:grid-cols-4 gap-8'>
                         {features.map((f, i) => (
-                            <div key={i} className='p-8 rounded-[2rem] bg-muted/5 border border-white/5 hover:bg-primary/5 hover:border-primary/20 transition-all duration-500 group'>
-                                <div className='bg-primary/10 w-14 h-14 rounded-2xl flex items-center justify-center mb-6 border border-primary/20 group-hover:scale-110 transition-transform'>
+                            <div key={i} className='p-8 rounded-[2rem] bg-background/40 backdrop-blur-xl border border-white/10 hover:bg-primary/5 hover:border-primary/20 transition-all duration-500 group shadow-2xl'>
+                                <div className='bg-primary/20 w-14 h-14 rounded-2xl flex items-center justify-center mb-6 border border-primary/30 group-hover:scale-110 transition-transform'>
                                     {f.icon}
                                 </div>
-                                <h3 className='text-xl font-bold mb-4 uppercase tracking-tight'>{f.title}</h3>
-                                <p className='text-muted-foreground leading-relaxed'>{f.description}</p>
+                                <h3 className='text-xl font-bold mb-4 uppercase tracking-tight text-foreground'>{f.title}</h3>
+                                <p className='text-muted-foreground/90 leading-relaxed font-medium'>{f.description}</p>
                             </div>
                         ))}
                     </div>
                 </div>
             </section>
 
+
             {/* Solutions Section */}
-            <section id="solutions" className='py-32 bg-muted/5 border-y border-white/5'>
-                <div className='container mx-auto px-6'>
+            <section id="solutions" className='relative py-32 overflow-hidden border-y border-white/5'>
+                {/* Background Image for Solutions */}
+                <div className='absolute inset-0 z-0'>
+                    <img
+                        src="https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=2000"
+                        alt="Corporate Background"
+                        className='w-full h-full object-cover opacity-20 filter grayscale contrast-125'
+                    />
+                    <div className='absolute inset-0 bg-gradient-to-r from-background via-background/90 to-transparent z-10' />
+                </div>
+
+                <div className='container mx-auto px-6 relative z-20'>
                     <div className='flex flex-col lg:flex-row items-center gap-20'>
                         <div className='lg:w-1/2 space-y-8'>
                             <h2 className='text-4xl md:text-6xl font-black tracking-tighter uppercase italic leading-tight'>
-                                Solutions for Every <br /> <span className='text-primary'>Industry.</span>
+                                Solutions for Every <br /> <span className='text-primary drop-shadow-2xl'>Industry.</span>
                             </h2>
-                            <p className='text-xl text-muted-foreground leading-relaxed'>
+                            <p className='text-xl text-muted-foreground/90 leading-relaxed font-medium'>
                                 SmartSignDeck is versatile and scales perfectly to fit any professional environment, ensuring your message is heard.
                             </p>
 
                             <div className='grid grid-cols-2 gap-4'>
                                 {industries.map((ind, i) => (
-                                    <div key={i} className='flex items-center gap-3 p-4 bg-background rounded-2xl border border-white/5 shadow-sm hover:border-primary/20 transition-colors'>
-                                        <div className='text-primary'>{ind.icon}</div>
+                                    <div key={i} className='flex items-center gap-3 p-4 bg-background/60 backdrop-blur-md rounded-2xl border border-white/10 shadow-xl hover:border-primary/30 transition-all group'>
+                                        <div className='text-primary group-hover:scale-110 transition-transform'>{ind.icon}</div>
                                         <span className='font-bold text-sm uppercase tracking-wider'>{ind.name}</span>
                                     </div>
                                 ))}
                             </div>
 
-                            <Button variant='link' className='gap-2 text-primary font-bold p-0 text-lg uppercase tracking-tighter'>
+                            <Button variant='link' className='gap-2 text-primary font-bold p-0 text-lg uppercase tracking-tighter hover:gap-4 transition-all'>
                                 Explore all industries <IconArrowRight size={18} />
                             </Button>
                         </div>
 
                         <div className='lg:w-1/2 relative'>
                             <div className='absolute -inset-10 bg-primary/20 blur-[100px] rounded-full' />
-                            <div className='relative rounded-[3rem] overflow-hidden border-8 border-white/10 shadow-2xl skew-y-3 hover:skew-y-0 transition-transform duration-1000'>
+                            <div className='relative rounded-[3rem] overflow-hidden border-8 border-white/10 shadow-2xl skew-y-3 hover:skew-y-0 transition-transform duration-1000 group'>
                                 <img
                                     src="https://images.unsplash.com/photo-1542744094-24638eff58bb?auto=format&fit=crop&q=80&w=1000"
                                     alt="Dashboard Preview"
-                                    className='w-full grayscale hover:grayscale-0 transition-all duration-1000'
+                                    className='w-full grayscale group-hover:grayscale-0 transition-all duration-1000'
                                 />
+                                <div className='absolute inset-0 bg-primary/10 group-hover:bg-transparent transition-colors' />
                             </div>
                         </div>
                     </div>
                 </div>
             </section>
+
 
             {/* CTA Section */}
             <section id="contact" className='py-32 overflow-hidden relative'>
