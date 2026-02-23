@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { authService, signupSchema } from '@/api/auth.service'
+import { Routes } from '@/utilities/routes'
 
 import { Button } from '@/components/custom/button'
 import { PasswordInput } from '@/components/custom/password-input'
