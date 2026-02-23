@@ -343,7 +343,7 @@ export const UsersList = () => {
                   }
 
                   const response = await authService.getInviteToken(compId.toString(), role)
-                  const token = response.data.token
+                  const token = response.token
                   const inviteLink = `${window.location.origin}${Routes.SIGN_UP}?inviteToken=${token}`
 
                   navigator.clipboard.writeText(inviteLink)
@@ -354,7 +354,7 @@ export const UsersList = () => {
                 } catch (error: any) {
                   toast({
                     title: 'Failed to generate link',
-                    description: error.response?.data?.message || 'Server error',
+                    description: error.message || 'Server error',
                     variant: 'destructive',
                   })
                 }
