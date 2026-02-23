@@ -84,6 +84,7 @@ const createScreen = {
       )
       .default([]),
     status: Joi.string().valid("online", "offline", "maintenance"),
+    isPublic: Joi.boolean().optional(),
   }),
 };
 
@@ -158,6 +159,7 @@ const updateScreen = {
         }),
       ),
       status: Joi.string().valid("online", "offline", "maintenance"),
+      isPublic: Joi.boolean().optional(),
     })
     .min(1),
 };

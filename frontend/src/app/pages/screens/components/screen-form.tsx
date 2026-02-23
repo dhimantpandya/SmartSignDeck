@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/select'
 import ScheduleManager from './schedule-manager'
 import { GLOBAL_SCALE } from '@/utilities/fabric-utils'
+import { Globe } from 'lucide-react'
 
 interface ScreenFormProps {
     initialData?: any
@@ -820,7 +821,7 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
 
                     {/* Scrollable Content Area */}
                     <div className='flex-1 overflow-y-auto pr-2 custom-scrollbar'>
-                        <div className='grid gap-4 sm:grid-cols-3 mb-6'>
+                        <div className='grid gap-4 sm:grid-cols-2 mb-4'>
                             <div className='grid gap-2'>
                                 <Label htmlFor='name'>Screen Name</Label>
                                 <Input id='name' placeholder='Lobby Display 1' value={name} onChange={(e) => setName(e.target.value)} />
@@ -850,19 +851,29 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div className='flex items-center gap-2 pt-8'>
-                                <Checkbox
-                                    id='isPublic'
-                                    checked={isPublic}
-                                    onCheckedChange={(checked) => setIsPublic(!!checked)}
-                                />
-                                <div className="grid gap-1.5 leading-none">
-                                    <Label htmlFor='isPublic' className="cursor-pointer">Global Screen</Label>
-                                    <p className="text-[10px] text-muted-foreground">
-                                        Make this screen visible in the company's global library.
+                        </div>
+
+                        {/* Global Screen Setting - Clean dedicated row */}
+                        <div className={`flex items-center justify-between rounded-lg border px-4 py-3 mb-6 transition-colors ${isPublic ? 'border-blue-500/40 bg-blue-500/5' : 'border-border bg-muted/20'}`}>
+                            <div className='flex items-center gap-3'>
+                                <div className={`rounded-md p-1.5 ${isPublic ? 'bg-blue-500/15 text-blue-500' : 'bg-muted text-muted-foreground'}`}>
+                                    <Globe size={16} />
+                                </div>
+                                <div>
+                                    <p className='text-sm font-medium leading-none'>Global Screen</p>
+                                    <p className='text-xs text-muted-foreground mt-0.5'>
+                                        Share this screen in your company's global library
                                     </p>
                                 </div>
                             </div>
+                            <button
+                                role="switch"
+                                aria-checked={isPublic}
+                                onClick={() => setIsPublic(!isPublic)}
+                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${isPublic ? 'bg-blue-500' : 'bg-input'}`}
+                            >
+                                <span className={`inline-block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${isPublic ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                            </button>
                         </div>
 
                         {selectedTemplate && (
