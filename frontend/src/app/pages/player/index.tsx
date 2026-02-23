@@ -566,21 +566,7 @@ function ZoneRenderer({ zone, content, screenId, templateId, secretKey }: { zone
 
     const item = playlist[currentIndex]
 
-    // ERROR HANDLER: AUTO-SKIP
-    useEffect(() => {
-        if (hasError && playlist.length > 0) {
-            console.error('[Player] ❌ Media playback error for item:', item?.url);
-            // Longer timeout to allow for transient network issues/slow loads
-            const timer = setTimeout(() => {
-                setHasError(false)
-                if (playlist.length > 1) {
-                    console.log('[Player] ⏭️ Skipping to next item in playlist');
-                    setCurrentIndex((prev) => (prev + 1) % playlist.length)
-                }
-            }, 2000) // Increased to 2s
-            return () => clearTimeout(timer)
-        }
-    }, [hasError, playlist.length, item])
+    // ERROR HANDLER: AUTO-SKIP (REMOVED - Now handled instantly via onError callbacks)
 
     const mediaType = item.type || zone.type
     const videoRef = useRef<HTMLVideoElement>(null)
@@ -609,11 +595,7 @@ function ZoneRenderer({ zone, content, screenId, templateId, secretKey }: { zone
     return (
         <div className='w-full h-full bg-black relative flex items-center justify-center'>
             {hasError ? (
-                <div className="flex flex-col items-center justify-center text-gray-500 animate-pulse p-4 text-center">
-                    <IconAlertTriangle size={48} className="mb-2 opacity-50" />
-                    <p className="text-xs font-bold uppercase tracking-widest">Media failed to load</p>
-                    <p className="text-[8px] mt-1 break-all max-w-[200px] opacity-40">{item.url}</p>
-                </div>
+                <div className="w-full h-full bg-black"></div>
             ) : mediaType === 'video' ? (
                 <video
                     ref={videoRef}
@@ -628,7 +610,14 @@ function ZoneRenderer({ zone, content, screenId, templateId, secretKey }: { zone
                     style={{ backgroundColor: 'black' }}
                     onError={() => {
                         console.error('[Player] Video element onError triggered for:', item.url);
-                        setHasError(true);
+                        if (playlist.length > 1) {
+                            setTimeout(() => {
+                                setHasError(false);
+                                setCurrentIndex((prev) => (prev + 1) % playlist.length);
+                            }, 50);
+                        } else {
+                            setTimeout(() => setHasError(true), 50);
+                        }
                     }}
                     onEnded={() => {
                         if (playlist.length > 1) {
@@ -644,7 +633,14 @@ function ZoneRenderer({ zone, content, screenId, templateId, secretKey }: { zone
                     style={{ backgroundColor: 'black' }}
                     onError={() => {
                         console.error('[Player] Image element onError triggered for:', item.url);
-                        setHasError(true);
+                        if (playlist.length > 1) {
+                            setTimeout(() => {
+                                setHasError(false);
+                                setCurrentIndex((prev) => (prev + 1) % playlist.length);
+                            }, 50);
+                        } else {
+                            setTimeout(() => setHasError(true), 50);
+                        }
                     }}
                 />
             )}
