@@ -27,7 +27,7 @@ const router = Router();
 // ===== REGISTER =====
 router.get(
   "/invite-token",
-  auth("super_admin", "admin"),
+  auth("manageUsers"),
   authController.generateInviteToken
 );
 router.post("/register", validate(register), authController.register);
