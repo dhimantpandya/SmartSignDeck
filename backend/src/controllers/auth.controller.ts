@@ -873,7 +873,7 @@ export const requestDeleteAccount = async (req: Request, res: Response) => {
     const { otp } = await tokenService.generateVerifyEmailOtp(user);
     const { default: config } = await import("../config/config");
 
-    const deletionLink = `${config.frontend_url || 'https://smart-sign-deck.vercel.app'}/delete-account?email=${encodeURIComponent(user.email)}&token=${otp}`;
+    const deletionLink = `${config.appUrl || 'https://smart-sign-deck.vercel.app'}/delete-account?email=${encodeURIComponent(user.email)}&token=${otp}`;
 
     await emailService.sendMail(constants.DELETE_CONFIRMATION_TEMPLATE, {
       email: user.email,
