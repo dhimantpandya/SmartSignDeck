@@ -78,13 +78,8 @@ const queryScreens = async (filter: any, options: CustomPaginateOptions, user: I
     const isQueryingByCreator = !!finalFilter.createdBy;
 
     if (isRecycleBinQuery) {
-      // 🗑️ Recycle Bin Isolation: Strictly same company ONLY
-      if (companyIdStr && mongoose.Types.ObjectId.isValid(companyIdStr)) {
-        finalFilter.companyId = new mongoose.Types.ObjectId(companyIdStr);
-      } else {
-        // Fallback for users without company (shouldn't happen with ensureUserCompany)
-        finalFilter.createdBy = new mongoose.Types.ObjectId(userIdStr);
-      }
+      // 🗑️ Recycle Bin Isolation: Strictly same user ONLY
+      finalFilter.createdBy = new mongoose.Types.ObjectId(userIdStr);
     } else if (isQueryingPublic && isQueryingByCreator) {
       // 🌍 Global Profile View: Allow bypass if specifically looking for PUBLIC items by a CREATOR
       // This enables the "Users -> Profile" modal to work across companies.

@@ -131,6 +131,14 @@ const logout = async (refreshToken: string) => {
 }
 
 /* ================= DELETE ACCOUNT (SELF) ================= */
+const requestDeleteAccount = async () => {
+  return apiService.post('/v1/auth/request-delete', {})
+}
+
+const confirmDeleteAccount = async (email: string, token: string) => {
+  return apiService.post('/v1/auth/confirm-delete', { email, token })
+}
+
 const deleteAccount = async () => {
   return apiService.delete<void>('/v1/auth/account')
 }
@@ -150,6 +158,8 @@ export const authService = {
   verifyResetOtp,
   resetPassword,
   changePassword,
+  requestDeleteAccount,
+  confirmDeleteAccount,
   deleteAccount,
   getInviteToken,
 }

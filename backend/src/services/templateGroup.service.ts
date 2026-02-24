@@ -28,7 +28,11 @@ const queryTemplateGroups = async (
     // Otherwise, we default to only non-deleted items
     const finalFilter = { ...filter };
     if (filter.trashed === 'true') {
+        const userId = (options as any).user?._id || (options as any).user?.id;
         finalFilter.deletedAt = { $ne: null };
+        if (userId) {
+            finalFilter.createdBy = userId;
+        }
         delete finalFilter.trashed;
     } else {
         finalFilter.deletedAt = null;

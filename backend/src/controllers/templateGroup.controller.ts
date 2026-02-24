@@ -20,7 +20,7 @@ const getTemplateGroups = catchAsync(async (req, res) => {
     // Ensure users only see groups from their company
     filter.companyId = (req as any).user.companyId;
 
-    const result = await templateGroupService.queryTemplateGroups(filter, options);
+    const result = await templateGroupService.queryTemplateGroups(filter, options, (req as any).user);
     res.send(result);
 });
 

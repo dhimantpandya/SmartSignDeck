@@ -98,6 +98,8 @@ router.post(
 router.post("/firebase", authController.firebaseLogin);
 
 // ===== DELETE ACCOUNT =====
+router.post("/request-delete", auth(), authController.requestDeleteAccount);
+router.post("/confirm-delete", authController.confirmDeleteAccount);
 router.delete("/account", auth(), authController.deleteAccount);
 
 // ===== LOGOUT =====

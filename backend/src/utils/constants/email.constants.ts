@@ -13,3 +13,9 @@ export const USER_EMAIL_VERIFICATION_SUBJECT = "Verify your Email";
 export const USER_EMAIL_VERIFIED_SUBJECT = "Email verified successfully!";
 export const USER_WITH_CREDENTIALS_SUBJECT =
   "Invitation: <YOUR APP NAME> welcomes you!";
+
+export const ACCOUNT_DELETED_TEMPLATE = "account_deleted_template";
+export const ACCOUNT_DELETED_SUBJECT = "Your account has been deleted";
+
+export const DELETE_CONFIRMATION_TEMPLATE = "delete_confirmation_template";
+export const DELETE_CONFIRMATION_SUBJECT = "Confirm your account deletion";

@@ -289,6 +289,14 @@ const deleteUser = catchAsync(async (req: Request, res: Response) => {
     }
   }
 
+  // Send notification email
+  await emailService.sendMail(emailConstants.ACCOUNT_DELETED_TEMPLATE, {
+    email: targetUser.email,
+    name: `${targetUser.first_name} ${targetUser.last_name}`,
+  }).catch(err => {
+    console.error(`[ERROR] Failed to send account deletion email to ${targetUser.email}:`, err);
+  });
+
   await userService.deleteUserById(req.params.userId);
   successResponse(res, userConstants.USER_DELETED, httpStatus.OK, {});
 });

@@ -23,29 +23,56 @@ const Profile: FC = () => {
   ]
 
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
-  const { logout } = useAuth()
+  const [isOtpStep, setIsOtpStep] = useState(false)
+  const [otp, setOtp] = useState('')
+  const { logout, user: currentUser } = useAuth()
   const navigate = useNavigate()
 
-  const { mutate: deleteAccount, isPending: isDeleting } = useMutation({
-    mutationFn: async () => authService.deleteAccount(),
+  const { mutate: requestDelete, isPending: isRequesting } = useMutation({
+    mutationFn: () => authService.requestDeleteAccount(),
+    onSuccess: () => {
+      setIsOtpStep(true)
+      toast({
+        title: 'Verification code sent',
+        description: 'Please check your email for the deletion code.',
+      })
+    },
+    onError: (error: any) => {
+      toast({
+        title: error?.message || 'Failed to request deletion',
+        variant: 'destructive',
+      })
+    },
+  })
+
+  const { mutate: confirmDelete, isPending: isConfirming } = useMutation({
+    mutationFn: (token: string) => authService.confirmDeleteAccount(currentUser?.email || '', token),
     onSuccess: async () => {
       toast({
         title: 'Account deleted',
-        description: 'Your account has been deleted successfully.',
+        description: 'Your account and data have been removed.',
       })
       await logout()
       navigate('/sign-in')
     },
     onError: (error: any) => {
       toast({
-        title: error?.message || 'Failed to delete account',
+        title: error?.message || 'Invalid or expired code',
         variant: 'destructive',
       })
     },
   })
 
   const handleConfirmDelete = () => {
-    deleteAccount()
+    if (!isOtpStep) {
+      requestDelete()
+    } else {
+      if (!otp.trim()) {
+        toast({ title: 'Please enter the code', variant: 'destructive' })
+        return
+      }
+      confirmDelete(otp)
+    }
   }
 
   return (
@@ -83,7 +110,10 @@ const Profile: FC = () => {
                   type='button'
                   variant='destructive'
                   className='w-fit'
-                  onClick={() => setIsDeleteOpen(true)}
+                  onClick={() => {
+                    setIsOtpStep(false)
+                    setIsDeleteOpen(true)
+                  }}
                 >
                   Delete my account
                 </Button>
@@ -95,13 +125,28 @@ const Profile: FC = () => {
           isOpen={isDeleteOpen}
           onClose={() => setIsDeleteOpen(false)}
           onConfirm={handleConfirmDelete}
-          title='Delete account?'
-          message='This will permanently delete your SmartSignDeck account and related data. This action cannot be undone.'
-          confirmBtnText='Yes, delete my account'
+          title={isOtpStep ? 'Verify Deletion' : 'Delete account?'}
+          message={isOtpStep
+            ? 'We have sent a verification code to your email. Please enter it below to confirm permanent deletion.'
+            : 'This will send a verification code to your email. You will need this code to confirm permanent deletion of your account and data.'}
+          confirmBtnText={isOtpStep ? 'Permanently Delete' : 'Send Code'}
           cancelBtnText='Cancel'
           variant='destructive'
-          isLoading={isDeleting}
-        />
+          isLoading={isRequesting || isConfirming}
+        >
+          {isOtpStep && (
+            <div className='mt-4'>
+              <input
+                type='text'
+                placeholder='Enter 6-digit code'
+                className='w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50'
+                value={otp}
+                onChange={(e) => setOtp(e.target.value)}
+                autoFocus
+              />
+            </div>
+          )}
+        </ConfirmationDialog>
       </Layout.Body>
     </Layout>
   )

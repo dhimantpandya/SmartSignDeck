@@ -80,8 +80,8 @@ const AdminRequests: FC = () => {
                                 </CardHeader>
                                 <CardContent className="space-y-4">
                                     <div className="text-sm">
-                                        <p><strong>Target User:</strong> {request.targetUserId?.first_name ? `${request.targetUserId.first_name} ${request.targetUserId.last_name || ''}` : request.targetUserInfo?.name || 'Unknown User'}</p>
-                                        <p><strong>Email:</strong> {request.targetUserId?.email || request.targetUserInfo?.email || 'N/A'}</p>
+                                        <p><strong>Target User:</strong> {request.targetUserInfo?.name || (request.targetUserId?.first_name ? `${request.targetUserId.first_name} ${request.targetUserId.last_name || ''}` : 'Unknown User')}</p>
+                                        <p><strong>Email:</strong> {request.targetUserInfo?.email || request.targetUserId?.email || 'N/A'}</p>
                                         {request.type === 'ROLE_UPDATE' && (
                                             <p><strong>New Role:</strong> {request.details?.proposedRole}</p>
                                         )}

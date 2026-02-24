@@ -98,10 +98,8 @@ const queryTemplates = async (filter: any, options: CustomPaginateOptions, user:
     const isQueryingByCreator = !!finalFilter.createdBy;
 
     if (isRecycleBinQuery) {
-      // 🗑️ Recycle Bin Isolation: Strictly same company ONLY
-      if (companyIdStr && mongoose.Types.ObjectId.isValid(companyIdStr)) {
-        finalFilter.companyId = new mongoose.Types.ObjectId(companyIdStr);
-      } else if (userId) {
+      // 🗑️ Recycle Bin Isolation: Strictly same user ONLY
+      if (userId) {
         finalFilter.createdBy = userId;
       }
     } else if (isQueryingPublic && isQueryingByCreator) {

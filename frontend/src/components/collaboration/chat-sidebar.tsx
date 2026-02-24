@@ -384,15 +384,6 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
                                 </Badge>
                             )}
                         </TabsTrigger>
-                        <TabsTrigger value="requests" className="rounded-none data-[state=active]:bg-background border-b-2 border-transparent data-[state=active]:border-primary transition-all text-[10px] px-1 relative">
-                            Reqs
-                            {receivedRequests.length > 0 && (
-                                <span className="absolute top-1 right-1 h-2 w-2 bg-destructive rounded-full" />
-                            )}
-                        </TabsTrigger>
-                        <TabsTrigger value="find" className="rounded-none data-[state=active]:bg-background border-b-2 border-transparent data-[state=active]:border-primary transition-all text-[10px] px-1">
-                            Find
-                        </TabsTrigger>
                     </TabsList>
 
                     <div className="flex-1 overflow-hidden relative flex flex-col mt-0 p-0 justify-start">
@@ -504,7 +495,9 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
                                                             <AvatarImage src={friend.avatar} />
                                                             <AvatarFallback className="bg-primary/5 text-primary text-xs font-bold">{friend.first_name?.[0]}{friend.last_name?.[0]}</AvatarFallback>
                                                         </Avatar>
-                                                        <div className="absolute bottom-0 right-0 h-3 w-3 bg-green-500 border-2 border-background rounded-full" />
+                                                        {onlineUsers.has(friendId) && (
+                                                            <div className="absolute bottom-0 right-0 h-3 w-3 bg-green-500 border-2 border-background rounded-full" />
+                                                        )}
                                                     </div>
                                                     <div className="flex flex-col flex-1 overflow-hidden">
                                                         <span className="text-sm font-semibold truncate">{friend.first_name} {friend.last_name}</span>
@@ -587,62 +580,6 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
                             )}
                         </TabsContent>
 
-                        {/* Requests List */}
-                        <TabsContent value="requests" className="flex-1 m-0 p-0 flex flex-col overflow-hidden !mt-0 !pt-0 data-[state=inactive]:hidden">
-                            <div className="flex-1 overflow-y-auto p-2 custom-scrollbar">
-                                {receivedRequests.length === 0 ? (
-                                    <div className="text-center text-xs text-muted-foreground mt-10">
-                                        No pending requests.
-                                    </div>
-                                ) : (
-                                    <div className="space-y-2">
-                                        {receivedRequests.map(req => (
-                                            <div key={req.id} className="p-3 bg-muted/30 rounded-xl border border-primary/5">
-                                                <div className="flex items-center gap-3 mb-3">
-                                                    <Avatar className="h-8 w-8">
-                                                        <AvatarImage src={req.fromId?.avatar} />
-                                                        <AvatarFallback className="text-[10px]">{req.fromId?.first_name?.[0]}</AvatarFallback>
-                                                    </Avatar>
-                                                    <div className="flex-1 min-w-0">
-                                                        <p className="text-xs font-bold truncate">{req.fromId?.first_name} {req.fromId?.last_name}</p>
-                                                        <p className="text-[10px] text-muted-foreground truncate">{req.fromId?.email}</p>
-                                                    </div>
-                                                </div>
-                                                <div className="flex gap-2">
-                                                    <Button size="sm" className="flex-1 h-7 text-[10px]" onClick={() => handleRequestResponse(req.id || req._id, 'accepted')}>Accept</Button>
-                                                    <Button size="sm" variant="outline" className="flex-1 h-7 text-[10px] border-destructive/20 text-destructive hover:bg-destructive/5" onClick={() => handleRequestResponse(req.id || req._id, 'rejected')}>Reject</Button>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        </TabsContent>
-
-                        {/* Find People tab in sidebar */}
-                        <TabsContent value="find" className="flex-1 m-0 p-0 flex flex-col overflow-hidden !mt-0 !pt-0 data-[state=inactive]:hidden">
-                            <div className="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-4">
-                                <div className="p-4 bg-primary/5 rounded-full">
-                                    <UserPlus size={32} className="text-primary" />
-                                </div>
-                                <div>
-                                    <p className="text-sm font-semibold">Grow your network</p>
-                                    <p className="text-xs text-muted-foreground mt-1">
-                                        Use the main Collaboration Hub to find and connect with new people.
-                                    </p>
-                                </div>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => {
-                                        onClose();
-                                        window.location.href = '/collaboration?tab=find';
-                                    }}
-                                >
-                                    Open Hub
-                                </Button>
-                            </div>
-                        </TabsContent>
                     </div>
 
                     {/* Input Area (Shared between Board and Direct if friend selected) */}

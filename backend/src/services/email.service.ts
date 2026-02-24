@@ -200,9 +200,24 @@ export const sendMail = async (type: string, request: Record<string, string>) =>
         await getHTMLandSendEmail("user-registered.html", request);
         break;
 
-      case emailConstants.USER_RESET_PASSWORD_TEMPLATE:
-        request.subject = emailConstants.USER_RESET_PASSWORD_SUBJECT;
-        await getHTMLandSendEmail("reset-password-success.html", request);
+      case emailConstants.USER_EMAIL_VERIFIED_TEMPLATE:
+        request.subject = emailConstants.USER_EMAIL_VERIFIED_SUBJECT;
+        await getHTMLandSendEmail("email-verification-success.html", request);
+        break;
+
+      case emailConstants.ACCOUNT_DELETED_TEMPLATE:
+        request.subject = emailConstants.ACCOUNT_DELETED_SUBJECT;
+        request.contactUrl = config.appUrl ? `${config.appUrl}/contact` : "mailto:support@smartsigndeck.com";
+        await getHTMLandSendEmail("account-deleted.html", request);
+        break;
+
+      case emailConstants.DELETE_CONFIRMATION_TEMPLATE:
+        request.subject = emailConstants.DELETE_CONFIRMATION_SUBJECT;
+        request.deletionLink = createUrl({
+          type: "delete-account",
+          query: `token=${request.token}&email=${request.email}`,
+        });
+        await getHTMLandSendEmail("delete-confirmation.html", request);
         break;
 
       default:

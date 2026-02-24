@@ -21,6 +21,7 @@ interface ConfirmationDialogProps {
   cancelBtnText?: string
   variant?: 'default' | 'destructive' | 'warning' | 'success'
   isLoading?: boolean
+  children?: React.ReactNode
 }
 
 export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
@@ -33,6 +34,7 @@ export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
   cancelBtnText = 'Cancel',
   variant = 'default',
   isLoading = false,
+  children,
 }) => {
   const getIcon = () => {
     switch (variant) {
@@ -64,6 +66,7 @@ export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
               {message}
             </AlertDialogDescription>
           </AlertDialogHeader>
+          {children}
         </div>
         <AlertDialogFooter className="sm:justify-center gap-2">
           <AlertDialogCancel onClick={onClose} disabled={isLoading}>

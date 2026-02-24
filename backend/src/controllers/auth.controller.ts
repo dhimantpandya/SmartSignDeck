@@ -838,3 +838,46 @@ export const deleteAccount = async (req: Request, res: Response) => {
     res.status(status).json({ status: "error", message });
   }
 };
+// ===== REQUEST DELETE ACCOUNT =====
+export const requestDeleteAccount = async (req: Request, res: Response) => {
+  try {
+    const user = req.user as any;
+    const { token } = await tokenService.generateVerifyEmailOtp(user);
+
+    await emailService.sendMail(constants.DELETE_CONFIRMATION_TEMPLATE, {
+      email: user.email,
+      name: `${user.first_name} ${user.last_name}`,
+      token,
+    });
+
+    successResponse(res, "Verification code sent to your email", httpStatus.OK);
+  } catch (err: any) {
+    console.error("[RequestDeleteAccount Error]", err);
+    res.status(err.statusCode || httpStatus.INTERNAL_SERVER_ERROR).json({
+      status: "error",
+      message: err.message || "Failed to process request",
+    });
+  }
+};
+
+// ===== CONFIRM DELETE ACCOUNT =====
+export const confirmDeleteAccount = async (req: Request, res: Response) => {
+  try {
+    const { token, email } = req.body;
+    await authService.verifyEmailOtp(email, token);
+
+    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!user) {
+      throw new ApiError(httpStatus.NOT_FOUND, "User not found");
+    }
+
+    await userService.deleteUserById(user._id.toString());
+    successResponse(res, "Account deleted successfully", httpStatus.OK);
+  } catch (err: any) {
+    console.error("[ConfirmDeleteAccount Error]", err);
+    res.status(err.statusCode || httpStatus.INTERNAL_SERVER_ERROR).json({
+      status: "error",
+      message: err.message || "Failed to delete account",
+    });
+  }
+};
