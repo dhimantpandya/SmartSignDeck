@@ -43,26 +43,40 @@ export default function LandingPage() {
 
     const features = [
         {
-            title: 'Effortless Creation',
-            description: 'Design stunning layouts in minutes with our intuitive drag-and-drop editor.',
+            title: 'Intuitive Flow, Effortless Scale',
+            description: 'Design stunning layouts in seconds with our high-performance drag-and-drop orchestration.',
             icon: <IconSparkles className="text-primary" />
         },
         {
-            title: 'Real-time Sync',
-            description: 'Collaborate with your team instantly. Changes reflect on screens in milliseconds.',
+            title: 'Unified Broadcast Command',
+            description: 'Collaborate with your team instantly. Changes reflect on screens across the globe in milliseconds.',
             icon: <IconWorld className="text-primary" />
         },
         {
-            title: 'Advanced Analytics',
-            description: 'Track impressions, playtime, and engagement with deep insights.',
+            title: 'Absolute Command, Total Control',
+            description: 'Experience robust enterprise governance with deep insights and real-time screen management.',
             icon: <IconChartBar className="text-primary" />
         },
         {
-            title: 'Global Distribution',
-            description: 'Scale from one screen to thousands across the globe with ease.',
+            title: 'Built for Tomorrow: Scalable Architecture',
+            description: 'Scale from one screen to thousands globally with a system designed for infinite growth.',
             icon: <IconDeviceTv className="text-primary" />
         }
     ]
+
+    const heroVideos = [
+        "https://videos.pexels.com/video-files/3205619/3205619-hd_1920_1080_25fps.mp4",
+        "/videos/presentation.mp4"
+    ]
+
+    const [activeVideo, setActiveVideo] = useState(0)
+
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setActiveVideo((prev) => (prev + 1) % heroVideos.length)
+        }, 8000)
+        return () => clearInterval(timer)
+    }, [])
 
     // Scroll-linked transforms for Hero
     const heroOpacity = useTransform(scrollYProgress, [0, 0.2], [1, 0])
@@ -131,16 +145,26 @@ export default function LandingPage() {
                 style={{ opacity: heroOpacity, scale: heroScale, y: heroY }}
                 className='relative h-screen flex items-center justify-center overflow-hidden'
             >
-                {/* High-Quality Tech Background with Motion */}
+                {/* Video Background with Crossfade */}
                 <div className='absolute inset-0 z-0 overflow-hidden'>
-                    <motion.img
-                        initial={{ scale: 1.2 }}
-                        animate={{ scale: 1 }}
-                        transition={{ duration: 10, repeat: Infinity, repeatType: "reverse", ease: "linear" }}
-                        src="https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=80&w=2000"
-                        className='w-full h-full object-cover opacity-60'
-                    />
-                    <div className='absolute inset-0 bg-gradient-to-b from-background/10 via-background/30 to-background z-10' />
+                    {heroVideos.map((video, idx) => (
+                        <motion.video
+                            key={video}
+                            initial={{ opacity: 0, scale: 1.1 }}
+                            animate={{
+                                opacity: activeVideo === idx ? 0.6 : 0,
+                                scale: activeVideo === idx ? 1 : 1.1
+                            }}
+                            transition={{ duration: 2, ease: "easeInOut" }}
+                            src={video}
+                            autoPlay
+                            muted
+                            loop
+                            playsInline
+                            className='absolute inset-0 w-full h-full object-cover'
+                        />
+                    ))}
+                    <div className='absolute inset-0 bg-gradient-to-b from-background/10 via-background/40 to-background z-10' />
                 </div>
 
                 <div className='container mx-auto px-6 relative z-20 text-center space-y-8 max-w-5xl'>
@@ -150,8 +174,8 @@ export default function LandingPage() {
                         transition={{ duration: 1, ease: "easeOut" }}
                         className='text-5xl md:text-8xl font-black tracking-tighter leading-[0.9] uppercase italic perspective-1000'
                     >
-                        Your Message, <br />
-                        <span className='text-primary drop-shadow-[0_0_20px_hsla(var(--primary),0.3)]'>Across Every Screen.</span>
+                        Master the Screen, <br />
+                        <span className='text-primary drop-shadow-[0_0_20px_hsla(var(--primary),0.3)]'>Dominate the Message.</span>
                     </motion.h1>
 
                     <motion.p
@@ -160,7 +184,7 @@ export default function LandingPage() {
                         transition={{ delay: 0.5, duration: 1 }}
                         className='text-lg md:text-xl text-muted-foreground/80 max-w-2xl mx-auto font-medium leading-relaxed'
                     >
-                        Smart and powerful digital signage that lets you focus on what’s important — your message. Cloud-based management for a digital world.
+                        Experience absolute command over your digital presence. Robust enterprise governance meets intuitive flow with the industry's most scalable cloud infrastructure.
                     </motion.p>
 
                     <motion.div
@@ -245,10 +269,10 @@ export default function LandingPage() {
                             className='lg:w-1/2 space-y-8'
                         >
                             <h2 className='text-5xl md:text-8xl font-black tracking-tighter uppercase italic leading-tight'>
-                                Solutions for <br /> Every <span className='text-primary drop-shadow-2xl'>Industry.</span>
+                                Infinite Identity: <br /> Seamless <span className='text-primary drop-shadow-2xl'>Branding.</span>
                             </h2>
                             <p className='text-2xl text-muted-foreground/90 leading-relaxed font-medium'>
-                                SmartSignDeck is versatile and scales perfectly to fit any professional environment.
+                                SmartSignDeck delivers robust enterprise governance perfectly tuned for elite environments.
                             </p>
 
                             <div className='grid grid-cols-2 gap-4'>
