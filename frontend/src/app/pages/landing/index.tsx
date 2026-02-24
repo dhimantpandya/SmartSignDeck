@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/custom/button'
+import Footer from '@/components/footer'
 import { Routes } from '@/utilities/routes'
 import {
     IconDeviceTv,
@@ -8,12 +9,10 @@ import {
     IconLayout,
     IconArrowRight,
     IconUsers,
-    IconMessageCircle,
-    IconWorld,
-    IconBrandLinkedin
+    IconWorld
 } from '@tabler/icons-react'
 import { cn } from '@/lib/utils'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { motion, useScroll, useTransform, useSpring } from 'framer-motion'
 
 export default function LandingPage() {
@@ -69,14 +68,31 @@ export default function LandingPage() {
         "/videos/presentation.mp4"
     ]
 
+    const dynamicMessages = useMemo(() => [
+        "Dominate the Message.",
+        "Captivate the Audience.",
+        "Amplify the Reach.",
+        "Command the Presence.",
+        "Empower the Vision."
+    ], [])
+
     const [activeVideo, setActiveVideo] = useState(0)
+    const [activeMessage, setActiveMessage] = useState(0)
 
     useEffect(() => {
-        const timer = setInterval(() => {
+        const videoTimer = setInterval(() => {
             setActiveVideo((prev) => (prev + 1) % heroVideos.length)
         }, 8000)
-        return () => clearInterval(timer)
-    }, [])
+
+        const messageTimer = setInterval(() => {
+            setActiveMessage((prev) => (prev + 1) % dynamicMessages.length)
+        }, 3000)
+
+        return () => {
+            clearInterval(videoTimer)
+            clearInterval(messageTimer)
+        }
+    }, [dynamicMessages.length])
 
     // Scroll-linked transforms for Hero
     const heroOpacity = useTransform(scrollYProgress, [0, 0.2], [1, 0])
@@ -164,7 +180,9 @@ export default function LandingPage() {
                             className='absolute inset-0 w-full h-full object-cover'
                         />
                     ))}
-                    <div className='absolute inset-0 bg-gradient-to-b from-background/10 via-background/40 to-background z-10' />
+                    {/* Darker Overlay for better text contrast */}
+                    <div className='absolute inset-0 bg-gradient-to-b from-background/40 via-background/60 to-background z-10' />
+                    <div className='absolute inset-0 bg-black/40 z-10' />
                 </div>
 
                 <div className='container mx-auto px-6 relative z-20 text-center space-y-8 max-w-5xl'>
@@ -172,10 +190,18 @@ export default function LandingPage() {
                         initial={{ opacity: 0, y: 50, rotateX: 45 }}
                         animate={{ opacity: 1, y: 0, rotateX: 0 }}
                         transition={{ duration: 1, ease: "easeOut" }}
-                        className='text-5xl md:text-8xl font-black tracking-tighter leading-[0.9] uppercase italic perspective-1000'
+                        className='text-4xl md:text-7xl font-black tracking-tighter leading-[0.9] uppercase italic perspective-1000'
                     >
                         Master the Screen, <br />
-                        <span className='text-primary drop-shadow-[0_0_20px_hsla(var(--primary),0.3)]'>Dominate the Message.</span>
+                        <motion.span
+                            key={activeMessage}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20 }}
+                            className='text-primary drop-shadow-[0_0_20px_hsla(var(--primary),0.3)] inline-block'
+                        >
+                            {dynamicMessages[activeMessage]}
+                        </motion.span>
                     </motion.h1>
 
                     <motion.p
@@ -351,49 +377,8 @@ export default function LandingPage() {
                 </div>
             </section>
 
-            {/* Footer */}
-            <footer className='py-32 bg-background border-t border-white/5'>
-                <div className='container mx-auto px-6'>
-                    <div className='grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-20'>
-                        <div className='col-span-2 space-y-8'>
-                            <div className='flex items-center gap-3'>
-                                <IconDeviceTv className='text-primary h-10 w-10' />
-                                <span className='text-3xl font-black tracking-tighter uppercase italic'>SmartSign<span className='text-primary'>Deck</span></span>
-                            </div>
-                            <p className='text-muted-foreground/60 max-w-sm text-lg leading-relaxed'>
-                                The industry standard for cloud-based digital signage management. Built for performance, designed for ease.
-                            </p>
-                            <div className='flex gap-6'>
-                                <motion.a whileHover={{ y: -5, color: 'hsl(var(--primary))' }} href="https://linkedin.com/in/dhimant-pandya-083b4b271" target="_blank" rel="noopener noreferrer" className='bg-muted p-3 rounded-2xl hover:bg-primary/20 cursor-pointer transition-colors'>
-                                    <IconBrandLinkedin size={24} className="text-primary" />
-                                </motion.a>
-                                <motion.div whileHover={{ y: -5, color: 'hsl(var(--primary))' }} className='bg-muted p-3 rounded-2xl hover:bg-primary/20 cursor-pointer transition-colors'><IconWorld size={24} /></motion.div>
-                                <motion.div whileHover={{ y: -5, color: 'hsl(var(--primary))' }} className='bg-muted p-3 rounded-2xl hover:bg-primary/20 cursor-pointer transition-colors'><IconMessageCircle size={24} /></motion.div>
-                            </div>
-                        </div>
-
-                        {['Product', 'Support', 'Company', 'Legal'].map((title, i) => (
-                            <div key={i} className='space-y-6'>
-                                <h4 className='font-black uppercase tracking-[0.3em] text-xs text-muted-foreground'>{title}</h4>
-                                <ul className='space-y-4 text-md text-muted-foreground/80'>
-                                    {['Link 1', 'Link 2', 'Link 3', 'Link 4'].map((link, j) => (
-                                        <motion.li key={j} whileHover={{ x: 5, color: 'hsl(var(--primary))' }} className='cursor-pointer transition-colors'>{link}</motion.li>
-                                    ))}
-                                </ul>
-                            </div>
-                        ))}
-                    </div>
-
-                    <div className='mt-32 pt-10 border-t border-white/5 flex flex-col md:flex-row justify-between gap-8 text-xs font-bold uppercase tracking-widest text-muted-foreground/30'>
-                        <span>© 2026 SmartSignDeck. Mastered with Precision.</span>
-                        <div className='flex gap-12'>
-                            <span>Privacy Policy</span>
-                            <span>Terms of Service</span>
-                            <span>Direct Management</span>
-                        </div>
-                    </div>
-                </div>
-            </footer>
+            {/* Updated Shared Footer */}
+            <Footer />
         </div>
     )
 }
