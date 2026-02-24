@@ -22,8 +22,22 @@ const createPlaylist = async (playlistBody: IPlaylist): Promise<IPlaylist> => {
  * @param {number} [options.page] - Current page (default = 1)
  * @returns {Promise<QueryResult>}
  */
-const queryPlaylists = async (filter: FilterQuery<IPlaylist>, options: CustomPaginateOptions) => {
-    return await Playlist.paginate(filter, options);
+const queryPlaylists = async (filter: FilterQuery<IPlaylist>, options: CustomPaginateOptions, user: any) => {
+    const finalFilter: any = { ...filter };
+
+    if (user.role !== "super_admin") {
+        const companyIdStr = (user.companyId || "").toString();
+        const userIdStr = (user.id || user._id || "").toString();
+
+        if (user.role === 'admin') {
+            if (companyIdStr) finalFilter.companyId = companyIdStr;
+        } else {
+            // Regular user: Only own content
+            if (userIdStr) finalFilter.createdBy = userIdStr;
+        }
+    }
+
+    return await Playlist.paginate(finalFilter, options);
 };
 
 /**

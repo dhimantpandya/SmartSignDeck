@@ -233,16 +233,33 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
             setOnlineUsers(new Set(users))
         }
 
+        const handleAccountDeleted = () => {
+            console.warn('[SOCKET Provider] 🔞 Account deleted by administrator. Logging out...')
+            toast({
+                title: "Account Deleted",
+                description: "Your account has been deleted by an administrator. You will be logged out now.",
+                variant: "destructive",
+                duration: 10000,
+            })
+            // Force logout
+            setTimeout(() => {
+                localStorage.clear();
+                window.location.href = '/login';
+            }, 3000);
+        }
+
         socket.on('new_notification', handleNotification)
         socket.on('new_chat', handleChat)
         socket.on('user_presence', handlePresence)
+        socket.on('user_deleted', handleAccountDeleted)
 
         return () => {
             socket.off('new_notification', handleNotification)
             socket.off('new_chat', handleChat)
             socket.off('user_presence', handlePresence)
+            socket.off('user_deleted', handleAccountDeleted)
         }
-    }, [socket, user, isChatOpen])
+    }, [socket, user, isChatOpen, activeChatInfo])
 
     // Filter out chat messages from the bell notifications list
     const bellNotifications = notifications.filter(n => n.type !== 'new_chat')

@@ -84,16 +84,21 @@ const queryScreens = async (filter: any, options: CustomPaginateOptions, user: I
       // 🌍 Global Profile View: Allow bypass if specifically looking for PUBLIC items by a CREATOR
       // This enables the "Users -> Profile" modal to work across companies.
     } else {
-      // 🔒 Account Isolation: Strictly same company ONLY (whether public or private)
-      if (companyIdStr && mongoose.Types.ObjectId.isValid(companyIdStr)) {
-        finalFilter.companyId = new mongoose.Types.ObjectId(companyIdStr);
-      } else if (userIdStr && mongoose.Types.ObjectId.isValid(userIdStr)) {
-        // Fallback to own content if no companyId
-        finalFilter.createdBy = new mongoose.Types.ObjectId(userIdStr);
+      // 🔒 Account Isolation: 
+      // - Admins see everything in the same company.
+      // - Regular users ('user' role) ONLY see what they created.
+      if (user.role === 'admin') {
+        if (companyIdStr && mongoose.Types.ObjectId.isValid(companyIdStr)) {
+          finalFilter.companyId = new mongoose.Types.ObjectId(companyIdStr);
+        }
+      } else {
+        // Regular user: Only own content
+        if (userIdStr && mongoose.Types.ObjectId.isValid(userIdStr)) {
+          finalFilter.createdBy = new mongoose.Types.ObjectId(userIdStr);
+        }
       }
 
       // 👤 Strict User Isolation: Honor the 'createdBy' filter if provided by the frontend.
-      // This ensures the "My Screens" list is correctly isolated to the current account.
       if (isQueryingOwn && userIdStr && mongoose.Types.ObjectId.isValid(userIdStr)) {
         finalFilter.createdBy = new mongoose.Types.ObjectId(userIdStr);
       }

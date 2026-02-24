@@ -26,9 +26,23 @@ const queryTemplateGroups = async (
 ): Promise<CustomPaginateResult<ITemplateGroup>> => {
     // If 'trashed' is specifically passed as true, we look for deleted items
     // Otherwise, we default to only non-deleted items
-    const finalFilter = { ...filter };
+    const finalFilter: any = { ...filter };
+    const user = (options as any).user;
+
+    if (user && user.role !== "super_admin") {
+        const companyIdStr = (user.companyId || "").toString();
+        const userIdStr = (user.id || user._id || "").toString();
+
+        if (user.role === 'admin') {
+            if (companyIdStr) finalFilter.companyId = companyIdStr;
+        } else {
+            // Regular user: Only own content
+            if (userIdStr) finalFilter.createdBy = userIdStr;
+        }
+    }
+
     if (filter.trashed === 'true') {
-        const userId = (options as any).user?._id || (options as any).user?.id;
+        const userId = user?._id || user?.id;
         finalFilter.deletedAt = { $ne: null };
         if (userId) {
             finalFilter.createdBy = userId;

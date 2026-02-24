@@ -37,7 +37,7 @@ const getPlaylists = catchAsync(async (req: Request, res: Response) => {
     }
 
     const options = pick(req.query, ["sortBy", "limit", "page"]);
-    const result = await playlistService.queryPlaylists(filter, options);
+    const result = await playlistService.queryPlaylists(filter, options, user);
     res.send(result);
 });
 

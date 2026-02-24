@@ -207,7 +207,7 @@ export const sendMail = async (type: string, request: Record<string, string>) =>
 
       case emailConstants.ACCOUNT_DELETED_TEMPLATE:
         request.subject = emailConstants.ACCOUNT_DELETED_SUBJECT;
-        request.contactUrl = config.appUrl ? `${config.appUrl}/contact` : "mailto:support@smartsigndeck.com";
+        request.contactUrl = config.appUrl ? `${config.appUrl}/contact-us` : "mailto:support@smartsigndeck.com";
         await getHTMLandSendEmail("account-deleted.html", request);
         break;
 

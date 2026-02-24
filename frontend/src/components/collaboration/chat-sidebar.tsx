@@ -514,9 +514,15 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
                                         </Avatar>
                                         <div className="flex flex-col flex-1 overflow-hidden">
                                             <span className="text-xs font-bold truncate">{selectedFriend.first_name} {selectedFriend.last_name}</span>
-                                            <span className="text-[10px] text-green-500 flex items-center gap-1">
-                                                <span className="h-1.5 w-1.5 bg-green-500 rounded-full" /> Online
-                                            </span>
+                                            {onlineUsers.has(extractId(selectedFriend)) ? (
+                                                <span className="text-[10px] text-green-500 flex items-center gap-1">
+                                                    <span className="h-1.5 w-1.5 bg-green-500 rounded-full" /> Online
+                                                </span>
+                                            ) : (
+                                                <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                                    <span className="h-1.5 w-1.5 bg-muted-foreground/30 rounded-full" /> Offline
+                                                </span>
+                                            )}
                                         </div>
                                     </div>
                                     {/* Private Messages */}

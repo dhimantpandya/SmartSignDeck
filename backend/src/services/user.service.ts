@@ -154,6 +154,8 @@ const updateUserById = async (
 };
 
 const deleteUserById = async (userId: string): Promise<DeleteResult> => {
+  const { emitToUser } = await import("./socket.service");
+  emitToUser(userId, "user_deleted", { userId });
   return await User.deleteOne({ _id: userId });
 };
 
