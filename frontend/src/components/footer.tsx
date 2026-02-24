@@ -1,44 +1,68 @@
+import { Link } from 'react-router-dom'
+import { Routes } from '@/utilities/routes'
 import { IconBrandLinkedin, IconMail } from '@tabler/icons-react'
 
 export default function Footer() {
+    const BrandLogo = ({ className = "h-6 w-6" }: { className?: string }) => (
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className={className}
+        >
+            <path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3" />
+        </svg>
+    )
     return (
         <footer className='w-full border-t border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60'>
             <div className='container mx-auto px-4 py-8 md:py-12'>
                 <div className='grid grid-cols-1 gap-8 md:grid-cols-4 lg:grid-cols-5'>
                     {/* Brand */}
                     <div className='space-y-4 lg:col-span-2'>
-                        <h2 className='text-3xl font-black tracking-tighter text-primary italic uppercase'>SmartSign<span className='text-foreground'>Deck</span></h2>
+                        <div className='flex items-center gap-2'>
+                            <BrandLogo className='text-primary h-8 w-8' />
+                            <h2 className='text-3xl font-black tracking-tighter text-primary italic uppercase'>SmartSign<span className='text-foreground'>Deck</span></h2>
+                        </div>
                         <p className='text-sm text-muted-foreground leading-relaxed max-w-sm'>
                             Intelligent Ad Scheduling & Display Platform. Empowering your digital presence with smart solutions. Built for performance, designed for ease.
                         </p>
                     </div>
 
-                    {/* Services */}
                     <div>
                         <h3 className='mb-4 text-xs font-black uppercase tracking-[0.2em] text-foreground'>Services</h3>
                         <ul className='space-y-3 text-sm text-muted-foreground font-medium'>
-                            <li><a href='#' className='transition-colors hover:text-primary'>Ad Scheduling</a></li>
-                            <li><a href='#' className='transition-colors hover:text-primary'>Screen Management</a></li>
-                            <li><a href='#' className='transition-colors hover:text-primary'>Analytics</a></li>
-                            <li><a href='#' className='transition-colors hover:text-primary'>Template Implementation</a></li>
+                            <li><a href='#' className='transition-colors hover:text-[#00ffff]'>Ad Scheduling</a></li>
+                            <li><a href='#' className='transition-colors hover:text-[#00ffff]'>Screen Management</a></li>
+                            <li><a href='#' className='transition-colors hover:text-[#00ffff]'>Analytics</a></li>
+                            <li><a href='#' className='transition-colors hover:text-[#00ffff]'>Template Implementation</a></li>
                         </ul>
                     </div>
 
-                    {/* Company */}
                     <div>
                         <h3 className='mb-4 text-xs font-black uppercase tracking-[0.2em] text-foreground'>Company</h3>
                         <ul className='space-y-3 text-sm text-muted-foreground font-medium'>
                             <li>
-                                <button
-                                    onClick={() => alert("About Us:\nSmartSignDeck is an innovative digital signage project developed during a professional internship. Focused on bridging the gap between complex scheduling needs and intuitive user interfaces, we aim to provide a high-performance, accessible platform for businesses.")}
-                                    className='transition-colors hover:text-primary text-left'
+                                <Link
+                                    to={Routes.ABOUT_US}
+                                    className='transition-colors hover:text-[#00ffff]'
                                 >
                                     About Us
-                                </button>
+                                </Link>
                             </li>
-                            <li><a href='mailto:smartsigndeckk@gmail.com' className='transition-colors hover:text-primary'>Contact</a></li>
-                            <li><a href='#' className='transition-colors hover:text-primary'>Privacy Policy</a></li>
-                            <li><a href='#' className='transition-colors hover:text-primary'>Terms of Service</a></li>
+                            <li>
+                                <Link
+                                    to={Routes.CONTACT_US}
+                                    className='transition-colors hover:text-[#00ffff]'
+                                >
+                                    Contact
+                                </Link>
+                            </li>
+                            <li><a href='#' className='transition-colors hover:text-[#00ffff]'>Privacy Policy</a></li>
+                            <li><a href='#' className='transition-colors hover:text-[#00ffff]'>Terms of Service</a></li>
                         </ul>
                     </div>
 
@@ -50,14 +74,14 @@ export default function Footer() {
                                 href='https://linkedin.com/in/dhimant-pandya-083b4b271'
                                 target='_blank'
                                 rel='noopener noreferrer'
-                                className='text-muted-foreground transition-all hover:scale-110 hover:text-primary'
+                                className='text-muted-foreground transition-all hover:scale-110 hover:text-[#00ffff]'
                             >
                                 <IconBrandLinkedin className='h-8 w-8' />
                                 <span className='sr-only'>LinkedIn</span>
                             </a>
                             <a
                                 href='mailto:smartsigndeckk@gmail.com'
-                                className='text-muted-foreground transition-all hover:scale-110 hover:text-primary'
+                                className='text-muted-foreground transition-all hover:scale-110 hover:text-[#00ffff]'
                             >
                                 <IconMail className='h-8 w-8' />
                                 <span className='sr-only'>Email Us</span>

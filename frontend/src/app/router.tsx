@@ -29,6 +29,18 @@ const Setup = () => {
             return null;
           },
         },
+        {
+          path: Routes.ABOUT_US,
+          lazy: async () => ({
+            Component: (await import('./pages/landing/about-us')).default,
+          }),
+        },
+        {
+          path: Routes.CONTACT_US,
+          lazy: async () => ({
+            Component: (await import('./pages/landing/contact-us')).default,
+          }),
+        },
         // ===== AUTH ROUTES =====
         {
           lazy: async () => {

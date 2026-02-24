@@ -1,5 +1,7 @@
 export const Routes = {
   LANDING: '/',
+  ABOUT_US: '/about-us',
+  CONTACT_US: '/contact-us',
   NOTIFICATION: '/notification',
   SIGN_IN: '/sign-in',
   SIGN_UP: '/sign-up',

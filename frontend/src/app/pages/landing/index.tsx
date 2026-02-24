@@ -25,6 +25,21 @@ export default function LandingPage() {
         restDelta: 0.001
     })
 
+    const BrandLogo = ({ className = "h-6 w-6" }: { className?: string }) => (
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className={className}
+        >
+            <path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3" />
+        </svg>
+    )
+
     useEffect(() => {
         const handleScroll = () => setIsScrolled(window.scrollY > 50)
         window.addEventListener('scroll', handleScroll)
@@ -100,10 +115,15 @@ export default function LandingPage() {
     const heroY = useTransform(scrollYProgress, [0, 0.2], [0, -100])
 
     return (
-        <div className='min-h-screen bg-background text-foreground selection:bg-primary selection:text-white font-sans overflow-x-hidden'>
+        <div className='min-h-screen bg-background text-foreground selection:bg-[#020817] selection:text-white font-sans overflow-x-hidden'>
+            <style dangerouslySetInnerHTML={{
+                __html: `
+                .selection-navy::selection { background-color: #020817; color: white; }
+                .selection-navy *::selection { background-color: #020817; color: white; }
+            ` }} />
             {/* Scroll Progress Bar */}
             <motion.div
-                className="fixed top-0 left-0 right-0 h-1 bg-primary z-[200] origin-left"
+                className="fixed top-0 left-0 right-0 h-1 bg-[#00ffff] z-[200] origin-left shadow-[0_0_10px_rgba(0,255,255,0.5)]"
                 style={{ scaleX }}
             />
 
@@ -119,8 +139,8 @@ export default function LandingPage() {
                         className='flex items-center gap-2 group cursor-pointer'
                         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
                     >
-                        <div className='bg-primary/20 p-2 rounded-xl group-hover:scale-110 transition-transform'>
-                            <IconDeviceTv className='text-primary h-6 w-6' />
+                        <div className='bg-primary/20 p-3 rounded-xl group-hover:scale-110 transition-transform'>
+                            <BrandLogo className='text-primary h-6 w-6' />
                         </div>
                         <span className='text-xl font-black tracking-tighter uppercase italic'>
                             SmartSign<span className='text-primary'>Deck</span>
@@ -132,8 +152,8 @@ export default function LandingPage() {
                             <motion.a
                                 key={item}
                                 href={`#${item.toLowerCase()}`}
-                                whileHover={{ scale: 1.1, color: '#00D1FF' }}
-                                className='text-sm font-black uppercase tracking-widest text-primary hover:text-[#00D1FF] transition-all duration-300'
+                                whileHover={{ scale: 1.1, color: '#00ffff' }}
+                                className='text-sm font-black uppercase tracking-widest text-[#00D1FF] hover:text-[#00ffff] transition-all duration-300 drop-shadow-[0_0_10px_rgba(0,209,255,0.3)]'
                             >
                                 {item}
                             </motion.a>
@@ -191,13 +211,13 @@ export default function LandingPage() {
                         animate={{ opacity: 1, y: 0, rotateX: 0 }}
                         exit={{ opacity: 0, y: -50, rotateX: -45 }}
                         transition={{ duration: 0.8, ease: "circOut" }}
-                        className='text-4xl md:text-7xl font-black tracking-tighter leading-[0.9] uppercase italic perspective-1000'
+                        className='text-4xl md:text-7xl font-black tracking-tighter leading-[0.9] uppercase italic perspective-1000 selection-navy'
                     >
-                        <span className='text-[#00D1FF]'>
+                        <span className='text-[#00ffff]'>
                             {dynamicMessages[activeMessage].line1}
                         </span>
                         <br />
-                        <span className='text-[#00D1FF] drop-shadow-[0_0_30px_rgba(0,209,255,0.4)]'>
+                        <span className='text-[#00ffff] drop-shadow-[0_0_30px_rgba(0,255,255,0.4)]'>
                             {dynamicMessages[activeMessage].line2}
                         </span>
                     </motion.h1>
@@ -206,7 +226,7 @@ export default function LandingPage() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ delay: 0.5, duration: 1 }}
-                        className='text-lg md:text-xl text-muted-foreground/80 max-w-2xl mx-auto font-medium leading-relaxed'
+                        className='text-lg md:text-xl text-muted-foreground/80 max-w-2xl mx-auto font-bold leading-relaxed'
                     >
                         Experience absolute command over your digital presence. Robust enterprise governance meets intuitive flow with the industry's most scalable cloud infrastructure.
                     </motion.p>
@@ -254,7 +274,7 @@ export default function LandingPage() {
                             className='text-center space-y-4 mb-20'
                         >
                             <h2 className='text-4xl md:text-7xl font-black tracking-tighter uppercase italic'>Powerful Features</h2>
-                            <div className='h-2 w-32 bg-[#00D1FF] mx-auto rounded-full shadow-[0_0_20px_rgba(0,209,255,0.5)]' />
+                            <div className='h-2 w-32 bg-[#00ffff] mx-auto rounded-full shadow-[0_0_20px_rgba(0,255,255,0.5)]' />
                             <p className='text-muted-foreground/80 max-w-xl mx-auto text-xl'>Experience the next generation of content management.</p>
                         </motion.div>
 
