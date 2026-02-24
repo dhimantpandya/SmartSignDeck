@@ -3,7 +3,7 @@ import { useEffect } from 'react'
 import { Button } from '@/components/custom/button'
 import Footer from '@/components/footer'
 import { Routes } from '@/utilities/routes'
-import { IconArrowLeft, IconArrowRight } from '@tabler/icons-react'
+import { IconArrowLeft } from '@tabler/icons-react'
 import { motion } from 'framer-motion'
 
 export default function IndustriesPage() {
@@ -61,7 +61,7 @@ export default function IndustriesPage() {
         },
         {
             name: 'Transportation',
-            image: 'https://images.unsplash.com/photo-1464037866736-6585998394a0?auto=format&fit=crop&q=80&w=800',
+            image: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&q=80&w=800',
             description: 'Instant schedule updates and traveler information for transit hubs.'
         },
         {
@@ -86,7 +86,7 @@ export default function IndustriesPage() {
         },
         {
             name: 'Energy',
-            image: 'https://images.unsplash.com/photo-1466611653911-95281773ad90?auto=format&fit=crop&q=80&w=800',
+            image: 'https://images.unsplash.com/photo-1509391366360-2e959784a276?auto=format&fit=crop&q=80&w=800',
             description: 'Sustainability metrics and grid status monitoring displays.'
         },
         {
@@ -101,7 +101,7 @@ export default function IndustriesPage() {
         },
         {
             name: 'Sports',
-            image: 'https://images.unsplash.com/photo-1461896746974-8d285448de03?auto=format&fit=crop&q=80&w=800',
+            image: 'https://images.unsplash.com/photo-1541252260730-0412e3e2107e?auto=format&fit=crop&q=80&w=800',
             description: 'Real-time scoreboards and fan engagement zones.'
         }
     ]
@@ -161,11 +161,6 @@ export default function IndustriesPage() {
                                 <div className='p-8 space-y-4'>
                                     <h2 className='text-3xl font-black uppercase italic text-foreground'>{ind.name}</h2>
                                     <p className='text-muted-foreground font-medium leading-relaxed'>{ind.description}</p>
-                                    <div className='pt-4'>
-                                        <span className='inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.2em] text-[#020817] opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all'>
-                                            Explore Solutions <IconArrowRight size={16} />
-                                        </span>
-                                    </div>
                                 </div>
                             </motion.div>
                         ))}

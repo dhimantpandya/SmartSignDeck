@@ -388,7 +388,7 @@ export default function LandingPage() {
                             {
                                 title: "Global Network Expansion",
                                 date: "Feb 20, 2026",
-                                image: "https://images.unsplash.com/photo-1529400971008-f560c5298894?auto=format&fit=crop&q=80&w=800",
+                                image: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80&w=800",
                                 desc: "Expanding our edge clusters to 50+ new regions for even lower latency."
                             },
                             {
@@ -400,7 +400,7 @@ export default function LandingPage() {
                             {
                                 title: "Enterprise Partner Success",
                                 date: "Feb 10, 2026",
-                                image: "https://images.unsplash.com/photo-1522071823990-944b1d68370b?auto=format&fit=crop&q=80&w=800",
+                                image: "https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&q=80&w=800",
                                 desc: "Celebrating our 500th global enterprise partner joining the ecosystem."
                             },
                             {
