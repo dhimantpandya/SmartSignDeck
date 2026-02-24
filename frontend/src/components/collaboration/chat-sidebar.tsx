@@ -222,8 +222,7 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
 
     const loadRequests = async () => {
         try {
-            const res = await socialService.getReceivedRequests()
-            // setReceivedRequests(res) // Removed since unused
+            await socialService.getReceivedRequests()
         } catch (err) {
             console.error('Failed to load requests', err)
         }
