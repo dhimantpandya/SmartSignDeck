@@ -69,11 +69,11 @@ export default function LandingPage() {
     ]
 
     const dynamicMessages = useMemo(() => [
-        "Dominate the Message.",
-        "Captivate the Audience.",
-        "Amplify the Reach.",
-        "Command the Presence.",
-        "Empower the Vision."
+        { line1: "Master the Screen,", line2: "Dominate the Message." },
+        { line1: "Captivate Hearts,", line2: "Inspire the Crowd." },
+        { line1: "Amplify Reach,", line2: "Multiply Impact." },
+        { line1: "Command Space,", line2: "Total Presence." },
+        { line1: "Empower Vision,", line2: "Drive Growth." }
     ], [])
 
     const [activeVideo, setActiveVideo] = useState(0)
@@ -82,17 +82,17 @@ export default function LandingPage() {
     useEffect(() => {
         const videoTimer = setInterval(() => {
             setActiveVideo((prev) => (prev + 1) % heroVideos.length)
-        }, 8000)
+        }, 6000)
 
         const messageTimer = setInterval(() => {
             setActiveMessage((prev) => (prev + 1) % dynamicMessages.length)
-        }, 3000)
+        }, 6000)
 
         return () => {
             clearInterval(videoTimer)
             clearInterval(messageTimer)
         }
-    }, [dynamicMessages.length])
+    }, [dynamicMessages, heroVideos.length])
 
     // Scroll-linked transforms for Hero
     const heroOpacity = useTransform(scrollYProgress, [0, 0.2], [1, 0])
@@ -132,8 +132,8 @@ export default function LandingPage() {
                             <motion.a
                                 key={item}
                                 href={`#${item.toLowerCase()}`}
-                                whileHover={{ scale: 1.1, color: 'hsl(var(--primary))' }}
-                                className='text-sm font-bold uppercase tracking-widest text-muted-foreground transition-colors'
+                                whileHover={{ scale: 1.1, color: '#00D1FF' }}
+                                className='text-sm font-black uppercase tracking-widest text-primary hover:text-[#00D1FF] transition-all duration-300'
                             >
                                 {item}
                             </motion.a>
@@ -161,14 +161,14 @@ export default function LandingPage() {
                 style={{ opacity: heroOpacity, scale: heroScale, y: heroY }}
                 className='relative h-screen flex items-center justify-center overflow-hidden'
             >
-                {/* Video Background with Crossfade */}
+                {/* Brighter Video Background with Crossfade */}
                 <div className='absolute inset-0 z-0 overflow-hidden'>
                     {heroVideos.map((video, idx) => (
                         <motion.video
                             key={video}
                             initial={{ opacity: 0, scale: 1.1 }}
                             animate={{
-                                opacity: activeVideo === idx ? 0.6 : 0,
+                                opacity: activeVideo === idx ? 0.9 : 0,
                                 scale: activeVideo === idx ? 1 : 1.1
                             }}
                             transition={{ duration: 2, ease: "easeInOut" }}
@@ -177,31 +177,29 @@ export default function LandingPage() {
                             muted
                             loop
                             playsInline
-                            className='absolute inset-0 w-full h-full object-cover'
+                            className='absolute inset-0 w-full h-full object-cover brightness-110 contrast-110'
                         />
                     ))}
-                    {/* Darker Overlay for better text contrast */}
-                    <div className='absolute inset-0 bg-gradient-to-b from-background/40 via-background/60 to-background z-10' />
-                    <div className='absolute inset-0 bg-black/40 z-10' />
+                    {/* Lighter Gradient Overlay for brightness */}
+                    <div className='absolute inset-0 bg-gradient-to-b from-background/5 via-background/20 to-background z-10' />
                 </div>
 
                 <div className='container mx-auto px-6 relative z-20 text-center space-y-8 max-w-5xl'>
                     <motion.h1
+                        key={activeMessage}
                         initial={{ opacity: 0, y: 50, rotateX: 45 }}
                         animate={{ opacity: 1, y: 0, rotateX: 0 }}
-                        transition={{ duration: 1, ease: "easeOut" }}
+                        exit={{ opacity: 0, y: -50, rotateX: -45 }}
+                        transition={{ duration: 0.8, ease: "circOut" }}
                         className='text-4xl md:text-7xl font-black tracking-tighter leading-[0.9] uppercase italic perspective-1000'
                     >
-                        Master the Screen, <br />
-                        <motion.span
-                            key={activeMessage}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -20 }}
-                            className='text-primary drop-shadow-[0_0_20px_hsla(var(--primary),0.3)] inline-block'
-                        >
-                            {dynamicMessages[activeMessage]}
-                        </motion.span>
+                        <span className='text-[#00D1FF]'>
+                            {dynamicMessages[activeMessage].line1}
+                        </span>
+                        <br />
+                        <span className='text-[#00D1FF] drop-shadow-[0_0_30px_rgba(0,209,255,0.4)]'>
+                            {dynamicMessages[activeMessage].line2}
+                        </span>
                     </motion.h1>
 
                     <motion.p
@@ -256,7 +254,7 @@ export default function LandingPage() {
                             className='text-center space-y-4 mb-20'
                         >
                             <h2 className='text-4xl md:text-7xl font-black tracking-tighter uppercase italic'>Powerful Features</h2>
-                            <div className='h-2 w-32 bg-primary mx-auto rounded-full' />
+                            <div className='h-2 w-32 bg-[#00D1FF] mx-auto rounded-full shadow-[0_0_20px_rgba(0,209,255,0.5)]' />
                             <p className='text-muted-foreground/80 max-w-xl mx-auto text-xl'>Experience the next generation of content management.</p>
                         </motion.div>
 
