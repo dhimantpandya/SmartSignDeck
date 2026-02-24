@@ -155,10 +155,7 @@ function ManageCompanyModal({ company, isOpen, onClose }: { company: Company, is
                                 </div>
                                 <Separator />
                                 <div className="pt-2">
-                                    <Button variant="outline" size="sm" className="w-full gap-2 font-semibold">
-                                        View Invoices
-                                        <ChevronRight size={14} />
-                                    </Button>
+                                    {/* Removed View Invoices button as per request */}
                                 </div>
                             </div>
                         </TabsContent>
@@ -321,15 +318,7 @@ export default function AdminCompanies() {
                                                 </TableCell>
                                                 <TableCell className="text-right">
                                                     <div className="flex justify-end gap-1.5 px-2">
-                                                        <Button
-                                                            variant="outline"
-                                                            size="icon"
-                                                            className="h-8 w-8 hover:bg-primary/10 hover:text-primary transition-all shadow-sm"
-                                                            onClick={() => handleOpenEdit(group[0])}
-                                                            title="Edit Organization"
-                                                        >
-                                                            <Edit size={14} />
-                                                        </Button>
+                                                        {/* Hidden Edit Organization button as per request */}
                                                         <Button
                                                             variant="outline"
                                                             size="icon"
@@ -377,15 +366,7 @@ export default function AdminCompanies() {
                                                     </TableCell>
                                                     <TableCell className="text-right">
                                                         <div className="flex justify-end gap-1.5 px-2">
-                                                            <Button
-                                                                variant="outline"
-                                                                size="icon"
-                                                                className="h-8 w-8 hover:bg-primary/10 hover:text-primary transition-all shadow-sm"
-                                                                onClick={() => handleOpenEdit(company)}
-                                                                title="Edit Details"
-                                                            >
-                                                                <Edit size={14} />
-                                                            </Button>
+                                                            {/* Hidden Edit Details button as per request */}
                                                             <Button
                                                                 variant="outline"
                                                                 size="icon"

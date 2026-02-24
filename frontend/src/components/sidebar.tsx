@@ -32,7 +32,8 @@ export default function Sidebar({
     unreadCount, // Added for dependency tracking
     clearRequestBadges,
     suppressedChatSections,
-    isChatOpen
+    isChatOpen,
+    unreadNotifications, // Added to check for specific notif types
   } = useNotifications()
 
   useEffect(() => {
@@ -63,8 +64,13 @@ export default function Sidebar({
 
 
   const filteredLinks = sidelinks.map(link => {
-    // 1. Collaboration (Now specifically for Friend Requests if user wants it there, 
+    // 1. Collaboration (Includes friend requests + template invites)
     if (link.title === 'Collaboration') {
+      const templateNotifs = unreadNotifications.filter(n => n.type === 'company_invite' || n.title.toLowerCase().includes('template')).length;
+      const totalCollab = unreadRequestCount + templateNotifs;
+      if (totalCollab > 0 && !currentPath?.includes('/collaboration')) {
+        return { ...link, label: totalCollab.toString() }
+      }
       return link;
     }
 
@@ -94,7 +100,10 @@ export default function Sidebar({
     if (currentPath?.includes('/collaboration')) {
       if (unreadRequestCount > 0) clearRequestBadges()
     }
-  }, [currentPath])
+    if (currentPath?.includes('/admin/requests')) {
+      if (adminRequestCount > 0) setAdminRequestCount(0)
+    }
+  }, [currentPath, adminRequestCount])
 
   return (
     <aside

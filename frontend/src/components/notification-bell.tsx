@@ -35,7 +35,11 @@ export function NotificationBell() {
     }
 
     return (
-        <DropdownMenu>
+        <DropdownMenu onOpenChange={(open) => {
+            if (open && unreadCount > 0) {
+                markAllAsRead()
+            }
+        }}>
             <DropdownMenuTrigger asChild>
                 <Button variant='ghost' size='icon' className='relative'>
                     <IconBell size={20} />

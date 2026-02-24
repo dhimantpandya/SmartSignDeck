@@ -28,12 +28,30 @@ const createRequest = catchAsync(async (req: Request, res: Response) => {
         throw new ApiError(httpStatus.FORBIDDEN, "Admins cannot send role change requests for other admins of the same company.");
     }
 
+    // 🕒 Rate Limit Check: 24 hours for the same target user from same requester
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const existingRecentRequest = await AdminRequest.findOne({
+        requesterId,
+        targetUserId,
+        type,
+        createdAt: { $gte: twentyFourHoursAgo }
+    });
+
+    if (existingRecentRequest) {
+        throw new ApiError(httpStatus.TOO_MANY_REQUESTS, `A ${type.replace('_', ' ').toLowerCase()} request for this user was already submitted in the last 24 hours.`);
+    }
+
     const request = await AdminRequest.create({
         requesterId,
         targetUserId,
         companyId,
         type,
         details,
+        targetUserInfo: {
+            name: `${targetUser.first_name} ${targetUser.last_name || ''}`.trim(),
+            email: targetUser.email,
+            role: targetUser.role
+        }
     });
 
     // 🔔 Notify all Super Admins about the new request

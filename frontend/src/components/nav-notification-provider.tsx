@@ -39,6 +39,7 @@ interface NotificationContextType {
     suppressChatSection: (section: string) => void
     socket: Socket | null
     setActiveChat: (info: { type: 'company' | 'private' | null; id?: string | null }) => void
+    unreadNotifications: Notification[]
 }
 
 const NotificationContext = createContext<NotificationContextType | null>(null)
@@ -320,7 +321,8 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
                 suppressedChatSections,
                 suppressChatSection,
                 socket,
-                setActiveChat: setActiveChatInfo
+                setActiveChat: setActiveChatInfo,
+                unreadNotifications: notifications.filter(n => !n.isRead)
             }}
         >
             {children}

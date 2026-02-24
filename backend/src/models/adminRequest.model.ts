@@ -33,6 +33,11 @@ const adminRequestSchema = new mongoose.Schema(
             default: 'PENDING',
         },
         adminComment: String,
+        targetUserInfo: {
+            name: String,
+            email: String,
+            role: String,
+        },
     },
     {
         timestamps: true,
@@ -54,6 +59,11 @@ export interface IAdminRequest extends mongoose.Document {
     };
     status: 'PENDING' | 'APPROVED' | 'REJECTED';
     adminComment?: string;
+    targetUserInfo: {
+        name: string;
+        email: string;
+        role: string;
+    };
     createdAt: Date;
     updatedAt: Date;
 }
