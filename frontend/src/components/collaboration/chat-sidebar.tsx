@@ -9,7 +9,6 @@ import {
     Search,
     ChevronLeft,
     MessageSquare,
-    UserPlus,
     CheckCheck
 } from 'lucide-react'
 import {
@@ -42,16 +41,13 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
         suppressedChatSections,
         suppressChatSection,
         socket,
-        setActiveChat
+        setActiveChat,
+        onlineUsers
     } = useNotifications()
     const { toast } = useToast()
 
     const [boardMessages, setBoardMessages] = useState<any[]>([])
     const [privateMessages, setPrivateMessages] = useState<any[]>([])
-    const [inputText, setInputText] = useState('')
-    const [activeTab, setActiveTab] = useState('company')
-    const [friends, setFriends] = useState<any[]>([])
-    const [receivedRequests, setReceivedRequests] = useState<any[]>([])
     const [selectedFriend, setSelectedFriend] = useState<any>(null)
     const [searchQuery, setSearchQuery] = useState('')
 
@@ -224,19 +220,9 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
     const loadRequests = async () => {
         try {
             const res = await socialService.getReceivedRequests()
-            setReceivedRequests(res)
+            // setReceivedRequests(res) // Removed since unused
         } catch (err) {
             console.error('Failed to load requests', err)
-        }
-    }
-
-    const handleRequestResponse = async (requestId: string, status: 'accepted' | 'rejected') => {
-        try {
-            await socialService.respondToFriendRequest(requestId, status)
-            loadRequests()
-            if (status === 'accepted') loadFriends()
-        } catch (err) {
-            console.error('Failed to respond to request', err)
         }
     }
 

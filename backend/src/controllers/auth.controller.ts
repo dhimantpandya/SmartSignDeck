@@ -842,12 +842,12 @@ export const deleteAccount = async (req: Request, res: Response) => {
 export const requestDeleteAccount = async (req: Request, res: Response) => {
   try {
     const user = req.user as any;
-    const { token } = await tokenService.generateVerifyEmailOtp(user);
+    const { otp } = await tokenService.generateVerifyEmailOtp(user);
 
     await emailService.sendMail(constants.DELETE_CONFIRMATION_TEMPLATE, {
       email: user.email,
       name: `${user.first_name} ${user.last_name}`,
-      token,
+      token: otp,
     });
 
     successResponse(res, "Verification code sent to your email", httpStatus.OK);
