@@ -336,7 +336,11 @@ export default function LandingPage() {
                                 ))}
                             </div>
 
-                            <Button variant='link' className='gap-2 text-primary font-bold p-0 text-xl uppercase tracking-tighter hover:gap-6 transition-all'>
+                            <Button
+                                variant='link'
+                                onClick={() => navigate(Routes.INDUSTRIES)}
+                                className='gap-2 text-primary font-bold p-0 text-xl uppercase tracking-tighter hover:gap-6 transition-all'
+                            >
                                 Explore all industries <IconArrowRight size={24} />
                             </Button>
                         </motion.div>
@@ -365,6 +369,71 @@ export default function LandingPage() {
                 </div>
             </section>
 
+
+            {/* News Section - What's Happening */}
+            <section id="news" className='relative py-32 bg-[#020817]/5'>
+                <div className='container mx-auto px-6'>
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        className='text-center mb-20 space-y-4'
+                    >
+                        <h2 className='text-4xl md:text-7xl font-black tracking-tighter uppercase italic'>What's Happening</h2>
+                        <div className='h-2 w-32 bg-[#020817] mx-auto rounded-full' />
+                        <p className='text-muted-foreground/80 max-w-xl mx-auto text-xl'>Stay updated with the latest from SmartSignDeck.</p>
+                    </motion.div>
+
+                    <div className='grid md:grid-cols-2 lg:grid-cols-4 gap-8'>
+                        {[
+                            {
+                                title: "Global Network Expansion",
+                                date: "Feb 20, 2026",
+                                image: "https://images.unsplash.com/photo-1529400971008-f560c5298894?auto=format&fit=crop&q=80&w=800",
+                                desc: "Expanding our edge clusters to 50+ new regions for even lower latency."
+                            },
+                            {
+                                title: "AI Core 2.0 Launch",
+                                date: "Feb 15, 2026",
+                                image: "https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&q=80&w=800",
+                                desc: "New neural scheduling algorithms that predict audience trends."
+                            },
+                            {
+                                title: "Enterprise Partner Success",
+                                date: "Feb 10, 2026",
+                                image: "https://images.unsplash.com/photo-1522071823990-944b1d68370b?auto=format&fit=crop&q=80&w=800",
+                                desc: "Celebrating our 500th global enterprise partner joining the ecosystem."
+                            },
+                            {
+                                title: "Zero-Carbon Displays",
+                                date: "Feb 05, 2026",
+                                image: "https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?auto=format&fit=crop&q=80&w=800",
+                                desc: "New energy-saving modes reducing screen consumption by 40%."
+                            }
+                        ].map((item, i) => (
+                            <motion.div
+                                key={i}
+                                initial={{ opacity: 0, y: 50 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                transition={{ delay: i * 0.1 }}
+                                className='group flex flex-col space-y-4 cursor-pointer'
+                            >
+                                <div className='aspect-square overflow-hidden rounded-[2rem] border border-white/5'>
+                                    <img
+                                        src={item.image}
+                                        className='w-full h-full object-cover grayscale brightness-75 group-hover:grayscale-0 group-hover:brightness-100 group-hover:scale-110 transition-all duration-700'
+                                        alt={item.title}
+                                    />
+                                </div>
+                                <div className='space-y-2 px-2'>
+                                    <p className='text-[10px] font-black uppercase tracking-widest text-[#020817]'>{item.date}</p>
+                                    <h3 className='text-xl font-black uppercase italic leading-tight group-hover:text-[#020817] transition-colors'>{item.title}</h3>
+                                    <p className='text-sm text-muted-foreground font-medium'>{item.desc}</p>
+                                </div>
+                            </motion.div>
+                        ))}
+                    </div>
+                </div>
+            </section>
 
             {/* CTA Section */}
             <section id="contact" className='py-48 overflow-hidden relative'>

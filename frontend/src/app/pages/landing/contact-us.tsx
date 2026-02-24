@@ -73,7 +73,7 @@ export default function ContactUsPage() {
                             <h2 className='text-3xl font-black uppercase italic mb-4'>Email Us</h2>
                             <p className='text-muted-foreground font-medium mb-6'>smartsigndeckk@gmail.com</p>
                             <span className='inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.2em] text-[#020817] group-hover:gap-4 transition-all'>
-                                Send Message <IconArrowRight size={16} />
+                                Open Inbox <IconArrowRight size={16} />
                             </span>
                         </a>
 

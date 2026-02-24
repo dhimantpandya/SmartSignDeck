@@ -53,6 +53,18 @@ const Setup = () => {
             Component: (await import('./pages/landing/terms-of-service')).default,
           }),
         },
+        {
+          path: Routes.INDUSTRIES,
+          lazy: async () => ({
+            Component: (await import('./pages/landing/industries')).default,
+          }),
+        },
+        {
+          path: Routes.DIRECT_MANAGEMENT,
+          lazy: async () => ({
+            Component: (await import('./pages/landing/direct-management')).default,
+          }),
+        },
         // ===== AUTH ROUTES =====
         {
           lazy: async () => {

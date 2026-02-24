@@ -4,6 +4,8 @@ export const Routes = {
   CONTACT_US: '/contact-us',
   PRIVACY_POLICY: '/privacy-policy',
   TERMS_OF_SERVICE: '/terms-of-service',
+  INDUSTRIES: '/industries',
+  DIRECT_MANAGEMENT: '/direct-management',
   NOTIFICATION: '/notification',
   SIGN_IN: '/sign-in',
   SIGN_UP: '/sign-up',

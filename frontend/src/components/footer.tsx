@@ -124,7 +124,7 @@ export default function Footer() {
                     <div className='flex items-center gap-6 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/30'>
                         <Link to={Routes.PRIVACY_POLICY} className="hover:text-[#020817] transition-colors">Privacy Policy</Link>
                         <Link to={Routes.TERMS_OF_SERVICE} className="hover:text-[#020817] transition-colors">Terms of Service</Link>
-                        <a href="#" className="hover:text-[#020817] transition-colors">Direct Management</a>
+                        <Link to={Routes.DIRECT_MANAGEMENT} className="hover:text-[#020817] transition-colors">Direct Management</Link>
                     </div>
                 </div>
             </div>
