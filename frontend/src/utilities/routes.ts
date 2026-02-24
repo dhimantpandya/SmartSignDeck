@@ -12,6 +12,7 @@ export const Routes = {
   FORGOT_PASSWORD: '/forgot-password',
   OTP: '/otp',
   GOOGLE_CALLBACK: '/google-callback',
+  DELETE_ACCOUNT: '/delete-account',
   DASHBOARD: '/dashboard',
   USERS: '/users',
   PROFILE: '/profile',

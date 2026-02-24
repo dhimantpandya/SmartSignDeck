@@ -51,6 +51,12 @@ export interface ChangePasswordRequest {
   confirmPassword: string
 }
 
+export interface ConfirmDeleteRequest {
+  [key: string]: unknown
+  email: string
+  token: string
+}
+
 // ===== ZOD SCHEMA =====
 export const signupSchema = z
   .object({

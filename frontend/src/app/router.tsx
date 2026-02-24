@@ -122,6 +122,12 @@ const Setup = () => {
                 Component: (await import('./pages/auth/invited')).default,
               }),
             },
+            {
+              path: Routes.DELETE_ACCOUNT,
+              lazy: async () => ({
+                Component: (await import('./pages/auth/delete-account')).default,
+              }),
+            },
           ]
         },
 
