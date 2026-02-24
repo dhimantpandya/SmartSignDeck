@@ -66,6 +66,32 @@ export default function DirectManagementPage() {
                             SmartSign<span className='text-[#020817]'>Deck</span>
                         </span>
                     </div>
+
+                    <div className='hidden md:flex items-center gap-8'>
+                        {[
+                            { name: 'Features', hash: '#features' },
+                            { name: 'Solutions', hash: '#features' },
+                            { name: 'Contact', hash: '#contact' }
+                        ].map((item) => (
+                            <motion.button
+                                key={item.name}
+                                onClick={() => navigate(Routes.LANDING + item.hash)}
+                                whileHover={{ scale: 1.1, color: '#020817' }}
+                                className='text-sm font-black uppercase tracking-widest text-primary hover:text-[#020817] transition-all duration-300'
+                            >
+                                {item.name}
+                            </motion.button>
+                        ))}
+                    </div>
+
+                    <div className='flex items-center gap-4'>
+                        <Button variant='ghost' onClick={() => navigate(Routes.SIGN_IN)} className='font-bold uppercase tracking-widest text-xs h-10 px-6'>
+                            Login
+                        </Button>
+                        <Button onClick={() => navigate(Routes.SIGN_UP)} className='font-bold uppercase tracking-widest text-xs h-10 px-6'>
+                            Get Started
+                        </Button>
+                    </div>
                 </div>
             </nav>
 

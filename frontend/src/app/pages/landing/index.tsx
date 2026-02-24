@@ -155,7 +155,7 @@ export default function LandingPage() {
                         {['Features', 'Solutions', 'Contact'].map((item) => (
                             <motion.a
                                 key={item}
-                                href={`#${item.toLowerCase()}`}
+                                href={item === 'Solutions' ? '#features' : `#${item.toLowerCase()}`}
                                 whileHover={{ scale: 1.1, color: '#020817' }}
                                 className='text-sm font-black uppercase tracking-widest text-primary hover:text-[#020817] transition-all duration-300'
                             >
@@ -388,7 +388,7 @@ export default function LandingPage() {
                             {
                                 title: "Global Network Expansion",
                                 date: "Feb 20, 2026",
-                                image: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80&w=800",
+                                image: "https://images.unsplash.com/photo-1551434678-e076c223a692?auto=format&fit=crop&q=80&w=800",
                                 desc: "Expanding our edge clusters to 50+ new regions for even lower latency."
                             },
                             {
@@ -400,7 +400,7 @@ export default function LandingPage() {
                             {
                                 title: "Enterprise Partner Success",
                                 date: "Feb 10, 2026",
-                                image: "https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&q=80&w=800",
+                                image: "https://images.unsplash.com/photo-1542744095-fcf48d80b0fd?auto=format&fit=crop&q=80&w=800",
                                 desc: "Celebrating our 500th global enterprise partner joining the ecosystem."
                             },
                             {
@@ -460,7 +460,7 @@ export default function LandingPage() {
                             <Button size='lg' onClick={() => navigate(Routes.SIGN_UP)} className='bg-white text-black hover:bg-white/90 h-20 px-16 rounded-3xl font-black uppercase tracking-widest text-lg w-full sm:w-auto shadow-2xl'>
                                 Start Free Trial
                             </Button>
-                            <Button size='lg' variant='outline' className='h-20 px-16 rounded-3xl font-black uppercase tracking-widest text-lg bg-transparent border-white/40 hover:bg-white/10 w-full sm:w-auto mt-4 sm:mt-0'>
+                            <Button size='lg' variant='outline' onClick={() => navigate(Routes.CONTACT_US)} className='h-20 px-16 rounded-3xl font-black uppercase tracking-widest text-lg bg-transparent border-white/40 hover:bg-white/10 w-full sm:w-auto mt-4 sm:mt-0'>
                                 Contact Sales
                             </Button>
                         </div>

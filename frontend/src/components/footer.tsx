@@ -101,18 +101,11 @@ export default function Footer() {
                                 <span className='sr-only'>Email Us</span>
                             </a>
                         </div>
-                        <div className='space-y-3'>
-                            <p className='text-xs font-bold text-muted-foreground uppercase tracking-widest'>Newsletter</p>
-                            <div className='flex items-center gap-2'>
-                                <input
-                                    type='email'
-                                    placeholder='Enter your email'
-                                    className='h-9 w-full rounded-xl border border-input bg-background px-3 py-1 text-xs shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring'
-                                />
-                                <button className='inline-flex h-9 items-center justify-center rounded-xl bg-primary px-4 text-xs font-black uppercase tracking-widest text-primary-foreground shadow-lg hover:bg-primary/90 transition-all'>
-                                    Join
-                                </button>
-                            </div>
+                        <div className='bg-primary/5 p-6 rounded-2xl border border-white/5'>
+                            <p className='text-xs font-bold text-muted-foreground uppercase tracking-widest mb-4'>Enterprise Power</p>
+                            <p className='text-[10px] text-muted-foreground/60 leading-relaxed font-medium'>
+                                Unleash the potential of your digital network with our state-of-the-art orchestration engine.
+                            </p>
                         </div>
                     </div>
                 </div>
