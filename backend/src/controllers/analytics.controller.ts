@@ -29,9 +29,7 @@ const getAnalyticsSummary = catchAsync(async (req: Request, res: Response) => {
     console.log(`- Query Start Date: ${start.toISOString()} (${startDate})`);
     console.log(`- Query End Date: ${end.toISOString()} (${endDate})`);
 
-    const userRole = (req.user as any)?.role;
-    const isCompanyWide = ['admin', 'advertiser', 'super_admin'].includes(userRole);
-    const userId = isCompanyWide ? undefined : ((req.user as any)?.id || (req.user as any)?._id)?.toString();
+    const userId = ((req.user as any)?.id || (req.user as any)?._id)?.toString();
     const summary = await analyticsService.getAnalyticsSummary(start, end, req.user!.companyId!.toString(), userId);
 
     successResponse(
@@ -62,9 +60,7 @@ const getScreenStats = catchAsync(async (req: Request, res: Response) => {
     const end = new Date(endDate as string);
     end.setUTCHours(23, 59, 59, 999);
 
-    const userRole = (req.user as any)?.role;
-    const isCompanyWide = ['admin', 'advertiser', 'super_admin'].includes(userRole);
-    const userId = isCompanyWide ? undefined : ((req.user as any)?.id || (req.user as any)?._id)?.toString();
+    const userId = ((req.user as any)?.id || (req.user as any)?._id)?.toString();
     const stats = await analyticsService.getPlaybackStatsByScreen(
         screenId,
         start,
@@ -108,9 +104,7 @@ const getTemplateStats = catchAsync(async (req: Request, res: Response) => {
     const end = new Date(endDate as string);
     end.setUTCHours(23, 59, 59, 999);
 
-    const userRole = (req.user as any)?.role;
-    const isCompanyWide = ['admin', 'advertiser', 'super_admin'].includes(userRole);
-    const userId = isCompanyWide ? undefined : ((req.user as any)?.id || (req.user as any)?._id)?.toString();
+    const userId = ((req.user as any)?.id || (req.user as any)?._id)?.toString();
     const stats = await analyticsService.getPlaybackStatsByTemplate(
         templateId,
         start,
@@ -148,9 +142,7 @@ const getContentPerformance = catchAsync(
         end.setUTCHours(23, 59, 59, 999);
         const limitNum = limit ? parseInt(limit as string, 10) : 10;
 
-        const userRole = (req.user as any)?.role;
-        const isCompanyWide = ['admin', 'advertiser', 'super_admin'].includes(userRole);
-        const userId = isCompanyWide ? undefined : ((req.user as any)?.id || (req.user as any)?._id)?.toString();
+        const userId = ((req.user as any)?.id || (req.user as any)?._id)?.toString();
         const performance = await analyticsService.getContentPerformance(
             start,
             end,
@@ -188,9 +180,7 @@ const getPlaybackTimeline = catchAsync(async (req: Request, res: Response) => {
     end.setUTCHours(23, 59, 59, 999);
     const intervalStr = (interval as string) || "day";
 
-    const userRole = (req.user as any)?.role;
-    const isCompanyWide = ['admin', 'advertiser', 'super_admin'].includes(userRole);
-    const userId = isCompanyWide ? undefined : ((req.user as any)?.id || (req.user as any)?._id)?.toString();
+    const userId = ((req.user as any)?.id || (req.user as any)?._id)?.toString();
     const timeline = await analyticsService.getPlaybackTimeline(
         start,
         end,
@@ -226,9 +216,7 @@ const getAudienceSummary = catchAsync(async (req: Request, res: Response) => {
     const end = new Date(endDate as string);
     end.setUTCHours(23, 59, 59, 999);
 
-    const userRole = (req.user as any)?.role;
-    const isCompanyWide = ['admin', 'advertiser', 'super_admin'].includes(userRole);
-    const userId = isCompanyWide ? undefined : ((req.user as any)?.id || (req.user as any)?._id)?.toString();
+    const userId = ((req.user as any)?.id || (req.user as any)?._id)?.toString();
     const summary = await analyticsService.getAudienceSummary(start, end, req.user!.companyId!.toString(), userId);
 
     successResponse(
@@ -258,9 +246,7 @@ const exportCSV = catchAsync(async (req: Request, res: Response) => {
     const end = new Date(endDate as string);
     end.setUTCHours(23, 59, 59, 999);
 
-    const userRole = (req.user as any)?.role;
-    const isCompanyWide = ['admin', 'advertiser', 'super_admin'].includes(userRole);
-    const userId = isCompanyWide ? undefined : ((req.user as any)?.id || (req.user as any)?._id)?.toString();
+    const userId = ((req.user as any)?.id || (req.user as any)?._id)?.toString();
     const logs = await analyticsService.getPlaybackLogs(start, end, req.user!.companyId!.toString(), userId);
     const csv = analyticsService.exportLogsToCSV(logs);
 
@@ -291,9 +277,7 @@ const exportPDF = catchAsync(async (req: Request, res: Response) => {
     const end = new Date(endDate as string);
     end.setUTCHours(23, 59, 59, 999);
 
-    const userRole = (req.user as any)?.role;
-    const isCompanyWide = ['admin', 'advertiser', 'super_admin'].includes(userRole);
-    const userId = isCompanyWide ? undefined : ((req.user as any)?.id || (req.user as any)?._id)?.toString();
+    const userId = ((req.user as any)?.id || (req.user as any)?._id)?.toString();
     const summary = await analyticsService.getAnalyticsSummary(start, end, req.user!.companyId!.toString(), userId);
     const performance = await analyticsService.getContentPerformance(start, end, 10, req.user!.companyId!.toString(), userId);
     const pdfBuffer = await analyticsService.generatePDFReport(

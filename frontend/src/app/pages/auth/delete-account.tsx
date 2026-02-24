@@ -5,6 +5,7 @@ import { Routes } from '@/utilities/routes'
 import { Building2, CheckCircle2, XCircle, Loader2 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/custom/button'
+import { tokenStore } from '@/store/token'
 
 const DeleteAccount: FC = () => {
     const [searchParams] = useSearchParams()
@@ -25,6 +26,8 @@ const DeleteAccount: FC = () => {
         const confirmDeletion = async () => {
             try {
                 await authService.confirmDeleteAccount(email, token)
+                // Clear tokens immediately on success
+                tokenStore.clearTokens()
                 setStatus('success')
                 setMessage('Your account has been deleted successfully. We are sorry to see you go.')
             } catch (err: any) {
