@@ -48,6 +48,9 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
 
     const [boardMessages, setBoardMessages] = useState<any[]>([])
     const [privateMessages, setPrivateMessages] = useState<any[]>([])
+    const [inputText, setInputText] = useState('')
+    const [activeTab, setActiveTab] = useState('company')
+    const [friends, setFriends] = useState<any[]>([])
     const [selectedFriend, setSelectedFriend] = useState<any>(null)
     const [searchQuery, setSearchQuery] = useState('')
 

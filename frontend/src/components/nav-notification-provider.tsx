@@ -40,6 +40,7 @@ interface NotificationContextType {
     socket: Socket | null
     setActiveChat: (info: { type: 'company' | 'private' | null; id?: string | null }) => void
     unreadNotifications: Notification[]
+    onlineUsers: Set<string>
 }
 
 const NotificationContext = createContext<NotificationContextType | null>(null)
@@ -56,6 +57,7 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
     const [isChatOpen, setIsChatOpen] = useState(false)
     const [suppressedChatSections, setSuppressedChatSections] = useState<Set<string>>(new Set())
     const [activeChatInfo, setActiveChatInfo] = useState<{ type: 'company' | 'private' | null; id?: string | null }>({ type: null, id: null })
+    const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set())
 
     // 0. Force Refresh User on Mount to ensure CompanyID is up to date (Critical for merged companies)
     useEffect(() => {
@@ -226,12 +228,19 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
             }
         }
 
+        const handlePresence = (users: string[]) => {
+            console.log('[SOCKET Provider] 👥 Presence update:', users)
+            setOnlineUsers(new Set(users))
+        }
+
         socket.on('new_notification', handleNotification)
         socket.on('new_chat', handleChat)
+        socket.on('user_presence', handlePresence)
 
         return () => {
             socket.off('new_notification', handleNotification)
             socket.off('new_chat', handleChat)
+            socket.off('user_presence', handlePresence)
         }
     }, [socket, user, isChatOpen])
 
@@ -322,7 +331,8 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
                 suppressChatSection,
                 socket,
                 setActiveChat: setActiveChatInfo,
-                unreadNotifications: notifications.filter(n => !n.isRead)
+                unreadNotifications: notifications.filter(n => !n.isRead),
+                onlineUsers
             }}
         >
             {children}
