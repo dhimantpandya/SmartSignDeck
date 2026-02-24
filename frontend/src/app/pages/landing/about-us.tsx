@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import { useEffect } from 'react'
 import { Button } from '@/components/custom/button'
 import Footer from '@/components/footer'
 import { Routes } from '@/utilities/routes'
@@ -7,6 +8,10 @@ import { motion } from 'framer-motion'
 
 export default function AboutUsPage() {
     const navigate = useNavigate()
+
+    useEffect(() => {
+        window.scrollTo(0, 0)
+    }, [])
 
     return (
         <div className='min-h-screen bg-background text-foreground selection:bg-[#020817] selection:text-white font-sans overflow-x-hidden'>
@@ -17,11 +22,11 @@ export default function AboutUsPage() {
                         className='flex items-center gap-2 group cursor-pointer'
                         onClick={() => navigate(Routes.LANDING)}
                     >
-                        <div className='bg-primary/20 p-2 rounded-xl group-hover:scale-110 transition-transform'>
-                            <IconDeviceTv className='text-primary h-6 w-6' />
+                        <div className='bg-[#020817]/20 p-2 rounded-xl group-hover:scale-110 transition-transform'>
+                            <IconDeviceTv className='text-[#020817] h-6 w-6' />
                         </div>
                         <span className='text-xl font-black tracking-tighter uppercase italic'>
-                            SmartSign<span className='text-primary'>Deck</span>
+                            SmartSign<span className='text-[#020817]'>Deck</span>
                         </span>
                     </div>
                 </div>
@@ -35,7 +40,7 @@ export default function AboutUsPage() {
                 >
                     <div className='space-y-6'>
                         <h1 className='text-5xl md:text-7xl font-black tracking-tighter uppercase italic perspective-1000'>
-                            About <span className='text-[#00D1FF]'>SmartSignDeck.</span>
+                            About <span className='text-[#020817]'>SmartSignDeck.</span>
                         </h1>
                         <p className='text-xl text-muted-foreground/80 leading-relaxed font-bold'>
                             Bridging the Gap Between Complex Scheduling and Intuitive Design.
@@ -45,7 +50,7 @@ export default function AboutUsPage() {
                     <div className='grid md:grid-cols-2 gap-12 pt-10'>
                         <div className='space-y-6'>
                             <h2 className='text-2xl font-black uppercase tracking-tight flex items-center gap-3'>
-                                <IconSparkles className='text-[#00D1FF]' /> The Vision
+                                <IconSparkles className='text-[#020817]' /> The Vision
                             </h2>
                             <p className='text-muted-foreground leading-relaxed'>
                                 SmartSignDeck began as a vision to simplify the digital signage landscape. Developed as a professional internship project, it focuses on high-performance ad scheduling and real-time synchronization across global screen networks.
@@ -53,7 +58,7 @@ export default function AboutUsPage() {
                         </div>
                         <div className='space-y-6'>
                             <h2 className='text-2xl font-black uppercase tracking-tight flex items-center gap-3'>
-                                <IconUsers className='text-[#00D1FF]' /> Driven by Growth
+                                <IconUsers className='text-[#020817]' /> Driven by Growth
                             </h2>
                             <p className='text-muted-foreground leading-relaxed'>
                                 Our mission is to empower businesses with "Unified Broadcast Command"—a system that scales effortlessly from a single display to thousands, all while maintaining absolute brand integrity.
@@ -66,7 +71,7 @@ export default function AboutUsPage() {
                         <p className='text-lg leading-relaxed text-muted-foreground'>
                             Utilizing state-of-the-art technologies including React, Fabric.js for template orchestration, and a robust Node.js backend, SmartSignDeck ensures millisecond-level sync and enterprise-grade reliability.
                         </p>
-                        <div className='flex items-center gap-4 text-[#00D1FF] font-black uppercase tracking-widest text-sm'>
+                        <div className='flex items-center gap-4 text-[#020817] font-black uppercase tracking-widest text-sm'>
                             <IconWorld /> GLOBAL SCALABILITY <span className='text-white/20'>|</span> REAL-TIME SYNC
                         </div>
                     </div>
@@ -74,7 +79,7 @@ export default function AboutUsPage() {
                     <Button
                         variant='ghost'
                         onClick={() => navigate(Routes.LANDING)}
-                        className='gap-2 font-black uppercase tracking-widest hover:text-[#00D1FF]'
+                        className='gap-2 font-black uppercase tracking-widest hover:text-[#020817]'
                     >
                         <IconArrowLeft size={20} /> Back to Home
                     </Button>

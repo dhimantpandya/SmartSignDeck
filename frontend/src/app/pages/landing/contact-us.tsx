@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import { useEffect } from 'react'
 import { Button } from '@/components/custom/button'
 import Footer from '@/components/footer'
 import { Routes } from '@/utilities/routes'
@@ -7,6 +8,10 @@ import { motion } from 'framer-motion'
 
 export default function ContactUsPage() {
     const navigate = useNavigate()
+
+    useEffect(() => {
+        window.scrollTo(0, 0)
+    }, [])
 
     return (
         <div className='min-h-screen bg-background text-foreground selection:bg-[#020817] selection:text-white font-sans overflow-x-hidden'>
@@ -17,11 +22,11 @@ export default function ContactUsPage() {
                         className='flex items-center gap-2 group cursor-pointer'
                         onClick={() => navigate(Routes.LANDING)}
                     >
-                        <div className='bg-primary/20 p-2 rounded-xl group-hover:scale-110 transition-transform'>
-                            <IconDeviceTv className='text-primary h-6 w-6' />
+                        <div className='bg-[#020817]/20 p-2 rounded-xl group-hover:scale-110 transition-transform'>
+                            <IconDeviceTv className='text-[#020817] h-6 w-6' />
                         </div>
                         <span className='text-xl font-black tracking-tighter uppercase italic'>
-                            SmartSign<span className='text-primary'>Deck</span>
+                            SmartSign<span className='text-[#020817]'>Deck</span>
                         </span>
                     </div>
                 </div>
@@ -35,7 +40,7 @@ export default function ContactUsPage() {
                 >
                     <div className='space-y-6'>
                         <h1 className='text-5xl md:text-8xl font-black tracking-tighter uppercase italic perspective-1000'>
-                            Get In <span className='text-[#00D1FF]'>Touch.</span>
+                            Get In <span className='text-[#020817]'>Touch.</span>
                         </h1>
                         <p className='text-xl text-muted-foreground/80 max-w-2xl mx-auto font-bold leading-relaxed'>
                             Whether you're looking for support, partnership opportunities, or just want to talk tech, we're here to listen.
@@ -45,14 +50,14 @@ export default function ContactUsPage() {
                     <div className='grid md:grid-cols-2 gap-8'>
                         <a
                             href='mailto:smartsigndeckk@gmail.com'
-                            className='group p-12 rounded-[3rem] bg-primary/5 border border-white/5 hover:bg-primary/10 hover:border-[#00D1FF]/30 transition-all duration-500'
+                            className='group p-12 rounded-[3rem] bg-primary/5 border border-white/5 hover:bg-primary/10 hover:border-[#020817]/30 transition-all duration-500'
                         >
-                            <div className='bg-[#00D1FF]/20 w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-8 group-hover:scale-110 group-hover:rotate-6 transition-transform'>
-                                <IconMail size={40} className='text-[#00D1FF]' />
+                            <div className='bg-[#020817]/20 w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-8 group-hover:scale-110 group-hover:rotate-6 transition-transform'>
+                                <IconMail size={40} className='text-[#020817]' />
                             </div>
                             <h2 className='text-3xl font-black uppercase italic mb-4'>Email Us</h2>
                             <p className='text-muted-foreground font-medium mb-6'>smartsigndeckk@gmail.com</p>
-                            <span className='inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.2em] text-[#00D1FF] group-hover:gap-4 transition-all'>
+                            <span className='inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.2em] text-[#020817] group-hover:gap-4 transition-all'>
                                 Send Message <IconArrowRight size={16} />
                             </span>
                         </a>
@@ -61,14 +66,14 @@ export default function ContactUsPage() {
                             href='https://linkedin.com/in/dhimant-pandya-083b4b271'
                             target='_blank'
                             rel='noopener noreferrer'
-                            className='group p-12 rounded-[3rem] bg-primary/5 border border-white/5 hover:bg-primary/10 hover:border-[#00D1FF]/30 transition-all duration-500'
+                            className='group p-12 rounded-[3rem] bg-primary/5 border border-white/5 hover:bg-primary/10 hover:border-[#020817]/30 transition-all duration-500'
                         >
-                            <div className='bg-[#00D1FF]/20 w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-8 group-hover:scale-110 group-hover:rotate-6 transition-transform'>
-                                <IconBrandLinkedin size={40} className='text-[#00D1FF]' />
+                            <div className='bg-[#020817]/20 w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-8 group-hover:scale-110 group-hover:rotate-6 transition-transform'>
+                                <IconBrandLinkedin size={40} className='text-[#020817]' />
                             </div>
                             <h2 className='text-3xl font-black uppercase italic mb-4'>LinkedIn</h2>
                             <p className='text-muted-foreground font-medium mb-6'>Dhimant Pandya</p>
-                            <span className='inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.2em] text-[#00D1FF] group-hover:gap-4 transition-all'>
+                            <span className='inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.2em] text-[#020817] group-hover:gap-4 transition-all'>
                                 View Profile <IconArrowRight size={16} />
                             </span>
                         </a>
@@ -77,7 +82,7 @@ export default function ContactUsPage() {
                     <Button
                         variant='ghost'
                         onClick={() => navigate(Routes.LANDING)}
-                        className='gap-2 font-black uppercase tracking-widest hover:text-[#00D1FF]'
+                        className='gap-2 font-black uppercase tracking-widest hover:text-[#020817]'
                     >
                         <IconArrowLeft size={20} /> Back to Home
                     </Button>

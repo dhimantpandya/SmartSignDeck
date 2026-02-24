@@ -24,8 +24,8 @@ export default function Footer() {
                     {/* Brand */}
                     <div className='space-y-4 lg:col-span-2'>
                         <div className='flex items-center gap-2'>
-                            <BrandLogo className='text-primary h-8 w-8' />
-                            <h2 className='text-3xl font-black tracking-tighter text-primary italic uppercase'>SmartSign<span className='text-foreground'>Deck</span></h2>
+                            <BrandLogo className='text-[#020817] h-8 w-8' />
+                            <h2 className='text-3xl font-black tracking-tighter text-[#020817] italic uppercase'>SmartSign<span className='text-foreground'>Deck</span></h2>
                         </div>
                         <p className='text-sm text-muted-foreground leading-relaxed max-w-sm'>
                             Intelligent Ad Scheduling & Display Platform. Empowering your digital presence with smart solutions. Built for performance, designed for ease.

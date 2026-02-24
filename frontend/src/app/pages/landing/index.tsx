@@ -19,6 +19,10 @@ export default function LandingPage() {
     const navigate = useNavigate()
     const [isScrolled, setIsScrolled] = useState(false)
     const { scrollYProgress } = useScroll()
+    useEffect(() => {
+        window.scrollTo(0, 0)
+    }, [])
+
     const scaleX = useSpring(scrollYProgress, {
         stiffness: 100,
         damping: 30,
@@ -123,7 +127,7 @@ export default function LandingPage() {
             ` }} />
             {/* Scroll Progress Bar */}
             <motion.div
-                className="fixed top-0 left-0 right-0 h-1 bg-[#00ffff] z-[200] origin-left shadow-[0_0_10px_rgba(0,255,255,0.5)]"
+                className="fixed top-0 left-0 right-0 h-1 bg-[#020817] z-[200] origin-left shadow-[0_0_10px_rgba(2,8,23,0.3)]"
                 style={{ scaleX }}
             />
 
@@ -139,11 +143,11 @@ export default function LandingPage() {
                         className='flex items-center gap-2 group cursor-pointer'
                         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
                     >
-                        <div className='bg-primary/20 p-3 rounded-xl group-hover:scale-110 transition-transform'>
-                            <BrandLogo className='text-primary h-6 w-6' />
+                        <div className='bg-[#020817]/20 p-3 rounded-xl group-hover:scale-110 transition-transform'>
+                            <BrandLogo className='text-[#020817] h-6 w-6' />
                         </div>
                         <span className='text-xl font-black tracking-tighter uppercase italic'>
-                            SmartSign<span className='text-primary'>Deck</span>
+                            SmartSign<span className='text-[#020817]'>Deck</span>
                         </span>
                     </motion.div>
 
@@ -152,8 +156,8 @@ export default function LandingPage() {
                             <motion.a
                                 key={item}
                                 href={`#${item.toLowerCase()}`}
-                                whileHover={{ scale: 1.1, color: '#00ffff' }}
-                                className='text-sm font-black uppercase tracking-widest text-[#00D1FF] hover:text-[#00ffff] transition-all duration-300 drop-shadow-[0_0_10px_rgba(0,209,255,0.3)]'
+                                whileHover={{ scale: 1.1, color: '#020817' }}
+                                className='text-sm font-black uppercase tracking-widest text-primary hover:text-[#020817] transition-all duration-300'
                             >
                                 {item}
                             </motion.a>
@@ -213,11 +217,11 @@ export default function LandingPage() {
                         transition={{ duration: 0.8, ease: "circOut" }}
                         className='text-4xl md:text-7xl font-black tracking-tighter leading-[0.9] uppercase italic perspective-1000 selection-navy'
                     >
-                        <span className='text-[#00ffff]'>
+                        <span className='text-[#020817]'>
                             {dynamicMessages[activeMessage].line1}
                         </span>
                         <br />
-                        <span className='text-[#00ffff] drop-shadow-[0_0_30px_rgba(0,255,255,0.4)]'>
+                        <span className='text-[#020817] drop-shadow-[0_0_20px_rgba(2,8,23,0.2)]'>
                             {dynamicMessages[activeMessage].line2}
                         </span>
                     </motion.h1>
@@ -274,7 +278,7 @@ export default function LandingPage() {
                             className='text-center space-y-4 mb-20'
                         >
                             <h2 className='text-4xl md:text-7xl font-black tracking-tighter uppercase italic'>Powerful Features</h2>
-                            <div className='h-2 w-32 bg-[#00ffff] mx-auto rounded-full shadow-[0_0_20px_rgba(0,255,255,0.5)]' />
+                            <div className='h-2 w-32 bg-[#020817] mx-auto rounded-full shadow-[0_0_20px_rgba(2,8,23,0.3)]' />
                             <p className='text-muted-foreground/80 max-w-xl mx-auto text-xl'>Experience the next generation of content management.</p>
                         </motion.div>
 
