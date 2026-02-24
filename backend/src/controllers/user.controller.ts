@@ -186,6 +186,14 @@ const getUsers = catchAsync(async (req: Request, res: Response) => {
         }
       }).filter(Boolean);
 
+      // 🔝 Sort by role priority: super_admin → admin → user → others
+      const rolePriority: Record<string, number> = { super_admin: 0, admin: 1, user: 2 };
+      result.results = result.results.sort((a: any, b: any) => {
+        const ap = rolePriority[a?.role] ?? 3;
+        const bp = rolePriority[b?.role] ?? 3;
+        return ap - bp;
+      });
+
       console.log('[DEBUG] getUsers - transformed results count:', result.results.length);
     } catch (mapError) {
       console.error('[ERROR] Failed to map users:', mapError);

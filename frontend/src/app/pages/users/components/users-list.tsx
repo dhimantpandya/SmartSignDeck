@@ -1,8 +1,9 @@
-import { ChangeEvent, useState } from 'react'
+import { ChangeEvent, useState, useEffect } from 'react'
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
 import { useReactTable, getCoreRowModel } from '@tanstack/react-table'
 import { userService, adminRequestService, socialService, authService } from '@/api'
 import { useAuth } from '@/hooks/use-auth'
+import { useNotifications } from '@/components/nav-notification-provider'
 import { useUserListTableColumns } from '../hooks/use-users-list-table-columns'
 import { User, UserListFilter } from '@/models/user.model'
 import { Button } from '@/components/custom/button'
@@ -38,6 +39,19 @@ const initialTableState = {
 export const UsersList = () => {
   const queryClient = useQueryClient()
   const { user } = useAuth()
+  const { socket } = useNotifications()
+
+  // ⚡ Real-time: refresh users list when a new user registers
+  useEffect(() => {
+    if (!socket) return
+    const handleNewUser = (newUser: any) => {
+      console.log('[UsersList] New user registered:', newUser)
+      queryClient.invalidateQueries({ queryKey: [QueryKeys.USER_LIST] })
+    }
+    socket.on('new_user_registered', handleNewUser)
+    return () => { socket.off('new_user_registered', handleNewUser) }
+  }, [socket, queryClient])
+
   const [userForm, setUserForm] = useState<{
     isOpen: boolean
     user?: User

@@ -497,10 +497,31 @@ export const verifyOtp = async (req: Request, res: Response) => {
         try {
           const adminEmail = "smartsigndeck@gmail.com";
           const systemAdmin = await User.findOne({ email: adminEmail });
+          const notifService = (await import("../services/notification.service")).default;
+          const { emitToUser, getIO } = await import("../services/socket.service");
 
-          // 1. Notify System Admin
+          // 1. Emit real-time socket event so /users page updates instantly (no refresh needed)
+          try {
+            const io = getIO();
+            const newUserPayload = {
+              id: user._id.toString(),
+              first_name: user.first_name,
+              last_name: user.last_name,
+              email: user.email,
+              role: user.role,
+              companyId: (user as any).companyId?.toString(),
+              companyName: (user as any).companyName,
+            };
+            // Emit globally so any /users page viewer sees it immediately
+            io.emit('new_user_registered', newUserPayload);
+            console.log(`[Auth] Emitted new_user_registered socket event for ${user.email}`);
+          } catch (socketErr) {
+            console.error("[Auth] Socket emit failed (non-critical):", socketErr);
+          }
+
+          // 2. Notify System Admin
           if (systemAdmin && systemAdmin._id.toString() !== user._id.toString()) {
-            await (await import("../services/notification.service")).default.createNotification(
+            await notifService.createNotification(
               systemAdmin._id.toString(),
               "system_alert",
               "New User Registration",
@@ -508,18 +529,25 @@ export const verifyOtp = async (req: Request, res: Response) => {
             );
           }
 
-          // 2. Notify Company Owner if joining existing company
-          if (user.companyId) {
+          // 3. Notify ALL company members when a new user joins (not just the owner)
+          if ((user as any).companyId) {
             const { default: Company } = await import("../models/company.model");
-            const company = await Company.findById(user.companyId);
-            if (company && company.ownerId.toString() !== user._id.toString()) {
-              await (await import("../services/notification.service")).default.createNotification(
-                company.ownerId.toString(),
-                "system_alert",
-                "New Team Member",
-                `${user.first_name} ${user.last_name} has joined your workspace.`
-              );
-            }
+            const allCompanyMembers = await User.find({
+              companyId: (user as any).companyId,
+              _id: { $ne: user._id } // Exclude the new user themselves
+            }).select('_id');
+
+            await Promise.all(
+              allCompanyMembers.map(member =>
+                notifService.createNotification(
+                  member._id.toString(),
+                  "system_alert",
+                  "New Team Member 👋",
+                  `${user.first_name} ${user.last_name} has joined your workspace.`
+                ).catch(e => console.error(`[Auth] Notification failed for member ${member._id}:`, e))
+              )
+            );
+            console.log(`[Auth] Sent join notifications to ${allCompanyMembers.length} company members.`);
           }
         } catch (notifErr) {
           console.error("[Auth] Background registration notification failed:", notifErr);

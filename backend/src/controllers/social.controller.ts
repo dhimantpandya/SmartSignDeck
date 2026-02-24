@@ -83,7 +83,10 @@ const getCompanyBoard = catchAsync(async (req: Request, res: Response) => {
     if (!user.companyId) {
         return successResponse(res, "No company associated", httpStatus.OK, []);
     }
-    const messages = await socialService.getCompanyMessages(user.companyId.toString());
+    // 🔒 Pass user's createdAt as the join-date cutoff so new users don't see
+    // historical messages from before they joined the company
+    const joinedAfter = user.createdAt ? new Date(user.createdAt) : undefined;
+    const messages = await socialService.getCompanyMessages(user.companyId.toString(), joinedAfter);
     successResponse(res, "Retrieved company board", httpStatus.OK, messages);
 });
 

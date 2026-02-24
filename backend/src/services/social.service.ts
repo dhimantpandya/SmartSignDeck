@@ -20,8 +20,15 @@ const sendMessage = async (senderId: string, text: string, recipientId?: string,
 /**
  * Get messages for a company
  */
-const getCompanyMessages = async (companyId: string) => {
-    const messages = await Message.find({ companyId })
+const getCompanyMessages = async (companyId: string, joinedAfter?: Date) => {
+    // 🔒 Only show messages sent after the user's join date (joinedAfter = user.createdAt)
+    // This prevents new invited users from seeing historical company chat
+    const query: any = { companyId };
+    if (joinedAfter) {
+        query.created_at = { $gte: joinedAfter };
+    }
+
+    const messages = await Message.find(query)
         .sort({ created_at: -1 })
         .limit(50)
         .populate("senderId", "first_name last_name avatar");

@@ -10,16 +10,16 @@ const getStats = catchAsync(async (req: Request, res: Response) => {
 
   console.log(`[DEBUG] Fetching signage stats for user: ${user?.id}, companyId: ${companyId}, role: ${user?.role}`);
 
-  let stats;
+  // 🔒 Dashboard stats are ALWAYS personal: show only what this user created.
+  // Even admins see their own content count (0 for new users).
+  // Company-wide management is done on the template/screen management pages.
   const userId = (user?.id || user?._id)?.toString();
 
-  const userRole = user?.role;
-  const isCompanyWide = (userRole === "admin" || userRole === "advertiser" || userRole === "super_admin") && !!companyId;
-  const targetUserId = isCompanyWide ? undefined : userId;
+  let stats;
 
   if (!companyId && user?.role === "super_admin") {
-    // Super-admin without company sees everything
-    stats = await signageService.getSignageStats("", targetUserId as string);
+    // Super-admin without company: show their own content
+    stats = await signageService.getSignageStats("", userId as string);
   } else if (!companyId) {
     // Fallback if somehow companyId is missing for regular users
     stats = {
@@ -29,7 +29,8 @@ const getStats = catchAsync(async (req: Request, res: Response) => {
       offlineScreens: 0,
     };
   } else {
-    stats = await signageService.getSignageStats(companyId, targetUserId as string);
+    // Always filter by userId so new invited users (even admins) see 0 until they create content
+    stats = await signageService.getSignageStats(companyId, userId as string);
   }
 
   successResponse(
