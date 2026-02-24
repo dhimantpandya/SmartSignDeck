@@ -15,7 +15,6 @@ import { Separator } from '@/components/ui/separator'
 import {
     Building2,
     Plus,
-    Edit,
     Trash,
     Settings as SettingsIcon,
     ShieldCheck,
@@ -225,10 +224,6 @@ export default function AdminCompanies() {
         setIsDialogOpen(true)
     }
 
-    const handleOpenEdit = (company: Company) => {
-        setEditingCompany(company)
-        setIsDialogOpen(true)
-    }
 
     const handleSave = () => {
         if (!editingCompany?.name) return
