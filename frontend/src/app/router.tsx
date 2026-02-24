@@ -41,6 +41,18 @@ const Setup = () => {
             Component: (await import('./pages/landing/contact-us')).default,
           }),
         },
+        {
+          path: Routes.PRIVACY_POLICY,
+          lazy: async () => ({
+            Component: (await import('./pages/landing/privacy-policy')).default,
+          }),
+        },
+        {
+          path: Routes.TERMS_OF_SERVICE,
+          lazy: async () => ({
+            Component: (await import('./pages/landing/terms-of-service')).default,
+          }),
+        },
         // ===== AUTH ROUTES =====
         {
           lazy: async () => {

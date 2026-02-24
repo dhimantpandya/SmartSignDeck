@@ -35,10 +35,10 @@ export default function Footer() {
                     <div>
                         <h3 className='mb-4 text-xs font-black uppercase tracking-[0.2em] text-foreground'>Services</h3>
                         <ul className='space-y-3 text-sm text-muted-foreground font-medium'>
-                            <li><a href='#' className='transition-colors hover:text-[#00ffff]'>Ad Scheduling</a></li>
-                            <li><a href='#' className='transition-colors hover:text-[#00ffff]'>Screen Management</a></li>
-                            <li><a href='#' className='transition-colors hover:text-[#00ffff]'>Analytics</a></li>
-                            <li><a href='#' className='transition-colors hover:text-[#00ffff]'>Template Implementation</a></li>
+                            <li><span>Ad Scheduling</span></li>
+                            <li><span>Screen Management</span></li>
+                            <li><span>Analytics</span></li>
+                            <li><span>Template Implementation</span></li>
                         </ul>
                     </div>
 
@@ -48,7 +48,7 @@ export default function Footer() {
                             <li>
                                 <Link
                                     to={Routes.ABOUT_US}
-                                    className='transition-colors hover:text-[#00ffff]'
+                                    className='transition-colors hover:text-[#020817]'
                                 >
                                     About Us
                                 </Link>
@@ -56,13 +56,27 @@ export default function Footer() {
                             <li>
                                 <Link
                                     to={Routes.CONTACT_US}
-                                    className='transition-colors hover:text-[#00ffff]'
+                                    className='transition-colors hover:text-[#020817]'
                                 >
                                     Contact
                                 </Link>
                             </li>
-                            <li><a href='#' className='transition-colors hover:text-[#00ffff]'>Privacy Policy</a></li>
-                            <li><a href='#' className='transition-colors hover:text-[#00ffff]'>Terms of Service</a></li>
+                            <li>
+                                <Link
+                                    to={Routes.PRIVACY_POLICY}
+                                    className='transition-colors hover:text-[#020817]'
+                                >
+                                    Privacy Policy
+                                </Link>
+                            </li>
+                            <li>
+                                <Link
+                                    to={Routes.TERMS_OF_SERVICE}
+                                    className='transition-colors hover:text-[#020817]'
+                                >
+                                    Terms of Service
+                                </Link>
+                            </li>
                         </ul>
                     </div>
 
@@ -74,14 +88,14 @@ export default function Footer() {
                                 href='https://linkedin.com/in/dhimant-pandya-083b4b271'
                                 target='_blank'
                                 rel='noopener noreferrer'
-                                className='text-muted-foreground transition-all hover:scale-110 hover:text-[#00ffff]'
+                                className='text-muted-foreground transition-all hover:scale-110 hover:text-[#020817]'
                             >
                                 <IconBrandLinkedin className='h-8 w-8' />
                                 <span className='sr-only'>LinkedIn</span>
                             </a>
                             <a
                                 href='mailto:smartsigndeckk@gmail.com'
-                                className='text-muted-foreground transition-all hover:scale-110 hover:text-[#00ffff]'
+                                className='text-muted-foreground transition-all hover:scale-110 hover:text-[#020817]'
                             >
                                 <IconMail className='h-8 w-8' />
                                 <span className='sr-only'>Email Us</span>
@@ -108,9 +122,9 @@ export default function Footer() {
                         &copy; 2026 SmartSignDeck. All rights reserved.
                     </p>
                     <div className='flex items-center gap-6 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/30'>
-                        <a href="#" className="hover:text-primary transition-colors">Privacy Policy</a>
-                        <a href="#" className="hover:text-primary transition-colors">Terms of Service</a>
-                        <a href="#" className="hover:text-primary transition-colors">Direct Management</a>
+                        <Link to={Routes.PRIVACY_POLICY} className="hover:text-[#020817] transition-colors">Privacy Policy</Link>
+                        <Link to={Routes.TERMS_OF_SERVICE} className="hover:text-[#020817] transition-colors">Terms of Service</Link>
+                        <a href="#" className="hover:text-[#020817] transition-colors">Direct Management</a>
                     </div>
                 </div>
             </div>

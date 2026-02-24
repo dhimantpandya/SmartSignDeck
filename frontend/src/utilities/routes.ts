@@ -2,6 +2,8 @@ export const Routes = {
   LANDING: '/',
   ABOUT_US: '/about-us',
   CONTACT_US: '/contact-us',
+  PRIVACY_POLICY: '/privacy-policy',
+  TERMS_OF_SERVICE: '/terms-of-service',
   NOTIFICATION: '/notification',
   SIGN_IN: '/sign-in',
   SIGN_UP: '/sign-up',
