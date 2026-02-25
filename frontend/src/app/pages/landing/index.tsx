@@ -12,8 +12,9 @@ import {
     IconWorld
 } from '@tabler/icons-react'
 import { cn } from '@/lib/utils'
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, Suspense, lazy } from 'react'
 import { motion, useScroll, useTransform, useSpring } from 'framer-motion'
+const Spline = lazy(() => import('@splinetool/react-spline'))
 
 export default function LandingPage() {
     const navigate = useNavigate()
@@ -205,7 +206,14 @@ export default function LandingPage() {
                         />
                     ))}
                     {/* Lighter Gradient Overlay for brightness */}
-                    <div className='absolute inset-0 bg-gradient-to-b from-background/5 via-background/20 to-background z-10' />
+                    <div className='absolute inset-0 bg-gradient-to-b from-background/40 via-background/60 to-background z-10' />
+                </div>
+
+                {/* 3D Spline Scene */}
+                <div className="absolute inset-0 z-15 opacity-80 mix-blend-screen pointer-events-none">
+                    <Suspense fallback={null}>
+                        <Spline scene="https://prod.spline.design/6Wq1Q7YGyM-iab9i/scene.splinecode" />
+                    </Suspense>
                 </div>
 
                 <div className='container mx-auto px-6 relative z-20 text-center space-y-8 max-w-5xl'>
