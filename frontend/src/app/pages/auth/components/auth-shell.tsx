@@ -16,6 +16,7 @@ export function AuthShell({ children, title, subtitle, isPureForm }: AuthShellPr
 
     return (
         <motion.div
+            layoutId="auth-card"
             layout
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
@@ -23,8 +24,9 @@ export function AuthShell({ children, title, subtitle, isPureForm }: AuthShellPr
             whileTap={{ scale: 0.99 }}
             transition={{
                 type: "spring",
-                stiffness: 400,
-                damping: 15
+                stiffness: 500,
+                damping: 18,
+                mass: 1.2
             }}
             className={cn(
                 'relative mx-auto flex min-h-[600px] w-full overflow-hidden rounded-[2.5rem] border border-white/10 bg-background/30 shadow-2xl backdrop-blur-3xl cursor-default',
