@@ -166,10 +166,10 @@ export function AuthShell({ children, title, subtitle, isPureForm }: AuthShellPr
                                             exit="exit"
                                             src={selectedCharacter.imageUrl}
                                             alt={selectedCharacter.name}
-                                            className='h-full w-auto object-cover object-top drop-shadow-[0_0_30px_rgba(0,0,0,0.8)] filter brightness-90 contrast-110'
+                                            className='h-full w-auto object-contain object-bottom drop-shadow-[0_0_30px_rgba(0,0,0,0.5)]'
                                             style={{
-                                                maskImage: 'linear-gradient(to top, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 100%)',
-                                                WebkitMaskImage: 'linear-gradient(to top, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 100%)'
+                                                maskImage: 'linear-gradient(to top, rgba(0,0,0,1) 80%, rgba(0,0,0,0) 100%)',
+                                                WebkitMaskImage: 'linear-gradient(to top, rgba(0,0,0,1) 80%, rgba(0,0,0,0) 100%)'
                                             }}
                                         />
                                     )}
