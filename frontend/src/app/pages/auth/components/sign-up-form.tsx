@@ -136,9 +136,13 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
               name="first_name"
               render={({ field }) => (
                 <FormItem className="space-y-1">
-                  <FormLabel>First Name</FormLabel>
+                  <FormLabel className='text-xs font-black uppercase tracking-widest text-[#020817]'>First Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="John" {...field} />
+                    <Input
+                      placeholder="John"
+                      {...field}
+                      className='h-12 rounded-xl border-white/20 bg-white/5 focus-visible:ring-primary/50'
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -151,9 +155,13 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
               name="last_name"
               render={({ field }) => (
                 <FormItem className="space-y-1">
-                  <FormLabel>Last Name</FormLabel>
+                  <FormLabel className='text-xs font-black uppercase tracking-widest text-[#020817]'>Last Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="Doe" {...field} />
+                    <Input
+                      placeholder="Doe"
+                      {...field}
+                      className='h-12 rounded-xl border-white/20 bg-white/5 focus-visible:ring-primary/50'
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -166,9 +174,14 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
               name="email"
               render={({ field }) => (
                 <FormItem className="space-y-1">
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel className='text-xs font-black uppercase tracking-widest text-[#020817]'>Email</FormLabel>
                   <FormControl>
-                    <Input placeholder="email@example.com" autoComplete="off" {...field} />
+                    <Input
+                      placeholder="email@example.com"
+                      autoComplete="off"
+                      {...field}
+                      className='h-12 rounded-xl border-white/20 bg-white/5 focus-visible:ring-primary/50'
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -182,9 +195,14 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
                 name="companyName"
                 render={({ field }) => (
                   <FormItem className="space-y-1">
-                    <FormLabel>Company Name</FormLabel>
+                    <FormLabel className='text-xs font-black uppercase tracking-widest text-[#020817]'>Company Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="Acme Inc." autoComplete="off" {...field} />
+                      <Input
+                        placeholder="Acme Inc."
+                        autoComplete="off"
+                        {...field}
+                        className='h-12 rounded-xl border-white/20 bg-white/5 focus-visible:ring-primary/50'
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -198,9 +216,14 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
               name="password"
               render={({ field }) => (
                 <FormItem className="space-y-1">
-                  <FormLabel>Password</FormLabel>
+                  <FormLabel className='text-xs font-black uppercase tracking-widest text-[#020817]'>Password</FormLabel>
                   <FormControl>
-                    <PasswordInput placeholder="********" autoComplete="new-password" {...field} />
+                    <PasswordInput
+                      placeholder="********"
+                      autoComplete="new-password"
+                      {...field}
+                      className='h-12 rounded-xl border-white/20 bg-white/5 focus-visible:ring-primary/50'
+                    />
                   </FormControl>
                   <PasswordStrengthIndicator password={field.value} className="mt-2" />
                   <FormMessage />
@@ -214,9 +237,14 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
               name="confirmPassword"
               render={({ field }) => (
                 <FormItem className="space-y-1">
-                  <FormLabel>Confirm Password</FormLabel>
+                  <FormLabel className='text-xs font-black uppercase tracking-widest text-[#020817]'>Confirm Password</FormLabel>
                   <FormControl>
-                    <PasswordInput placeholder="********" autoComplete="new-password" {...field} />
+                    <PasswordInput
+                      placeholder="********"
+                      autoComplete="new-password"
+                      {...field}
+                      className='h-12 rounded-xl border-white/20 bg-white/5 focus-visible:ring-primary/50'
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -224,16 +252,16 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
             />
 
             {/* Submit Button */}
-            <Button type="submit" className="mt-2" loading={isLoading}>
+            <Button type="submit" className="mt-4 h-12 rounded-xl font-black uppercase tracking-widest shadow-xl" loading={isLoading}>
               Create Account
             </Button>
 
-            <div className='relative mt-2'>
+            <div className='relative my-8'>
               <div className='absolute inset-0 flex items-center'>
-                <span className='w-full border-t' />
+                <span className='w-full border-t border-white/10' />
               </div>
-              <div className='relative flex justify-center text-xs uppercase'>
-                <span className='bg-background px-2 text-muted-foreground'>
+              <div className='relative flex justify-center text-[10px] font-black uppercase tracking-[0.3em]'>
+                <span className='bg-transparent px-4 text-muted-foreground/60'>
                   Or continue with
                 </span>
               </div>
@@ -242,6 +270,7 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
             <Button
               variant='outline'
               type='button'
+              className='h-12 rounded-xl border-white/20 bg-white/5 font-black uppercase tracking-widest hover:bg-white/10 transition-all shadow-lg'
               disabled={isLoading}
               onClick={async () => {
                 let timeoutId: any;
@@ -347,21 +376,18 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
               </svg>
               Google
             </Button>
-            <div className='mt-4 flex flex-col items-center gap-2 text-center text-sm'>
-              <div>
-                Already have an account?{' '}
-                <Link to='/sign-in' className='underline hover:text-primary transition-colors'>
-                  Sign in
-                </Link>
+            <div className='mt-6 flex flex-col items-center gap-4 text-center text-[10px] font-bold uppercase tracking-[0.2em]'>
+              <div className='flex items-center gap-2 text-muted-foreground/60 transition-colors'>
+                Need help? <Link to={Routes.CONTACT_US} className='text-[#020817] underline underline-offset-4 hover:text-primary'>Reach out</Link>
               </div>
               <div className='flex items-center gap-2 text-muted-foreground'>
-                <span className='h-[1px] w-4 bg-muted' />
+                <span className='h-[1px] w-6 bg-muted/30' />
                 <span>or</span>
-                <span className='h-[1px] w-4 bg-muted' />
+                <span className='h-[1px] w-6 bg-muted/30' />
               </div>
               <div>
                 Have an invitation?{' '}
-                <Link to={Routes.INVITED} className='font-medium underline hover:text-primary transition-colors'>
+                <Link to={Routes.INVITED} className='text-[#020817] underline underline-offset-4 hover:text-primary transition-colors'>
                   Join workspace
                 </Link>
               </div>

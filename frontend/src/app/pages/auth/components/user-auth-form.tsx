@@ -179,9 +179,14 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
               name="email"
               render={({ field }) => (
                 <FormItem className='space-y-1'>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel className='text-xs font-black uppercase tracking-widest text-[#020817]'>Email</FormLabel>
                   <FormControl>
-                    <Input placeholder="name@example.com" autoComplete="off" {...field} />
+                    <Input
+                      placeholder="name@example.com"
+                      autoComplete="off"
+                      {...field}
+                      className='h-12 rounded-xl border-white/20 bg-white/5 focus-visible:ring-primary/50'
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -194,15 +199,20 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
               render={({ field }) => (
                 <FormItem className='space-y-1'>
                   <div className='flex items-center justify-between'>
-                    <FormLabel>Password</FormLabel>
+                    <FormLabel className='text-xs font-black uppercase tracking-widest text-[#020817]'>Password</FormLabel>
                   </div>
                   <FormControl>
-                    <PasswordInput placeholder="********" autoComplete="new-password" {...field} />
+                    <PasswordInput
+                      placeholder="********"
+                      autoComplete="new-password"
+                      {...field}
+                      className='h-12 rounded-xl border-white/20 bg-white/5 focus-visible:ring-primary/50'
+                    />
                   </FormControl>
                   <div className="flex justify-end">
                     <Link
                       to={Routes.FORGOT_PASSWORD}
-                      className='text-sm font-medium text-muted-foreground hover:opacity-75'
+                      className='text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors'
                     >
                       Forgot password?
                     </Link>
@@ -212,175 +222,175 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
               )}
             />
 
-            <Button type="submit" loading={isLoading} className='mt-2'>
+            <Button type="submit" loading={isLoading} className='mt-4 h-12 rounded-xl font-black uppercase tracking-widest shadow-xl'>
               Sign In
             </Button>
 
             <div className='relative mt-2'>
-              <div className='absolute inset-0 flex items-center'>
-                <span className='w-full border-t' />
+              <div className='relative my-8'>
+                <div className='absolute inset-0 flex items-center'>
+                  <span className='w-full border-t border-white/10' />
+                </div>
+                <div className='relative flex justify-center text-[10px] font-black uppercase tracking-[0.3em]'>
+                  <span className='bg-transparent px-4 text-muted-foreground/60'>
+                    Or continue with
+                  </span>
+                </div>
               </div>
-              <div className='relative flex justify-center text-xs uppercase'>
-                <span className='bg-background px-2 text-muted-foreground'>
-                  Or continue with
-                </span>
-              </div>
-            </div>
 
-            <Button
-              variant='outline'
-              type='button'
-              disabled={isLoading}
-              onClick={async () => {
-                let timeoutId: any;
-                try {
-                  setIsLoading(true);
-                  // 5s safety timeout for loading state
-                  timeoutId = setTimeout(() => setIsLoading(false), 5000);
+              <Button
+                variant='outline'
+                type='button'
+                className='h-12 rounded-xl border-white/20 bg-white/5 font-black uppercase tracking-widest hover:bg-white/10 transition-all shadow-lg'
+                disabled={isLoading}
+                onClick={async () => {
+                  let timeoutId: any;
+                  try {
+                    setIsLoading(true);
+                    // 5s safety timeout for loading state
+                    timeoutId = setTimeout(() => setIsLoading(false), 5000);
 
-                  form.clearErrors();
+                    form.clearErrors();
 
-                  console.log('Starting Google Sign-In...');
-                  const { signInWithPopup } = await import('firebase/auth');
-                  const { auth, googleProvider, isFirebaseConfigured } = await import('@/lib/firebase');
+                    console.log('Starting Google Sign-In...');
+                    const { signInWithPopup } = await import('firebase/auth');
+                    const { auth, googleProvider, isFirebaseConfigured } = await import('@/lib/firebase');
 
-                  if (!isFirebaseConfigured() || !auth || !googleProvider) {
-                    toast({
-                      variant: 'destructive',
-                      title: 'Configuration Error',
-                      description: 'Google Sign-In is not correctly configured. Please check your Firebase API keys.'
-                    });
-                    return;
+                    if (!isFirebaseConfigured() || !auth || !googleProvider) {
+                      toast({
+                        variant: 'destructive',
+                        title: 'Configuration Error',
+                        description: 'Google Sign-In is not correctly configured. Please check your Firebase API keys.'
+                      });
+                      return;
+                    }
+
+                    const result = await signInWithPopup(auth, googleProvider);
+                    const idToken = await result.user.getIdToken();
+
+                    const response = await authService.firebaseLogin(idToken, 'login');
+
+                    // Handle success similar to standard login
+                    const apiUser = response.user;
+                    const user = mapApiUserToUser(apiUser)
+
+                    const refreshToken = (import.meta.env.VITE_COOKIE_BASED_AUTHENTICATION as unknown as string) !== 'true'
+                      ? response.tokens?.refresh?.token ?? null
+                      : null;
+                    const accessToken = response.tokens?.access ?? null
+
+                    login(user, refreshToken, accessToken);
+
+                    toast({ title: 'Login successful' });
+
+                    // Immediate redirect after login
+                    console.log('[UserAuthForm] Google login successful, redirecting to dashboard...')
+                    navigate(Routes.DASHBOARD, { replace: true })
+                  } catch (error: any) {
+                    console.error('Google Sign-In Error:', error);
+
+                    // Check if user closed the popup without selecting an account
+                    const isPopupClosed =
+                      error?.code === 'auth/popup-closed-by-user' ||
+                      error?.code === 'auth/cancelled-popup-request' ||
+                      error?.message?.includes('popup') ||
+                      error?.message?.includes('closed');
+
+                    if (isPopupClosed) {
+                      // User cancelled the popup - just close silently without showing error
+                      console.log('Google Sign-In popup closed by user');
+                      return; // Exit early, don't show error toast
+                    }
+
+                    // Check if it's the 404 User Not Found error from our backend
+                    const isUserNotFound =
+                      error?.message === 'User not found' ||
+                      error?.status === 404 ||
+                      error?.response?.status === 404
+
+                    if (isUserNotFound) {
+                      toast({
+                        title: 'Email is not registered',
+                        description: 'Redirecting you to the sign-up page...',
+                      })
+
+                      const { auth } = await import('@/lib/firebase');
+                      const currentUser = auth?.currentUser;
+
+                      // Wait 2 seconds so the user can read the message
+                      setTimeout(() => {
+                        if (currentUser) {
+                          const displayName = currentUser.displayName || '';
+                          const [firstName, ...rest] = displayName.split(' ');
+                          const lastName = rest.join(' ');
+
+                          navigate('/sign-up', {
+                            state: {
+                              email: currentUser.email,
+                              first_name: firstName || '',
+                              last_name: lastName || ''
+                            }
+                          });
+                        } else {
+                          navigate('/sign-up');
+                        }
+                      }, 2000)
+                      return;
+                    }
+
+                    if (error?.status === 400 && error?.message?.includes('This account was created with')) {
+                      toast({
+                        variant: 'destructive',
+                        title: 'Wrong Login Method',
+                        description: error.message,
+                      })
+                      return
+                    }
+
+                    console.error('[UserAuthForm] Google Sign-In Error:', error);
+                    const errorMessage = error?.message || (typeof error === 'string' ? error : 'Google Sign-In failed');
+                    toast({ variant: 'destructive', title: 'Sign-In Failed', description: errorMessage });
+                  } finally {
+                    if (timeoutId) clearTimeout(timeoutId);
+                    setIsLoading(false);
                   }
-
-                  const result = await signInWithPopup(auth, googleProvider);
-                  const idToken = await result.user.getIdToken();
-
-                  const response = await authService.firebaseLogin(idToken, 'login');
-
-                  // Handle success similar to standard login
-                  const apiUser = response.user;
-                  const user = mapApiUserToUser(apiUser)
-
-                  const refreshToken = (import.meta.env.VITE_COOKIE_BASED_AUTHENTICATION as unknown as string) !== 'true'
-                    ? response.tokens?.refresh?.token ?? null
-                    : null;
-                  const accessToken = response.tokens?.access ?? null
-
-                  login(user, refreshToken, accessToken);
-
-                  toast({ title: 'Login successful' });
-
-                  // Immediate redirect after login
-                  console.log('[UserAuthForm] Google login successful, redirecting to dashboard...')
-                  navigate(Routes.DASHBOARD, { replace: true })
-                } catch (error: any) {
-                  console.error('Google Sign-In Error:', error);
-
-                  // Check if user closed the popup without selecting an account
-                  const isPopupClosed =
-                    error?.code === 'auth/popup-closed-by-user' ||
-                    error?.code === 'auth/cancelled-popup-request' ||
-                    error?.message?.includes('popup') ||
-                    error?.message?.includes('closed');
-
-                  if (isPopupClosed) {
-                    // User cancelled the popup - just close silently without showing error
-                    console.log('Google Sign-In popup closed by user');
-                    return; // Exit early, don't show error toast
-                  }
-
-                  // Check if it's the 404 User Not Found error from our backend
-                  const isUserNotFound =
-                    error?.message === 'User not found' ||
-                    error?.status === 404 ||
-                    error?.response?.status === 404
-
-                  if (isUserNotFound) {
-                    toast({
-                      title: 'Email is not registered',
-                      description: 'Redirecting you to the sign-up page...',
-                    })
-
-                    const { auth } = await import('@/lib/firebase');
-                    const currentUser = auth?.currentUser;
-
-                    // Wait 2 seconds so the user can read the message
-                    setTimeout(() => {
-                      if (currentUser) {
-                        const displayName = currentUser.displayName || '';
-                        const [firstName, ...rest] = displayName.split(' ');
-                        const lastName = rest.join(' ');
-
-                        navigate('/sign-up', {
-                          state: {
-                            email: currentUser.email,
-                            first_name: firstName || '',
-                            last_name: lastName || ''
-                          }
-                        });
-                      } else {
-                        navigate('/sign-up');
-                      }
-                    }, 2000)
-                    return;
-                  }
-
-                  if (error?.status === 400 && error?.message?.includes('This account was created with')) {
-                    toast({
-                      variant: 'destructive',
-                      title: 'Wrong Login Method',
-                      description: error.message,
-                    })
-                    return
-                  }
-
-                  console.error('[UserAuthForm] Google Sign-In Error:', error);
-                  const errorMessage = error?.message || (typeof error === 'string' ? error : 'Google Sign-In failed');
-                  toast({ variant: 'destructive', title: 'Sign-In Failed', description: errorMessage });
-                } finally {
-                  if (timeoutId) clearTimeout(timeoutId);
-                  setIsLoading(false);
-                }
-              }}
-            >
-              <svg
-                role='img'
-                viewBox='0 0 24 24'
-                xmlns='http://www.w3.org/2000/svg'
-                className='mr-2 h-4 w-4'
+                }}
               >
-                <path
-                  d='M12.48 10.92v3.28h7.84c-.24 1.84-.908 3.152-1.928 4.176-1.152 1.152-2.8 2.392-5.92 2.392-5.336 0-9.44-4.32-9.44-9.656 0-5.336 4.104-9.656 9.44-9.656 3.152 0 5.44 1.232 7.144 2.84l2.368-2.368A11.332 11.332 0 0 0 12.48 0C5.584 0 0 5.584 0 12.48s5.584 12.48 12.48 12.48c3.752 0 6.592-1.232 8.872-3.6 2.328-2.328 3.072-5.576 3.072-8.184 0-.752-.056-1.464-.176-2.112H12.48z'
-                  fill='currentColor'
-                />
-              </svg>
-              Google
-            </Button>
+                <svg
+                  role='img'
+                  viewBox='0 0 24 24'
+                  xmlns='http://www.w3.org/2000/svg'
+                  className='mr-2 h-4 w-4'
+                >
+                  <path
+                    d='M12.48 10.92v3.28h7.84c-.24 1.84-.908 3.152-1.928 4.176-1.152 1.152-2.8 2.392-5.92 2.392-5.336 0-9.44-4.32-9.44-9.656 0-5.336 4.104-9.656 9.44-9.656 3.152 0 5.44 1.232 7.144 2.84l2.368-2.368A11.332 11.332 0 0 0 12.48 0C5.584 0 0 5.584 0 12.48s5.584 12.48 12.48 12.48c3.752 0 6.592-1.232 8.872-3.6 2.328-2.328 3.072-5.576 3.072-8.184 0-.752-.056-1.464-.176-2.112H12.48z'
+                    fill='currentColor'
+                  />
+                </svg>
+                Google
+              </Button>
 
 
-            <div className='mt-4 flex flex-col items-center gap-2 text-center text-sm'>
-              <div>
-                Don&apos;t have an account?{' '}
-                <Link to='/sign-up' className='underline hover:text-primary transition-colors'>
-                  Sign up
-                </Link>
-              </div>
-              <div className='flex items-center gap-2 text-muted-foreground'>
-                <span className='h-[1px] w-4 bg-muted' />
-                <span>or</span>
-                <span className='h-[1px] w-4 bg-muted' />
-              </div>
-              <div>
-                Have an invitation?{' '}
-                <Link to={Routes.INVITED} className='font-medium underline hover:text-primary transition-colors'>
-                  Join workspace
-                </Link>
+              <div className='mt-6 flex flex-col items-center gap-4 text-center text-[10px] font-bold uppercase tracking-[0.2em]'>
+                <div className='flex items-center gap-2 text-muted-foreground/60 transition-colors'>
+                  Need help? <Link to={Routes.CONTACT_US} className='text-[#020817] underline underline-offset-4 hover:text-primary'>Reach out</Link>
+                </div>
+                <div className='flex items-center gap-2 text-muted-foreground'>
+                  <span className='h-[1px] w-6 bg-muted/30' />
+                  <span>or</span>
+                  <span className='h-[1px] w-6 bg-muted/30' />
+                </div>
+                <div>
+                  Have an invitation?{' '}
+                  <Link to={Routes.INVITED} className='text-[#020817] underline underline-offset-4 hover:text-primary transition-colors'>
+                    Join workspace
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
         </form>
       </Form>
-    </div >
+    </div>
   )
 }

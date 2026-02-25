@@ -182,30 +182,34 @@ export default function OtpForm({ className, ...props }: OtpFormProps) {
                 <FormControl>
                   <PinInput
                     {...field}
-                    className="flex h-10 justify-center gap-2"
+                    className="flex h-12 justify-center gap-3"
                     onComplete={() => setDisabledBtn(false)}
                     onIncomplete={() => setDisabledBtn(true)}
                   >
                     {Array.from({ length: 6 }, (_, i) => (
-                      <PinInputField key={i} component="input" className="w-12 h-12 text-center text-lg" />
+                      <PinInputField
+                        key={i}
+                        component="input"
+                        className="w-14 h-14 text-center text-xl font-black rounded-2xl border-white/20 bg-white/5 focus:ring-primary/50"
+                      />
                     ))}
                   </PinInput>
                 </FormControl>
-                <FormDescription className="text-center">
+                <FormDescription className="text-center mt-4">
                   {timeLeft > 0 ? (
-                    <span className="text-sm text-muted-foreground">
-                      Code expires in <span className="font-semibold text-foreground">{formatTime(timeLeft)}</span>
+                    <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground/60">
+                      Code expires in <span className="text-[#020817] font-black">{formatTime(timeLeft)}</span>
                     </span>
                   ) : (
-                    <span className="text-sm text-destructive font-semibold">OTP expired. Please request a new one.</span>
+                    <span className="text-xs font-black uppercase tracking-widest text-destructive">OTP expired</span>
                   )}
                 </FormDescription>
                 {form.formState.isSubmitted && <FormMessage />}
               </FormItem>
             )}
           />
-          <Button className="mt-4 w-full" disabled={disabledBtn || timeLeft === 0} loading={isLoading}>
-            Verify
+          <Button className="mt-8 h-12 rounded-xl font-black uppercase tracking-widest shadow-xl w-full" disabled={disabledBtn || timeLeft === 0} loading={isLoading}>
+            Verify Code
           </Button>
 
           <div className="mt-4 text-center">
@@ -214,12 +218,12 @@ export default function OtpForm({ className, ...props }: OtpFormProps) {
               variant="ghost"
               disabled={!canResend || resendCooldown > 0 || isResending}
               onClick={handleResendOtp}
-              className="text-sm"
+              className="text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors"
               loading={isResending}
             >
               {resendCooldown > 0
-                ? `Resend OTP in ${resendCooldown}s`
-                : 'Didn\'t receive code? Resend OTP'}
+                ? `Resend in ${resendCooldown}s`
+                : "Didn't receive code? Resend OTP"}
             </Button>
           </div>
         </form>

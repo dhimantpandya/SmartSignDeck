@@ -1,8 +1,13 @@
 import { Link } from 'react-router-dom'
 import { Routes } from '@/utilities/routes'
 import { IconBrandLinkedin, IconMail } from '@tabler/icons-react'
+import { cn } from '@/lib/utils'
 
-export default function Footer() {
+interface FooterProps {
+    className?: string
+}
+
+export default function Footer({ className }: FooterProps) {
     const BrandLogo = ({ className = "h-6 w-6" }: { className?: string }) => (
         <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -18,7 +23,7 @@ export default function Footer() {
         </svg>
     )
     return (
-        <footer className='w-full border-t border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60'>
+        <footer className={cn('w-full border-t border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60', className)}>
             <div className='container mx-auto px-4 py-8 md:py-12'>
                 <div className='grid grid-cols-1 gap-8 md:grid-cols-4 lg:grid-cols-5'>
                     {/* Brand */}

@@ -243,16 +243,20 @@ export function ForgotForm({ className, ...props }: ForgotFormProps) {
                 name='email'
                 render={({ field }) => (
                   <FormItem className='space-y-1'>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel className='text-xs font-black uppercase tracking-widest text-[#020817]'>Email</FormLabel>
                     <FormControl>
-                      <Input placeholder='name@example.com' {...field} />
+                      <Input
+                        placeholder='name@example.com'
+                        {...field}
+                        className='h-12 rounded-xl border-white/20 bg-white/5 focus-visible:ring-primary/50'
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <Button className='mt-2' loading={isLoading}>
-                Continue
+              <Button className='mt-4 h-12 rounded-xl font-black uppercase tracking-widest shadow-xl' loading={isLoading}>
+                Send Reset Code
               </Button>
             </div>
           </form>
@@ -264,9 +268,9 @@ export function ForgotForm({ className, ...props }: ForgotFormProps) {
         <Form {...otpForm}>
           <form onSubmit={otpForm.handleSubmit(onOtpSubmit)}>
             <div className='grid gap-4'>
-              <div className="flex flex-col space-y-2 text-center">
-                <h1 className="text-sm text-muted-foreground">
-                  Enter the 6-digit OTP sent to {email}
+              <div className="flex flex-col space-y-2 text-center mb-4">
+                <h1 className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground/60">
+                  Enter the 6-digit code sent to <br /> <span className="text-[#020817] font-black">{email}</span>
                 </h1>
               </div>
 
@@ -279,41 +283,45 @@ export function ForgotForm({ className, ...props }: ForgotFormProps) {
                     <FormControl>
                       <PinInput
                         {...field}
-                        className="flex h-10 justify-center gap-2"
+                        className="flex h-12 justify-center gap-3"
                         onComplete={() => setDisabledOtpBtn(false)}
                         onIncomplete={() => setDisabledOtpBtn(true)}
                       >
                         {Array.from({ length: 6 }, (_, i) => (
-                          <PinInputField key={i} component="input" className="w-12 h-12 text-center text-lg" />
+                          <PinInputField
+                            key={i}
+                            component="input"
+                            className="w-14 h-14 text-center text-xl font-black rounded-2xl border-white/20 bg-white/5 focus:ring-primary/50"
+                          />
                         ))}
                       </PinInput>
                     </FormControl>
                     <FormMessage />
-                    <div className="text-center text-sm text-muted-foreground mt-2">
+                    <div className="text-center mt-4">
                       {timeLeft > 0 ? (
-                        <span>
-                          Code expires in <span className="font-semibold">{formatTime(timeLeft)}</span>
+                        <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground/60">
+                          Code expires in <span className="text-[#020817] font-black">{formatTime(timeLeft)}</span>
                         </span>
                       ) : (
-                        <span className="text-destructive font-semibold">OTP expired. Please resend.</span>
+                        <span className="text-xs font-black uppercase tracking-widest text-destructive">OTP expired</span>
                       )}
                     </div>
                   </FormItem>
                 )}
               />
-              <Button type="submit" loading={isLoading} disabled={disabledOtpBtn || timeLeft === 0}>
+              <Button type="submit" loading={isLoading} disabled={disabledOtpBtn || timeLeft === 0} className='mt-4 h-12 rounded-xl font-black uppercase tracking-widest shadow-xl w-full'>
                 Verify OTP
               </Button>
               <Button
                 type="button"
-                variant="link"
-                className="text-sm text-muted-foreground"
+                variant="ghost"
+                className="mt-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors"
                 onClick={handleResendOtp}
                 disabled={!canResend || resendCooldown > 0 || isLoading}
               >
                 {resendCooldown > 0
-                  ? `Resend OTP in ${resendCooldown}s`
-                  : 'Resend OTP'}
+                  ? `Resend in ${resendCooldown}s`
+                  : 'Didn\'t receive code? Resend OTP'}
               </Button>
             </div>
           </form>
@@ -330,9 +338,13 @@ export function ForgotForm({ className, ...props }: ForgotFormProps) {
                 name="password"
                 render={({ field }) => (
                   <FormItem className="space-y-1">
-                    <FormLabel>New Password</FormLabel>
+                    <FormLabel className='text-xs font-black uppercase tracking-widest text-[#020817]'>New Password</FormLabel>
                     <FormControl>
-                      <PasswordInput placeholder="********" {...field} />
+                      <PasswordInput
+                        placeholder="********"
+                        {...field}
+                        className='h-12 rounded-xl border-white/20 bg-white/5 focus-visible:ring-primary/50'
+                      />
                     </FormControl>
                     <PasswordStrengthIndicator password={field.value} className="mt-2" />
                     <FormMessage />
@@ -344,16 +356,20 @@ export function ForgotForm({ className, ...props }: ForgotFormProps) {
                 name="confirmPassword"
                 render={({ field }) => (
                   <FormItem className="space-y-1">
-                    <FormLabel>Confirm Password</FormLabel>
+                    <FormLabel className='text-xs font-black uppercase tracking-widest text-[#020817]'>Confirm Password</FormLabel>
                     <FormControl>
-                      <PasswordInput placeholder="********" {...field} />
+                      <PasswordInput
+                        placeholder="********"
+                        {...field}
+                        className='h-12 rounded-xl border-white/20 bg-white/5 focus-visible:ring-primary/50'
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <Button className='mt-2' loading={isLoading}>
-                Reset Password
+              <Button className='mt-6 h-12 rounded-xl font-black uppercase tracking-widest shadow-xl w-full' loading={isLoading}>
+                Secure Account
               </Button>
             </div>
           </form>
