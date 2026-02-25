@@ -1,4 +1,4 @@
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, Variants } from 'framer-motion'
 import { ReactNode } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { cn } from '@/lib/utils'
@@ -19,7 +19,7 @@ export function AuthShell({ children, title, subtitle, isPureForm }: AuthShellPr
     const [selectedCharacter] = useAtom(selectedCharacterAtom)
 
     // Pulling Animation Variants
-    const formVariants = {
+    const formVariants: Variants = {
         initial: (isSignIn: boolean) => ({
             x: isSignIn ? -50 : 50,
             opacity: 0,
@@ -30,7 +30,7 @@ export function AuthShell({ children, title, subtitle, isPureForm }: AuthShellPr
             opacity: 1,
             scale: 1,
             transition: {
-                type: "spring",
+                type: "spring" as const,
                 stiffness: 250,
                 damping: 20,
                 mass: 1,
@@ -44,7 +44,7 @@ export function AuthShell({ children, title, subtitle, isPureForm }: AuthShellPr
         })
     };
 
-    const characterVariants = {
+    const characterVariants: Variants = {
         initial: (isSignIn: boolean) => ({
             x: isSignIn ? 150 : -150,
             opacity: 0,
@@ -57,7 +57,7 @@ export function AuthShell({ children, title, subtitle, isPureForm }: AuthShellPr
             scale: 1,
             rotate: 0,
             transition: {
-                type: "spring",
+                type: "spring" as const,
                 stiffness: 150,
                 damping: 15,
                 mass: 1.5,
