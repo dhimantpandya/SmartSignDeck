@@ -20,7 +20,7 @@ export function CharacterSelection() {
                 <motion.div
                     initial={{ y: 20, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
-                    transition={{ delay: 0.1, type: "spring" }}
+                    transition={{ delay: 0.1, type: "spring" as const }}
                 >
                     <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
                         <User className="h-8 w-8" />
@@ -41,7 +41,7 @@ export function CharacterSelection() {
                             animate={{ y: 0, opacity: 1 }}
                             transition={{
                                 delay: 0.2 + index * 0.1,
-                                type: "spring",
+                                type: "spring" as const,
                                 stiffness: 300,
                                 damping: 20
                             }}
