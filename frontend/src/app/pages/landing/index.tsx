@@ -83,8 +83,8 @@ export default function LandingPage() {
     ]
 
     const heroVideos = [
-        "https://cdn.pixabay.com/video/2021/08/25/86278-592881024_tiny.mp4",
-        "https://cdn.pixabay.com/video/2023/10/24/186307-877717652_tiny.mp4"
+        "https://videos.pexels.com/video-files/3205619/3205619-hd_1920_1080_25fps.mp4",
+        "https://assets.mixkit.co/videos/preview/mixkit-group-of-people-looking-at-a-digital-screen-large.mp4"
     ]
 
     const dynamicMessages = useMemo(() => [
