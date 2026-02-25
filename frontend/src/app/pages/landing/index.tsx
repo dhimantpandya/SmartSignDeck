@@ -83,8 +83,8 @@ export default function LandingPage() {
     ]
 
     const heroVideos = [
-        "/videos/hero.mp4",
-        "/videos/solutions.mp4"
+        "https://res.cloudinary.com/dqrk3dj1a/video/upload/v1708892744/mixkit-digital-connection-background-23058-medium_p4i8xw.mp4",
+        "https://res.cloudinary.com/dqrk3dj1a/video/upload/v1708892742/mixkit-group-of-people-looking-at-a-digital-screen-large_hzzhxw.mp4"
     ]
 
     const dynamicMessages = useMemo(() => [
