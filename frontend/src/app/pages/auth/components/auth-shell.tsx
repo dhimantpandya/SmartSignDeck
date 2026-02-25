@@ -77,10 +77,36 @@ export function AuthShell({ children, title, subtitle, isPureForm }: AuthShellPr
                     <motion.div
                         layout
                         transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                        className='relative hidden w-1/2 flex-col items-center justify-center bg-[#020817] p-12 text-white md:flex'
+                        className='relative hidden w-1/2 flex-col items-center justify-center bg-[#020817] p-12 text-white md:flex overflow-hidden'
                     >
                         {/* Decorative background for the dark section */}
                         <div className='absolute inset-0 z-0 opacity-20 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-primary via-transparent to-transparent' />
+
+                        {/* Character Image (The "Person coming with the form") */}
+                        <div className='absolute bottom-0 left-0 right-0 h-2/3 pointer-events-none z-0 overflow-hidden'>
+                            <AnimatePresence mode="wait">
+                                <motion.img
+                                    key={isSignIn ? 'person-join' : 'person-welcome'}
+                                    src={isSignIn
+                                        ? "https://images.pexels.com/photos/1181682/pexels-photo-1181682.jpeg?auto=compress&cs=tinysrgb&w=800"
+                                        : "https://images.pexels.com/photos/3777570/pexels-photo-3777570.jpeg?auto=compress&cs=tinysrgb&w=800"
+                                    }
+                                    initial={{ x: isSignIn ? 100 : -100, opacity: 0, scale: 1.1 }}
+                                    animate={{ x: 0, opacity: 0.4, scale: 1 }}
+                                    exit={{ x: isSignIn ? -100 : 100, opacity: 0, scale: 1.1 }}
+                                    transition={{
+                                        type: "spring",
+                                        stiffness: 400,
+                                        damping: 25
+                                    }}
+                                    className='h-full w-full object-cover object-top grayscale-0 brightness-75 contrast-125'
+                                    style={{
+                                        maskImage: 'linear-gradient(to top, rgba(0,0,0,1) 50%, rgba(0,0,0,0) 100%)',
+                                        WebkitMaskImage: 'linear-gradient(to top, rgba(0,0,0,1) 50%, rgba(0,0,0,0) 100%)'
+                                    }}
+                                />
+                            </AnimatePresence>
+                        </div>
 
                         <div className='relative z-10 text-center space-y-6'>
                             <motion.h2
@@ -92,7 +118,7 @@ export function AuthShell({ children, title, subtitle, isPureForm }: AuthShellPr
                             >
                                 {isSignIn ? "Hello, Friend!" : "Welcome Back!"}
                             </motion.h2>
-                            <p className='text-white/70 font-medium text-lg'>
+                            <p className='text-white/70 font-medium text-lg max-w-[300px]'>
                                 {isSignIn
                                     ? "Enter your personal details and start your journey with us."
                                     : "To keep connected with us please login with your personal info."}
