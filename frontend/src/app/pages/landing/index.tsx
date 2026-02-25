@@ -83,8 +83,8 @@ export default function LandingPage() {
     ]
 
     const heroVideos = [
-        "https://res.cloudinary.com/dqrk3dj1a/video/upload/v1708892744/mixkit-digital-connection-background-23058-medium_p4i8xw.mp4",
-        "https://res.cloudinary.com/dqrk3dj1a/video/upload/v1708892742/mixkit-group-of-people-looking-at-a-digital-screen-large_hzzhxw.mp4"
+        "https://cdn.pixabay.com/video/2021/08/25/86278-592881024_tiny.mp4",
+        "https://cdn.pixabay.com/video/2023/10/24/186307-877717652_tiny.mp4"
     ]
 
     const dynamicMessages = useMemo(() => [
@@ -197,11 +197,11 @@ export default function LandingPage() {
                             }}
                             transition={{ duration: 2, ease: "easeInOut" }}
                             src={video}
-                            autoPlay
-                            muted
-                            loop
-                            playsInline
-                            className='absolute inset-0 w-full h-full object-cover brightness-110 contrast-110'
+                            autoPlay={true}
+                            muted={true}
+                            loop={true}
+                            playsInline={true}
+                            className='absolute inset-0 w-full h-full object-cover brightness-110 contrast-110 pointer-events-none'
                         />
                     ))}
                     {/* Lighter Gradient Overlay for brightness */}
