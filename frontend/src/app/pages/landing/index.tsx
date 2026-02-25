@@ -83,7 +83,7 @@ export default function LandingPage() {
     ]
 
     const heroVideos = [
-        "https://videos.pexels.com/video-files/3205619/3205619-hd_1920_1080_25fps.mp4",
+        "https://assets.mixkit.co/videos/preview/mixkit-digital-connection-background-23058-large.mp4",
         "https://assets.mixkit.co/videos/preview/mixkit-group-of-people-looking-at-a-digital-screen-large.mp4"
     ]
 
