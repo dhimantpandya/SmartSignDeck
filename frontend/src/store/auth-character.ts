@@ -14,32 +14,32 @@ export const CHARACTERS: Character[] = [
         id: 'boy-1',
         name: 'Alex',
         type: 'boy',
-        imageUrl: '/images/characters/boy-1.jpg',
-        thumbnailUrl: '/images/characters/boy-1.jpg',
+        imageUrl: '/images/characters/boy-1.png',
+        thumbnailUrl: '/images/characters/boy-1.png',
         color: 'from-blue-500 to-cyan-400'
     },
     {
         id: 'girl-1',
         name: 'Sarah',
         type: 'girl',
-        imageUrl: '/images/characters/girl-1.jpg',
-        thumbnailUrl: '/images/characters/girl-1.jpg',
+        imageUrl: '/images/characters/girl-1.png',
+        thumbnailUrl: '/images/characters/girl-1.png',
         color: 'from-pink-500 to-rose-400'
     },
     {
         id: 'boy-2',
         name: 'Marcus',
         type: 'boy',
-        imageUrl: '/images/characters/boy-2.jpg',
-        thumbnailUrl: '/images/characters/boy-2.jpg',
+        imageUrl: '/images/characters/boy-2.png',
+        thumbnailUrl: '/images/characters/boy-2.png',
         color: 'from-orange-500 to-amber-400'
     },
     {
         id: 'girl-2',
         name: 'Emma',
         type: 'girl',
-        imageUrl: '/images/characters/girl-2.jpg',
-        thumbnailUrl: '/images/characters/girl-2.jpg',
+        imageUrl: '/images/characters/girl-2.png',
+        thumbnailUrl: '/images/characters/girl-2.png',
         color: 'from-purple-500 to-indigo-400'
     }
 ];
