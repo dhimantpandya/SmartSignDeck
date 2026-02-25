@@ -1,10 +1,8 @@
-import { Outlet, useLocation } from 'react-router-dom'
-import { motion, AnimatePresence } from 'framer-motion'
+import { Outlet } from 'react-router-dom'
 import Footer from './footer'
 import { AnimatedAuthBg } from '@/app/pages/auth/components/animated-auth-bg'
 
 export default function AuthLayout() {
-    const location = useLocation()
 
     return (
         <div className='relative flex min-h-svh flex-col overflow-hidden bg-[#020817]'>
