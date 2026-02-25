@@ -84,7 +84,7 @@ export default function LandingPage() {
 
     const heroVideos = [
         "https://videos.pexels.com/video-files/3205619/3205619-hd_1920_1080_25fps.mp4",
-        "/videos/presentation.mp4"
+        "/videos/solutions.mp4"
     ]
 
     const dynamicMessages = useMemo(() => [
