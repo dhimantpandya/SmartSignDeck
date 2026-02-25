@@ -83,8 +83,8 @@ export default function LandingPage() {
     ]
 
     const heroVideos = [
-        "https://res.cloudinary.com/dqrk3dj1a/video/upload/v1740464601/hero_1080p_q7z1zs.mp4",
-        "https://res.cloudinary.com/dqrk3dj1a/video/upload/v1740464601/solutions_1080p_v2x7yw.mp4"
+        "https://videos.pexels.com/video-files/3205619/3205619-hd_1920_1080_25fps.mp4",
+        "https://videos.pexels.com/video-files/3129957/3129957-hd_1920_1080_25fps.mp4"
     ]
 
     const dynamicMessages = useMemo(() => [

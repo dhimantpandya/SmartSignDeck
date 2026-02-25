@@ -17,15 +17,17 @@ export function AuthShell({ children, title, subtitle, isPureForm }: AuthShellPr
     return (
         <motion.div
             layout
-            initial={{ scale: 0.9, opacity: 0 }}
+            initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
+            whileHover={{ scale: 1.01 }}
+            whileTap={{ scale: 0.99 }}
             transition={{
                 type: "spring",
-                stiffness: 260,
-                damping: 20
+                stiffness: 400,
+                damping: 15
             }}
             className={cn(
-                'relative mx-auto flex min-h-[600px] w-full overflow-hidden rounded-[2.5rem] border border-white/10 bg-background/30 shadow-2xl backdrop-blur-3xl',
+                'relative mx-auto flex min-h-[600px] w-full overflow-hidden rounded-[2.5rem] border border-white/10 bg-background/30 shadow-2xl backdrop-blur-3xl cursor-default',
                 isPureForm ? 'max-w-[600px]' : 'max-w-[1000px]'
             )}
         >

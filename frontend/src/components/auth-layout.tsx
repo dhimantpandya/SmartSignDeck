@@ -12,14 +12,14 @@ export default function AuthLayout() {
 
             {/* Main Content Area */}
             <main className='relative z-10 flex flex-1 flex-col items-center justify-center p-4 lg:p-8'>
-                <AnimatePresence mode='wait'>
+                <AnimatePresence>
                     <motion.div
                         key={location.pathname}
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -20 }}
-                        transition={{ duration: 0.3 }}
-                        className='w-full'
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        transition={{ duration: 0.2 }}
+                        className='w-full flex justify-center'
                     >
                         <Outlet />
                     </motion.div>
