@@ -39,7 +39,8 @@ export default function CombinedAuthPage() {
                 <div className="welcome-section signin">
                     <h2 className="slide-element">WELCOME BACK!</h2>
                     <p className="slide-element">Enter your personal details and start your journey with us.</p>
-                    <div className="slide-element">
+                    <div className="slide-element text-center">
+                        <p className="account-prompt">Don't have an account?</p>
                         <Link
                             className="switch-btn flex items-center justify-center no-underline pointer-events-auto cursor-pointer"
                             to="/sign-up"
@@ -61,7 +62,8 @@ export default function CombinedAuthPage() {
                 <div className="welcome-section signup">
                     <h2 className="slide-element">WELCOME!</h2>
                     <p className="slide-element">Please register to get started with your new journey.</p>
-                    <div className="slide-element">
+                    <div className="slide-element text-center">
+                        <p className="account-prompt">Already have an account?</p>
                         <Link
                             className="switch-btn flex items-center justify-center no-underline pointer-events-auto cursor-pointer"
                             to="/sign-in"
