@@ -7,6 +7,7 @@ import app from "./app";
 import logger from "./config/logger";
 import { initSocket } from "./services/socket.service";
 import cleanupService from "./services/cleanup.service";
+import { migrationService } from "./services";
 
 let server: http.Server | https.Server;
 
@@ -25,6 +26,14 @@ mongoose
       logger.error("Seeding failed", seedErr);
     }
     // -----------------------------------------------------
+
+    // --- MIGRATION: Company Data Normalization ---
+    try {
+      await migrationService.runCompanyMigration();
+    } catch (migErr) {
+      logger.error("Company migration failed", migErr);
+    }
+    // ---------------------------------------------
 
     // --- MIGRATION: Drop unique company name index ---
     try {
