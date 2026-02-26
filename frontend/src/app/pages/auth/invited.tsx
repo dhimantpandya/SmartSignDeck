@@ -53,7 +53,7 @@ export default function Invited() {
         >
             <div className='grid gap-6'>
                 <div className='grid gap-3'>
-                    <label htmlFor='link' className='text-xs font-black uppercase tracking-widest text-[#020817]'>
+                    <label htmlFor='link' className='text-xs font-semibold text-muted-foreground'>
                         Paste Invitation Link
                     </label>
                     <Input
@@ -90,11 +90,11 @@ export default function Invited() {
 
             <p className='px-4 text-center text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/60 mt-8'>
                 By joining SmartSignDeck, you agree to our{' '}
-                <a href='#' className='text-[#020817] underline underline-offset-4 hover:text-primary transition-colors'>
+                <a href='#' className='text-foreground underline underline-offset-4 hover:text-primary transition-colors'>
                     Terms
                 </a>{' '}
                 &{' '}
-                <a href='#' className='text-[#020817] underline underline-offset-4 hover:text-primary transition-colors'>
+                <a href='#' className='text-foreground underline underline-offset-4 hover:text-primary transition-colors'>
                     Privacy
                 </a>.
             </p>

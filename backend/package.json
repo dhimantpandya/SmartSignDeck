@@ -15,7 +15,7 @@
     "copy-public": "cpx \"src/public/**/*\" dist/public",
     "start": "node dist/index.js",
     "prod": "node dist/index.js",
-    "dev": "cross-env NODE_ENV=development nodemon -x ts-node src/index.ts",
+    "dev": "cross-env NODE_ENV=development nodemon --exec \"node --max-old-space-size=4096 -r ts-node/register\" src/index.ts",
     "test": "jest -i --colors --verbose --detectOpenHandles",
     "test:watch": "jest -i --watchAll",
     "coverage": "jest -i --coverage",

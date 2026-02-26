@@ -82,7 +82,7 @@ const Setup = () => {
             {
               path: Routes.SIGN_IN,
               lazy: async () => ({
-                Component: (await import('./pages/auth/sign-in')).default,
+                Component: (await import('./pages/auth/combined-auth')).default,
               }),
               loader: () => {
                 const refreshToken = tokenStore.getRefreshToken()
@@ -95,7 +95,7 @@ const Setup = () => {
             {
               path: Routes.SIGN_UP,
               lazy: async () => ({
-                Component: (await import('./pages/auth/sign-up')).default,
+                Component: (await import('./pages/auth/combined-auth')).default,
               }),
             },
             {

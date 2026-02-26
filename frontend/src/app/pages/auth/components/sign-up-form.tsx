@@ -136,7 +136,7 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
               name="first_name"
               render={({ field }) => (
                 <FormItem className="space-y-1">
-                  <FormLabel className='text-xs font-black uppercase tracking-widest text-[#020817]'>First Name</FormLabel>
+                  <FormLabel className='text-xs font-semibold text-muted-foreground'>First Name</FormLabel>
                   <FormControl>
                     <Input
                       placeholder="John"
@@ -155,7 +155,7 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
               name="last_name"
               render={({ field }) => (
                 <FormItem className="space-y-1">
-                  <FormLabel className='text-xs font-black uppercase tracking-widest text-[#020817]'>Last Name</FormLabel>
+                  <FormLabel className='text-xs font-semibold text-muted-foreground'>Last Name</FormLabel>
                   <FormControl>
                     <Input
                       placeholder="Doe"
@@ -174,7 +174,7 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
               name="email"
               render={({ field }) => (
                 <FormItem className="space-y-1">
-                  <FormLabel className='text-xs font-black uppercase tracking-widest text-[#020817]'>Email</FormLabel>
+                  <FormLabel className='text-xs font-semibold text-muted-foreground'>Email</FormLabel>
                   <FormControl>
                     <Input
                       placeholder="email@example.com"
@@ -195,7 +195,7 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
                 name="companyName"
                 render={({ field }) => (
                   <FormItem className="space-y-1">
-                    <FormLabel className='text-xs font-black uppercase tracking-widest text-[#020817]'>Company Name</FormLabel>
+                    <FormLabel className='text-xs font-semibold text-muted-foreground'>Company Name</FormLabel>
                     <FormControl>
                       <Input
                         placeholder="Acme Inc."
@@ -216,7 +216,7 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
               name="password"
               render={({ field }) => (
                 <FormItem className="space-y-1">
-                  <FormLabel className='text-xs font-black uppercase tracking-widest text-[#020817]'>Password</FormLabel>
+                  <FormLabel className='text-xs font-semibold text-muted-foreground'>Password</FormLabel>
                   <FormControl>
                     <PasswordInput
                       placeholder="********"
@@ -237,7 +237,7 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
               name="confirmPassword"
               render={({ field }) => (
                 <FormItem className="space-y-1">
-                  <FormLabel className='text-xs font-black uppercase tracking-widest text-[#020817]'>Confirm Password</FormLabel>
+                  <FormLabel className='text-xs font-semibold text-muted-foreground'>Confirm Password</FormLabel>
                   <FormControl>
                     <PasswordInput
                       placeholder="********"
@@ -252,7 +252,7 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
             />
 
             {/* Submit Button */}
-            <Button type="submit" className="mt-4 h-12 rounded-xl font-black uppercase tracking-widest shadow-xl" loading={isLoading}>
+            <Button type="submit" className="mt-4 h-12 w-full rounded-xl font-black uppercase tracking-widest shadow-xl" loading={isLoading}>
               Create Account
             </Button>
 
@@ -270,7 +270,7 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
             <Button
               variant='outline'
               type='button'
-              className='h-12 rounded-xl border-white/20 bg-white/5 font-black uppercase tracking-widest hover:bg-white/10 transition-all shadow-lg'
+              className='h-12 w-full rounded-xl border-white/20 bg-white/5 font-black uppercase tracking-widest hover:bg-white/10 transition-all shadow-lg'
               disabled={isLoading}
               onClick={async () => {
                 let timeoutId: any;
@@ -378,16 +378,19 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
             </Button>
             <div className='mt-6 flex flex-col items-center gap-4 text-center text-[10px] font-bold uppercase tracking-[0.2em]'>
               <div className='flex items-center gap-2 text-muted-foreground/60 transition-colors'>
-                Need help? <Link to={Routes.CONTACT_US} className='text-[#020817] underline underline-offset-4 hover:text-primary'>Reach out</Link>
+                Need help? <Link to={Routes.CONTACT_US} className='text-foreground underline underline-offset-4 hover:text-[#a1a1aa] transition-colors'>Reach out</Link>
               </div>
               <div className='flex items-center gap-2 text-muted-foreground'>
                 <span className='h-[1px] w-6 bg-muted/30' />
                 <span>or</span>
                 <span className='h-[1px] w-6 bg-muted/30' />
               </div>
-              <div>
+              <div className="text-[10px] font-bold uppercase tracking-[0.2em] mt-2">
                 Have an invitation?{' '}
-                <Link to={Routes.INVITED} className='text-[#020817] underline underline-offset-4 hover:text-primary transition-colors'>
+                <Link
+                  to={Routes.INVITED}
+                  className='text-foreground underline underline-offset-4 hover:text-[#a1a1aa] transition-colors'
+                >
                   Join workspace
                 </Link>
               </div>

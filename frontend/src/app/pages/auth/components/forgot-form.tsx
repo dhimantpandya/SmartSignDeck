@@ -243,7 +243,7 @@ export function ForgotForm({ className, ...props }: ForgotFormProps) {
                 name='email'
                 render={({ field }) => (
                   <FormItem className='space-y-1'>
-                    <FormLabel className='text-xs font-black uppercase tracking-widest text-[#020817]'>Email</FormLabel>
+                    <FormLabel className='text-xs font-semibold text-muted-foreground'>Email</FormLabel>
                     <FormControl>
                       <Input
                         placeholder='name@example.com'
@@ -270,7 +270,7 @@ export function ForgotForm({ className, ...props }: ForgotFormProps) {
             <div className='grid gap-4'>
               <div className="flex flex-col space-y-2 text-center mb-4">
                 <h1 className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground/60">
-                  Enter the 6-digit code sent to <br /> <span className="text-[#020817] font-black">{email}</span>
+                  Enter the 6-digit code sent to <br /> <span className="text-foreground font-black">{email}</span>
                 </h1>
               </div>
 
@@ -300,7 +300,7 @@ export function ForgotForm({ className, ...props }: ForgotFormProps) {
                     <div className="text-center mt-4">
                       {timeLeft > 0 ? (
                         <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground/60">
-                          Code expires in <span className="text-[#020817] font-black">{formatTime(timeLeft)}</span>
+                          Code expires in <span className="text-foreground font-black">{formatTime(timeLeft)}</span>
                         </span>
                       ) : (
                         <span className="text-xs font-black uppercase tracking-widest text-destructive">OTP expired</span>
@@ -338,7 +338,7 @@ export function ForgotForm({ className, ...props }: ForgotFormProps) {
                 name="password"
                 render={({ field }) => (
                   <FormItem className="space-y-1">
-                    <FormLabel className='text-xs font-black uppercase tracking-widest text-[#020817]'>New Password</FormLabel>
+                    <FormLabel className='text-xs font-semibold text-muted-foreground'>New Password</FormLabel>
                     <FormControl>
                       <PasswordInput
                         placeholder="********"
@@ -356,7 +356,7 @@ export function ForgotForm({ className, ...props }: ForgotFormProps) {
                 name="confirmPassword"
                 render={({ field }) => (
                   <FormItem className="space-y-1">
-                    <FormLabel className='text-xs font-black uppercase tracking-widest text-[#020817]'>Confirm Password</FormLabel>
+                    <FormLabel className='text-xs font-semibold text-muted-foreground'>Confirm Password</FormLabel>
                     <FormControl>
                       <PasswordInput
                         placeholder="********"

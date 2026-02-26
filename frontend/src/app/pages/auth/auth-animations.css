@@ -1,0 +1,426 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+
+.auth-page-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    min-height: 100vh;
+    background: #1a1a2e;
+    padding: 40px 20px;
+    font-family: 'Poppins', sans-serif;
+}
+
+.auth-page-container * {
+    box-sizing: border-box;
+    color: #fff;
+}
+
+.auth-wrapper {
+    position: relative;
+    width: 98%;
+    max-width: 1000px;
+    height: 650px;
+    border: 2px solid #00d4ff;
+    box-shadow: 0 0 25px #00d4ff;
+    overflow: hidden;
+    background: #1a1a2e;
+    margin: auto;
+    z-index: 10;
+}
+
+.auth-wrapper .credentials-panel {
+    position: absolute;
+    top: 0;
+    width: 50%;
+    height: 100%;
+    display: flex;
+    justify-content: flex-start;
+    flex-direction: column;
+    z-index: 20;
+    overflow-y: auto;
+    padding-top: 60px;
+    padding-bottom: 40px;
+    -ms-overflow-style: none;
+    /* IE and Edge */
+    scrollbar-width: none;
+    /* Firefox */
+}
+
+.auth-wrapper .credentials-panel::-webkit-scrollbar {
+    display: none;
+    /* Chrome, Safari and Opera */
+}
+
+.credentials-panel.signin {
+    left: 0;
+    padding: 0 40px;
+}
+
+.credentials-panel.signin .slide-element {
+    transform: translateX(0%);
+    transition: .7s;
+    opacity: 1;
+}
+
+/* Staggered entry for signin */
+.credentials-panel.signin .slide-element:nth-child(1) {
+    transition-delay: 2.8s;
+}
+
+.credentials-panel.signin .slide-element:nth-child(2) {
+    transition-delay: 2.9s;
+}
+
+.credentials-panel.signin .slide-element:nth-child(3) {
+    transition-delay: 3.0s;
+}
+
+.credentials-panel.signin .slide-element:nth-child(4) {
+    transition-delay: 3.1s;
+}
+
+.credentials-panel.signin .slide-element:nth-child(5) {
+    transition-delay: 3.2s;
+}
+
+.auth-wrapper.toggled .credentials-panel.signin .slide-element {
+    transform: translateX(-120%);
+    opacity: 0;
+}
+
+/* Instant exit for signin */
+.auth-wrapper.toggled .credentials-panel.signin .slide-element:nth-child(1) {
+    transition-delay: 0s;
+}
+
+.auth-wrapper.toggled .credentials-panel.signin .slide-element:nth-child(2) {
+    transition-delay: 0.1s;
+}
+
+.auth-wrapper.toggled .credentials-panel.signin .slide-element:nth-child(3) {
+    transition-delay: 0.2s;
+}
+
+.auth-wrapper.toggled .credentials-panel.signin .slide-element:nth-child(4) {
+    transition-delay: 0.3s;
+}
+
+.auth-wrapper.toggled .credentials-panel.signin .slide-element:nth-child(5) {
+    transition-delay: 0.4s;
+}
+
+.credentials-panel.signup {
+    right: 0;
+    padding: 40px 40px;
+}
+
+.credentials-panel.signup .slide-element {
+    transform: translateX(120%);
+    transition: .7s ease;
+    opacity: 0;
+    filter: blur(10px);
+}
+
+/* Default state for signup (hidden) */
+.credentials-panel.signup .slide-element:nth-child(1) {
+    transition-delay: 0s;
+}
+
+.credentials-panel.signup .slide-element:nth-child(2) {
+    transition-delay: 0.1s;
+}
+
+.credentials-panel.signup .slide-element:nth-child(3) {
+    transition-delay: 0.2s;
+}
+
+.credentials-panel.signup .slide-element:nth-child(4) {
+    transition-delay: 0.3s;
+}
+
+.credentials-panel.signup .slide-element:nth-child(5) {
+    transition-delay: 0.4s;
+}
+
+.credentials-panel.signup .slide-element:nth-child(6) {
+    transition-delay: 0.5s;
+}
+
+.auth-wrapper.toggled .credentials-panel.signup .slide-element {
+    transform: translateX(0%);
+    opacity: 1;
+    filter: blur(0px);
+}
+
+/* Staggered entry for signup */
+.auth-wrapper.toggled .credentials-panel.signup .slide-element:nth-child(1) {
+    transition-delay: 1.7s;
+}
+
+.auth-wrapper.toggled .credentials-panel.signup .slide-element:nth-child(2) {
+    transition-delay: 1.8s;
+}
+
+.auth-wrapper.toggled .credentials-panel.signup .slide-element:nth-child(3) {
+    transition-delay: 1.9s;
+}
+
+.auth-wrapper.toggled .credentials-panel.signup .slide-element:nth-child(4) {
+    transition-delay: 1.9s;
+}
+
+.auth-wrapper.toggled .credentials-panel.signup .slide-element:nth-child(5) {
+    transition-delay: 2.0s;
+}
+
+.auth-wrapper.toggled .credentials-panel.signup .slide-element:nth-child(6) {
+    transition-delay: 2.1s;
+}
+
+.credentials-panel h2 {
+    font-size: 32px;
+    text-align: center;
+    margin-bottom: 20px;
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+.welcome-section {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    width: 50%;
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    z-index: 30;
+}
+
+.welcome-section.signin {
+    right: 0;
+    text-align: right;
+    padding: 0 40px 60px 100px;
+    pointer-events: auto;
+}
+
+.welcome-section.signin .slide-element {
+    transform: translateX(0);
+    transition: .7s ease;
+    opacity: 1;
+    filter: blur(0px);
+}
+
+.welcome-section.signin .slide-element:nth-child(1) {
+    transition-delay: 2.8s;
+}
+
+.welcome-section.signin .slide-element:nth-child(2) {
+    transition-delay: 2.9s;
+}
+
+.welcome-section.signin .slide-element:nth-child(3) {
+    transition-delay: 3.0s;
+}
+
+.auth-wrapper.toggled .welcome-section.signin .slide-element {
+    transform: translateX(120%);
+    opacity: 0;
+    transition: .7s ease;
+}
+
+.auth-wrapper.toggled .welcome-section.signin .slide-element:nth-child(1) {
+    transition-delay: 0s;
+}
+
+.auth-wrapper.toggled .welcome-section.signin .slide-element:nth-child(2) {
+    transition-delay: 0.1s;
+}
+
+.auth-wrapper.toggled .welcome-section.signin .slide-element:nth-child(3) {
+    transition-delay: 0.2s;
+}
+
+.welcome-section.signup {
+    left: 0;
+    text-align: left;
+    padding: 0 100px 60px 40px;
+    pointer-events: none;
+}
+
+.welcome-section.signup .slide-element {
+    transform: translateX(-120%);
+    transition: .7s ease;
+    opacity: 0;
+    filter: blur(10px);
+}
+
+.welcome-section.signup .slide-element:nth-child(1) {
+    transition-delay: 0s;
+}
+
+.welcome-section.signup .slide-element:nth-child(2) {
+    transition-delay: 0.1s;
+}
+
+.auth-wrapper.toggled .welcome-section.signup {
+    transform: translateX(0%);
+    opacity: 1;
+    filter: blur(0);
+    pointer-events: auto;
+}
+
+.auth-wrapper.toggled .welcome-section.signup .slide-element {
+    transform: translateX(0);
+    opacity: 1;
+    filter: blur(0);
+}
+
+.auth-wrapper.toggled .welcome-section.signup .slide-element:nth-child(1) {
+    transition-delay: 1.7s;
+}
+
+.auth-wrapper.toggled .welcome-section.signup .slide-element:nth-child(2) {
+    transition-delay: 1.8s;
+}
+
+.auth-wrapper.toggled .welcome-section.signup .slide-element:nth-child(3) {
+    transition-delay: 1.9s;
+}
+
+.welcome-section h2 {
+    text-transform: uppercase;
+    font-size: 32px;
+    line-height: 1.2;
+    font-weight: 800;
+}
+
+.welcome-section p {
+    font-size: 16px;
+    margin-top: 10px;
+}
+
+.welcome-section .switch-btn {
+    background: transparent;
+    border: 2px solid #00d4ff;
+    padding: 10px 30px;
+    border-radius: 40px;
+    margin-top: 20px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: 0.3s;
+    pointer-events: auto;
+    position: relative;
+    z-index: 100;
+}
+
+.welcome-section .switch-btn:hover {
+    background: #a1a1aa;
+    border-color: #a1a1aa;
+    color: #1a1a2e;
+    cursor: pointer;
+}
+
+/* Main Form Buttons (Sign In / Create Account) */
+.credentials-panel button[type="submit"]:hover {
+    background-color: #a1a1aa !important;
+    border-color: #a1a1aa !important;
+    color: #1a1a2e !important;
+}
+
+.credentials-panel a {
+    transition: color 0.3s ease;
+}
+
+.credentials-panel a:hover {
+    color: #a1a1aa !important;
+}
+
+.auth-wrapper .background-shape {
+    position: absolute;
+    right: 0;
+    top: -5px;
+    height: 750px;
+    width: 1000px;
+    background: linear-gradient(45deg, #1a1a2e, #00d4ff);
+    transform: rotate(10deg) skewY(40deg);
+    transform-origin: bottom right;
+    transition: 1.5s ease;
+    transition-delay: 1.6s;
+    z-index: 1;
+}
+
+.auth-wrapper.toggled .background-shape {
+    transform: rotate(0deg) skewY(0deg);
+    transition-delay: .5s;
+}
+
+.auth-wrapper .secondary-shape {
+    position: absolute;
+    left: 250px;
+    top: 100%;
+    height: 700px;
+    width: 850px;
+    background: #1a1a2e;
+    border-top: 3px solid #00d4ff;
+    transform: rotate(0deg) skewY(0deg);
+    transform-origin: bottom left;
+    transition: 1.5s ease;
+    transition-delay: .5s;
+    z-index: 2;
+}
+
+.auth-wrapper.toggled .secondary-shape {
+    transform: rotate(-11deg) skewY(-41deg);
+    transition-delay: 1.2s;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .auth-wrapper {
+        height: auto;
+        min-height: 600px;
+        max-width: 400px;
+    }
+
+    .auth-wrapper .credentials-panel,
+    .welcome-section {
+        width: 100%;
+        position: relative;
+    }
+
+    .welcome-section {
+        display: none;
+    }
+
+    .credentials-panel.signin,
+    .credentials-panel.signup {
+        padding: 40px 20px;
+        display: none;
+    }
+
+    .auth-wrapper:not(.toggled) .credentials-panel.signin {
+        display: flex;
+    }
+
+    .auth-wrapper.toggled .credentials-panel.signup {
+        display: flex;
+    }
+
+    /* Override slide elements for mobile */
+    .credentials-panel.signin .slide-element,
+    .credentials-panel.signup .slide-element,
+    .auth-wrapper.toggled .credentials-panel.signin .slide-element,
+    .auth-wrapper.toggled .credentials-panel.signup .slide-element {
+        transform: none !important;
+        opacity: 1 !important;
+        filter: none !important;
+        transition: none !important;
+    }
+
+    .auth-wrapper .background-shape,
+    .auth-wrapper .secondary-shape {
+        display: none;
+    }
+}
