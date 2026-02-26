@@ -26,7 +26,29 @@ const createCompany = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getCompanies = catchAsync(async (req: Request, res: Response) => {
-    const companies = await Company.find();
+    const companies = await Company.aggregate([
+        {
+            $lookup: {
+                from: "users",
+                localField: "_id",
+                foreignField: "companyId",
+                as: "members"
+            }
+        },
+        {
+            $project: {
+                name: 1,
+                ownerId: 1,
+                description: 1,
+                logo: 1,
+                website: 1,
+                isActive: 1,
+                created_at: 1,
+                updated_at: 1,
+                memberCount: { $size: "$members" }
+            }
+        }
+    ]);
     successResponse(res, "Retrieved companies", httpStatus.OK, companies);
 });
 

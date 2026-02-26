@@ -481,7 +481,7 @@ export const verifyOtp = async (req: Request, res: Response) => {
         if (User) {
           await User.findByIdAndUpdate(user._id, {
             companyId: company._id,
-            companyName: company.name // Ensure consistent casing from DB
+            companyName: company.name // Ensure consistent casing from DB (lowercase)
           });
           (user as any).companyId = company._id;
           (user as any).companyName = company.name;

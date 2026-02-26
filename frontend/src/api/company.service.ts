@@ -6,6 +6,7 @@ export interface Company {
     ownerId: string
     description?: string
     logo?: string
+    memberCount?: number
     settings?: {
         primaryColor?: string
         allowPublicTemplates?: boolean

@@ -195,6 +195,10 @@ export default function AdminCompanies() {
         setExpandedGroups(prev => ({ ...prev, [name]: !prev[name] }))
     }
 
+    const toTitleCase = (str: string) => {
+        return str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
+    }
+
     const saveMutation = useMutation({
         mutationFn: (company: Partial<Company>) =>
             company.id
@@ -290,7 +294,7 @@ export default function AdminCompanies() {
                                                             <Building2 size={20} />
                                                         </div>
                                                         <div className="flex flex-col">
-                                                            <span className="font-bold text-lg">{groupName}</span>
+                                                            <span className="font-bold text-lg">{toTitleCase(groupName)}</span>
                                                             <span className="text-[10px] text-muted-foreground tracking-widest uppercase font-bold">Grouped Organization</span>
                                                         </div>
                                                     </div>
@@ -302,7 +306,9 @@ export default function AdminCompanies() {
                                                 </TableCell>
                                                 <TableCell>
                                                     <div className="flex items-center gap-2">
-                                                        <Badge variant="outline" className="font-mono">{group.length} {group.length > 1 ? 'Records' : 'Record'}</Badge>
+                                                        <Badge variant="outline" className="font-mono">
+                                                            {group.reduce((sum, c) => sum + (c.memberCount || 0), 0)} Members
+                                                        </Badge>
                                                     </div>
                                                 </TableCell>
                                                 <TableCell>
