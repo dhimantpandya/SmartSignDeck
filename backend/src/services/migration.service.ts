@@ -42,14 +42,25 @@ const runCompanyMigration = async () => {
             }
         }
 
-        // 2. Fix Orphaned Users (Users with companyName but no companyId)
-        const orphanedUsers = await User.find({
-            companyName: { $exists: true, $ne: '' },
-            companyId: { $exists: false }
+        // 2. Fix Orphaned Users (Users with companyName but no companyId OR invalid companyId)
+        const allUsers = await User.find({
+            companyName: { $exists: true, $ne: '' }
         });
 
+        const orphanedUsers = [];
+        for (const user of allUsers) {
+            // If companyId is missing, null, or points to a non-existent company
+            let isOrphaned = !user.companyId;
+            if (user.companyId) {
+                const companyExists = await Company.exists({ _id: user.companyId });
+                if (!companyExists) isOrphaned = true;
+            }
+
+            if (isOrphaned) orphanedUsers.push(user);
+        }
+
         if (orphanedUsers.length > 0) {
-            logger.info(`[Migration] Found ${orphanedUsers.length} orphaned users. Linking...`);
+            logger.info(`[Migration] Found ${orphanedUsers.length} orphaned/mislinked users. Linking...`);
 
             for (const user of orphanedUsers) {
                 if (!user.companyName) continue;
@@ -57,7 +68,7 @@ const runCompanyMigration = async () => {
 
                 let company = await Company.findOne({ name: normalizedName });
                 if (!company) {
-                    logger.info(`[Migration] Creating missing company record for "${normalizedName}"`);
+                    logger.info(`[Migration] Creating missing company record for "${normalizedName}" (User: ${user.email})`);
                     company = await Company.create({
                         name: normalizedName,
                         ownerId: user._id,
@@ -68,6 +79,7 @@ const runCompanyMigration = async () => {
                 user.companyId = company._id as any;
                 user.companyName = company.name;
                 await user.save();
+                logger.info(`[Migration] User ${user.email} linked to company "${company.name}"`);
             }
         }
 
