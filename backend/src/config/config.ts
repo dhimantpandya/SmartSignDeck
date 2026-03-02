@@ -183,9 +183,16 @@ const config = {
     apiSecret: envVars.CLOUDINARY_API_SECRET,
   },
   cors: {
-    origin: envVars.ALLOWED_ORIGINS
-      ? envVars.ALLOWED_ORIGINS.split(",").map((origin) => origin.trim())
-      : ["http://localhost:5173", "https://smart-sign-deck.vercel.app"],
+    origin: (() => {
+      // Always include these production origins as a baseline
+      const baseline = ["http://localhost:5173", "http://localhost:3000", "https://smart-sign-deck.vercel.app"];
+      if (envVars.ALLOWED_ORIGINS) {
+        const extra = envVars.ALLOWED_ORIGINS.split(",").map((o) => o.trim()).filter(Boolean);
+        // Merge, deduplicate
+        return Array.from(new Set([...baseline, ...extra]));
+      }
+      return baseline;
+    })(),
   },
   appUrl: envVars.WEB_APP_URL,
 };
