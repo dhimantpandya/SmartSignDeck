@@ -163,18 +163,19 @@ class ApiService {
     params: Record<string, unknown> = {},
     headers: Record<string, string> = {}
   ): Promise<T> {
+    const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
+    const targetUrl = cleanEndpoint.startsWith('v1/') ? cleanEndpoint : `v1/${cleanEndpoint}`;
     try {
       const contentType = body instanceof FormData ? 'multipart/form-data' : 'application/json';
-      const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
       const config: any = {
-        url: cleanEndpoint.startsWith('v1/') ? cleanEndpoint : `v1/${cleanEndpoint}`,
+        url: targetUrl,
         method,
         headers: { ...headers, 'Content-Type': contentType },
         data: body instanceof FormData || body ? body : undefined,
         params,
       }
 
-      console.log(`[ApiService] Full Target URL: ${this.api.defaults.baseURL}/${config.url}`);
+      console.log(`[ApiService] Full Target URL: ${this.api.defaults.baseURL}/${targetUrl}`);
 
       const response = await this.api.request<any>(config)
       const data = response.data
@@ -185,7 +186,7 @@ class ApiService {
       return data as T
     } catch (error: any) {
       if (error?.message === 'Network Error' || !error.response) {
-        console.error(`[ApiService] NETWORK ERROR: Could not reach ${this.api.defaults.baseURL}/${config.url}. Please check if the backend is running and CORS is allowed for ${window.location.origin}.`);
+        console.error(`[ApiService] NETWORK ERROR: Could not reach ${this.api.defaults.baseURL}/${targetUrl}. Please check if the backend is running and CORS is allowed for ${window.location.origin}.`);
       } else {
         console.error('API request error:', error?.response || error)
       }
