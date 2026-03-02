@@ -29,28 +29,38 @@ const app: Application = express();
 // Trust proxy - Set to 1 to tell Express we are behind exactly one proxy (Railway/Vercel)
 app.set("trust proxy", 1);
 
-// enable cors with proper configuration
-const corsOptions = {
-  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-    // allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
+// Manual CORS Middleware - 100% control to override Railway/Infrastructure defaults
+app.use((req: Request, res: Response, next: NextFunction) => {
+  const origin = req.headers.origin;
+  const allowedOrigins = config.cors.origin;
 
-    const allowedOrigins = config.cors.origin;
-    const isAllowed = allowedOrigins.indexOf(origin) !== -1 || allowedOrigins.includes('*');
+  // LOGGING: Crucial to see what the server "sees" in production
+  if (config.env === "production" || req.url.includes('diagnose-cors')) {
+    console.log(`[CORS-DEBUG] Request from Origin: ${origin || 'none'}, URL: ${req.url}, Method: ${req.method}`);
+  }
 
-    if (isAllowed) {
-      callback(null, true);
-    } else {
-      console.warn(`[CORS] Blocked request from origin: ${origin}. Allowed: ${allowedOrigins.join(', ')}`);
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept", "Origin", "Access-Control-Allow-Headers"],
-};
-app.use(cors(corsOptions));
-app.options("*", cors(corsOptions));
+  if (!origin) {
+    return next();
+  }
+
+  const isAllowed = allowedOrigins.indexOf(origin) !== -1 || allowedOrigins.includes('*');
+
+  if (isAllowed) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, Accept, Origin, Access-Control-Allow-Headers");
+  } else {
+    console.warn(`[CORS-WARN] Blocked Origin: ${origin}. Allowed: ${allowedOrigins.join(', ')}`);
+  }
+
+  // Handle Preflight
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
+
+  next();
+});
 
 // Manual COOP/COEP Header overrides to ensure Google Sign-In works
 app.use((req, res, next) => {

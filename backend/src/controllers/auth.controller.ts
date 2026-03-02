@@ -913,3 +913,27 @@ export const confirmDeleteAccount = async (req: Request, res: Response) => {
     });
   }
 };
+// ===== DIAGNOSE CORS =====
+export const diagnoseCors = async (req: Request, res: Response) => {
+  try {
+    const origin = req.headers.origin;
+    const { default: config } = await import("../config/config");
+
+    res.status(httpStatus.OK).json({
+      status: "success",
+      message: "CORS Diagnostic Data",
+      data: {
+        requestOrigin: origin || "none",
+        allowedOrigins: config.cors.origin,
+        node_env: config.env,
+        headers: req.headers,
+        timestamp: new Date().toISOString()
+      }
+    });
+  } catch (err: any) {
+    res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+      status: "error",
+      message: err.message
+    });
+  }
+};

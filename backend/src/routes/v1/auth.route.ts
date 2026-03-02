@@ -24,6 +24,9 @@ import auth from "../../middleware/auth";
 
 const router = Router();
 
+// ===== DIAGNOSE CORS =====
+router.get("/diagnose-cors", authController.diagnoseCors);
+
 // ===== REGISTER =====
 router.get(
   "/invite-token",
