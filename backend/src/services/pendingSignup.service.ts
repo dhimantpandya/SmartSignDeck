@@ -51,4 +51,4 @@ export const getPendingSignupsCount = async (): Promise<number> => {
     return PendingSignupModel.countDocuments();
 };
 
-logger.info("Pending signup service (MongoDB) initialized");
+logger.info("[VERSION-CHECK-3] Pending signup service (MongoDB) initialized");
