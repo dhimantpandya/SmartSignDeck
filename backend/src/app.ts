@@ -30,10 +30,21 @@ const app: Application = express();
 app.set("trust proxy", 1);
 
 // enable cors with proper configuration
-// using origin: true reflects the request origin, effectively allowing any origin
-// while still supporting credentials
 const corsOptions = {
-  origin: true,
+  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+    // allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+
+    const allowedOrigins = config.cors.origin;
+    const isAllowed = allowedOrigins.indexOf(origin) !== -1 || allowedOrigins.includes('*');
+
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      console.warn(`[CORS] Blocked request from origin: ${origin}. Allowed: ${allowedOrigins.join(', ')}`);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept", "Origin", "Access-Control-Allow-Headers"],

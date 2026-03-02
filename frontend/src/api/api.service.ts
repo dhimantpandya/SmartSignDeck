@@ -184,7 +184,11 @@ class ApiService {
       }
       return data as T
     } catch (error: any) {
-      console.error('API request error:', error?.response || error)
+      if (error?.message === 'Network Error' || !error.response) {
+        console.error(`[ApiService] NETWORK ERROR: Could not reach ${this.api.defaults.baseURL}/${endpoint}. Please check if the backend is running and CORS is allowed for ${window.location.origin}.`);
+      } else {
+        console.error('API request error:', error?.response || error)
+      }
       throw error?.response?.data || error
     }
   }
