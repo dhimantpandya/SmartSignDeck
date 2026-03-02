@@ -61,6 +61,7 @@ mongoose
 
     httpServer.listen(config.port, "0.0.0.0", () => {
       logger.info(`HTTP Server running on port ${config.port}`);
+      logger.info(`[DEPLOY-CHECK] New version started at: ${new Date().toISOString()}`);
       cleanupService.startCleanupJob();
     });
     server = httpServer;
