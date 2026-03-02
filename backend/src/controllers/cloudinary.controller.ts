@@ -61,13 +61,21 @@ const uploadFile = catchAsync(async (req: Request, res: Response) => {
 
 const getSignature = catchAsync(async (req: Request, res: Response) => {
   const timestamp = Math.round(new Date().getTime() / 1000);
-  const finalParams = { ...req.query, timestamp };
+  // Sign EVERYTHING provided in query + timestamp
+  const paramsToSign: any = { ...req.query, timestamp };
 
-  const signature = cloudinaryService.generateSignature(finalParams);
+  // Clean up paramsToSign (remove undefined/null if any)
+  Object.keys(paramsToSign).forEach((key) => {
+    if (paramsToSign[key] === undefined || paramsToSign[key] === null) {
+      delete paramsToSign[key];
+    }
+  });
+
+  const signature = cloudinaryService.generateSignature(paramsToSign);
 
   successResponse(res, "Signature generated successfully", httpStatus.OK, {
     signature,
-    timestamp,
+    ...paramsToSign, // Includes timestamp and other signed params
     cloud_name: cloudinary.config().cloud_name,
     api_key: cloudinary.config().api_key,
   });

@@ -80,9 +80,9 @@ const queryScreens = async (filter: any, options: CustomPaginateOptions, user: I
     if (isRecycleBinQuery) {
       // 🗑️ Recycle Bin Isolation: Strictly same user ONLY
       finalFilter.createdBy = new mongoose.Types.ObjectId(userIdStr);
-    } else if (isQueryingPublic && isQueryingByCreator) {
-      // 🌍 Global Profile View: Allow bypass if specifically looking for PUBLIC items by a CREATOR
-      // This enables the "Users -> Profile" modal to work across companies.
+    } else if (isQueryingPublic) {
+      // 🌍 Global View: Allow seeing public screens
+      finalFilter.isPublic = true;
     } else {
       // 🔒 Account Isolation: 
       // - Admins see everything in the same company.
@@ -101,6 +101,19 @@ const queryScreens = async (filter: any, options: CustomPaginateOptions, user: I
       // 👤 Strict User Isolation: Honor the 'createdBy' filter if provided by the frontend.
       if (isQueryingOwn && userIdStr && mongoose.Types.ObjectId.isValid(userIdStr)) {
         finalFilter.createdBy = new mongoose.Types.ObjectId(userIdStr);
+      }
+
+      // 🌍 Ensure public items are always allowed in general queries
+      if (!finalFilter.$or) {
+        finalFilter.$or = [
+          { isPublic: true },
+          { createdBy: finalFilter.createdBy || new mongoose.Types.ObjectId(userIdStr) }
+        ];
+        if (user.role === 'admin' && companyIdStr && mongoose.Types.ObjectId.isValid(companyIdStr)) {
+          finalFilter.$or.push({ companyId: new mongoose.Types.ObjectId(companyIdStr) });
+        }
+        delete finalFilter.createdBy;
+        delete finalFilter.companyId;
       }
     }
   }

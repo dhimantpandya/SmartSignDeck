@@ -102,8 +102,9 @@ const queryTemplates = async (filter: any, options: CustomPaginateOptions, user:
       if (userId) {
         finalFilter.createdBy = userId;
       }
-    } else if (isQueryingPublic && isQueryingByCreator) {
-      // 🌍 Global Profile View: Allow bypass if specifically looking for PUBLIC items by a CREATOR
+    } else if (isQueryingPublic) {
+      // 🌍 Global View: If specifically querying public items, just ensure we stick to isPublic: true
+      finalFilter.isPublic = true;
     } else if (isQueryingShared && userId) {
       // 🤝 Explicit Shared Query: Just stick to the collaborators filter
       finalFilter.collaborators = userId;
@@ -124,10 +125,8 @@ const queryTemplates = async (filter: any, options: CustomPaginateOptions, user:
         }
       }
 
-      // 🤝 Add Collaboration access (always allowed if user is a collaborator)
-      if (userId) {
-        securityConditions.push({ collaborators: userId });
-      }
+      // 🌍 ALWAYS Add Public access
+      securityConditions.push({ isPublic: true });
 
       finalFilter.$or = securityConditions;
 

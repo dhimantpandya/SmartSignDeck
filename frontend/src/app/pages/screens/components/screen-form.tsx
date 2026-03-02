@@ -510,13 +510,16 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
                 throw new Error("Cloudinary SDK not loaded. Please refresh the page.")
             }
 
-            const { signature, timestamp, cloud_name, api_key } = await apiService.get<any>('/v1/cloudinary/signature', {
-                params: { timestamp: Math.round(new Date().getTime() / 1000) }
+            const { signature, timestamp, cloud_name, api_key, username } = await apiService.get<any>('/v1/cloudinary/signature', {
+                params: {
+                    timestamp: Math.round(new Date().getTime() / 1000),
+                    username: user?.email // 🔑 Use user email as username for DAM 
+                }
             })
 
             // @ts-ignore
             const widget = window.cloudinary.createMediaLibrary({
-                cloud_name, api_key, timestamp, signature,
+                cloud_name, api_key, timestamp, signature, username,
                 button_class: 'hidden', multiple: true, max_files: 15, z_index: 9999
             }, {
                 insertHandler: (data: any) => {

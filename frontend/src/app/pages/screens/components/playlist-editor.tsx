@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useAuth } from '@/hooks/use-auth'
 import { Button } from '@/components/custom/button'
 import { IconPlus, IconTrash, IconPhoto, IconMovie, IconTrashX, IconPlayerPlay, IconArrowsSort, IconExternalLink } from '@tabler/icons-react'
 import { toast } from '@/components/ui/use-toast'
@@ -24,6 +25,7 @@ interface PlaylistEditorProps {
 }
 
 export default function PlaylistEditor({ zone, items, onChange }: PlaylistEditorProps) {
+    const { user } = useAuth()
     const [mediaTypeLock, setMediaTypeLock] = useState<'image' | 'video' | 'both'>('both')
     const [isProcessing, setIsProcessing] = useState(false)
     const [confirmAction, setConfirmAction] = useState<{ type: 'remove' | 'clear', index?: number } | null>(null)
@@ -125,9 +127,10 @@ export default function PlaylistEditor({ zone, items, onChange }: PlaylistEditor
             }
 
             // Get signature from backend
-            const { signature, timestamp, cloud_name, api_key } = await apiService.get<any>('/v1/cloudinary/signature', {
+            const { signature, timestamp, cloud_name, api_key, username } = await apiService.get<any>('/v1/cloudinary/signature', {
                 params: {
-                    timestamp: Math.round(new Date().getTime() / 1000)
+                    timestamp: Math.round(new Date().getTime() / 1000),
+                    username: user?.email || '' // 🔑 Use email for DAM auth
                 }
             })
 
@@ -138,6 +141,7 @@ export default function PlaylistEditor({ zone, items, onChange }: PlaylistEditor
                 api_key: api_key,
                 timestamp: timestamp,
                 signature: signature,
+                username: username,
                 button_class: 'hidden',
                 multiple: true,
                 max_files: 15,
