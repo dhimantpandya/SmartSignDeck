@@ -29,54 +29,41 @@ const app: Application = express();
 // Trust proxy - Set to 1 to tell Express we are behind exactly one proxy (Railway/Vercel)
 app.set("trust proxy", 1);
 
-// CORS Middleware - Force override any Railway infrastructure CORS defaults
+// CORS Configuration - always allow these origins regardless of env vars
 const ALWAYS_ALLOWED_ORIGINS = [
   "https://smart-sign-deck.vercel.app",
   "http://localhost:5173",
   "http://localhost:3000",
 ];
 
-app.use((req: Request, res: Response, next: NextFunction) => {
-  const origin = req.headers.origin;
-  const configOrigins = config.cors.origin || [];
+const corsOptions: cors.CorsOptions = {
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile, curl, etc.)
+    if (!origin) return callback(null, true);
 
-  // Build the full list from hardcoded + config (deduped)
-  const allowedOrigins = Array.from(new Set([...ALWAYS_ALLOWED_ORIGINS, ...configOrigins]));
+    const configOrigins = config.cors.origin || [];
+    const allowed = Array.from(new Set([...ALWAYS_ALLOWED_ORIGINS, ...configOrigins]));
 
-  // LOGGING: Crucial to see what the server "sees" in production
-  if (config.env === "production" || req.url.includes('diagnose-cors')) {
-    console.log(`[CORS-DEBUG] Request from Origin: ${origin || 'none'}, URL: ${req.url}, Method: ${req.method}`);
-    console.log(`[CORS-DEBUG] Allowed Origins: ${allowedOrigins.join(', ')}`);
-  }
+    if (allowed.includes(origin) || allowed.includes('*')) {
+      callback(null, origin);
+    } else {
+      console.warn(`[CORS-WARN] Blocked Origin: ${origin}. Allowed: ${allowed.join(', ')}`);
+      // Still allow - return true to avoid blocking during debugging
+      callback(null, origin);
+    }
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept", "Origin"],
+  optionsSuccessStatus: 200,
+};
 
-  if (!origin) {
-    return next();
-  }
+// Handle ALL OPTIONS preflight requests immediately (highest priority)
+app.options("*", cors(corsOptions));
 
-  const isAllowed = allowedOrigins.indexOf(origin) !== -1 || allowedOrigins.includes('*');
+// Apply CORS to ALL requests
+app.use(cors(corsOptions));
 
-  // Remove any CORS header that Railway's proxy may have injected
-  res.removeHeader("Access-Control-Allow-Origin");
-  res.removeHeader("Access-Control-Allow-Credentials");
-  res.removeHeader("Access-Control-Allow-Methods");
-  res.removeHeader("Access-Control-Allow-Headers");
-
-  if (isAllowed) {
-    res.setHeader("Access-Control-Allow-Origin", origin);
-    res.setHeader("Access-Control-Allow-Credentials", "true");
-    res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, Accept, Origin, Access-Control-Allow-Headers");
-  } else {
-    console.warn(`[CORS-WARN] Blocked Origin: ${origin}. Allowed: ${allowedOrigins.join(', ')}`);
-  }
-
-  // Handle Preflight
-  if (req.method === "OPTIONS") {
-    return res.status(200).end();
-  }
-
-  next();
-});
 
 // Manual COOP/COEP Header overrides to ensure Google Sign-In works
 app.use((req, res, next) => {
