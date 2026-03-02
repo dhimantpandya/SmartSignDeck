@@ -29,14 +29,24 @@ const app: Application = express();
 // Trust proxy - Set to 1 to tell Express we are behind exactly one proxy (Railway/Vercel)
 app.set("trust proxy", 1);
 
-// Manual CORS Middleware - 100% control to override Railway/Infrastructure defaults
+// CORS Middleware - Force override any Railway infrastructure CORS defaults
+const ALWAYS_ALLOWED_ORIGINS = [
+  "https://smart-sign-deck.vercel.app",
+  "http://localhost:5173",
+  "http://localhost:3000",
+];
+
 app.use((req: Request, res: Response, next: NextFunction) => {
   const origin = req.headers.origin;
-  const allowedOrigins = config.cors.origin;
+  const configOrigins = config.cors.origin || [];
+
+  // Build the full list from hardcoded + config (deduped)
+  const allowedOrigins = Array.from(new Set([...ALWAYS_ALLOWED_ORIGINS, ...configOrigins]));
 
   // LOGGING: Crucial to see what the server "sees" in production
   if (config.env === "production" || req.url.includes('diagnose-cors')) {
     console.log(`[CORS-DEBUG] Request from Origin: ${origin || 'none'}, URL: ${req.url}, Method: ${req.method}`);
+    console.log(`[CORS-DEBUG] Allowed Origins: ${allowedOrigins.join(', ')}`);
   }
 
   if (!origin) {
@@ -44,6 +54,12 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   }
 
   const isAllowed = allowedOrigins.indexOf(origin) !== -1 || allowedOrigins.includes('*');
+
+  // Remove any CORS header that Railway's proxy may have injected
+  res.removeHeader("Access-Control-Allow-Origin");
+  res.removeHeader("Access-Control-Allow-Credentials");
+  res.removeHeader("Access-Control-Allow-Methods");
+  res.removeHeader("Access-Control-Allow-Headers");
 
   if (isAllowed) {
     res.setHeader("Access-Control-Allow-Origin", origin);
