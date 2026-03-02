@@ -127,7 +127,7 @@ app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 // Simple health check for Railway/Uptime
 app.get("/health", (req, res) => {
-  res.status(200).send("OK - v2-cors-fix");
+  res.status(200).send("OK - v2-cors-fix-FINAL-999");
 });
 
 app.use(cookieParser());
