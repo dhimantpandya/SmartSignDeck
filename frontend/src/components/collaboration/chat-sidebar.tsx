@@ -12,7 +12,6 @@ import {
     CheckCheck,
     Check,
     Clock,
-    MoreVertical,
     Reply,
     Copy,
     Trash2
@@ -259,7 +258,7 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
             await socialService.markAsSeen(msg._id || msg.id)
             setPrivateMessages(prev => prev.map(m =>
                 (m._id === msg._id || m.id === msg.id)
-                    ? { ...m, seenBy: [...(m.seenBy || []), { userId: user._id, seenAt: new Date().toISOString() }] }
+                    ? { ...m, seenBy: [...(m.seenBy || []), { userId: user.id || (user as any)._id, seenAt: new Date().toISOString() }] }
                     : m
             ))
         } catch (err) {
@@ -411,7 +410,7 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
             }
 
             // API Call
-            const res = await socialService.sendMessage({
+            await socialService.sendMessage({
                 text,
                 recipientId,
                 companyId,
