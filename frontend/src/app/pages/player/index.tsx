@@ -350,13 +350,13 @@ export default function ScreenPlayer() {
         })
 
         // 3. NEW: If only ONE zone has content, make it fill the FULL screen
-        const nonTextZones = zones.filter(z => {
+        const nonTextZones = zones.filter((z: any) => {
             const zContent = content[z.id]
             return zContent && (zContent.playlist?.length > 0 || zContent.src)
         })
 
         if (nonTextZones.length === 1) {
-            const soloZone = zones.find(z => z.id === nonTextZones[0].id)
+            const soloZone = zones.find((z: any) => z.id === nonTextZones[0].id)
             if (soloZone) {
                 soloZone.x = 0
                 soloZone.y = 0
