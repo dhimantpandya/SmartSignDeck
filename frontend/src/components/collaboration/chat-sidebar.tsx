@@ -153,12 +153,12 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
                     console.log('[ChatSidebar] ✅ Match! Appending message')
                     setPrivateMessages((prev) => {
                         const isDup = prev.some(m =>
-                            (m._id === data._id || m.id === data.id) ||
+                            isSameId(m, data.messageId || data._id || data.id) ||
                             (m.text === data.text && isSameId(m.senderId, data.senderId) && m.isOptimistic)
                         )
                         if (isDup) {
                             console.log('[ChatSidebar] ⚠️ Private duplicate found, merging/replacing')
-                            return prev.map(m => ((m.isOptimistic && m.text === data.text) || (m._id === data._id || m.id === data.id)) ? { ...data, isOptimistic: false } : m)
+                            return prev.map(m => ((m.isOptimistic && m.text === data.text) || isSameId(m, data.messageId || data._id || data.id)) ? { ...data, isOptimistic: false } : m)
                         }
                         return [...prev, data]
                     })
@@ -169,7 +169,7 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
         const handleMessageSeen = (data: { messageId: string, seenBy: string, seenAt: string }) => {
             console.log('[ChatSidebar] 👁️ message_seen received:', data)
             const updater = (prev: any[]) => prev.map(m =>
-                (m._id === data.messageId || m.id === data.messageId)
+                isSameId(m, data.messageId)
                     ? { ...m, seenBy: [...(m.seenBy || []), { userId: data.seenBy, seenAt: data.seenAt }] }
                     : m
             )
@@ -180,7 +180,7 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
         const handleMessageDelivered = (data: { messageId: string, userId: string, deliveredAt: string }) => {
             console.log('[ChatSidebar] 📦 message_delivered received:', data)
             const updater = (prev: any[]) => prev.map(m =>
-                (m._id === data.messageId || m.id === data.messageId)
+                isSameId(m, data.messageId)
                     ? { ...m, deliveredBy: [...(m.deliveredBy || []), { userId: data.userId, deliveredAt: data.deliveredAt }] }
                     : m
             )
@@ -308,7 +308,7 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
             await socialService.markAsSeen(mid)
             const seenObj = { userId: user.id || (user as any)._id, seenAt: new Date().toISOString() }
             const updater = (prev: any[]) => prev.map(m =>
-                (m._id === mid || m.id === mid)
+                isSameId(m, mid)
                     ? { ...m, seenBy: [...(m.seenBy || []), seenObj] }
                     : m
             )
@@ -327,7 +327,7 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
         try {
             await socialService.deleteMessage(messageId, scope)
             const updater = (prev: any[]) => prev.map(m =>
-                (m._id === messageId || m.id === messageId)
+                isSameId(m, messageId)
                     ? (scope === 'everyone' ? { ...m, text: 'This message was deleted', isDeleted: true } : null)
                     : m
             ).filter(Boolean)
