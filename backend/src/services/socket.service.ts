@@ -1,4 +1,5 @@
 import { Server, Socket } from "socket.io";
+import mongoose from "mongoose";
 import { type Server as HttpServer } from "http";
 import { type Server as HttpsServer } from "https";
 import logger from "../config/logger";
