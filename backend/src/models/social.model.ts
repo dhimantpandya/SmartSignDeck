@@ -46,6 +46,7 @@ export interface IMessage extends Document {
     seenBy: { userId: mongoose.Schema.Types.ObjectId; seenAt: Date }[];
     deliveredBy: { userId: mongoose.Schema.Types.ObjectId; deliveredAt: Date }[];
     deletedFor: { userId: mongoose.Schema.Types.ObjectId; scope: 'me' | 'everyone'; deletedAt: Date }[];
+    isDeleted?: boolean;
     created_at: Date;
     updated_at: Date;
 }
@@ -90,6 +91,7 @@ const messageSchema = new Schema<IMessage>(
             scope: { type: String, enum: ['me', 'everyone'], default: 'me' },
             deletedAt: { type: Date, default: Date.now }
         }],
+        isDeleted: { type: Boolean, default: false }
     },
     { timestamps: { createdAt: "created_at", updatedAt: "updated_at" } },
 );

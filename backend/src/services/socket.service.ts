@@ -184,6 +184,7 @@ const broadcastChat = (data: {
     avatar?: string;
     replyTo?: any;
     created_at?: Date;
+    id?: any;
 }) => {
     if (!io) {
         logger.error("[SOCKET] broadcastChat called but IO not initialized!");
@@ -196,10 +197,13 @@ const broadcastChat = (data: {
     const { text, senderName, avatar, created_at } = data;
 
     const payload = {
+        _id: data.id,
+        id: data.id,
         text,
         senderName,
         senderId,
         avatar,
+        replyTo: data.replyTo,
         created_at: created_at || new Date(),
     };
 

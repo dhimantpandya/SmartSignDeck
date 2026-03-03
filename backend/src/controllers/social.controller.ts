@@ -1,4 +1,5 @@
 import httpStatus from "http-status";
+import mongoose from "mongoose";
 import { Request, Response } from "express";
 import catchAsync from "../utils/catchAsync";
 import socialService from "../services/social.service";
@@ -30,13 +31,14 @@ const sendMessage = catchAsync(async (req: Request, res: Response) => {
 
     // 1. Broadcast for real-time chat window synchronization
     broadcastChat({
+        id: message._id,
         text,
         recipientId: cRecipientId,
         companyId: cCompanyId,
         senderId: cSenderId,
         senderName: `${user.first_name} ${user.last_name}`,
         avatar: user.avatar,
-        replyTo: message.replyTo, // Include parent message info if populated
+        replyTo: message.replyTo,
         created_at: message.created_at
     });
 
@@ -52,15 +54,17 @@ const sendMessage = catchAsync(async (req: Request, res: Response) => {
             // Don't emit to sender (optional, but frontend handles dupes)
             if (memberId !== cSenderId) {
                 emitToUser(memberId, 'new_chat', {
+                    _id: message._id,
+                    id: message._id,
                     text,
-                    recipientId: cRecipientId, // Keep original recipient logic (null for company)
+                    recipientId: cRecipientId,
                     companyId: cCompanyId,
                     senderId: cSenderId,
                     senderName: `${user.first_name} ${user.last_name}`,
                     avatar: user.avatar,
                     replyTo: message.replyTo,
                     created_at: message.created_at,
-                    type: 'company' // Explicitly set type
+                    type: 'company'
                 });
             }
         });
@@ -136,6 +140,12 @@ const getSentRequests = catchAsync(async (req: Request, res: Response) => {
 const markAsSeen = catchAsync(async (req: Request, res: Response) => {
     const user: any = req.user;
     const { messageId } = req.params;
+
+    // Validate ID
+    if (!messageId || messageId === 'undefined' || !mongoose.Types.ObjectId.isValid(messageId)) {
+        return successResponse(res, "Invalid message ID", httpStatus.BAD_REQUEST, {});
+    }
+
     const { Message } = await import("../models/social.model");
     const { emitToUser } = await import("../services/socket.service");
 
@@ -157,6 +167,12 @@ const deleteMessage = catchAsync(async (req: Request, res: Response) => {
     const user: any = req.user;
     const { messageId } = req.params;
     const { scope } = req.body; // 'me' | 'everyone'
+
+    // Validate ID
+    if (!messageId || messageId === 'undefined' || !mongoose.Types.ObjectId.isValid(messageId)) {
+        return successResponse(res, "Invalid message ID", httpStatus.BAD_REQUEST, {});
+    }
+
     const { Message } = await import("../models/social.model");
 
     const msg = await Message.findById(messageId);
@@ -177,19 +193,30 @@ const deleteMessage = catchAsync(async (req: Request, res: Response) => {
         }
         // Mark deleted for everyone
         msg.text = 'This message was deleted';
+        msg.isDeleted = true; // explicitly set a flag if your model has it, otherwise text is enough
+        if (!msg.deletedFor) msg.deletedFor = [];
         msg.deletedFor.push({ userId: user._id, scope: 'everyone', deletedAt: new Date() } as any);
         await msg.save();
 
-        // Broadcast deletion to recipient / company
+        // Broadcast deletion
         const { emitToUser: emitUser, emitToCompany } = await import("../services/socket.service");
         const payload = { messageId, scope: 'everyone' };
-        if (msg.recipientId) emitUser(msg.recipientId.toString(), 'message_deleted', payload);
-        if (msg.companyId) emitToCompany(msg.companyId.toString(), 'message_deleted', payload);
-        emitUser(user._id.toString(), 'message_deleted', payload);
+
+        if (msg.companyId) {
+            emitToCompany(msg.companyId.toString(), 'message_deleted', payload);
+        } else if (msg.recipientId) {
+            emitUser(msg.recipientId.toString(), 'message_deleted', payload);
+            emitUser(msg.senderId.toString(), 'message_deleted', payload);
+        }
     } else {
         // Delete for me only
+        if (!msg.deletedFor) msg.deletedFor = [];
         msg.deletedFor.push({ userId: user._id, scope: 'me', deletedAt: new Date() } as any);
         await msg.save();
+
+        // Notify the user who deleted it so their UI updates
+        const { emitToUser: emitUser } = await import("../services/socket.service");
+        emitUser(user._id.toString(), 'message_deleted', { messageId, scope: 'me' });
     }
     successResponse(res, "Message deleted", httpStatus.OK, { messageId, scope });
 });

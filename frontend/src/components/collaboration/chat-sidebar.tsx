@@ -117,20 +117,21 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
             if (data.type === 'company' || data.companyId) {
                 console.log('[ChatSidebar] 🏢 Processing company message')
                 setBoardMessages((prev) => {
-                    const isDup = prev.some(m =>
-                        m.text === data.text &&
-                        isSameId(m.senderId, data.senderId) &&
-                        (m.isOptimistic || Math.abs(new Date(m.created_at || new Date()).getTime() - new Date(data.created_at || new Date()).getTime()) < 5000)
-                    )
+                    setBoardMessages((prev) => {
+                        const isDup = prev.some(m =>
+                            (m._id === data._id || m.id === data.id) ||
+                            (m.text === data.text && isSameId(m.senderId, data.senderId) && m.isOptimistic)
+                        )
 
-                    if (isDup) {
-                        console.log('[ChatSidebar] ⚠️ Duplicate found, merging/replacing')
-                        return prev.map(m => (m.isOptimistic && m.text === data.text) ? { ...data, isOptimistic: false } : m)
-                    }
+                        if (isDup) {
+                            console.log('[ChatSidebar] ⚠️ Duplicate found, merging/replacing')
+                            return prev.map(m => ((m.isOptimistic && m.text === data.text) || (m._id === data._id || m.id === data.id)) ? { ...data, isOptimistic: false } : m)
+                        }
 
-                    const newMsgs = [...prev, data]
-                    console.log('[ChatSidebar] ✅ Added message. New count:', newMsgs.length)
-                    return newMsgs
+                        const newMsgs = [...prev, data]
+                        console.log('[ChatSidebar] ✅ Added message. New count:', newMsgs.length)
+                        return newMsgs
+                    })
                 })
             }
             // 🛡️ Filter for private messages
@@ -154,13 +155,12 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
                     console.log('[ChatSidebar] ✅ Match! Appending message')
                     setPrivateMessages((prev) => {
                         const isDup = prev.some(m =>
-                            m.text === data.text &&
-                            isSameId(m.senderId, data.senderId) &&
-                            (m.isOptimistic || Math.abs(new Date(m.created_at || new Date()).getTime() - new Date(data.created_at || new Date()).getTime()) < 5000)
+                            (m._id === data._id || m.id === data.id) ||
+                            (m.text === data.text && isSameId(m.senderId, data.senderId) && m.isOptimistic)
                         )
                         if (isDup) {
                             console.log('[ChatSidebar] ⚠️ Private duplicate found, merging/replacing')
-                            return prev.map(m => (m.isOptimistic && m.text === data.text) ? { ...data, isOptimistic: false } : m)
+                            return prev.map(m => ((m.isOptimistic && m.text === data.text) || (m._id === data._id || m.id === data.id)) ? { ...data, isOptimistic: false } : m)
                         }
                         return [...prev, data]
                     })
@@ -269,22 +269,32 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
 
     const markAsSeen = async (msg: any) => {
         if (!user || isSameId(msg.senderId, user)) return
+        const mid = msg._id || msg.id
+        if (!mid || mid === 'undefined') return
+
         const isAlreadySeen = msg.seenBy?.some((s: any) => isSameId(s.userId, user))
         if (isAlreadySeen) return
 
         try {
-            await socialService.markAsSeen(msg._id || msg.id)
-            setPrivateMessages(prev => prev.map(m =>
-                (m._id === msg._id || m.id === msg.id)
-                    ? { ...m, seenBy: [...(m.seenBy || []), { userId: user.id || (user as any)._id, seenAt: new Date().toISOString() }] }
+            await socialService.markAsSeen(mid)
+            const seenObj = { userId: user.id || (user as any)._id, seenAt: new Date().toISOString() }
+            const updater = (prev: any[]) => prev.map(m =>
+                (m._id === mid || m.id === mid)
+                    ? { ...m, seenBy: [...(m.seenBy || []), seenObj] }
                     : m
-            ))
+            )
+            setPrivateMessages(updater)
+            setBoardMessages(updater)
         } catch (err) {
             console.error('Failed to mark as seen', err)
         }
     }
 
     const handleDeleteMessage = async (messageId: string, scope: 'me' | 'everyone') => {
+        if (!messageId || messageId === 'undefined') {
+            console.error('[ChatSidebar] Cannot delete message: undefined ID')
+            return
+        }
         try {
             await socialService.deleteMessage(messageId, scope)
             const updater = (prev: any[]) => prev.map(m =>
