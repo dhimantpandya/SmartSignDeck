@@ -278,6 +278,16 @@ export default function ScreenPlayer() {
             return !zoneContent?.text || zoneContent.text.trim() === ''
         }
 
+        // Helper to check if a zone is an "empty media zone" (no content assigned)
+        const isEmptyMediaZone = (z: any) => {
+            if (z.type === 'text') return false
+            const zoneContent = content[z.id]
+            if (!zoneContent) return true
+            const hasPlaylist = zoneContent.playlist && zoneContent.playlist.length > 0
+            const hasSrc = !!zoneContent.src
+            return !hasPlaylist && !hasSrc
+        }
+
         // 1. Snap to Canvas Borders
         zones.forEach((z: any) => {
             if (isEmptyTextZone(z)) return // Skip stretching the empty zone itself
@@ -305,6 +315,7 @@ export default function ScreenPlayer() {
         // 2. Intra-Zone Gap Filling (Snap to neighbors)
         zones.forEach((z1: any) => {
             if (isEmptyTextZone(z1)) return // Active zones grow INTO empty zones
+            if (isEmptyMediaZone(z1)) return // Don't expand empty media zones
 
             zones.forEach((z2: any) => {
                 if (z1 === z2) return
@@ -350,23 +361,22 @@ export default function ScreenPlayer() {
         })
 
         // 3. NEW: If only ONE zone has content, make it fill the FULL screen
-        const nonTextZones = zones.filter((z: any) => {
-            const zContent = content[z.id]
-            return zContent && (zContent.playlist?.length > 0 || zContent.src)
+        const zonesWithContent = zones.filter((z: any) => {
+            if (isEmptyTextZone(z)) return false
+            if (isEmptyMediaZone(z)) return false
+            return true
         })
 
-        if (nonTextZones.length === 1) {
-            const soloZone = zones.find((z: any) => z.id === nonTextZones[0].id)
-            if (soloZone) {
-                soloZone.x = 0
-                soloZone.y = 0
-                soloZone.width = targetWidth
-                soloZone.height = targetHeight
-            }
+        if (zonesWithContent.length === 1) {
+            const soloZone = zonesWithContent[0]
+            soloZone.x = 0
+            soloZone.y = 0
+            soloZone.width = targetWidth
+            soloZone.height = targetHeight
         }
 
-        // 4. Final Pass: Hide empty text zones so they don't render black boxes
-        return zones.filter((z: any) => !isEmptyTextZone(z))
+        // 4. Final Pass: Hide both empty text AND empty media zones
+        return zones.filter((z: any) => !isEmptyTextZone(z) && !isEmptyMediaZone(z))
     })()
 
     return (
@@ -622,7 +632,6 @@ function ZoneRenderer({ zone, content, screenId, templateId, secretKey }: { zone
                     autoPlay
                     muted
                     playsInline
-                    crossOrigin="anonymous"
                     preload="auto"
                     loop={playlist.length === 1}
                     className='h-full w-full object-contain'
@@ -648,7 +657,6 @@ function ZoneRenderer({ zone, content, screenId, templateId, secretKey }: { zone
                 <img
                     src={item.url}
                     alt=""
-                    crossOrigin="anonymous"
                     className='h-full w-full object-contain animate-in fade-in duration-500'
                     style={{ backgroundColor: 'black' }}
                     onError={() => {
