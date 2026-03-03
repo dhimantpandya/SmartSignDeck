@@ -74,7 +74,7 @@ export default function TextZoneEditor({ content, onChange }: TextZoneEditorProp
     // Merge provided content with defaults to ensure all fields exist
     const [localContent, setLocalContent] = useState<TextZoneContent>({
         type: 'text',
-        text: content?.text || 'Enter your text here...',
+        text: content?.text || '',
         style: { ...DEFAULT_STYLE, ...content?.style },
         colorSequence: content?.colorSequence || []
     })

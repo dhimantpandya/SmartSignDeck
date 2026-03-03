@@ -7,6 +7,21 @@ import { Button } from '@/components/custom/button'
 import { toast } from '@/components/ui/use-toast'
 import { io } from 'socket.io-client'
 
+/**
+ * Normalize a Cloudinary video URL to ensure browser compatibility.
+ * Device uploads (MOV, HEVC, etc.) need vc_auto transformation to become
+ * web-playable H.264/MP4. Non-Cloudinary URLs are returned as-is.
+ */
+function normalizeVideoUrl(url: string): string {
+    if (!url) return url
+    // Only transform Cloudinary video URLs
+    if (!url.includes('res.cloudinary.com') || !url.includes('/video/upload/')) return url
+    // Already has a transformation (e.g. vc_auto) - skip
+    if (url.includes('/vc_auto/') || url.includes('vc_auto,')) return url
+    // Inject vc_auto transformation after /upload/
+    return url.replace('/video/upload/', '/video/upload/vc_auto/')
+}
+
 export default function ScreenPlayer() {
     const { screenId } = useParams()
     const [data, setData] = useState<any>(null)
@@ -628,7 +643,7 @@ function ZoneRenderer({ zone, content, screenId, templateId, secretKey }: { zone
                 <video
                     ref={videoRef}
                     key={item.url}
-                    src={item.url}
+                    src={normalizeVideoUrl(item.url)}
                     autoPlay
                     muted
                     playsInline
