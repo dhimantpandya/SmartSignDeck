@@ -47,6 +47,13 @@ const updateScreen = catchAsync(async (req: Request, res: Response) => {
     req.body,
     req.user as any
   );
+
+  // Notify the player of the update
+  emitToScreen(req.params.screenId, "content_update", {
+    reason: "screen_updated",
+    screenId: req.params.screenId
+  });
+
   successResponse(res, "Screen updated successfully", httpStatus.OK, screen);
 });
 

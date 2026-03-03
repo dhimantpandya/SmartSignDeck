@@ -67,6 +67,24 @@ const updatePlaylist = catchAsync(async (req: Request, res: Response) => {
         req.body,
         user.companyId.toString()
     );
+
+    // Notify screens using this playlist
+    const Screen = (await import('../models/screen.model')).default;
+    const screens = await Screen.find({
+        $or: [
+            { "defaultContent": { $elemMatch: { playlistId: req.params.playlistId } } },
+            { "schedules.content": { $elemMatch: { playlistId: req.params.playlistId } } }
+        ]
+    });
+
+    const { emitToScreen } = await import('../services/socket.service');
+    screens.forEach((screen: any) => {
+        emitToScreen(screen._id.toString(), "content_update", {
+            reason: "playlist_updated",
+            playlistId: req.params.playlistId
+        });
+    });
+
     res.send(playlist);
 });
 

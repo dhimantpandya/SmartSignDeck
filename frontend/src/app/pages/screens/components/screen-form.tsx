@@ -331,18 +331,33 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
                                 mediaCache.current[currentItem.url] = video
                             }
                             if (video.readyState >= 2) {
-                                ctx.drawImage(video, scaledX, scaledY, scaledW, scaledH)
+                                // Draw Contain
+                                const hRatio = scaledW / video.videoWidth;
+                                const vRatio = scaledH / video.videoHeight;
+                                const ratio = Math.min(hRatio, vRatio);
+                                const centerShift_x = (scaledW - video.videoWidth * ratio) / 2;
+                                const centerShift_y = (scaledH - video.videoHeight * ratio) / 2;
+                                ctx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight,
+                                    scaledX + centerShift_x, scaledY + centerShift_y, video.videoWidth * ratio, video.videoHeight * ratio);
                                 drawPlaceholder = false
                             }
                         } else if (currentItem.type === 'image') {
                             let img = cachedMedia as HTMLImageElement
                             if (!img || img.tagName !== 'IMG') {
                                 img = new Image()
+                                img.crossOrigin = "anonymous"
                                 img.src = currentItem.url
                                 mediaCache.current[currentItem.url] = img
                             }
                             if (img.complete) {
-                                ctx.drawImage(img, scaledX, scaledY, scaledW, scaledH)
+                                // Draw Contain
+                                const hRatio = scaledW / img.width;
+                                const vRatio = scaledH / img.height;
+                                const ratio = Math.min(hRatio, vRatio);
+                                const centerShift_x = (scaledW - img.width * ratio) / 2;
+                                const centerShift_y = (scaledH - img.height * ratio) / 2;
+                                ctx.drawImage(img, 0, 0, img.width, img.height,
+                                    scaledX + centerShift_x, scaledY + centerShift_y, img.width * ratio, img.height * ratio);
                                 drawPlaceholder = false
                             }
                         }

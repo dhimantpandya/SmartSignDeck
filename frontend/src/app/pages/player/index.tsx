@@ -118,7 +118,9 @@ export default function ScreenPlayer() {
     useEffect(() => {
         if (!screenId) return
 
-        const socket = io(import.meta.env.VITE_APP_URL || 'http://localhost:5000')
+        // FIX: Use VITE_API_URL for socket connection, fallback to origin
+        const socketUrl = import.meta.env.VITE_API_URL || window.location.origin
+        const socket = io(socketUrl)
 
         socket.on('connect', () => {
             console.log('Connected to socket server')
@@ -347,7 +349,23 @@ export default function ScreenPlayer() {
             })
         })
 
-        // 3. Final Pass: Hide empty text zones so they don't render black boxes
+        // 3. NEW: If only ONE zone has content, make it fill the FULL screen
+        const nonTextZones = zones.filter(z => {
+            const zContent = content[z.id]
+            return zContent && (zContent.playlist?.length > 0 || zContent.src)
+        })
+
+        if (nonTextZones.length === 1) {
+            const soloZone = zones.find(z => z.id === nonTextZones[0].id)
+            if (soloZone) {
+                soloZone.x = 0
+                soloZone.y = 0
+                soloZone.width = targetWidth
+                soloZone.height = targetHeight
+            }
+        }
+
+        // 4. Final Pass: Hide empty text zones so they don't render black boxes
         return zones.filter((z: any) => !isEmptyTextZone(z))
     })()
 
@@ -604,9 +622,10 @@ function ZoneRenderer({ zone, content, screenId, templateId, secretKey }: { zone
                     autoPlay
                     muted
                     playsInline
+                    crossOrigin="anonymous"
                     preload="auto"
                     loop={playlist.length === 1}
-                    className='h-full w-full object-cover'
+                    className='h-full w-full object-contain'
                     style={{ backgroundColor: 'black' }}
                     onError={() => {
                         console.error('[Player] Video element onError triggered for:', item.url);
@@ -629,7 +648,8 @@ function ZoneRenderer({ zone, content, screenId, templateId, secretKey }: { zone
                 <img
                     src={item.url}
                     alt=""
-                    className='h-full w-full object-cover animate-in fade-in duration-500'
+                    crossOrigin="anonymous"
+                    className='h-full w-full object-contain animate-in fade-in duration-500'
                     style={{ backgroundColor: 'black' }}
                     onError={() => {
                         console.error('[Player] Image element onError triggered for:', item.url);
