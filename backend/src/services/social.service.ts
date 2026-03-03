@@ -24,15 +24,27 @@ const sendMessage = async (senderId: string, text: string, recipientId?: string,
     return message;
 };
 
+const maskMessage = (m: any) => {
+    const msg = m.toObject ? m.toObject() : m;
+    if (msg.isDeleted || msg.text === 'This message was deleted') {
+        msg.text = 'This message was deleted';
+    }
+    if (msg.replyTo && typeof msg.replyTo === 'object') {
+        if (msg.replyTo.isDeleted || msg.replyTo.text === 'This message was deleted') {
+            msg.replyTo.text = 'This message was deleted';
+        }
+    }
+    return msg;
+};
+
 /**
  * Get messages for a company
  */
 const getCompanyMessages = async (companyId: string, userId: string, joinedAfter?: Date) => {
     // 🔒 Only show messages sent after the user's join date (joinedAfter = user.createdAt)
-    // This prevents new invited users from seeing historical company chat
     const query: any = {
         companyId,
-        'deletedFor.userId': { $ne: userId } // Hide messages deleted by this user
+        'deletedFor.userId': { $ne: userId }
     };
     if (joinedAfter) {
         query.created_at = { $gte: joinedAfter };
@@ -45,26 +57,27 @@ const getCompanyMessages = async (companyId: string, userId: string, joinedAfter
         .populate("replyTo", "text senderId created_at isDeleted")
         .populate("deliveredBy.userId", "first_name last_name");
 
-    // Defensive check: filter out messages where senderId couldn't be populated (deleted users?)
-    return messages.filter(m => m.senderId);
+    return messages.map(maskMessage);
 };
 
 /**
  * Get private chat history
  */
 const getPrivateMessages = async (user1: string, user2: string) => {
-    return await Message.find({
+    const messages = await Message.find({
         $or: [
             { senderId: user1, recipientId: user2 },
             { senderId: user2, recipientId: user1 },
         ],
-        'deletedFor.userId': { $ne: user1 } // Hide messages deleted by the requesting user
+        'deletedFor.userId': { $ne: user1 }
     })
         .sort({ created_at: -1 })
         .limit(50)
         .populate("senderId", "first_name last_name avatar")
         .populate("replyTo", "text senderId created_at isDeleted")
         .populate("deliveredBy.userId", "first_name last_name");
+
+    return messages.map(maskMessage);
 };
 
 /**
@@ -126,7 +139,6 @@ const respondToFriendRequest = async (requestId: string, status: "accepted" | "r
         await sendMessage(request.fromId.toString(), "You are now connected with this user!", userId);
         await sendMessage(userId, "You are now connected with this user!", request.fromId.toString());
 
-        // Notify original sender
         // Notify original sender
         await notificationService.createNotification(
             request.fromId.toString(),

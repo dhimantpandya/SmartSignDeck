@@ -4,8 +4,9 @@ import { twMerge } from 'tailwind-merge'
 export function extractId(obj: any): string {
   if (!obj) return ''
   if (typeof obj === 'string') return obj.trim().toLowerCase()
-  const id = obj.id || obj._id || obj.userId || obj.friendId || obj.senderId || obj.recipientId
-  if (id) return id.toString().trim().toLowerCase()
+  // Check common ID fields including potentially Mongoose objects
+  const idValue = obj._id || obj.id || obj.userId || obj.friendId || obj.senderId || obj.recipientId || (obj.toString && typeof obj.toString === 'function' && obj.toString().length === 24 ? obj.toString() : null)
+  if (idValue) return idValue.toString().trim().toLowerCase()
   return ''
 }
 

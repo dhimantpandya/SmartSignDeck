@@ -279,23 +279,20 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
 
         const handleMessageSeen = (data: any) => {
             console.log('[SOCKET Provider] 👁️ message_seen event relaying:', data)
-            // This is just a relay for components like ChatSidebar
         }
 
         const handleMessageDelivered = (data: any) => {
             console.log('[SOCKET Provider] 📦 message_delivered event relaying:', data)
-            // Relay for ChatSidebar
         }
 
         const handleMessageDeleted = (data: any) => {
             console.log('[SOCKET Provider] 🗑️ message_deleted event relaying:', data)
-            // Relay for ChatSidebar
         }
 
         socket.on('new_notification', handleNotification)
         socket.on('new_chat', handleChat)
         socket.on('user_presence', handlePresence)
-        socket.on('online_users_update', handlePresence) // Also listen to sync event
+        socket.on('online_users_update', handlePresence)
         socket.on('user_status_change', handleStatusChange)
         socket.on('user_deleted', handleAccountDeleted)
         socket.on('message_seen', handleMessageSeen)
@@ -318,7 +315,6 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
     // Filter out chat messages from the bell notifications list
     const bellNotifications = notifications.filter(n => n.type !== 'new_chat')
 
-    // Actions
     const markAsRead = async (id: string) => {
         try {
             await apiService.patch(`/v1/notifications/${id}/read`, {})
@@ -351,7 +347,7 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
     const clearChatNotifications = async (type: 'company' | 'private', senderId?: string) => {
         // Optimistic update: Clear UI immediately
         if (type === 'company') {
-            setUnreadCompanyChatCount(0);
+            setUnreadCompanyChatCount(0)
         } else if (type === 'private') {
             if (senderId) {
                 setUnreadChatCounts(prev => {
@@ -382,7 +378,7 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
         } catch (err) {
             console.error('Failed to clear chat notifications', err)
         }
-    };
+    }
 
     return (
         <NotificationContext.Provider
