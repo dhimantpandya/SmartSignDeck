@@ -179,6 +179,17 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
 
             if (msgSenderId === myId) return
 
+            // 📦 EMIT DELIVERY ACKNOWLEDGMENT (Only for DMs)
+            if (data.type === 'private' || data.recipientId) {
+                if (data._id || data.id) {
+                    console.log('[SOCKET Provider] 📦 Emitting message_delivered for:', data._id || data.id)
+                    socket.emit('message_delivered', {
+                        messageId: data._id || data.id,
+                        userId: myId
+                    })
+                }
+            }
+
             if (data.type === 'company' || data.companyId) {
                 // Skip if actively viewing company board
                 if (activeChatInfo.type === 'company') {
@@ -231,7 +242,7 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
         }
 
         const handlePresence = (users: string[]) => {
-            console.log('[SOCKET Provider] 👥 Presence update:', users)
+            console.log('[SOCKET Provider] 👥 Presence update (all online):', users)
             setOnlineUsers(new Set(users))
         }
 
@@ -239,8 +250,11 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
             console.log('[SOCKET Provider] 👤 User status change:', data)
             setOnlineUsers(prev => {
                 const next = new Set(prev)
-                if (data.status === 'online') next.add(data.userId)
-                else next.delete(data.userId)
+                if (data.status === 'online') {
+                    next.add(data.userId)
+                } else {
+                    next.delete(data.userId)
+                }
                 return next
             })
             if (data.lastSeen) {
@@ -263,18 +277,34 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
             }, 3000);
         }
 
+        const handleMessageSeen = (data: any) => {
+            console.log('[SOCKET Provider] 👁️ message_seen event relaying:', data)
+            // This is just a relay for components like ChatSidebar
+        }
+
+        const handleMessageDelivered = (data: any) => {
+            console.log('[SOCKET Provider] 📦 message_delivered event relaying:', data)
+            // This is just a relay for components like ChatSidebar
+        }
+
         socket.on('new_notification', handleNotification)
         socket.on('new_chat', handleChat)
         socket.on('user_presence', handlePresence)
+        socket.on('online_users_update', handlePresence) // Also listen to sync event
         socket.on('user_status_change', handleStatusChange)
         socket.on('user_deleted', handleAccountDeleted)
+        socket.on('message_seen', handleMessageSeen)
+        socket.on('message_delivered', handleMessageDelivered)
 
         return () => {
             socket.off('new_notification', handleNotification)
             socket.off('new_chat', handleChat)
             socket.off('user_presence', handlePresence)
+            socket.off('online_users_update', handlePresence)
             socket.off('user_status_change', handleStatusChange)
             socket.off('user_deleted', handleAccountDeleted)
+            socket.off('message_seen', handleMessageSeen)
+            socket.off('message_delivered', handleMessageDelivered)
         }
     }, [socket, user, isChatOpen, activeChatInfo])
 

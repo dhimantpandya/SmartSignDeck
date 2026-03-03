@@ -44,6 +44,7 @@ export interface IMessage extends Document {
     text: string;
     replyTo?: mongoose.Schema.Types.ObjectId | IMessage; // Parent message for replies
     seenBy: { userId: mongoose.Schema.Types.ObjectId; seenAt: Date }[];
+    deliveredBy: { userId: mongoose.Schema.Types.ObjectId; deliveredAt: Date }[];
     deletedFor: { userId: mongoose.Schema.Types.ObjectId; scope: 'me' | 'everyone'; deletedAt: Date }[];
     created_at: Date;
     updated_at: Date;
@@ -79,6 +80,10 @@ const messageSchema = new Schema<IMessage>(
         seenBy: [{
             userId: { type: Schema.Types.ObjectId, ref: 'User' },
             seenAt: { type: Date, default: Date.now }
+        }],
+        deliveredBy: [{
+            userId: { type: Schema.Types.ObjectId, ref: 'User' },
+            deliveredAt: { type: Date, default: Date.now }
         }],
         deletedFor: [{
             userId: { type: Schema.Types.ObjectId, ref: 'User' },

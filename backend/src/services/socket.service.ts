@@ -74,6 +74,32 @@ const initSocket = (server: HttpServer | HttpsServer): Server => {
             (socket as any).userId = uid;
 
             socket.emit('room_joined', { room: `user_${uid}`, userId: uid });
+
+            // Sync current online status to the newly joined user
+            socket.emit('online_users_update', Array.from(onlineUsers.keys()));
+        });
+
+        // --- DELIVERY ACKNOWLEDGMENT ---
+        socket.on("message_delivered", async (data: { messageId: string, userId: string }) => {
+            const { messageId, userId } = data;
+            if (!messageId || !userId) return;
+
+            try {
+                const { Message } = await import("../models/social.model");
+                const msg = await Message.findById(messageId);
+                if (msg) {
+                    const alreadyDelivered = msg.deliveredBy.some((d: any) => d.userId?.toString() === userId);
+                    if (!alreadyDelivered) {
+                        msg.deliveredBy.push({ userId: new mongoose.Types.ObjectId(userId) as any, deliveredAt: new Date() });
+                        await msg.save();
+
+                        // Notify the sender
+                        io.to(`user_${msg.senderId.toString()}`).emit('message_delivered', { messageId, userId, deliveredAt: new Date() });
+                    }
+                }
+            } catch (err) {
+                logger.error(`[SOCKET] Error marking message ${messageId} as delivered:`, err);
+            }
         });
 
         // --- TEMPLATE COLLABORATION ---

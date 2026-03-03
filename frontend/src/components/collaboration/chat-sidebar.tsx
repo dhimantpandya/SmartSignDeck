@@ -79,6 +79,9 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
     }
 
     const formatLastSeen = (userId: string, initialLastSeen?: string) => {
+        // If user is currently online, don't show "Last seen"
+        if (onlineUsers.has(userId)) return 'Online'
+
         const dateStr = lastSeenMap[userId] || initialLastSeen
         if (!dateStr) return 'Offline'
         const d = new Date(dateStr)
@@ -167,11 +170,24 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
 
         const handleMessageSeen = (data: { messageId: string, seenBy: string, seenAt: string }) => {
             console.log('[ChatSidebar] 👁️ message_seen received:', data)
-            setPrivateMessages(prev => prev.map(m =>
+            const updater = (prev: any[]) => prev.map(m =>
                 (m._id === data.messageId || m.id === data.messageId)
                     ? { ...m, seenBy: [...(m.seenBy || []), { userId: data.seenBy, seenAt: data.seenAt }] }
                     : m
-            ))
+            )
+            setPrivateMessages(updater)
+            setBoardMessages(updater)
+        }
+
+        const handleMessageDelivered = (data: { messageId: string, userId: string, deliveredAt: string }) => {
+            console.log('[ChatSidebar] 📦 message_delivered received:', data)
+            const updater = (prev: any[]) => prev.map(m =>
+                (m._id === data.messageId || m.id === data.messageId)
+                    ? { ...m, deliveredBy: [...(m.deliveredBy || []), { userId: data.userId, deliveredAt: data.deliveredAt }] }
+                    : m
+            )
+            setPrivateMessages(updater)
+            setBoardMessages(updater)
         }
 
         const handleMessageDeleted = (data: { messageId: string, scope: 'me' | 'everyone' }) => {
@@ -193,6 +209,7 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
 
         socket.on('new_chat', handleNewChat)
         socket.on('message_seen', handleMessageSeen)
+        socket.on('message_delivered', handleMessageDelivered)
         socket.on('message_deleted', handleMessageDeleted)
         socket.on('friend_request_received', handleFriendRequestReceived)
         socket.on('friend_request_accepted', handleFriendRequestAccepted)
@@ -216,6 +233,7 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
         return () => {
             socket.off('new_chat', handleNewChat)
             socket.off('message_seen', handleMessageSeen)
+            socket.off('message_delivered', handleMessageDelivered)
             socket.off('message_deleted', handleMessageDeleted)
             socket.off('friend_request_received', handleFriendRequestReceived)
             socket.off('friend_request_accepted', handleFriendRequestAccepted)
@@ -716,6 +734,7 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
                                                             }
 
                                                             const isSeenByRecipient = msg.seenBy?.some((s: any) => !isSameId(s.userId, msg.senderId));
+                                                            const isDeliveredToRecipient = msg.deliveredBy?.some((d: any) => !isSameId(d.userId, msg.senderId));
                                                             const isDeleted = msg.text === 'This message was deleted' || msg.isDeleted;
 
                                                             return (
@@ -781,6 +800,8 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
                                                                                         <Clock size={8} className="text-muted-foreground/40 animate-pulse" />
                                                                                     ) : isSeenByRecipient ? (
                                                                                         <CheckCheck size={10} className="text-blue-500" />
+                                                                                    ) : isDeliveredToRecipient ? (
+                                                                                        <CheckCheck size={10} className="text-muted-foreground/60" />
                                                                                     ) : (
                                                                                         <Check size={10} className="text-muted-foreground/60" />
                                                                                     )}
