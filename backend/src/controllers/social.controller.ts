@@ -32,13 +32,14 @@ const sendMessage = catchAsync(async (req: Request, res: Response) => {
     // 1. Broadcast for real-time chat window synchronization
     broadcastChat({
         id: message._id,
+        _id: message._id,
         text,
         recipientId: cRecipientId,
         companyId: cCompanyId,
         senderId: cSenderId,
         senderName: `${user.first_name} ${user.last_name}`,
         avatar: user.avatar,
-        replyTo: message.replyTo,
+        replyTo: message.replyTo, // Now populated from socialService
         created_at: message.created_at
     });
 

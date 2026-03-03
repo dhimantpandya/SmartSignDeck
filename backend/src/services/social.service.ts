@@ -15,6 +15,12 @@ const sendMessage = async (senderId: string, text: string, recipientId?: string,
         companyId,
         replyTo
     });
+
+    // Populate replyTo for real-time context
+    if (replyTo) {
+        await message.populate("replyTo", "text senderId created_at isDeleted");
+    }
+
     return message;
 };
 
