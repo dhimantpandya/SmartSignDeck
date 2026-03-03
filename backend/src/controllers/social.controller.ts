@@ -32,7 +32,6 @@ const sendMessage = catchAsync(async (req: Request, res: Response) => {
     // 1. Broadcast for real-time chat window synchronization
     broadcastChat({
         id: message._id,
-        _id: message._id,
         text,
         recipientId: cRecipientId,
         companyId: cCompanyId,
