@@ -192,7 +192,7 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
             console.log('[ChatSidebar] 🗑️ message_deleted received:', data)
 
             // Update draft reply if active
-            setReplyTo(prev => {
+            setReplyTo((prev: any) => {
                 if (prev && isSameId(prev, data.messageId)) {
                     return { ...prev, text: 'This message was deleted', isDeleted: true }
                 }
