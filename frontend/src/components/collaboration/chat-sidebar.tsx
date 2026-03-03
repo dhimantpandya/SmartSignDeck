@@ -193,11 +193,11 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
             const deleter = (prev: any[]) => prev.map(m => {
                 let updated = m
                 // If this is the deleted message
-                if (m._id === data.messageId || m.id === data.messageId) {
+                if (isSameId(m._id, data.messageId) || isSameId(m.id, data.messageId)) {
                     updated = { ...m, text: 'This message was deleted', isDeleted: true }
                 }
                 // If another message replies to this deleted message
-                if (m.replyTo && ((m.replyTo as any)._id === data.messageId || (m.replyTo as any).id === data.messageId)) {
+                if (m.replyTo && (isSameId((m.replyTo as any)._id, data.messageId) || isSameId((m.replyTo as any).id, data.messageId))) {
                     updated = {
                         ...updated,
                         replyTo: { ...(m.replyTo as any), text: 'This message was deleted', isDeleted: true }

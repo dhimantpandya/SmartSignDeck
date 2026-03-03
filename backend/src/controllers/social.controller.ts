@@ -186,9 +186,8 @@ const deleteMessage = catchAsync(async (req: Request, res: Response) => {
     if (scope === 'everyone') {
         // Mark deleted for everyone
         msg.text = 'This message was deleted';
-        msg.isDeleted = true; // explicitly set a flag if your model has it, otherwise text is enough
-        if (!msg.deletedFor) msg.deletedFor = [];
-        msg.deletedFor.push({ userId: user._id, scope: 'everyone', deletedAt: new Date() } as any);
+        msg.isDeleted = true;
+        // Do NOT add to deletedFor if scope is everyone, so it's not hidden by service query
         await msg.save();
 
         // Broadcast deletion
