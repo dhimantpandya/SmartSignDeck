@@ -117,21 +117,19 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
             if (data.type === 'company' || data.companyId) {
                 console.log('[ChatSidebar] 🏢 Processing company message')
                 setBoardMessages((prev) => {
-                    setBoardMessages((prev) => {
-                        const isDup = prev.some(m =>
-                            (m._id === data._id || m.id === data.id) ||
-                            (m.text === data.text && isSameId(m.senderId, data.senderId) && m.isOptimistic)
-                        )
+                    const isDup = prev.some(m =>
+                        (m._id === data._id || m.id === data.id) ||
+                        (m.text === data.text && isSameId(m.senderId, data.senderId) && m.isOptimistic)
+                    )
 
-                        if (isDup) {
-                            console.log('[ChatSidebar] ⚠️ Duplicate found, merging/replacing')
-                            return prev.map(m => ((m.isOptimistic && m.text === data.text) || (m._id === data._id || m.id === data.id)) ? { ...data, isOptimistic: false } : m)
-                        }
+                    if (isDup) {
+                        console.log('[ChatSidebar] ⚠️ Duplicate found, merging/replacing')
+                        return prev.map(m => ((m.isOptimistic && m.text === data.text) || (m._id === data._id || m.id === data.id)) ? { ...data, isOptimistic: false } : m)
+                    }
 
-                        const newMsgs = [...prev, data]
-                        console.log('[ChatSidebar] ✅ Added message. New count:', newMsgs.length)
-                        return newMsgs
-                    })
+                    const newMsgs = [...prev, data]
+                    console.log('[ChatSidebar] ✅ Added message. New count:', newMsgs.length)
+                    return newMsgs
                 })
             }
             // 🛡️ Filter for private messages
