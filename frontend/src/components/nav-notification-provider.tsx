@@ -284,7 +284,12 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
 
         const handleMessageDelivered = (data: any) => {
             console.log('[SOCKET Provider] 📦 message_delivered event relaying:', data)
-            // This is just a relay for components like ChatSidebar
+            // Relay for ChatSidebar
+        }
+
+        const handleMessageDeleted = (data: any) => {
+            console.log('[SOCKET Provider] 🗑️ message_deleted event relaying:', data)
+            // Relay for ChatSidebar
         }
 
         socket.on('new_notification', handleNotification)
@@ -295,6 +300,7 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
         socket.on('user_deleted', handleAccountDeleted)
         socket.on('message_seen', handleMessageSeen)
         socket.on('message_delivered', handleMessageDelivered)
+        socket.on('message_deleted', handleMessageDeleted)
 
         return () => {
             socket.off('new_notification', handleNotification)
@@ -305,6 +311,7 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
             socket.off('user_deleted', handleAccountDeleted)
             socket.off('message_seen', handleMessageSeen)
             socket.off('message_delivered', handleMessageDelivered)
+            socket.off('message_deleted', handleMessageDeleted)
         }
     }, [socket, user, isChatOpen, activeChatInfo])
 

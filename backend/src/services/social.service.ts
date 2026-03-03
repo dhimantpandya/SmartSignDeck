@@ -36,7 +36,7 @@ const getCompanyMessages = async (companyId: string, userId: string, joinedAfter
         .sort({ created_at: -1 })
         .limit(50)
         .populate("senderId", "first_name last_name avatar")
-        .populate("replyTo", "text senderId created_at")
+        .populate("replyTo", "text senderId created_at isDeleted")
         .populate("deliveredBy.userId", "first_name last_name");
 
     // Defensive check: filter out messages where senderId couldn't be populated (deleted users?)
@@ -57,7 +57,7 @@ const getPrivateMessages = async (user1: string, user2: string) => {
         .sort({ created_at: -1 })
         .limit(50)
         .populate("senderId", "first_name last_name avatar")
-        .populate("replyTo", "text senderId created_at")
+        .populate("replyTo", "text senderId created_at isDeleted")
         .populate("deliveredBy.userId", "first_name last_name");
 };
 

@@ -190,11 +190,21 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
 
         const handleMessageDeleted = (data: { messageId: string, scope: 'me' | 'everyone' }) => {
             console.log('[ChatSidebar] 🗑️ message_deleted received:', data)
-            const deleter = (prev: any[]) => prev.map(m =>
-                (m._id === data.messageId || m.id === data.messageId)
-                    ? { ...m, text: 'This message was deleted', isDeleted: true }
-                    : m
-            )
+            const deleter = (prev: any[]) => prev.map(m => {
+                let updated = m
+                // If this is the deleted message
+                if (m._id === data.messageId || m.id === data.messageId) {
+                    updated = { ...m, text: 'This message was deleted', isDeleted: true }
+                }
+                // If another message replies to this deleted message
+                if (m.replyTo && ((m.replyTo as any)._id === data.messageId || (m.replyTo as any).id === data.messageId)) {
+                    updated = {
+                        ...updated,
+                        replyTo: { ...(m.replyTo as any), text: 'This message was deleted', isDeleted: true }
+                    }
+                }
+                return updated
+            })
             setBoardMessages(deleter)
             setPrivateMessages(deleter)
         }
@@ -262,6 +272,18 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
                 return [...history, ...realTimeOnly]
             })
         } catch (err) {
+        }
+    }
+
+    const scrollToMessage = (messageId: string) => {
+        if (!messageId) return
+        const element = document.getElementById(`msg-${messageId}`)
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+            element.classList.add('ring-2', 'ring-primary', 'ring-offset-2', 'transition-all', 'duration-500')
+            setTimeout(() => {
+                element.classList.remove('ring-2', 'ring-primary', 'ring-offset-2')
+            }, 2000)
         }
     }
 
@@ -546,7 +568,7 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
                                                     const isDeleted = msg.text === 'This message was deleted' || msg.isDeleted;
 
                                                     return (
-                                                        <div key={msg._id || i} className={cn("flex gap-3", isOwnMessage ? "flex-row-reverse" : "flex-row")}>
+                                                        <div key={msg._id || i} id={`msg-${msg._id || msg.id}`} className={cn("flex gap-3", isOwnMessage ? "flex-row-reverse" : "flex-row")}>
                                                             <Avatar className="h-7 w-7 flex-shrink-0 border shadow-sm">
                                                                 <AvatarImage src={senderAvatar} />
                                                                 <AvatarFallback className="text-[10px] font-bold bg-primary/10 text-primary">{senderInitials}</AvatarFallback>
@@ -560,8 +582,14 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
                                                                 )}
 
                                                                 {msg.replyTo && (
-                                                                    <div className="mb-1 bg-muted/30 p-1.5 rounded-lg border-l-2 border-primary text-[10px] text-muted-foreground truncate w-full">
-                                                                        {msg.replyTo.text}
+                                                                    <div
+                                                                        onClick={() => scrollToMessage((msg.replyTo as any)._id || (msg.replyTo as any).id)}
+                                                                        className="mb-1 bg-muted/40 p-2 rounded-lg border-l-4 border-primary/50 text-[10px] text-muted-foreground truncate w-full cursor-pointer hover:bg-muted/60 transition-colors flex flex-col gap-0.5"
+                                                                    >
+                                                                        <span className="font-bold text-[8px] uppercase opacity-50">Replying to</span>
+                                                                        <span className={cn((msg.replyTo as any).isDeleted && "italic opacity-60")}>
+                                                                            {(msg.replyTo as any).isDeleted ? 'Deleted message' : (msg.replyTo as any).text}
+                                                                        </span>
                                                                     </div>
                                                                 )}
 
@@ -746,7 +774,7 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
                                                             const isDeleted = msg.text === 'This message was deleted' || msg.isDeleted;
 
                                                             return (
-                                                                <div key={msg._id || i} className={cn("flex gap-2 group relative", isOwnMessage ? "flex-row-reverse" : "flex-row")}>
+                                                                <div key={msg._id || i} id={`msg-${msg._id || msg.id}`} className={cn("flex gap-2 group relative", isOwnMessage ? "flex-row-reverse" : "flex-row")}>
                                                                     <Avatar className="h-7 w-7 flex-shrink-0 border shadow-sm">
                                                                         <AvatarImage src={senderAvatar} />
                                                                         <AvatarFallback className="text-[10px] font-bold bg-primary/10 text-primary">{senderInitials}</AvatarFallback>
@@ -754,8 +782,14 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
 
                                                                     <div className={cn("flex flex-col max-w-[75%]", isOwnMessage ? "items-end" : "items-start")}>
                                                                         {msg.replyTo && (
-                                                                            <div className="mb-1 bg-muted/30 p-1.5 rounded-lg border-l-2 border-primary text-[10px] text-muted-foreground truncate w-full">
-                                                                                {msg.replyTo.text}
+                                                                            <div
+                                                                                onClick={() => scrollToMessage((msg.replyTo as any)._id || (msg.replyTo as any).id)}
+                                                                                className="mb-1 bg-muted/40 p-2 rounded-lg border-l-4 border-primary/50 text-[10px] text-muted-foreground truncate w-full cursor-pointer hover:bg-muted/60 transition-colors flex flex-col gap-0.5"
+                                                                            >
+                                                                                <span className="font-bold text-[8px] uppercase opacity-50">Replying to</span>
+                                                                                <span className={cn((msg.replyTo as any).isDeleted && "italic opacity-60")}>
+                                                                                    {(msg.replyTo as any).isDeleted ? 'Deleted message' : (msg.replyTo as any).text}
+                                                                                </span>
                                                                             </div>
                                                                         )}
 

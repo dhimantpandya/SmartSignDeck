@@ -184,13 +184,6 @@ const deleteMessage = catchAsync(async (req: Request, res: Response) => {
     }
 
     if (scope === 'everyone') {
-        // For DMs: only allow if no one else has seen it
-        if (msg.recipientId) {
-            const seenByOthers = msg.seenBy.some((s: any) => s.userId?.toString() !== user._id.toString());
-            if (seenByOthers) {
-                return successResponse(res, "Cannot delete — already seen", httpStatus.FORBIDDEN, {});
-            }
-        }
         // Mark deleted for everyone
         msg.text = 'This message was deleted';
         msg.isDeleted = true; // explicitly set a flag if your model has it, otherwise text is enough
