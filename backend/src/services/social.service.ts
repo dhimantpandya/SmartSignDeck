@@ -7,12 +7,13 @@ import notificationService from "./notification.service";
 /**
  * Send a message
  */
-const sendMessage = async (senderId: string, text: string, recipientId?: string, companyId?: string) => {
+const sendMessage = async (senderId: string, text: string, recipientId?: string, companyId?: string, replyTo?: string) => {
     const message = await Message.create({
         senderId,
         text,
         recipientId,
         companyId,
+        replyTo
     });
     return message;
 };
@@ -20,10 +21,13 @@ const sendMessage = async (senderId: string, text: string, recipientId?: string,
 /**
  * Get messages for a company
  */
-const getCompanyMessages = async (companyId: string, joinedAfter?: Date) => {
+const getCompanyMessages = async (companyId: string, userId: string, joinedAfter?: Date) => {
     // 🔒 Only show messages sent after the user's join date (joinedAfter = user.createdAt)
     // This prevents new invited users from seeing historical company chat
-    const query: any = { companyId };
+    const query: any = {
+        companyId,
+        'deletedFor.userId': { $ne: userId } // Hide messages deleted by this user
+    };
     if (joinedAfter) {
         query.created_at = { $gte: joinedAfter };
     }
@@ -31,7 +35,8 @@ const getCompanyMessages = async (companyId: string, joinedAfter?: Date) => {
     const messages = await Message.find(query)
         .sort({ created_at: -1 })
         .limit(50)
-        .populate("senderId", "first_name last_name avatar");
+        .populate("senderId", "first_name last_name avatar")
+        .populate("replyTo", "text senderId created_at");
 
     // Defensive check: filter out messages where senderId couldn't be populated (deleted users?)
     return messages.filter(m => m.senderId);
@@ -46,10 +51,12 @@ const getPrivateMessages = async (user1: string, user2: string) => {
             { senderId: user1, recipientId: user2 },
             { senderId: user2, recipientId: user1 },
         ],
+        'deletedFor.userId': { $ne: user1 } // Hide messages deleted by the requesting user
     })
         .sort({ created_at: -1 })
         .limit(50)
-        .populate("senderId", "first_name last_name avatar");
+        .populate("senderId", "first_name last_name avatar")
+        .populate("replyTo", "text senderId created_at");
 };
 
 /**
@@ -143,7 +150,7 @@ const getFriends = async (userId: string) => {
     const connections = await FriendRequest.find({
         status: "accepted",
         $or: [{ fromId: userId }, { toId: userId }]
-    }).populate("fromId toId", "first_name last_name avatar email");
+    }).populate("fromId toId", "first_name last_name avatar email lastSeen");
 
     return connections.map(c => {
         try {
@@ -167,6 +174,7 @@ const getFriends = async (userId: string) => {
                 last_name: other.last_name || '',
                 avatar: other.avatar,
                 email: other.email,
+                lastSeen: other.lastSeen,
                 companyName: other.companyName || null
             };
         } catch (err) {

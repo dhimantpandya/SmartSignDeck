@@ -210,8 +210,8 @@ class ApiService {
     return this.request<T>(endpoint, 'PATCH', body, config.params, config.headers)
   }
 
-  delete<T>(endpoint: string, config: { params?: Record<string, unknown>, headers?: Record<string, string> } = {}): Promise<T> {
-    return this.request<T>(endpoint, 'DELETE', undefined, config.params, config.headers)
+  delete<T>(endpoint: string, body: RequestBody = undefined, config: { params?: Record<string, unknown>, headers?: Record<string, string> } = {}): Promise<T> {
+    return this.request<T>(endpoint, 'DELETE', body, config.params, config.headers)
   }
 
   async download(endpoint: string, params: Record<string, unknown> = {}): Promise<Blob> {

@@ -8,6 +8,8 @@ const router = express.Router();
 router.post("/message", auth(), socialController.sendMessage);
 router.get("/board", auth(), socialController.getCompanyBoard);
 router.get("/chat/:recipientId", auth(), socialController.getChatHistory);
+router.post("/message/:messageId/seen", auth(), socialController.markAsSeen);
+router.delete("/message/:messageId", auth(), socialController.deleteMessage);
 
 // Friends
 router.get("/friends", auth(), socialController.getFriends);

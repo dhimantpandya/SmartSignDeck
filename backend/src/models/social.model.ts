@@ -42,6 +42,9 @@ export interface IMessage extends Document {
     recipientId?: mongoose.Schema.Types.ObjectId; // For DM
     companyId?: mongoose.Schema.Types.ObjectId;   // For Company Wall
     text: string;
+    replyTo?: mongoose.Schema.Types.ObjectId | IMessage; // Parent message for replies
+    seenBy: { userId: mongoose.Schema.Types.ObjectId; seenAt: Date }[];
+    deletedFor: { userId: mongoose.Schema.Types.ObjectId; scope: 'me' | 'everyone'; deletedAt: Date }[];
     created_at: Date;
     updated_at: Date;
 }
@@ -68,6 +71,20 @@ const messageSchema = new Schema<IMessage>(
             required: true,
             trim: true,
         },
+        replyTo: {
+            type: Schema.Types.ObjectId,
+            ref: "Message",
+            index: true,
+        },
+        seenBy: [{
+            userId: { type: Schema.Types.ObjectId, ref: 'User' },
+            seenAt: { type: Date, default: Date.now }
+        }],
+        deletedFor: [{
+            userId: { type: Schema.Types.ObjectId, ref: 'User' },
+            scope: { type: String, enum: ['me', 'everyone'], default: 'me' },
+            deletedAt: { type: Date, default: Date.now }
+        }],
     },
     { timestamps: { createdAt: "created_at", updatedAt: "updated_at" } },
 );

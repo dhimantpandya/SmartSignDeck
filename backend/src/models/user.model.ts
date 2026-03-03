@@ -26,6 +26,7 @@ export interface IUser extends Document {
   language?: string;
   is_email_verified: boolean;
   onboardingCompleted: boolean;
+  lastSeen?: Date;
   isPasswordMatch: (password: string) => Promise<boolean>;
 }
 
@@ -99,6 +100,7 @@ const userSchema = new Schema<IUser, IUserModel>(
     language: { type: String, enum: ["english", "french", "germen"] },
     is_email_verified: { type: Boolean, default: false },
     onboardingCompleted: { type: Boolean, default: false },
+    lastSeen: { type: Date },
   },
   { timestamps: { createdAt: "created_at", updatedAt: "updated_at" } },
 );

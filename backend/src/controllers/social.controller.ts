@@ -6,14 +6,15 @@ import successResponse from "../helpers/responses/successResponse";
 import User from "../models/user.model";
 
 const sendMessage = catchAsync(async (req: Request, res: Response) => {
-    const { text, recipientId, companyId } = req.body;
+    const { text, recipientId, companyId, replyTo } = req.body;
     const user: any = req.user;
 
     const message: any = await socialService.sendMessage(
         user._id,
         text,
         recipientId,
-        companyId
+        companyId,
+        replyTo
     );
 
     // Dynamic import to avoid circular dependency
@@ -35,6 +36,7 @@ const sendMessage = catchAsync(async (req: Request, res: Response) => {
         senderId: cSenderId,
         senderName: `${user.first_name} ${user.last_name}`,
         avatar: user.avatar,
+        replyTo: message.replyTo, // Include parent message info if populated
         created_at: message.created_at
     });
 
@@ -56,6 +58,7 @@ const sendMessage = catchAsync(async (req: Request, res: Response) => {
                     senderId: cSenderId,
                     senderName: `${user.first_name} ${user.last_name}`,
                     avatar: user.avatar,
+                    replyTo: message.replyTo,
                     created_at: message.created_at,
                     type: 'company' // Explicitly set type
                 });
@@ -86,7 +89,7 @@ const getCompanyBoard = catchAsync(async (req: Request, res: Response) => {
     // 🔒 Pass user's created_at as the join-date cutoff so new users don't see
     // historical messages from before they joined the company
     const joinedAfter = (user.createdAt || user.created_at) ? new Date(user.createdAt || user.created_at) : undefined;
-    const messages = await socialService.getCompanyMessages(user.companyId.toString(), joinedAfter);
+    const messages = await socialService.getCompanyMessages(user.companyId.toString(), user._id.toString(), joinedAfter);
     successResponse(res, "Retrieved company board", httpStatus.OK, messages);
 });
 
@@ -130,10 +133,73 @@ const getSentRequests = catchAsync(async (req: Request, res: Response) => {
     successResponse(res, "Retrieved sent requests", httpStatus.OK, requests);
 });
 
+const markAsSeen = catchAsync(async (req: Request, res: Response) => {
+    const user: any = req.user;
+    const { messageId } = req.params;
+    const { Message } = await import("../models/social.model");
+    const { emitToUser } = await import("../services/socket.service");
+
+    const msg = await Message.findById(messageId);
+    if (!msg) return successResponse(res, "Message not found", httpStatus.NOT_FOUND, {});
+
+    const userId = user._id.toString();
+    const alreadySeen = msg.seenBy.some((s: any) => s.userId?.toString() === userId);
+    if (!alreadySeen) {
+        msg.seenBy.push({ userId: user._id, seenAt: new Date() as any });
+        await msg.save();
+        // Notify sender their message was seen
+        emitToUser(msg.senderId.toString(), 'message_seen', { messageId, seenBy: userId, seenAt: new Date() });
+    }
+    successResponse(res, "Marked as seen", httpStatus.OK, { messageId });
+});
+
+const deleteMessage = catchAsync(async (req: Request, res: Response) => {
+    const user: any = req.user;
+    const { messageId } = req.params;
+    const { scope } = req.body; // 'me' | 'everyone'
+    const { Message } = await import("../models/social.model");
+
+    const msg = await Message.findById(messageId);
+    if (!msg) return successResponse(res, "Message not found", httpStatus.NOT_FOUND, {});
+
+    // Only the sender can delete
+    if (msg.senderId.toString() !== user._id.toString()) {
+        return successResponse(res, "Unauthorized", httpStatus.FORBIDDEN, {});
+    }
+
+    if (scope === 'everyone') {
+        // For DMs: only allow if no one else has seen it
+        if (msg.recipientId) {
+            const seenByOthers = msg.seenBy.some((s: any) => s.userId?.toString() !== user._id.toString());
+            if (seenByOthers) {
+                return successResponse(res, "Cannot delete — already seen", httpStatus.FORBIDDEN, {});
+            }
+        }
+        // Mark deleted for everyone
+        msg.text = 'This message was deleted';
+        msg.deletedFor.push({ userId: user._id, scope: 'everyone', deletedAt: new Date() } as any);
+        await msg.save();
+
+        // Broadcast deletion to recipient / company
+        const { emitToUser: emitUser, emitToCompany } = await import("../services/socket.service");
+        const payload = { messageId, scope: 'everyone' };
+        if (msg.recipientId) emitUser(msg.recipientId.toString(), 'message_deleted', payload);
+        if (msg.companyId) emitToCompany(msg.companyId.toString(), 'message_deleted', payload);
+        emitUser(user._id.toString(), 'message_deleted', payload);
+    } else {
+        // Delete for me only
+        msg.deletedFor.push({ userId: user._id, scope: 'me', deletedAt: new Date() } as any);
+        await msg.save();
+    }
+    successResponse(res, "Message deleted", httpStatus.OK, { messageId, scope });
+});
+
 export default {
     sendMessage,
     getCompanyBoard,
     getChatHistory,
+    markAsSeen,
+    deleteMessage,
     sendFriendRequest,
     respondToFriendRequest,
     getFriends,

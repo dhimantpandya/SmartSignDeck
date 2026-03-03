@@ -102,8 +102,13 @@ const initSocket = (server: HttpServer | HttpsServer): Server => {
 
                 if (userSockets?.size === 0) {
                     onlineUsers.delete(uid);
-                    // Notify everyone this user is now offline
-                    io.emit('user_status_change', { userId: uid, status: 'offline' });
+                    // Notify everyone this user is now offline with lastSeen timestamp
+                    const lastSeenAt = new Date();
+                    io.emit('user_status_change', { userId: uid, status: 'offline', lastSeen: lastSeenAt });
+                    // Persist lastSeen to DB
+                    import("../models/user.model").then(({ default: User }) => {
+                        User.findByIdAndUpdate(uid, { lastSeen: lastSeenAt }).catch(() => { });
+                    });
                 }
             }
         });
@@ -150,6 +155,7 @@ const broadcastChat = (data: {
     senderName: string;
     senderId: any;
     avatar?: string;
+    replyTo?: any;
     created_at?: Date;
 }) => {
     if (!io) {

@@ -9,8 +9,21 @@ import {
     Search,
     ChevronLeft,
     MessageSquare,
-    CheckCheck
+    CheckCheck,
+    Check,
+    Clock,
+    MoreVertical,
+    Reply,
+    Copy,
+    Trash2
 } from 'lucide-react'
+import { format, isToday, isYesterday } from 'date-fns'
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import {
     Tooltip,
     TooltipContent,
@@ -42,7 +55,8 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
         suppressChatSection,
         socket,
         setActiveChat,
-        onlineUsers
+        onlineUsers,
+        lastSeenMap
     } = useNotifications()
     const { toast } = useToast()
 
@@ -56,6 +70,23 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
 
     const scrollRef = useRef<HTMLDivElement>(null)
     const selectedFriendRef = useRef<any>(null)
+    const [replyTo, setReplyTo] = useState<any>(null)
+
+    const formatChatDate = (date: string | Date) => {
+        const d = new Date(date)
+        if (isToday(d)) return 'Today'
+        if (isYesterday(d)) return 'Yesterday'
+        return format(d, 'MMMM d, yyyy')
+    }
+
+    const formatLastSeen = (userId: string, initialLastSeen?: string) => {
+        const dateStr = lastSeenMap[userId] || initialLastSeen
+        if (!dateStr) return 'Offline'
+        const d = new Date(dateStr)
+        if (isToday(d)) return `Last seen ${format(d, 'h:mm a')}`
+        if (isYesterday(d)) return `Last seen yesterday at ${format(d, 'h:mm a')}`
+        return `Last seen ${format(d, 'MMM d, h:mm a')}`
+    }
 
     // Sync ref with state
     useEffect(() => {
@@ -135,6 +166,26 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
             }
         }
 
+        const handleMessageSeen = (data: { messageId: string, seenBy: string, seenAt: string }) => {
+            console.log('[ChatSidebar] 👁️ message_seen received:', data)
+            setPrivateMessages(prev => prev.map(m =>
+                (m._id === data.messageId || m.id === data.messageId)
+                    ? { ...m, seenBy: [...(m.seenBy || []), { userId: data.seenBy, seenAt: data.seenAt }] }
+                    : m
+            ))
+        }
+
+        const handleMessageDeleted = (data: { messageId: string, scope: 'me' | 'everyone' }) => {
+            console.log('[ChatSidebar] 🗑️ message_deleted received:', data)
+            const deleter = (prev: any[]) => prev.map(m =>
+                (m._id === data.messageId || m.id === data.messageId)
+                    ? { ...m, text: 'This message was deleted', isDeleted: true }
+                    : m
+            )
+            setBoardMessages(deleter)
+            setPrivateMessages(deleter)
+        }
+
         const handleFriendRequestReceived = () => loadRequests()
         const handleFriendRequestAccepted = () => {
             loadRequests()
@@ -142,6 +193,8 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
         }
 
         socket.on('new_chat', handleNewChat)
+        socket.on('message_seen', handleMessageSeen)
+        socket.on('message_deleted', handleMessageDeleted)
         socket.on('friend_request_received', handleFriendRequestReceived)
         socket.on('friend_request_accepted', handleFriendRequestAccepted)
 
@@ -163,6 +216,8 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
 
         return () => {
             socket.off('new_chat', handleNewChat)
+            socket.off('message_seen', handleMessageSeen)
+            socket.off('message_deleted', handleMessageDeleted)
             socket.off('friend_request_received', handleFriendRequestReceived)
             socket.off('friend_request_accepted', handleFriendRequestAccepted)
             socket.off('room_joined', handleRoomJoined)
@@ -192,8 +247,50 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
                 return [...history, ...realTimeOnly]
             })
         } catch (err) {
-            console.error('Failed to load board data', err)
         }
+    }
+
+    const markAsSeen = async (msg: any) => {
+        if (!user || isSameId(msg.senderId, user)) return
+        const isAlreadySeen = msg.seenBy?.some((s: any) => isSameId(s.userId, user))
+        if (isAlreadySeen) return
+
+        try {
+            await socialService.markAsSeen(msg._id || msg.id)
+            setPrivateMessages(prev => prev.map(m =>
+                (m._id === msg._id || m.id === msg.id)
+                    ? { ...m, seenBy: [...(m.seenBy || []), { userId: user._id, seenAt: new Date().toISOString() }] }
+                    : m
+            ))
+        } catch (err) {
+            console.error('Failed to mark as seen', err)
+        }
+    }
+
+    const handleDeleteMessage = async (messageId: string, scope: 'me' | 'everyone') => {
+        try {
+            await socialService.deleteMessage(messageId, scope)
+            const updater = (prev: any[]) => prev.map(m =>
+                (m._id === messageId || m.id === messageId)
+                    ? (scope === 'everyone' ? { ...m, text: 'This message was deleted', isDeleted: true } : null)
+                    : m
+            ).filter(Boolean)
+
+            setBoardMessages(updater)
+            setPrivateMessages(updater)
+            toast({ title: "Message deleted" })
+        } catch (err: any) {
+            toast({
+                title: "Error",
+                description: err.message || "Failed to delete message",
+                variant: "destructive"
+            })
+        }
+    }
+
+    const handleCopyMessage = (text: string) => {
+        navigator.clipboard.writeText(text)
+        toast({ title: "Copied to clipboard" })
     }
 
     const fetchChatHistory = async (friendId: string) => {
@@ -302,6 +399,7 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
                 senderId: user.id,
                 senderName: `${user.first_name} ${user.last_name}`,
                 avatar: user.avatar,
+                replyTo: replyTo ? { text: replyTo.text } : undefined,
                 created_at: new Date().toISOString(),
                 isOptimistic: true // Mark for tracing
             }
@@ -313,7 +411,13 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
             }
 
             // API Call
-            await socialService.sendMessage({ text, recipientId, companyId })
+            const res = await socialService.sendMessage({
+                text,
+                recipientId,
+                companyId,
+                replyTo: replyTo?._id || replyTo?.id
+            })
+            if (replyTo) setReplyTo(null)
         } catch (error) {
             console.error('[ChatSidebar] Failed to send message:', error)
             toast({
@@ -385,48 +489,99 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
                                             <p className="text-sm">No board messages yet.</p>
                                         </div>
                                     )}
-                                    {boardMessages.map((msg, i) => {
-                                        const isOwnMessage = isSameId(msg.senderId, user);
+                                    {(() => {
+                                        const groups: Record<string, any[]> = {}
+                                        boardMessages.forEach(m => {
+                                            const d = formatChatDate(m.created_at)
+                                            if (!groups[d]) groups[d] = []
+                                            groups[d].push(m)
+                                        })
 
-                                        const senderName = msg.senderName ||
-                                            (msg.senderId?.first_name ? `${msg.senderId.first_name} ${msg.senderId.last_name}` : 'Unknown');
-                                        const messageDate = msg.created_at;
-
-                                        const senderAvatar = msg.senderId?.avatar || msg.avatar || null;
-                                        const senderInitials = senderName.split(' ').map((n: string) => n[0]).join('').toUpperCase();
-
-                                        return (
-                                            <div key={i} className={cn("flex gap-3", isOwnMessage ? "flex-row-reverse" : "flex-row")}>
-                                                <Avatar className="h-7 w-7 flex-shrink-0 border shadow-sm">
-                                                    <AvatarImage src={senderAvatar} />
-                                                    <AvatarFallback className="text-[10px] font-bold bg-primary/10 text-primary">{senderInitials}</AvatarFallback>
-                                                </Avatar>
-
-                                                <div className={cn("flex flex-col", isOwnMessage ? "items-end" : "items-start")}>
-                                                    {!isOwnMessage && (
-                                                        <span className="text-[8px] font-bold text-muted-foreground mb-1 ml-1">
-                                                            {senderName}
-                                                        </span>
-                                                    )}
-                                                    <div className={cn(
-                                                        "rounded-2xl px-3 py-2 text-xs shadow-sm max-w-[90%]",
-                                                        isOwnMessage
-                                                            ? "bg-primary text-primary-foreground rounded-tr-none"
-                                                            : "bg-background border border-primary/5 text-foreground rounded-tl-none"
-                                                    )}>
-                                                        {msg.text}
-                                                    </div>
-                                                    <span className="text-[7px] text-muted-foreground/60 mt-1 px-1">
-                                                        {messageDate ? new Date(messageDate).toLocaleTimeString('en-IN', {
-                                                            hour: '2-digit',
-                                                            minute: '2-digit',
-                                                            hour12: true
-                                                        }) : 'Now'}
+                                        return Object.entries(groups).map(([date, msgs]) => (
+                                            <div key={date} className="space-y-4">
+                                                <div className="flex justify-center my-4">
+                                                    <span className="text-[10px] font-medium bg-muted/50 px-2 py-1 rounded-full text-muted-foreground uppercase tracking-wider border border-primary/5">
+                                                        {date}
                                                     </span>
                                                 </div>
+                                                {msgs.map((msg, i) => {
+                                                    const isOwnMessage = isSameId(msg.senderId, user);
+                                                    const senderName = msg.senderName ||
+                                                        (msg.senderId?.first_name ? `${msg.senderId.first_name} ${msg.senderId.last_name}` : 'Unknown');
+                                                    const messageDate = msg.created_at;
+
+                                                    const senderAvatar = msg.senderId?.avatar || msg.avatar || null;
+                                                    const senderInitials = senderName.split(' ').map((n: string) => n[0]).join('').toUpperCase();
+
+                                                    // Mark unread messages as seen
+                                                    if (!isOwnMessage && isOpen && activeTab === 'company') {
+                                                        markAsSeen(msg)
+                                                    }
+
+                                                    const isDeleted = msg.text === 'This message was deleted' || msg.isDeleted;
+
+                                                    return (
+                                                        <div key={msg._id || i} className={cn("flex gap-3", isOwnMessage ? "flex-row-reverse" : "flex-row")}>
+                                                            <Avatar className="h-7 w-7 flex-shrink-0 border shadow-sm">
+                                                                <AvatarImage src={senderAvatar} />
+                                                                <AvatarFallback className="text-[10px] font-bold bg-primary/10 text-primary">{senderInitials}</AvatarFallback>
+                                                            </Avatar>
+
+                                                            <div className={cn("flex flex-col max-w-[75%]", isOwnMessage ? "items-end" : "items-start")}>
+                                                                {!isOwnMessage && (
+                                                                    <span className="text-[8px] font-bold text-muted-foreground mb-1 ml-1">
+                                                                        {senderName}
+                                                                    </span>
+                                                                )}
+
+                                                                {msg.replyTo && (
+                                                                    <div className="mb-1 bg-muted/30 p-1.5 rounded-lg border-l-2 border-primary text-[10px] text-muted-foreground truncate w-full">
+                                                                        {msg.replyTo.text}
+                                                                    </div>
+                                                                )}
+
+                                                                <DropdownMenu>
+                                                                    <DropdownMenuTrigger asChild>
+                                                                        <div className={cn(
+                                                                            "rounded-2xl px-3 py-2 text-xs shadow-sm cursor-pointer transition-all relative overflow-hidden",
+                                                                            isOwnMessage
+                                                                                ? "bg-primary text-primary-foreground rounded-tr-none"
+                                                                                : "bg-background border border-primary/5 text-foreground rounded-tl-none",
+                                                                            isDeleted && "italic opacity-60 bg-muted/30 text-muted-foreground"
+                                                                        )}>
+                                                                            {msg.text}
+                                                                        </div>
+                                                                    </DropdownMenuTrigger>
+                                                                    {!isDeleted && (
+                                                                        <DropdownMenuContent align={isOwnMessage ? 'end' : 'start'} className="w-40">
+                                                                            <DropdownMenuItem className="text-xs cursor-pointer gap-2" onClick={() => {
+                                                                                setReplyTo(msg);
+                                                                                setTimeout(() => document.getElementById('chat-input')?.focus(), 100);
+                                                                            }}>
+                                                                                <Reply size={14} /> Reply
+                                                                            </DropdownMenuItem>
+                                                                            <DropdownMenuItem className="text-xs cursor-pointer gap-2" onClick={() => handleCopyMessage(msg.text)}>
+                                                                                <Copy size={14} /> Copy
+                                                                            </DropdownMenuItem>
+                                                                            {isOwnMessage && (
+                                                                                <DropdownMenuItem className="text-xs cursor-pointer gap-2 text-destructive" onClick={() => handleDeleteMessage(msg._id || msg.id, 'everyone')}>
+                                                                                    <Trash2 size={14} /> Delete for Everyone
+                                                                                </DropdownMenuItem>
+                                                                            )}
+                                                                        </DropdownMenuContent>
+                                                                    )}
+                                                                </DropdownMenu>
+
+                                                                <span className="text-[7px] text-muted-foreground/60 mt-1 px-1">
+                                                                    {messageDate ? format(new Date(messageDate), 'h:mm a') : 'Now'}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    )
+                                                })}
                                             </div>
-                                        )
-                                    })}
+                                        ))
+                                    })()}
                                     <div ref={scrollRef} />
                                 </div>
                             </div>
@@ -520,53 +675,126 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
                                                 </span>
                                             ) : (
                                                 <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                                                    <span className="h-1.5 w-1.5 bg-muted-foreground/30 rounded-full" /> Offline
+                                                    <span className="h-1.5 w-1.5 bg-muted-foreground/30 rounded-full" />
+                                                    {formatLastSeen(extractId(selectedFriend), selectedFriend.lastSeen)}
                                                 </span>
                                             )}
                                         </div>
                                     </div>
                                     {/* Private Messages */}
                                     <div className="flex-1 overflow-y-auto px-3 py-1 flex flex-col custom-scrollbar min-h-0">
-                                        <div className="space-y-2">
+                                        <div className="space-y-4 py-2">
                                             {privateMessages.length === 0 && (
                                                 <div className="flex flex-col items-center justify-center h-full text-muted-foreground opacity-50">
                                                     <MessageSquare size={48} className="mb-2" />
                                                     <p className="text-sm">No private messages yet.</p>
                                                 </div>
                                             )}
-                                            {privateMessages.map((msg, i) => {
-                                                const isOwnMessage = isSameId(msg.senderId, user);
-                                                const messageDate = msg.timestamp || msg.created_at;
+                                            {(() => {
+                                                const groups: Record<string, any[]> = {}
+                                                privateMessages.forEach(m => {
+                                                    const d = formatChatDate(m.created_at)
+                                                    if (!groups[d]) groups[d] = []
+                                                    groups[d].push(m)
+                                                })
 
-                                                const senderAvatar = isOwnMessage ? user.avatar : (msg.senderId?.avatar || msg.avatar || selectedFriend.avatar);
-                                                const senderInitials = isOwnMessage ? user.first_name[0] : selectedFriend.first_name[0];
-
-                                                return (
-                                                    <div key={i} className={cn("flex gap-3", isOwnMessage ? "flex-row-reverse" : "flex-row")}>
-                                                        <Avatar className="h-7 w-7 flex-shrink-0 border shadow-sm">
-                                                            <AvatarImage src={senderAvatar} />
-                                                            <AvatarFallback className="text-[10px] font-bold bg-primary/10 text-primary">{senderInitials}</AvatarFallback>
-                                                        </Avatar>
-                                                        <div className={cn("flex flex-col", isOwnMessage ? "items-end" : "items-start")}>
-                                                            <div className={cn(
-                                                                "rounded-2xl px-3 py-2 text-xs shadow-sm max-w-[90%]",
-                                                                isOwnMessage
-                                                                    ? "bg-primary text-primary-foreground rounded-tr-none"
-                                                                    : "bg-background border border-primary/5 text-foreground rounded-tl-none"
-                                                            )}>
-                                                                {msg.text}
-                                                            </div>
-                                                            <span className="text-[7px] text-muted-foreground/60 mt-1 px-1">
-                                                                {messageDate ? new Date(messageDate).toLocaleTimeString('en-IN', {
-                                                                    hour: '2-digit',
-                                                                    minute: '2-digit',
-                                                                    hour12: true
-                                                                }) : 'Now'}
+                                                return Object.entries(groups).map(([date, msgs]) => (
+                                                    <div key={date} className="space-y-4">
+                                                        <div className="flex justify-center my-4">
+                                                            <span className="text-[10px] font-medium bg-muted/50 px-2 py-1 rounded-full text-muted-foreground uppercase tracking-wider border border-primary/5">
+                                                                {date}
                                                             </span>
                                                         </div>
+                                                        {msgs.map((msg, i) => {
+                                                            const isOwnMessage = isSameId(msg.senderId, user);
+                                                            const messageDate = msg.created_at;
+                                                            const senderAvatar = isOwnMessage ? user.avatar : (msg.senderId?.avatar || msg.avatar || selectedFriend.avatar);
+                                                            const senderInitials = isOwnMessage ? user.first_name[0] : selectedFriend.first_name[0];
+
+                                                            // Mark unread messages as seen when they appear
+                                                            if (!isOwnMessage && isOpen && activeTab === 'private') {
+                                                                markAsSeen(msg)
+                                                            }
+
+                                                            const isSeenByRecipient = msg.seenBy?.some((s: any) => !isSameId(s.userId, msg.senderId));
+                                                            const isDeleted = msg.text === 'This message was deleted' || msg.isDeleted;
+
+                                                            return (
+                                                                <div key={msg._id || i} className={cn("flex gap-2 group relative", isOwnMessage ? "flex-row-reverse" : "flex-row")}>
+                                                                    <Avatar className="h-7 w-7 flex-shrink-0 border shadow-sm">
+                                                                        <AvatarImage src={senderAvatar} />
+                                                                        <AvatarFallback className="text-[10px] font-bold bg-primary/10 text-primary">{senderInitials}</AvatarFallback>
+                                                                    </Avatar>
+
+                                                                    <div className={cn("flex flex-col max-w-[75%]", isOwnMessage ? "items-end" : "items-start")}>
+                                                                        {msg.replyTo && (
+                                                                            <div className="mb-1 bg-muted/30 p-1.5 rounded-lg border-l-2 border-primary text-[10px] text-muted-foreground truncate w-full">
+                                                                                {msg.replyTo.text}
+                                                                            </div>
+                                                                        )}
+
+                                                                        <DropdownMenu>
+                                                                            <DropdownMenuTrigger asChild>
+                                                                                <div className={cn(
+                                                                                    "rounded-2xl px-3 py-2 text-xs shadow-sm cursor-pointer transition-all relative overflow-hidden",
+                                                                                    isOwnMessage
+                                                                                        ? "bg-primary text-primary-foreground rounded-tr-none"
+                                                                                        : "bg-background border border-primary/5 text-foreground rounded-tl-none",
+                                                                                    isDeleted && "italic opacity-60 bg-muted/30 text-muted-foreground"
+                                                                                )}>
+                                                                                    {msg.text}
+                                                                                </div>
+                                                                            </DropdownMenuTrigger>
+                                                                            {!isDeleted && (
+                                                                                <DropdownMenuContent align={isOwnMessage ? 'end' : 'start'} className="w-40">
+                                                                                    <DropdownMenuItem className="text-xs cursor-pointer gap-2" onClick={() => {
+                                                                                        setReplyTo(msg);
+                                                                                        setTimeout(() => document.getElementById('chat-input')?.focus(), 100);
+                                                                                    }}>
+                                                                                        <Reply size={14} /> Reply
+                                                                                    </DropdownMenuItem>
+                                                                                    <DropdownMenuItem className="text-xs cursor-pointer gap-2" onClick={() => handleCopyMessage(msg.text)}>
+                                                                                        <Copy size={14} /> Copy
+                                                                                    </DropdownMenuItem>
+                                                                                    {isOwnMessage && (
+                                                                                        <>
+                                                                                            {!isSeenByRecipient && (
+                                                                                                <DropdownMenuItem className="text-xs cursor-pointer gap-2 text-destructive" onClick={() => handleDeleteMessage(msg._id || msg.id, 'everyone')}>
+                                                                                                    <Trash2 size={14} /> Delete for Everyone
+                                                                                                </DropdownMenuItem>
+                                                                                            )}
+                                                                                            <DropdownMenuItem className="text-xs cursor-pointer gap-2 text-destructive" onClick={() => handleDeleteMessage(msg._id || msg.id, 'me')}>
+                                                                                                <Trash2 size={14} /> Delete for Me
+                                                                                            </DropdownMenuItem>
+                                                                                        </>
+                                                                                    )}
+                                                                                </DropdownMenuContent>
+                                                                            )}
+                                                                        </DropdownMenu>
+
+                                                                        <div className="flex items-center gap-1 mt-1 px-1">
+                                                                            <span className="text-[7px] text-muted-foreground/60">
+                                                                                {messageDate ? format(new Date(messageDate), 'h:mm a') : 'Now'}
+                                                                            </span>
+                                                                            {isOwnMessage && !isDeleted && (
+                                                                                <span className="ml-1">
+                                                                                    {msg.isOptimistic ? (
+                                                                                        <Clock size={8} className="text-muted-foreground/40 animate-pulse" />
+                                                                                    ) : isSeenByRecipient ? (
+                                                                                        <CheckCheck size={10} className="text-blue-500" />
+                                                                                    ) : (
+                                                                                        <Check size={10} className="text-muted-foreground/60" />
+                                                                                    )}
+                                                                                </span>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            )
+                                                        })}
                                                     </div>
-                                                )
-                                            })}
+                                                ))
+                                            })()}
                                             <div ref={scrollRef} />
                                         </div>
                                     </div>
@@ -579,8 +807,22 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
                     {/* Input Area (Shared between Board and Direct if friend selected) */}
                     {(activeTab === 'company' || (activeTab === 'private' && selectedFriend)) && (
                         <div className="p-3 border-t bg-muted/10">
+                            {replyTo && (
+                                <div className="mb-2 bg-muted/50 p-2 rounded-lg border-l-4 border-primary flex justify-between items-center animate-in slide-in-from-bottom-2">
+                                    <div className="flex flex-col overflow-hidden">
+                                        <span className="text-[9px] font-bold text-primary flex items-center gap-1">
+                                            <Reply size={10} /> Replying to
+                                        </span>
+                                        <p className="text-[10px] text-muted-foreground truncate">{replyTo.text}</p>
+                                    </div>
+                                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setReplyTo(null)}>
+                                        <X size={14} />
+                                    </Button>
+                                </div>
+                            )}
                             <div className="flex gap-2">
                                 <Input
+                                    id="chat-input"
                                     placeholder="Type a message..."
                                     className="h-10 text-xs focus-visible:ring-primary border-primary/10 bg-background"
                                     value={inputText}

@@ -234,6 +234,7 @@ export const firebaseLogin = async (req: Request, res: Response) => {
           otpExpires,
           role: role || "user",
           companyId, // Added companyId from invite
+          avatar: picture || decodedToken.picture,
           createdAt: new Date(),
         };
 
@@ -318,6 +319,13 @@ export const firebaseLogin = async (req: Request, res: Response) => {
       if (lastName) user.last_name = lastName;
       userUpdated = true;
       console.log(`[AuthDebug] Auto-corrected name for existing user ${email} to ${firstName} ${lastName}`);
+    }
+
+    // Auto-sync Google avatar if missing
+    if (!user.avatar && decodedToken.picture) {
+      user.avatar = decodedToken.picture;
+      userUpdated = true;
+      console.log(`[AuthDebug] Auto-synced Google avatar for user ${email}`);
     }
 
     if (!user.is_email_verified) {
@@ -442,6 +450,7 @@ export const verifyOtp = async (req: Request, res: Response) => {
         authProvider: pendingSignup.authProvider,
         googleId: pendingSignup.googleId,
         role: (pendingSignup.role as RoleType) || "user",
+        avatar: pendingSignup.avatar,
         is_email_verified: true,
         companyId: pendingSignup.companyId ? new mongoose.Types.ObjectId(pendingSignup.companyId) : undefined, // Link to existing company if provided
         onboardingCompleted: !!(pendingSignup.companyName || pendingSignup.companyId), // Completed if company name OR ID exists

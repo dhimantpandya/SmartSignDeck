@@ -39,8 +39,9 @@ interface NotificationContextType {
     suppressChatSection: (section: string) => void
     socket: Socket | null
     setActiveChat: (info: { type: 'company' | 'private' | null; id?: string | null }) => void
-    unreadNotifications: Notification[]
     onlineUsers: Set<string>
+    lastSeenMap: Record<string, string>
+    unreadNotifications: Notification[]
 }
 
 const NotificationContext = createContext<NotificationContextType | null>(null)
@@ -58,6 +59,7 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
     const [suppressedChatSections, setSuppressedChatSections] = useState<Set<string>>(new Set())
     const [activeChatInfo, setActiveChatInfo] = useState<{ type: 'company' | 'private' | null; id?: string | null }>({ type: null, id: null })
     const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set())
+    const [lastSeenMap, setLastSeenMap] = useState<Record<string, string>>({})
 
     // 0. Force Refresh User on Mount to ensure CompanyID is up to date (Critical for merged companies)
     useEffect(() => {
@@ -233,6 +235,19 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
             setOnlineUsers(new Set(users))
         }
 
+        const handleStatusChange = (data: { userId: string, status: 'online' | 'offline', lastSeen?: string }) => {
+            console.log('[SOCKET Provider] 👤 User status change:', data)
+            setOnlineUsers(prev => {
+                const next = new Set(prev)
+                if (data.status === 'online') next.add(data.userId)
+                else next.delete(data.userId)
+                return next
+            })
+            if (data.lastSeen) {
+                setLastSeenMap(prev => ({ ...prev, [data.userId]: data.lastSeen! }))
+            }
+        }
+
         const handleAccountDeleted = () => {
             console.warn('[SOCKET Provider] 🔞 Account deleted by administrator. Logging out...')
             toast({
@@ -251,12 +266,14 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
         socket.on('new_notification', handleNotification)
         socket.on('new_chat', handleChat)
         socket.on('user_presence', handlePresence)
+        socket.on('user_status_change', handleStatusChange)
         socket.on('user_deleted', handleAccountDeleted)
 
         return () => {
             socket.off('new_notification', handleNotification)
             socket.off('new_chat', handleChat)
             socket.off('user_presence', handlePresence)
+            socket.off('user_status_change', handleStatusChange)
             socket.off('user_deleted', handleAccountDeleted)
         }
     }, [socket, user, isChatOpen, activeChatInfo])
@@ -349,7 +366,8 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
                 socket,
                 setActiveChat: setActiveChatInfo,
                 unreadNotifications: notifications.filter(n => !n.isRead),
-                onlineUsers
+                onlineUsers,
+                lastSeenMap
             }}
         >
             {children}
