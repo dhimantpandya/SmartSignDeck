@@ -44,7 +44,7 @@ const getTemplates = catchAsync(async (req: Request, res: Response) => {
         res,
         "Templates retrieved successfully",
         httpStatus.OK,
-        result,
+        result as any,
     );
 });
 
@@ -58,7 +58,7 @@ const getTemplate = catchAsync(async (req: Request, res: Response) => {
         res,
         "Template retrieved successfully",
         httpStatus.OK,
-        template,
+        template as any,
     );
 });
 
