@@ -267,6 +267,10 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
             console.log('[ChatSidebar] Friend changed, fetching history for:', fId)
             fetchingHistoryForRef.current = fId
             fetchChatHistory(fId)
+
+            // 🛡️ Clear notifications for this specific friend as soon as the chat is opened
+            clearChatNotifications('private', fId)
+
             if (socket) socket.emit('join_user', extractId(user))
         }
     }, [selectedFriend, socket])
