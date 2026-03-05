@@ -8,7 +8,7 @@ export default function AuthLayout() {
             <AnimatedAuthBg />
 
             {/* Full-screen auth content — no footer on auth pages */}
-            <main className='relative z-50 flex flex-1 flex-col items-center justify-center p-4 lg:p-8'>
+            <main className='relative z-50 flex w-full flex-1 flex-col items-center justify-center p-4 lg:p-8'>
                 <Outlet />
             </main>
         </div>
