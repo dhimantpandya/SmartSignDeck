@@ -29,10 +29,10 @@ export default function OtpForm({ className, ...props }: OtpFormProps) {
   const email = searchParams.get('email') || ''
 
   // Timer state (10 minutes = 600 seconds)
-  // Timer state (10 minutes = 600 seconds) persistent through reloads
+  // Timer state (3 minutes = 180 seconds) persistent through reloads
   const [timeLeft, setTimeLeft] = useState(() => {
     const expiresAt = localStorage.getItem('otp_expires_at')
-    if (!expiresAt) return 600
+    if (!expiresAt) return 180
     const remaining = Math.floor((Number(expiresAt) - Date.now()) / 1000)
     return remaining > 0 ? remaining : 0
   })
@@ -143,13 +143,13 @@ export default function OtpForm({ className, ...props }: OtpFormProps) {
     try {
       await authService.resendOtp(email)
       toast({ title: 'OTP resent successfully! Check your email.' })
-      const otpExpiresAt = Date.now() + 600 * 1000
+      const otpExpiresAt = Date.now() + 180 * 1000
       const resendAvailableAt = Date.now() + 60 * 1000
 
       localStorage.setItem('otp_expires_at', otpExpiresAt.toString())
       localStorage.setItem('resend_available_at', resendAvailableAt.toString())
 
-      setTimeLeft(600) // Reset timer to 10 minutes
+      setTimeLeft(180) // Reset timer to 3 minutes
       setResendCooldown(60) // 60 second cooldown before next resend
       setCanResend(false)
       form.reset()
@@ -190,7 +190,7 @@ export default function OtpForm({ className, ...props }: OtpFormProps) {
                       <PinInputField
                         key={i}
                         component="input"
-                        className="w-10 h-10 md:w-14 md:h-14 text-center text-lg md:text-xl font-black rounded-xl md:rounded-2xl border-white/20 bg-white/5 focus:ring-primary/50"
+                        className="w-10 h-10 md:w-14 md:h-14 text-center text-lg md:text-xl font-black rounded-xl md:rounded-2xl border-white/20 bg-white/5 focus:ring-primary/50 text-[#1a1a2e]"
                       />
                     ))}
                   </PinInput>
