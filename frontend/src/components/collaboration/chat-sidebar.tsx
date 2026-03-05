@@ -98,11 +98,17 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
     // Load board data FIRST, before setting up socket listeners
     // This prevents race condition where socket messages arrive before history loads
     useEffect(() => {
-        if (user?.companyId) {
-            console.log('[ChatSidebar] 📥 Loading board history...')
+        if (activeTab === 'company') {
+            console.log('[ChatSidebar] Board active, fetching...')
+            // 🛡️ Track active chat for NotificationProvider suppression
+            setActiveChat({ type: 'company' })
             fetchBoardData()
+            clearChatNotifications('company')
+        } else {
+            // If switching to Direct tab, we reset active chat until a friend is picked (handled by friend Effect)
+            setActiveChat({ type: null })
         }
-    }, [user?.companyId])
+    }, [activeTab, user?.companyId])
 
     useEffect(() => {
         if (!user || !socket) return
@@ -129,6 +135,13 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
 
                     const newMsgs = [...prev, data]
                     console.log('[ChatSidebar] ✅ Added message. New count:', newMsgs.length)
+
+                    // 🛡️ REAL-TIME CLEARING for Company Board
+                    if (activeTab === 'company') {
+                        console.log('[ChatSidebar] 🏃 High-speed clearing for active company board')
+                        clearChatNotifications('company')
+                    }
+
                     return newMsgs
                 })
             }
@@ -151,6 +164,14 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
 
                 if (isFromFriend || isFromMeToFriend) {
                     console.log('[ChatSidebar] ✅ Match! Appending message')
+
+                    // 🛡️ REAL-TIME CLEARING: If we are actively looking at this friend, mark as seen and clear badges
+                    if (msgSenderId && isFromFriend) {
+                        console.log('[ChatSidebar] 🏃 High-speed clearing for active friend:', msgSenderId)
+                        socialService.markAsSeen(data._id || data.id).catch(() => { })
+                        clearChatNotifications('private', msgSenderId)
+                    }
+
                     setPrivateMessages((prev) => {
                         const isDup = prev.some(m =>
                             isSameId(m, data.messageId || data._id || data.id) ||
@@ -274,6 +295,10 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
             const fId = extractId(selectedFriend)
             console.log('[ChatSidebar] Friend changed, fetching history for:', fId)
             fetchingHistoryForRef.current = fId
+
+            // 🛡️ Track active chat for NotificationProvider suppression
+            setActiveChat({ type: 'private', id: fId })
+
             fetchChatHistory(fId)
 
             // 🛡️ Clear notifications for this specific friend as soon as the chat is opened
@@ -524,8 +549,14 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
 
                 {/* Tabs */}
                 <Tabs value={activeTab} onValueChange={(val) => {
-                    setActiveTab(val)
-                    if (val === 'company') setSelectedFriend(null)
+                    setActiveTab(val as any)
+                    // Clear notifications for the tab we are switching TO
+                    if (val === 'company') {
+                        setSelectedFriend(null)
+                        clearChatNotifications('company')
+                    } else if (val === 'private' && selectedFriend) {
+                        clearChatNotifications('private', extractId(selectedFriend))
+                    }
                 }} className="flex-1 flex flex-col overflow-hidden gap-0">
                     <TabsList className="grid w-full grid-cols-4 rounded-none bg-muted/50 p-0 h-10 m-0">
                         <TabsTrigger value="company" className="rounded-none data-[state=active]:bg-background border-b-2 border-transparent data-[state=active]:border-primary transition-all text-[10px] px-1 relative">

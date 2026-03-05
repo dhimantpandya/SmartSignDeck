@@ -166,7 +166,8 @@ const markAsSeen = catchAsync(async (req: Request, res: Response) => {
 const deleteMessage = catchAsync(async (req: Request, res: Response) => {
     const user: any = req.user;
     const { messageId } = req.params;
-    const { scope } = req.body; // 'me' | 'everyone'
+    // Robust check for scope in body (handle legacy {data: {scope}} if needed)
+    const scope = req.body.scope || (req.body.data && req.body.data.scope);
 
     // Validate ID
     if (!messageId || messageId === 'undefined' || !mongoose.Types.ObjectId.isValid(messageId)) {

@@ -37,7 +37,7 @@ export const socialService = {
         apiService.post<any>(`/v1/social/message/${messageId}/seen`, {}),
 
     deleteMessage: (messageId: string, scope: 'me' | 'everyone') =>
-        apiService.delete<any>(`/v1/social/message/${messageId}`, { data: { scope } }),
+        apiService.delete<any>(`/v1/social/message/${messageId}`, { scope }),
 
     getFriends: () =>
         apiService.get<any[]>('/v1/social/friends'),

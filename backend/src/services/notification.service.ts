@@ -71,11 +71,14 @@ const markAllAsRead = async (userId: string) => {
  * Mark all notifications of a certain type/sender as read for a user
  */
 const markChatAsRead = async (userId: string, type: string, senderId?: string) => {
-    const query: any = { recipientId: userId, type, isRead: false };
-    if (senderId) {
-        query.senderId = senderId;
+    const cUserId = cleanId(userId);
+    const cSenderId = senderId ? cleanId(senderId) : undefined;
+
+    const query: any = { recipientId: cUserId, type, isRead: false };
+    if (cSenderId) {
+        query.senderId = cSenderId;
     }
-    console.log('[NOTIFICATION] Marking chat as read:', { userId, type, senderId, query });
+    console.log('[NOTIFICATION] Marking chat as read:', { userId: cUserId, type, senderId: cSenderId, query });
     const result = await Notification.updateMany(query, { isRead: true });
     console.log('[NOTIFICATION] Mark chat as read result:', { matchedCount: result.matchedCount, modifiedCount: result.modifiedCount });
     return result;
