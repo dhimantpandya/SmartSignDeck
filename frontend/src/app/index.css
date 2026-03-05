@@ -2,6 +2,30 @@
 @tailwind components;
 @tailwind utilities;
 
+.gradient-text {
+  background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+  background-size: 300% 300%;
+  animation: gradientTextAnimation 5s ease infinite;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  display: inline-block;
+}
+
+@keyframes gradientTextAnimation {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
 @layer base {
   :root {
     /* Custom CSS Variables */
@@ -231,10 +255,12 @@
       transform: scale(1) rotate(0deg) translateY(0);
       opacity: 1;
     }
+
     30% {
       transform: scale(1.1) rotate(2deg);
       opacity: 1;
     }
+
     100% {
       transform: scale(0.1) rotate(15deg) translateY(100px);
       opacity: 0;
@@ -250,6 +276,7 @@
       transform: scale(0.1) rotate(-15deg) translateY(100px);
       opacity: 0;
     }
+
     100% {
       transform: scale(1) rotate(0deg) translateY(0);
       opacity: 1;

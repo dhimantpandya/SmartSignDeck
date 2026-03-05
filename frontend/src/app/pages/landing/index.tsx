@@ -255,7 +255,7 @@ export default function LandingPage() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ delay: 0.5, duration: 1 }}
-                        className='text-lg md:text-xl text-muted-foreground/80 max-w-2xl mx-auto font-bold leading-relaxed'
+                        className='text-lg md:text-xl max-w-2xl mx-auto font-bold leading-relaxed gradient-text'
                     >
                         Experience absolute command over your digital presence. Robust enterprise governance meets intuitive flow with the industry's most scalable cloud infrastructure.
                     </motion.p>
@@ -380,11 +380,13 @@ export default function LandingPage() {
                             <div className='absolute -inset-20 bg-primary/20 blur-[150px] rounded-full animate-pulse' />
                             <div className='relative rounded-[4rem] overflow-hidden border-[12px] border-white/10 shadow-[0_0_100px_rgba(0,0,0,0.5)] group cursor-pointer'>
                                 <motion.img
-                                    whileHover={{ scale: 1.1 }}
+                                    initial={{ filter: 'grayscale(100%) brightness(75%)' }}
+                                    whileInView={{ filter: 'grayscale(0%) brightness(100%)' }}
+                                    viewport={{ amount: 0.6 }}
                                     transition={{ duration: 1 }}
                                     src="https://images.unsplash.com/photo-1542744094-24638eff58bb?auto=format&fit=crop&q=80&w=1200"
                                     alt="Dashboard Preview"
-                                    className='w-full grayscale brightness-75 group-hover:grayscale-0 group-hover:brightness-100 transition-all duration-1000'
+                                    className='w-full transition-all duration-1000'
                                 />
                                 <div className='absolute inset-0 bg-primary/5 group-hover:bg-transparent transition-colors' />
                                 <div className='absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-t from-primary/30 to-transparent' />

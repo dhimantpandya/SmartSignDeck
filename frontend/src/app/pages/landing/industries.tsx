@@ -178,10 +178,14 @@ export default function IndustriesPage() {
                                 className='group relative overflow-hidden rounded-[3rem] bg-primary/5 border border-white/5 hover:border-[#020817]/30 transition-all duration-700'
                             >
                                 <div className='aspect-video overflow-hidden'>
-                                    <img
+                                    <motion.img
+                                        initial={{ filter: 'grayscale(100%) brightness(75%)' }}
+                                        whileInView={{ filter: 'grayscale(0%) brightness(100%)' }}
+                                        viewport={{ amount: 0.5 }}
+                                        transition={{ duration: 1 }}
                                         src={ind.image}
                                         alt={ind.name}
-                                        className='w-full h-full object-cover grayscale brightness-75 group-hover:grayscale-0 group-hover:brightness-100 group-hover:scale-110 transition-all duration-1000'
+                                        className='w-full h-full object-cover group-hover:scale-110 transition-all duration-1000'
                                     />
                                 </div>
                                 <div className='p-8 space-y-4'>

@@ -430,11 +430,21 @@
         height: auto;
         min-height: 500px;
         max-width: 450px;
-        /* Removed backdrop-filter to fix mobile lag */
-        background: #1a1a2e !important;
-        border: 1px solid rgba(255, 255, 255, 0.15);
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
-        border-radius: 15px;
+        /* Optimized glass effect for performance */
+        background: rgba(255, 255, 255, 0.07) !important;
+        backdrop-filter: blur(8px) !important;
+        -webkit-backdrop-filter: blur(8px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+        border-radius: 20px;
+        transform: translate3d(0, 0, 0);
+        /* Hardware acceleration */
+    }
+
+    .auth-wrapper .credentials-panel .text-center a {
+        text-decoration: underline !important;
+        text-underline-offset: 4px;
+        color: #00d4ff !important;
     }
 
     .auth-wrapper .credentials-panel,
