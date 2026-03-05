@@ -182,7 +182,7 @@ export default function OtpForm({ className, ...props }: OtpFormProps) {
                 <FormControl>
                   <PinInput
                     {...field}
-                    className="flex h-12 justify-center gap-3"
+                    className="flex h-12 justify-center gap-2 md:gap-3"
                     onComplete={() => setDisabledBtn(false)}
                     onIncomplete={() => setDisabledBtn(true)}
                   >
@@ -190,7 +190,7 @@ export default function OtpForm({ className, ...props }: OtpFormProps) {
                       <PinInputField
                         key={i}
                         component="input"
-                        className="w-14 h-14 text-center text-xl font-black rounded-2xl border-white/20 bg-white/5 focus:ring-primary/50"
+                        className="w-10 h-10 md:w-14 md:h-14 text-center text-lg md:text-xl font-black rounded-xl md:rounded-2xl border-white/20 bg-white/5 focus:ring-primary/50"
                       />
                     ))}
                   </PinInput>
