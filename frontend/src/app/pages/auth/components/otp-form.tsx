@@ -197,8 +197,8 @@ export default function OtpForm({ className, ...props }: OtpFormProps) {
                 </FormControl>
                 <FormDescription className="text-center mt-4">
                   {timeLeft > 0 ? (
-                    <span className="text-xs font-bold uppercase tracking-widest text-white/90">
-                      Code expires in <span className="text-white font-black">{formatTime(timeLeft)}</span>
+                    <span className="text-xs font-bold uppercase tracking-widest text-[#1a1a2e]/90 md:text-muted-foreground/60">
+                      Code expires in <span className="text-[#1a1a2e] md:text-foreground font-black">{formatTime(timeLeft)}</span>
                     </span>
                   ) : (
                     <span className="text-xs font-black uppercase tracking-widest text-destructive">OTP expired</span>
@@ -218,7 +218,7 @@ export default function OtpForm({ className, ...props }: OtpFormProps) {
               variant="ghost"
               disabled={!canResend || resendCooldown > 0 || isResending}
               onClick={handleResendOtp}
-              className="mt-2 text-[10px] font-black uppercase tracking-widest text-white/80 hover:text-white transition-colors h-auto whitespace-normal break-words"
+              className="mt-2 text-[10px] font-black uppercase tracking-widest text-[#1a1a2e]/80 md:text-muted-foreground hover:text-[#1a1a2e] md:hover:text-primary transition-colors h-auto whitespace-normal break-words"
               loading={isResending}
             >
               {resendCooldown > 0

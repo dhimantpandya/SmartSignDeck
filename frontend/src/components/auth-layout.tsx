@@ -1,5 +1,6 @@
 import { Outlet } from 'react-router-dom'
 import { AnimatedAuthBg } from '@/app/pages/auth/components/animated-auth-bg'
+import '@/app/pages/auth/auth-animations.css'
 
 export default function AuthLayout() {
     return (

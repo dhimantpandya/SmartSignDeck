@@ -53,7 +53,7 @@ export default function Invited() {
         >
             <div className='grid gap-6'>
                 <div className='grid gap-3'>
-                    <label htmlFor='link' className='text-xs font-semibold text-white/90'>
+                    <label htmlFor='link' className='text-xs font-semibold text-[#1a1a2e] md:text-muted-foreground'>
                         Paste Invitation Link
                     </label>
                     <Input
@@ -73,7 +73,7 @@ export default function Invited() {
                         <span className='w-full border-t border-white/10' />
                     </div>
                     <div className='relative flex justify-center text-xs uppercase'>
-                        <span className='px-4 text-white/90 font-bold'>
+                        <span className='px-4 text-[#1a1a2e] md:text-muted-foreground font-bold'>
                             Already a member?
                         </span>
                     </div>
@@ -88,13 +88,13 @@ export default function Invited() {
                 </Button>
             </div>
 
-            <p className='px-4 text-center text-[10px] font-bold uppercase tracking-[0.2em] text-white/80 mt-8 leading-relaxed'>
+            <p className='px-4 text-center text-[10px] font-bold uppercase tracking-[0.2em] text-[#1a1a2e]/80 md:text-muted-foreground/60 mt-8 leading-relaxed'>
                 By joining SmartSignDeck, you agree to our{' '}
-                <a href='#' className='text-white underline underline-offset-4 hover:text-white/80 transition-colors'>
+                <a href='#' className='text-[#1a1a2e] md:text-foreground underline underline-offset-4 hover:text-[#1a1a2e]/80 md:hover:text-primary transition-colors'>
                     Terms
                 </a>{' '}
                 &{' '}
-                <a href='#' className='text-white underline underline-offset-4 hover:text-white/80 transition-colors'>
+                <a href='#' className='text-[#1a1a2e] md:text-foreground underline underline-offset-4 hover:text-[#1a1a2e]/80 md:hover:text-primary transition-colors'>
                     Privacy
                 </a>.
             </p>
