@@ -72,7 +72,7 @@ export const register = async (req: Request, res: Response) => {
     try {
       const emailPromise = emailService.sendMail(constants.USER_EMAIL_VERIFICATION_TEMPLATE, {
         email,
-        first_name: first_name,
+        first_name: first_name || "User",
         otp,
       });
 
@@ -245,7 +245,7 @@ export const firebaseLogin = async (req: Request, res: Response) => {
         try {
           const emailPromise = emailService.sendMail(constants.USER_EMAIL_VERIFICATION_TEMPLATE, {
             email: email,
-            first_name: firstName,
+            first_name: firstName || "User",
             otp,
           });
           const timeoutPromise = new Promise((_, reject) =>
@@ -638,7 +638,7 @@ export const resendOtp = async (req: Request, res: Response) => {
       try {
         const emailPromise = emailService.sendMail(constants.USER_EMAIL_VERIFICATION_TEMPLATE, {
           email: pendingSignup.email,
-          first_name: pendingSignup.first_name,
+          first_name: pendingSignup.first_name || "User",
           otp,
         });
         const timeoutPromise = new Promise((_, reject) =>
@@ -668,7 +668,7 @@ export const resendOtp = async (req: Request, res: Response) => {
       // Send OTP email (Non-blocking)
       emailService.sendMail(constants.USER_EMAIL_VERIFICATION_TEMPLATE, {
         email: user.email,
-        first_name: user.first_name,
+        first_name: user.first_name || "User",
         otp,
       }).catch((emailErr) => {
         console.error("[ResendOtp Existing Background Error]", emailErr.message);
@@ -696,7 +696,7 @@ export const forgotPassword = async (req: Request, res: Response) => {
 
     await emailService.sendMail(constants.USER_FORGOT_PASSWORD_TEMPLATE, {
       email: user.email,
-      first_name: user.first_name,
+      first_name: user.first_name || "User",
       token: resetPasswordToken,
       otp,
     });

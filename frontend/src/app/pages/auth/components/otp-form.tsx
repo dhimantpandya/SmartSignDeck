@@ -57,17 +57,34 @@ export default function OtpForm({ className, ...props }: OtpFormProps) {
     if (timeLeft <= 0) return
 
     const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer)
-          return 0
-        }
-        return prev - 1
-      })
+      const expiresAt = localStorage.getItem('otp_expires_at')
+      if (expiresAt) {
+        const remaining = Math.floor((Number(expiresAt) - Date.now()) / 1000)
+        setTimeLeft(remaining > 0 ? remaining : 0)
+      } else {
+        setTimeLeft(0)
+      }
     }, 1000)
 
     return () => clearInterval(timer)
   }, [timeLeft])
+
+  // Sync timers across multiple tabs
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'otp_expires_at' && e.newValue) {
+        const remaining = Math.floor((Number(e.newValue) - Date.now()) / 1000)
+        setTimeLeft(remaining > 0 ? remaining : 0)
+      }
+      if (e.key === 'resend_available_at' && e.newValue) {
+        const remaining = Math.floor((Number(e.newValue) - Date.now()) / 1000)
+        setResendCooldown(remaining > 0 ? remaining : 0)
+      }
+    }
+
+    window.addEventListener('storage', handleStorageChange)
+    return () => window.removeEventListener('storage', handleStorageChange)
+  }, [])
 
   // Resend cooldown timer
   useEffect(() => {
@@ -190,7 +207,7 @@ export default function OtpForm({ className, ...props }: OtpFormProps) {
                       <PinInputField
                         key={i}
                         component="input"
-                        className="w-10 h-10 md:w-14 md:h-14 text-center text-lg md:text-xl font-black rounded-xl md:rounded-2xl border-white/20 bg-white/5 focus:ring-primary/50 text-[#1a1a2e]"
+                        className="otp-digit-input w-10 h-10 md:w-14 md:h-14 text-center text-lg md:text-xl font-black rounded-xl md:rounded-2xl border-white/20 bg-white/5 focus:ring-primary/50 text-[#1a1a2e]"
                       />
                     ))}
                   </PinInput>

@@ -16,7 +16,7 @@
 
 /* Fix placeholders: Not white, no underlines */
 .auth-page-container input::placeholder {
-    color: rgba(255, 255, 255, 0.45) !important;
+    color: #a1a1aa !important;
     text-decoration: none !important;
     font-weight: 400 !important;
 }
@@ -47,12 +47,10 @@
 
 /* Force OTP digits to navy blue specifically on the light OTP card */
 .auth-page-container input[autocomplete="one-time-code"],
-.auth-page-container .gap-2 input,
-.auth-page-container .gap-3 input {
+.auth-page-container input.otp-digit-input {
     color: #1a1a2e !important;
     -webkit-text-fill-color: #1a1a2e !important;
 }
-
 
 
 

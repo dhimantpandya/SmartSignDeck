@@ -132,7 +132,7 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
         const email = form.getValues('email')
         authService.resendOtp(email).catch(console.error) // Trigger resend in background
 
-        const expiresIn = 600 // 10 minutes
+        const expiresIn = 120 // 2 minutes
         localStorage.setItem('otp_expires_at', (Date.now() + expiresIn * 1000).toString())
         toast({
           title: 'Email not verified',

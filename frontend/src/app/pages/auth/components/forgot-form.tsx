@@ -66,12 +66,12 @@ export function ForgotForm({ className, ...props }: ForgotFormProps) {
 
     if (stepParam === '2' && emailParam) {
       setStep(2)
-      setTimeLeft(600)
+      setTimeLeft(120)
     }
   }, [searchParams])
 
-  // Timer state
-  const [timeLeft, setTimeLeft] = useState(600)
+  // Timer state (2 minutes = 120 seconds)
+  const [timeLeft, setTimeLeft] = useState(120)
   const [canResend, setCanResend] = useState(false)
   const [resendCooldown, setResendCooldown] = useState(0)
 
@@ -144,7 +144,7 @@ export function ForgotForm({ className, ...props }: ForgotFormProps) {
       await authService.forgotPassword(data)
       setEmail(data.email)
       setStep(2)
-      setTimeLeft(600) // Start 10m timer
+      setTimeLeft(120) // Start 2m timer
       setCanResend(false)
       setResendCooldown(60) // Initial cooldown
       toast({ title: 'OTP sent to your email' })
@@ -220,7 +220,7 @@ export function ForgotForm({ className, ...props }: ForgotFormProps) {
     try {
       await authService.forgotPassword({ email }); // Re-use forgot password to resend
       toast({ title: 'OTP resent successfully' });
-      setTimeLeft(600)
+      setTimeLeft(120)
       setResendCooldown(60)
       setCanResend(false)
       otpForm.reset()
@@ -291,7 +291,7 @@ export function ForgotForm({ className, ...props }: ForgotFormProps) {
                           <PinInputField
                             key={i}
                             component="input"
-                            className="w-10 h-10 md:w-14 md:h-14 text-center text-lg md:text-xl font-black rounded-xl md:rounded-2xl border-white/20 bg-white/5 focus:ring-primary/50"
+                            className="otp-digit-input w-10 h-10 md:w-14 md:h-14 text-center text-lg md:text-xl font-black rounded-xl md:rounded-2xl border-white/20 bg-white/5 focus:ring-primary/50"
                           />
                         ))}
                       </PinInput>
