@@ -27,21 +27,18 @@
 }
 
 /* Base text color for labels and general text (Desktop Only) */
-@media (min-width: 769px) {
+.auth-page-container h2,
+.auth-page-container p,
+.auth-page-container label,
+.auth-page-container span {
+    color: #fff;
+}
 
-    .auth-page-container h2,
-    .auth-page-container p,
-    .auth-page-container label,
-    .auth-page-container span {
-        color: #fff;
-    }
-
-    /* Fix placeholders: Not white, no underlines */
-    .auth-page-container input::placeholder {
-        color: rgba(255, 255, 255, 0.45) !important;
-        text-decoration: none !important;
-        font-weight: 400 !important;
-    }
+/* Fix placeholders: Not white, no underlines */
+.auth-page-container input::placeholder {
+    color: rgba(255, 255, 255, 0.45) !important;
+    text-decoration: none !important;
+    font-weight: 400 !important;
 }
 
 .auth-wrapper {
@@ -497,6 +494,13 @@
     }
 
     /* Ensure combined-auth elements correctly show navy blue on light card */
+    .auth-page-container h2,
+    .auth-page-container p,
+    .auth-page-container label,
+    .auth-page-container span {
+        color: #1a1a2e !important;
+    }
+
     .credentials-panel h2,
     .account-prompt {
         color: #1a1a2e !important;
