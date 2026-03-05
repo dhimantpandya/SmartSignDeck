@@ -179,9 +179,22 @@ const deleteMessage = catchAsync(async (req: Request, res: Response) => {
     const msg = await Message.findById(messageId);
     if (!msg) return successResponse(res, "Message not found", httpStatus.NOT_FOUND, {});
 
-    // Only the sender can delete
-    if (msg.senderId.toString() !== user._id.toString()) {
-        return successResponse(res, "Unauthorized", httpStatus.FORBIDDEN, {});
+    const isSender = msg.senderId.toString() === user._id.toString();
+    const isRecipient = msg.recipientId && msg.recipientId.toString() === user._id.toString();
+    const isCompanyMember = msg.companyId && user.companyId && msg.companyId.toString() === user.companyId.toString();
+
+    // Authorization:
+    // 1. 'everyone' scope -> Only sender
+    // 2. 'me' scope -> Sender, Recipient, or Company Member
+    if (scope === 'everyone') {
+        if (!isSender) {
+            return successResponse(res, "Only the sender can delete for everyone", httpStatus.FORBIDDEN, {});
+        }
+    } else {
+        // 'me' scope
+        if (!isSender && !isRecipient && !isCompanyMember) {
+            return successResponse(res, "Unauthorized to delete this message", httpStatus.FORBIDDEN, {});
+        }
     }
 
     if (scope === 'everyone') {

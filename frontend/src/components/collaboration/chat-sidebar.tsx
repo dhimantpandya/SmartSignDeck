@@ -680,6 +680,9 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
                                                                                     <Trash2 size={14} /> Delete for Everyone
                                                                                 </DropdownMenuItem>
                                                                             )}
+                                                                            <DropdownMenuItem className="text-xs cursor-pointer gap-2 text-destructive" onClick={() => handleDeleteMessage(msg._id || msg.id, 'me')}>
+                                                                                <Trash2 size={14} /> Delete for Me
+                                                                            </DropdownMenuItem>
                                                                         </DropdownMenuContent>
                                                                     )}
                                                                 </DropdownMenu>
@@ -875,18 +878,16 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
                                                                                     <DropdownMenuItem className="text-xs cursor-pointer gap-2" onClick={() => handleCopyMessage(msg.text)}>
                                                                                         <Copy size={14} /> Copy
                                                                                     </DropdownMenuItem>
-                                                                                    {isOwnMessage && (
-                                                                                        <>
-                                                                                            {!isSeenByRecipient && (
-                                                                                                <DropdownMenuItem className="text-xs cursor-pointer gap-2 text-destructive" onClick={() => handleDeleteMessage(msg._id || msg.id, 'everyone')}>
-                                                                                                    <Trash2 size={14} /> Delete for Everyone
-                                                                                                </DropdownMenuItem>
-                                                                                            )}
-                                                                                            <DropdownMenuItem className="text-xs cursor-pointer gap-2 text-destructive" onClick={() => handleDeleteMessage(msg._id || msg.id, 'me')}>
-                                                                                                <Trash2 size={14} /> Delete for Me
-                                                                                            </DropdownMenuItem>
-                                                                                        </>
+
+                                                                                    {isOwnMessage && !isSeenByRecipient && (
+                                                                                        <DropdownMenuItem className="text-xs cursor-pointer gap-2 text-destructive" onClick={() => handleDeleteMessage(msg._id || msg.id, 'everyone')}>
+                                                                                            <Trash2 size={14} /> Delete for Everyone
+                                                                                        </DropdownMenuItem>
                                                                                     )}
+
+                                                                                    <DropdownMenuItem className="text-xs cursor-pointer gap-2 text-destructive" onClick={() => handleDeleteMessage(msg._id || msg.id, 'me')}>
+                                                                                        <Trash2 size={14} /> Delete for Me
+                                                                                    </DropdownMenuItem>
                                                                                 </DropdownMenuContent>
                                                                             )}
                                                                         </DropdownMenu>
