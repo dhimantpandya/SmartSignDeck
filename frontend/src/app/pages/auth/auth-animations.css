@@ -26,19 +26,22 @@
     overflow-x: hidden;
 }
 
-/* Base text color for labels and general text */
-.auth-page-container h2,
-.auth-page-container p,
-.auth-page-container label,
-.auth-page-container span {
-    color: #fff;
-}
+/* Base text color for labels and general text (Desktop Only) */
+@media (min-width: 769px) {
 
-/* Fix placeholders: Not white, no underlines */
-.auth-page-container input::placeholder {
-    color: rgba(255, 255, 255, 0.45) !important;
-    text-decoration: none !important;
-    font-weight: 400 !important;
+    .auth-page-container h2,
+    .auth-page-container p,
+    .auth-page-container label,
+    .auth-page-container span {
+        color: #fff;
+    }
+
+    /* Fix placeholders: Not white, no underlines */
+    .auth-page-container input::placeholder {
+        color: rgba(255, 255, 255, 0.45) !important;
+        text-decoration: none !important;
+        font-weight: 400 !important;
+    }
 }
 
 .auth-wrapper {
@@ -476,16 +479,27 @@
     /* Restore underlines specifically for Auth links */
     .credentials-panel a,
     .credentials-panel .text-center a {
-        color: #ffffff !important;
+        color: #1a1a2e !important;
         font-weight: 700 !important;
         text-decoration: underline !important;
         text-underline-offset: 4px;
         opacity: 1 !important;
     }
 
-    /* Ensure placeholders remain clean (no underlines) */
+    /* Ensure placeholders remain clean and inputs are navy blue */
     .auth-page-container input::placeholder {
+        color: rgba(26, 26, 46, 0.45) !important;
         text-decoration: none !important;
+    }
+
+    .auth-page-container input {
+        color: #1a1a2e !important;
+    }
+
+    /* Ensure combined-auth elements correctly show navy blue on light card */
+    .credentials-panel h2,
+    .account-prompt {
+        color: #1a1a2e !important;
     }
 
     .auth-wrapper .credentials-panel,
