@@ -3,11 +3,11 @@ import { AnimatedAuthBg } from '@/app/pages/auth/components/animated-auth-bg'
 
 export default function AuthLayout() {
     return (
-        <div className='relative flex min-h-svh flex-col overflow-hidden bg-[#020817]'>
+        <div className='auth-page-container relative flex min-h-svh flex-col overflow-hidden bg-[#020817]'>
             <AnimatedAuthBg />
 
             {/* Full-screen auth content — no footer on auth pages */}
-            <main className='relative z-10 flex flex-1 flex-col items-center justify-center p-4 lg:p-8'>
+            <main className='relative z-50 flex flex-1 flex-col items-center justify-center p-4 lg:p-8'>
                 <Outlet />
             </main>
         </div>

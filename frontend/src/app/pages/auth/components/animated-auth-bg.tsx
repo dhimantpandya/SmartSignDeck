@@ -1,6 +1,9 @@
 import { motion } from 'framer-motion'
 
 export function AnimatedAuthBg() {
+    // 🚀 Performance: Disable complex mesh animations on mobile to ensure zero keyboard lag
+    if (typeof window !== 'undefined' && window.innerWidth <= 768) return null;
+
     return (
         <div className='fixed inset-0 z-[-1] overflow-hidden bg-[#020817]'>
             {/* Mesh Gradients blobs */}

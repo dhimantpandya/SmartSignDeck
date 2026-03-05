@@ -29,7 +29,7 @@ export default function CombinedAuthPage() {
     }, [location.pathname]);
 
     return (
-        <div className="auth-page-container">
+        <div className="w-full h-full flex items-center justify-center">
             <div className={`auth-wrapper ${isSignup ? "toggled" : ""}`}>
                 {/* Visual Elements - Only for non-mobile to save RAM/CPU */}
                 {!isMobile && (
@@ -104,10 +104,6 @@ export default function CombinedAuthPage() {
                 </div>
             </div>
 
-            {/* Reference Footer - can be kept or swapped later */}
-            <div className="footer">
-                <p>SmartSignDeck © 2026 | Digital Signage Excellence</p>
-            </div>
         </div>
     );
 }

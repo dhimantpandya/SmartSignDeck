@@ -80,10 +80,10 @@ export default function AboutUsPage() {
                     className='space-y-12'
                 >
                     <div className='space-y-6'>
-                        <h1 className='text-5xl md:text-7xl font-black tracking-tighter uppercase italic perspective-1000'>
+                        <h1 className='text-4xl md:text-7xl font-black tracking-tighter uppercase italic perspective-1000'>
                             About <span className='text-[#020817]'>SmartSignDeck.</span>
                         </h1>
-                        <p className='text-xl text-muted-foreground/80 leading-relaxed font-bold'>
+                        <p className='text-lg md:text-xl text-muted-foreground/80 leading-relaxed font-bold'>
                             Bridging the Gap Between Complex Scheduling and Intuitive Design.
                         </p>
                     </div>
@@ -107,9 +107,9 @@ export default function AboutUsPage() {
                         </div>
                     </div>
 
-                    <div className='bg-primary/5 rounded-[3rem] p-10 md:p-16 border border-white/5 space-y-8'>
-                        <h2 className='text-3xl font-black uppercase italic'>Built with Precision</h2>
-                        <p className='text-lg leading-relaxed text-muted-foreground'>
+                    <div className='bg-primary/5 rounded-[2.5rem] md:rounded-[3rem] p-8 md:p-16 border border-white/5 space-y-8'>
+                        <h2 className='text-2xl md:text-3xl font-black uppercase italic'>Built with Precision</h2>
+                        <p className='text-base md:text-lg leading-relaxed text-muted-foreground'>
                             Utilizing state-of-the-art technologies including React, Fabric.js for template orchestration, and a robust Node.js backend, SmartSignDeck ensures millisecond-level sync and enterprise-grade reliability.
                         </p>
                         <div className='flex items-center gap-4 text-[#020817] font-black uppercase tracking-widest text-sm'>

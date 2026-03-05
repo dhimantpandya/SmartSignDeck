@@ -54,10 +54,10 @@ export default function ContactUsPage() {
                     className='space-y-16 text-center'
                 >
                     <div className='space-y-6'>
-                        <h1 className='text-5xl md:text-8xl font-black tracking-tighter uppercase italic perspective-1000'>
+                        <h1 className='text-4xl md:text-8xl font-black tracking-tighter uppercase italic perspective-1000'>
                             Get In <span className='text-[#020817]'>Touch.</span>
                         </h1>
-                        <p className='text-xl text-muted-foreground/80 max-w-2xl mx-auto font-bold leading-relaxed'>
+                        <p className='text-lg md:text-xl text-muted-foreground/80 max-w-2xl mx-auto font-bold leading-relaxed px-4'>
                             Whether you're looking for support, partnership opportunities, or just want to talk tech, we're here to listen.
                         </p>
                     </div>
@@ -65,13 +65,13 @@ export default function ContactUsPage() {
                     <div className='grid md:grid-cols-2 gap-8'>
                         <a
                             href='mailto:smartsigndeckk@gmail.com'
-                            className='group p-12 rounded-[3rem] bg-primary/5 border border-white/5 hover:bg-primary/10 hover:border-[#020817]/30 transition-all duration-500'
+                            className='group p-8 md:p-12 rounded-[2.5rem] md:rounded-[3rem] bg-primary/5 border border-white/5 hover:bg-primary/10 hover:border-[#020817]/30 transition-all duration-500'
                         >
-                            <div className='bg-[#020817]/20 w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-8 group-hover:scale-110 group-hover:rotate-6 transition-transform'>
-                                <IconMail size={40} className='text-[#020817]' />
+                            <div className='bg-[#020817]/20 w-16 h-16 md:w-20 md:h-20 rounded-2xl flex items-center justify-center mx-auto mb-6 md:mb-8 group-hover:scale-110 group-hover:rotate-6 transition-transform'>
+                                <IconMail size={32} className='text-[#020817]' />
                             </div>
-                            <h2 className='text-3xl font-black uppercase italic mb-4'>Email Us</h2>
-                            <p className='text-muted-foreground font-medium mb-6'>smartsigndeckk@gmail.com</p>
+                            <h2 className='text-2xl md:text-3xl font-black uppercase italic mb-4'>Email Us</h2>
+                            <p className='text-sm md:text-muted-foreground font-medium mb-6'>smartsigndeckk@gmail.com</p>
                             <span className='inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.2em] text-[#020817] group-hover:gap-4 transition-all'>
                                 Open Inbox <IconArrowRight size={16} />
                             </span>
@@ -81,13 +81,13 @@ export default function ContactUsPage() {
                             href='https://linkedin.com/in/dhimant-pandya-083b4b271'
                             target='_blank'
                             rel='noopener noreferrer'
-                            className='group p-12 rounded-[3rem] bg-primary/5 border border-white/5 hover:bg-primary/10 hover:border-[#020817]/30 transition-all duration-500'
+                            className='group p-8 md:p-12 rounded-[2.5rem] md:rounded-[3rem] bg-primary/5 border border-white/5 hover:bg-primary/10 hover:border-[#020817]/30 transition-all duration-500'
                         >
-                            <div className='bg-[#020817]/20 w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-8 group-hover:scale-110 group-hover:rotate-6 transition-transform'>
-                                <IconBrandLinkedin size={40} className='text-[#020817]' />
+                            <div className='bg-[#020817]/20 w-16 h-16 md:w-20 md:h-20 rounded-2xl flex items-center justify-center mx-auto mb-6 md:mb-8 group-hover:scale-110 group-hover:rotate-6 transition-transform'>
+                                <IconBrandLinkedin size={32} className='text-[#020817]' />
                             </div>
-                            <h2 className='text-3xl font-black uppercase italic mb-4'>LinkedIn</h2>
-                            <p className='text-muted-foreground font-medium mb-6'>Dhimant Pandya</p>
+                            <h2 className='text-2xl md:text-3xl font-black uppercase italic mb-4'>LinkedIn</h2>
+                            <p className='text-sm md:text-muted-foreground font-medium mb-6'>Dhimant Pandya</p>
                             <span className='inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.2em] text-[#020817] group-hover:gap-4 transition-all'>
                                 View Profile <IconArrowRight size={16} />
                             </span>
