@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Routes } from "@/utilities/routes";
 import { UserAuthForm } from "./components/user-auth-form";
 import { SignUpForm } from "./components/sign-up-form";
@@ -7,9 +7,17 @@ import "./auth-animations.css";
 
 export default function CombinedAuthPage() {
     const location = useLocation();
+    const [isMobile, setIsMobile] = useState(false);
 
     // Determine if we are on the signup page based on the URL
     const isSignup = location.pathname === Routes.SIGN_UP;
+
+    useEffect(() => {
+        const checkMobile = () => setIsMobile(window.innerWidth <= 768);
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
 
     // Scroll to top of the panel when switching between sign-in and sign-up
     useEffect(() => {
@@ -23,9 +31,13 @@ export default function CombinedAuthPage() {
     return (
         <div className="auth-page-container">
             <div className={`auth-wrapper ${isSignup ? "toggled" : ""}`}>
-                {/* Visual Elements */}
-                <div className="background-shape"></div>
-                <div className="secondary-shape"></div>
+                {/* Visual Elements - Only for non-mobile to save RAM/CPU */}
+                {!isMobile && (
+                    <>
+                        <div className="background-shape"></div>
+                        <div className="secondary-shape"></div>
+                    </>
+                )}
 
                 {/* Sign In Form Panel */}
                 <div className="credentials-panel signin">
@@ -33,6 +45,15 @@ export default function CombinedAuthPage() {
                     <div className="slide-element w-full">
                         <UserAuthForm />
                     </div>
+                    {/* Mobile Only: Sign Up Link */}
+                    {isMobile && (
+                        <div className="text-center mt-6">
+                            <p className="text-xs text-white/60 mb-2">Don't have an account?</p>
+                            <Link to={Routes.SIGN_UP} className="text-xs font-bold text-[#00d4ff] uppercase tracking-wider">
+                                Sign Up
+                            </Link>
+                        </div>
+                    )}
                 </div>
 
                 {/* Welcome Back Section (Next to Sign In Form) */}
@@ -56,6 +77,15 @@ export default function CombinedAuthPage() {
                     <div className="slide-element w-full">
                         <SignUpForm />
                     </div>
+                    {/* Mobile Only: Sign In Link */}
+                    {isMobile && (
+                        <div className="text-center mt-6">
+                            <p className="text-xs text-white/60 mb-2">Already have an account?</p>
+                            <Link to={Routes.SIGN_IN} className="text-xs font-bold text-[#00d4ff] uppercase tracking-wider">
+                                Sign In
+                            </Link>
+                        </div>
+                    )}
                 </div>
 
                 {/* Welcome Section (Next to Sign Up Form) */}
