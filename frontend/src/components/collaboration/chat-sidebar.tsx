@@ -165,10 +165,10 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
                 if (isFromFriend || isFromMeToFriend) {
                     console.log('[ChatSidebar] ✅ Match! Appending message')
 
-                    // 🛡️ REAL-TIME CLEARING: If we are actively looking at this friend, mark as seen and clear badges
+                    // 🛡️ REAL-TIME CLEARING: If we are actively looking at this friend, clear badges but DON'T mark as seen automatically
+                    // (marking as seen happens in the message list only if document has focus)
                     if (msgSenderId && isFromFriend) {
-                        console.log('[ChatSidebar] 🏃 High-speed clearing for active friend:', msgSenderId)
-                        socialService.markAsSeen(data._id || data.id).catch(() => { })
+                        console.log('[ChatSidebar] 🏃 High-speed badge clearing for active friend:', msgSenderId)
                         clearChatNotifications('private', msgSenderId)
                     }
 
@@ -335,6 +335,13 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
 
     const markAsSeen = async (msg: any) => {
         if (!user || isSameId(msg.senderId, user)) return
+
+        // 🛡️ Focus Check: Only mark as seen if the window is currently focused
+        if (!document.hasFocus()) {
+            // console.log('[ChatSidebar] Skipping markAsSeen: Window not focused')
+            return
+        }
+
         const mid = msg._id || msg.id
         if (!mid || mid === 'undefined') return
 
