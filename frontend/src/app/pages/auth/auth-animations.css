@@ -45,6 +45,15 @@
     transition: background-color 5000s ease-in-out 0s;
 }
 
+/* Force OTP digits to navy blue specifically on the light OTP card */
+.auth-page-container input[autocomplete="one-time-code"],
+.auth-page-container .gap-2 input,
+.auth-page-container .gap-3 input {
+    color: #1a1a2e !important;
+    -webkit-text-fill-color: #1a1a2e !important;
+}
+
+
 
 
 .auth-wrapper {

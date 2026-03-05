@@ -50,7 +50,7 @@ export const register = async (req: Request, res: Response) => {
 
     // Generate OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    const otpExpires = new Date(Date.now() + 2 * 60 * 1000); // 2 minutes
 
     // Store pending signup
     await pendingSignupService.savePendingSignup({
@@ -72,7 +72,7 @@ export const register = async (req: Request, res: Response) => {
     try {
       const emailPromise = emailService.sendMail(constants.USER_EMAIL_VERIFICATION_TEMPLATE, {
         email,
-        name: `${first_name} ${last_name}`,
+        first_name: first_name,
         otp,
       });
 
@@ -220,7 +220,7 @@ export const firebaseLogin = async (req: Request, res: Response) => {
 
         // Store pending Google signup
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+        const otpExpires = new Date(Date.now() + 2 * 60 * 1000); // 2 minutes
 
         console.log(`[AuthDebug] Storing pending Google signup for: ${email}, Name: ${firstName} ${lastName}`);
 
@@ -245,7 +245,7 @@ export const firebaseLogin = async (req: Request, res: Response) => {
         try {
           const emailPromise = emailService.sendMail(constants.USER_EMAIL_VERIFICATION_TEMPLATE, {
             email: email,
-            name: `${firstName} ${lastName}`,
+            first_name: firstName,
             otp,
           });
           const timeoutPromise = new Promise((_, reject) =>
@@ -631,14 +631,14 @@ export const resendOtp = async (req: Request, res: Response) => {
       // Generate new OTP for pending signup
       const otp = Math.floor(100000 + Math.random() * 900000).toString();
       pendingSignup.otp = otp;
-      pendingSignup.otpExpires = new Date(Date.now() + 10 * 60 * 1000);
+      pendingSignup.otpExpires = new Date(Date.now() + 2 * 60 * 1000); // 2 minutes
       await pendingSignupService.savePendingSignup(pendingSignup);
 
       // Send OTP email (Blocking with timeout)
       try {
         const emailPromise = emailService.sendMail(constants.USER_EMAIL_VERIFICATION_TEMPLATE, {
           email: pendingSignup.email,
-          name: `${pendingSignup.first_name} ${pendingSignup.last_name}`,
+          first_name: pendingSignup.first_name,
           otp,
         });
         const timeoutPromise = new Promise((_, reject) =>
@@ -668,7 +668,7 @@ export const resendOtp = async (req: Request, res: Response) => {
       // Send OTP email (Non-blocking)
       emailService.sendMail(constants.USER_EMAIL_VERIFICATION_TEMPLATE, {
         email: user.email,
-        name: `${user.first_name} ${user.last_name}`,
+        first_name: user.first_name,
         otp,
       }).catch((emailErr) => {
         console.error("[ResendOtp Existing Background Error]", emailErr.message);
@@ -696,6 +696,7 @@ export const forgotPassword = async (req: Request, res: Response) => {
 
     await emailService.sendMail(constants.USER_FORGOT_PASSWORD_TEMPLATE, {
       email: user.email,
+      first_name: user.first_name,
       token: resetPasswordToken,
       otp,
     });
