@@ -40,7 +40,7 @@
 .auth-page-container input:-webkit-autofill:hover,
 .auth-page-container input:-webkit-autofill:focus,
 .auth-page-container input:-webkit-autofill:active {
-    -webkit-box-shadow: 0 0 0 30px #1a1a2e inset !important;
+    -webkit-box-shadow: 0 0 0 30px #1e1e36 inset !important;
     -webkit-text-fill-color: white !important;
     transition: background-color 5000s ease-in-out 0s;
 }
