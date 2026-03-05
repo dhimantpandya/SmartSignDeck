@@ -11,9 +11,9 @@
   background-clip: text;
   display: inline-block;
   font-weight: 900;
-  /* Black border effect */
-  -webkit-text-stroke: 1.5px black;
-  filter: drop-shadow(0 0 1px black);
+  font-style: italic;
+  /* Soft shadow for visibility instead of hard border */
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
 }
 
 @keyframes gradientTextAnimation {

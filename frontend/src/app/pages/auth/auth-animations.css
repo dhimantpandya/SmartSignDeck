@@ -12,9 +12,32 @@
     font-family: 'Poppins', sans-serif;
 }
 
-.auth-page-container * {
-    box-sizing: border-box;
+.auth-page-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    min-height: 100vh;
+    background: #1a1a2e;
+    padding: 40px 20px;
+    font-family: 'Poppins', sans-serif;
     color: #fff;
+}
+
+/* Base text color for labels and general text */
+.auth-page-container h2,
+.auth-page-container p,
+.auth-page-container label,
+.auth-page-container span {
+    color: #fff;
+}
+
+/* Fix placeholders: Not white, no underlines */
+.auth-page-container input::placeholder {
+    color: rgba(255, 255, 255, 0.45) !important;
+    text-decoration: none !important;
+    font-weight: 400 !important;
 }
 
 .auth-wrapper {
@@ -451,8 +474,6 @@
     .credentials-panel .text-center a {
         color: #ffffff !important;
         font-weight: 700 !important;
-        text-decoration: underline !important;
-        text-underline-offset: 4px;
         opacity: 1 !important;
     }
 

@@ -255,7 +255,7 @@ export default function LandingPage() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ delay: 0.5, duration: 1 }}
-                        className='text-2xl md:text-4xl max-w-4xl mx-auto font-black leading-tight gradient-text'
+                        className='text-xl md:text-3xl max-w-3xl mx-auto font-black leading-tight gradient-text px-4 py-2 rounded-xl backdrop-blur-[2px] bg-white/5'
                     >
                         Experience absolute command over your digital presence. Robust enterprise governance meets intuitive flow with the industry's most scalable cloud infrastructure.
                     </motion.p>
@@ -445,9 +445,13 @@ export default function LandingPage() {
                                 className='group flex flex-col space-y-4 cursor-pointer'
                             >
                                 <div className='aspect-square overflow-hidden rounded-[2rem] border border-white/5'>
-                                    <img
+                                    <motion.img
+                                        initial={{ filter: 'grayscale(100%) brightness(75%)' }}
+                                        whileInView={{ filter: 'grayscale(0%) brightness(100%)' }}
+                                        viewport={{ amount: 0.5 }}
+                                        transition={{ duration: 0.8 }}
                                         src={item.image}
-                                        className='w-full h-full object-cover grayscale brightness-75 group-hover:grayscale-0 group-hover:brightness-100 group-hover:scale-110 transition-all duration-700'
+                                        className='w-full h-full object-cover group-hover:scale-110 transition-all duration-700'
                                         alt={item.title}
                                     />
                                 </div>
@@ -477,17 +481,17 @@ export default function LandingPage() {
                         transition={{ duration: 0.8 }}
                         className='bg-primary/95 text-white rounded-[4rem] p-16 md:p-32 text-center space-y-12 shadow-[0_50px_150px_-30px_hsla(var(--primary),0.6)] border border-white/10 backdrop-blur-3xl'
                     >
-                        <h2 className='text-5xl md:text-9xl font-black tracking-tighter uppercase italic leading-none'>
+                        <h2 className='text-4xl md:text-8xl font-black tracking-tighter uppercase italic leading-none'>
                             Ready to <br /> <span className='text-white/40'>transform?</span>
                         </h2>
-                        <p className='text-2xl text-white/70 max-w-3xl mx-auto font-medium'>
+                        <p className='text-xl md:text-2xl text-white/70 max-w-3xl mx-auto font-medium'>
                             Join the elite businesses using SmartSignDeck. Start your 14-day premium trial today and see the difference.
                         </p>
-                        <div className='flex flex-col sm:flex-row items-center justify-center gap-8'>
-                            <Button size='lg' onClick={() => navigate(Routes.SIGN_UP)} className='bg-white text-black hover:bg-white/90 h-20 px-16 rounded-3xl font-black uppercase tracking-widest text-lg w-full sm:w-auto shadow-2xl'>
+                        <div className='flex flex-col sm:flex-row items-center justify-center gap-6'>
+                            <Button size='lg' onClick={() => navigate(Routes.SIGN_UP)} className='bg-white text-black hover:bg-white/90 h-16 md:h-20 px-10 md:px-16 rounded-3xl font-black uppercase tracking-widest text-md md:text-lg w-full sm:w-auto shadow-2xl'>
                                 Start Free Trial
                             </Button>
-                            <Button size='lg' variant='outline' onClick={() => navigate(Routes.CONTACT_US)} className='h-20 px-16 rounded-3xl font-black uppercase tracking-widest text-lg bg-transparent border-white/40 hover:bg-white/10 w-full sm:w-auto mt-4 sm:mt-0'>
+                            <Button size='lg' variant='outline' onClick={() => navigate(Routes.CONTACT_US)} className='h-16 md:h-20 px-10 md:px-16 rounded-3xl font-black uppercase tracking-widest text-md md:text-lg bg-transparent border-white/40 hover:bg-white/10 w-full sm:w-auto mt-4 sm:mt-0'>
                                 Contact Sales
                             </Button>
                         </div>
