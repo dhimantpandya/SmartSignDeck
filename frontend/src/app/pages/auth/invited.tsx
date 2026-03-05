@@ -53,7 +53,7 @@ export default function Invited() {
         >
             <div className='grid gap-6'>
                 <div className='grid gap-3'>
-                    <label htmlFor='link' className='text-xs font-semibold text-muted-foreground'>
+                    <label htmlFor='link' className='text-xs font-semibold text-white/90'>
                         Paste Invitation Link
                     </label>
                     <Input
@@ -73,7 +73,7 @@ export default function Invited() {
                         <span className='w-full border-t border-white/10' />
                     </div>
                     <div className='relative flex justify-center text-xs uppercase'>
-                        <span className='bg-transparent px-4 text-muted-foreground font-semibold'>
+                        <span className='px-4 text-white/90 font-bold'>
                             Already a member?
                         </span>
                     </div>
@@ -88,13 +88,13 @@ export default function Invited() {
                 </Button>
             </div>
 
-            <p className='px-4 text-center text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/60 mt-8'>
+            <p className='px-4 text-center text-[10px] font-bold uppercase tracking-[0.2em] text-white/80 mt-8 leading-relaxed'>
                 By joining SmartSignDeck, you agree to our{' '}
-                <a href='#' className='text-foreground underline underline-offset-4 hover:text-primary transition-colors'>
+                <a href='#' className='text-white underline underline-offset-4 hover:text-white/80 transition-colors'>
                     Terms
                 </a>{' '}
                 &{' '}
-                <a href='#' className='text-foreground underline underline-offset-4 hover:text-primary transition-colors'>
+                <a href='#' className='text-white underline underline-offset-4 hover:text-white/80 transition-colors'>
                     Privacy
                 </a>.
             </p>
