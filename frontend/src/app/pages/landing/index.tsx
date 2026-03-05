@@ -255,7 +255,7 @@ export default function LandingPage() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ delay: 0.5, duration: 1 }}
-                        className='text-lg md:text-xl max-w-2xl mx-auto font-bold leading-relaxed gradient-text'
+                        className='text-2xl md:text-4xl max-w-4xl mx-auto font-black leading-tight gradient-text'
                     >
                         Experience absolute command over your digital presence. Robust enterprise governance meets intuitive flow with the industry's most scalable cloud infrastructure.
                     </motion.p>
