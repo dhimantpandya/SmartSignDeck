@@ -184,23 +184,29 @@ const deleteMessage = catchAsync(async (req: Request, res: Response) => {
     }
 
     if (scope === 'everyone') {
+        console.log(`[SOCIAL_CTRL] 🗑️ DELETING FOR EVERYONE: msgId=${messageId}, sender=${user._id}`);
         // Mark deleted for everyone
         msg.text = 'This message was deleted';
         msg.isDeleted = true;
-        // Do NOT add to deletedFor if scope is everyone, so it's not hidden by service query
         await msg.save();
+        console.log(`[SOCIAL_CTRL] ✅ msg saved to DB with isDeleted=true`);
 
         // Broadcast deletion
         const { emitToUser: emitUser, emitToCompany } = await import("../services/socket.service");
         const payload = { messageId, scope: 'everyone' };
 
         if (msg.companyId) {
+            console.log(`[SOCIAL_CTRL] 🏢 Broadcasting deletion to company: ${msg.companyId}`);
             emitToCompany(msg.companyId.toString(), 'message_deleted', payload);
         } else if (msg.recipientId) {
-            emitUser(msg.recipientId.toString(), 'message_deleted', payload);
-            emitUser(msg.senderId.toString(), 'message_deleted', payload);
+            const rid = msg.recipientId.toString();
+            const sid = msg.senderId.toString();
+            console.log(`[SOCIAL_CTRL] 👤 Broadcasting deletion to recipient: ${rid} and sender: ${sid}`);
+            emitUser(rid, 'message_deleted', payload);
+            emitUser(sid, 'message_deleted', payload);
         }
     } else {
+        console.log(`[SOCIAL_CTRL] 🗑️ DELETING FOR ME ONLY: msgId=${messageId}, user=${user._id}`);
         // Delete for me only
         if (!msg.deletedFor) msg.deletedFor = [];
         msg.deletedFor.push({ userId: user._id, scope: 'me', deletedAt: new Date() } as any);

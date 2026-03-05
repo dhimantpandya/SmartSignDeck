@@ -165,16 +165,22 @@ const emitToScreen = (screenId: string, event: string, data: any) => {
 const emitToUser = (userId: string, event: string, payload: any) => {
     if (io) {
         const uid = cleanId(userId);
-        logger.info(`[SOCKET] Emitting ${event} to user_${uid}`);
-        io.to(`user_${uid}`).emit(event, payload);
+        const roomName = `user_${uid}`;
+        const socketsInRoom = io.sockets.adapter.rooms.get(roomName);
+        const count = socketsInRoom ? socketsInRoom.size : 0;
+        logger.info(`[SOCKET] 👤 Emitting "${event}" to "${roomName}" | Sockets in room: ${count}`);
+        io.to(roomName).emit(event, payload);
     }
 }
 
 const emitToCompany = (companyId: string, event: string, data: any) => {
     if (io) {
         const cid = cleanId(companyId);
-        logger.info(`[SOCKET] Emitting ${event} to company_${cid}`);
-        io.to(`company_${cid}`).emit(event, data);
+        const roomName = `company_${cid}`;
+        const socketsInRoom = io.sockets.adapter.rooms.get(roomName);
+        const count = socketsInRoom ? socketsInRoom.size : 0;
+        logger.info(`[SOCKET] 🏢 Emitting "${event}" to "${roomName}" | Sockets in room: ${count}`);
+        io.to(roomName).emit(event, data);
     }
 }
 
