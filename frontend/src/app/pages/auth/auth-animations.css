@@ -21,6 +21,21 @@
     font-weight: 400 !important;
 }
 
+/* White input text on desktop */
+.auth-page-container input,
+.auth-page-container textarea {
+    color: #ffffff !important;
+}
+
+/* Red error/validation messages */
+.auth-page-container [role="alert"],
+.auth-page-container .text-destructive,
+.auth-page-container p.text-destructive,
+.auth-page-container span.text-destructive {
+    color: #ff4d4d !important;
+}
+
+
 .auth-wrapper {
     position: relative;
     width: 98%;
