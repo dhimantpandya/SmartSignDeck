@@ -438,10 +438,11 @@
 /* Mobile Responsive */
 @media (max-width: 768px) {
     .auth-page-container {
-        /* Faster but simpler gradient for mobile performance */
-        background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
-        background-size: 200% 200%;
-        animation: gradientAnimation 12s linear infinite !important;
+        /* Static gradient for zero-lag mobile performance */
+        background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab) !important;
+        background-size: cover !important;
+        animation: none !important;
+        /* Stop the CPU-heavy animation */
         padding: 20px;
         min-height: 100vh;
         display: flex;
@@ -453,34 +454,32 @@
         height: auto;
         min-height: 500px;
         max-width: 450px;
-        /* Re-implementing Optimized Glassmorphism */
-        background: rgba(255, 255, 255, 0.1) !important;
-        backdrop-filter: blur(12px) !important;
-        -webkit-backdrop-filter: blur(12px) !important;
+        /* Optimized Glassmorphism for mobile hardware */
+        background: rgba(255, 255, 255, 0.15) !important;
+        backdrop-filter: blur(8px) !important;
+        -webkit-backdrop-filter: blur(8px) !important;
         border: 1px solid rgba(255, 255, 255, 0.2);
         box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
         border-radius: 20px;
 
-        /* Performance Hints */
-        will-change: transform, opacity;
+        /* Hardware acceleration hints */
+        will-change: transform;
         transform: translate3d(0, 0, 0);
-        backface-visibility: hidden;
     }
 
-    /* Force all links in auth panels to be white and bold */
+    /* Restore underlines specifically for Auth links */
     .credentials-panel a,
-    .credentials-panel .text-muted-foreground a,
-    .credentials-panel .text-foreground,
     .credentials-panel .text-center a {
         color: #ffffff !important;
         font-weight: 700 !important;
+        text-decoration: underline !important;
+        text-underline-offset: 4px;
         opacity: 1 !important;
     }
 
-    /* Helper text color adjustments for contrast */
-    .credentials-panel .text-muted-foreground,
-    .credentials-panel .text-white\/60 {
-        color: rgba(255, 255, 255, 0.8) !important;
+    /* Ensure placeholders remain clean (no underlines) */
+    .auth-page-container input::placeholder {
+        text-decoration: none !important;
     }
 
     .auth-wrapper .credentials-panel,
