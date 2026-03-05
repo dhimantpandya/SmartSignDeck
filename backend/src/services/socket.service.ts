@@ -164,14 +164,17 @@ const emitToScreen = (screenId: string, event: string, data: any) => {
  */
 const emitToUser = (userId: string, event: string, payload: any) => {
     if (io) {
-        const uid = userId.toString().trim().toLowerCase();
+        const uid = cleanId(userId);
+        logger.info(`[SOCKET] Emitting ${event} to user_${uid}`);
         io.to(`user_${uid}`).emit(event, payload);
     }
 }
 
 const emitToCompany = (companyId: string, event: string, data: any) => {
     if (io) {
-        io.to(`company_${companyId}`).emit(event, data);
+        const cid = cleanId(companyId);
+        logger.info(`[SOCKET] Emitting ${event} to company_${cid}`);
+        io.to(`company_${cid}`).emit(event, data);
     }
 }
 

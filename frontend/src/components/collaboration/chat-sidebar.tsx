@@ -199,21 +199,26 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
                 return prev
             })
 
-            const deleter = (prev: any[]) => prev.map(m => {
-                let updated = m
-                // If this is the deleted message
-                if (isSameId(m, data.messageId)) {
-                    updated = { ...m, text: 'This message was deleted', isDeleted: true }
-                }
-                // If another message replies to this deleted message
-                if (m.replyTo && isSameId(m.replyTo, data.messageId)) {
-                    updated = {
-                        ...updated,
-                        replyTo: { ...((typeof m.replyTo === 'object' ? m.replyTo : {}) as any), text: 'This message was deleted', isDeleted: true }
+            const deleter = (prev: any[]) => {
+                console.log(`[ChatSidebar] 🍎 Running deleter on ${prev.length} messages for ID:`, data.messageId)
+                return prev.map(m => {
+                    let updated = m
+                    // If this is the deleted message
+                    if (isSameId(m, data.messageId)) {
+                        console.log(`[ChatSidebar] 🎯 Found message to delete in state:`, extractId(m))
+                        updated = { ...m, text: 'This message was deleted', isDeleted: true }
                     }
-                }
-                return updated
-            })
+                    // If another message replies to this deleted message
+                    if (m.replyTo && isSameId(m.replyTo, data.messageId)) {
+                        console.log(`[ChatSidebar] 🎯 Found reply to deleted message in state:`, extractId(m))
+                        updated = {
+                            ...updated,
+                            replyTo: { ...((typeof m.replyTo === 'object' ? m.replyTo : {}) as any), text: 'This message was deleted', isDeleted: true }
+                        }
+                    }
+                    return updated
+                })
+            }
             setBoardMessages(deleter)
             setPrivateMessages(deleter)
         }
