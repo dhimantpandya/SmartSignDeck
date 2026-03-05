@@ -179,7 +179,7 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
               name="email"
               render={({ field }) => (
                 <FormItem className='space-y-1'>
-                  <FormLabel className='text-xs font-semibold text-muted-foreground'>Email</FormLabel>
+                  <FormLabel className='text-xs font-semibold text-white'>Email</FormLabel>
                   <FormControl>
                     <Input
                       placeholder="name@example.com"
@@ -199,7 +199,7 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
               render={({ field }) => (
                 <FormItem className='space-y-1'>
                   <div className='flex items-center justify-between'>
-                    <FormLabel className='text-xs font-semibold text-muted-foreground'>Password</FormLabel>
+                    <FormLabel className='text-xs font-semibold text-white'>Password</FormLabel>
                   </div>
                   <FormControl>
                     <PasswordInput
@@ -212,7 +212,7 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
                   <div className="flex justify-end">
                     <Link
                       to={Routes.FORGOT_PASSWORD}
-                      className='text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-[#a1a1aa] transition-colors'
+                      className='text-[10px] font-black uppercase tracking-widest text-white hover:text-white/80 transition-colors'
                     >
                       Forgot password?
                     </Link>
@@ -232,7 +232,7 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
                   <span className='w-full border-t border-white/10' />
                 </div>
                 <div className='relative flex justify-center text-[10px] font-black uppercase tracking-[0.3em]'>
-                  <span className='bg-transparent px-4 text-muted-foreground/60'>
+                  <span className='bg-transparent px-4 text-white font-bold'>
                     Or continue with
                   </span>
                 </div>
@@ -372,17 +372,17 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
 
 
               <div className='mt-6 flex flex-col items-center gap-4 text-center text-[10px] font-bold uppercase tracking-[0.2em]'>
-                <div className='flex items-center gap-2 text-muted-foreground/60 transition-colors'>
-                  Need help? <Link to={Routes.CONTACT_US} className='text-foreground underline underline-offset-4 hover:text-[#a1a1aa] transition-colors'>Reach out</Link>
+                <div className='flex items-center gap-2 text-white font-bold transition-colors'>
+                  Need help? <Link to={Routes.CONTACT_US} className='text-white underline underline-offset-4 hover:text-white/80 transition-colors'>Reach out</Link>
                 </div>
-                <div className='flex items-center gap-2 text-muted-foreground'>
-                  <span className='h-[1px] w-6 bg-muted/30' />
-                  <span>or</span>
-                  <span className='h-[1px] w-6 bg-muted/30' />
+                <div className='flex items-center gap-2 text-white font-bold'>
+                  <span className='h-[1px] w-6 bg-white/20' />
+                  <span>OR</span>
+                  <span className='h-[1px] w-6 bg-white/20' />
                 </div>
-                <div>
+                <div className='text-white font-bold'>
                   Have an invitation?{' '}
-                  <Link to={Routes.INVITED} className='text-foreground underline underline-offset-4 hover:text-[#a1a1aa] transition-colors'>
+                  <Link to={Routes.INVITED} className='text-white underline underline-offset-4 hover:text-white/80 transition-colors'>
                     Join workspace
                   </Link>
                 </div>
