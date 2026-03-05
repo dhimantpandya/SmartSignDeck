@@ -97,8 +97,17 @@ export default function LandingPage() {
 
     const [activeVideo, setActiveVideo] = useState(0)
     const [activeMessage, setActiveMessage] = useState(0)
+    const [isMobile, setIsMobile] = useState(false)
 
     useEffect(() => {
+        const checkMobile = () => setIsMobile(window.innerWidth < 768)
+        checkMobile()
+        window.addEventListener('resize', checkMobile)
+        return () => window.removeEventListener('resize', checkMobile)
+    }, [])
+
+    useEffect(() => {
+        if (isMobile) return // Don't run video timer on mobile
         const videoTimer = setInterval(() => {
             setActiveVideo((prev) => (prev + 1) % heroVideos.length)
         }, 6000)
@@ -111,7 +120,7 @@ export default function LandingPage() {
             clearInterval(videoTimer)
             clearInterval(messageTimer)
         }
-    }, [dynamicMessages, heroVideos.length])
+    }, [dynamicMessages, heroVideos.length, isMobile])
 
     // Scroll-linked transforms for Hero
     const heroOpacity = useTransform(scrollYProgress, [0, 0.2], [1, 0])
@@ -185,25 +194,34 @@ export default function LandingPage() {
                 style={{ opacity: heroOpacity, scale: heroScale, y: heroY }}
                 className='relative h-screen flex items-center justify-center overflow-hidden'
             >
-                {/* Brighter Video Background with Crossfade */}
+                {/* Brighter Video Background/Image Fallback */}
                 <div className='absolute inset-0 z-0 overflow-hidden'>
-                    {heroVideos.map((video, idx) => (
-                        <motion.video
-                            key={video}
+                    {isMobile ? (
+                        <motion.img
                             initial={{ opacity: 0, scale: 1.1 }}
-                            animate={{
-                                opacity: activeVideo === idx ? 0.9 : 0,
-                                scale: activeVideo === idx ? 1 : 1.1
-                            }}
-                            transition={{ duration: 2, ease: "easeInOut" }}
-                            src={video}
-                            autoPlay={true}
-                            muted={true}
-                            loop={true}
-                            playsInline={true}
-                            className='absolute inset-0 w-full h-full object-cover brightness-110 contrast-110 pointer-events-none'
+                            animate={{ opacity: 1, scale: 1 }}
+                            src="https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&q=80&w=2000"
+                            className='absolute inset-0 w-full h-full object-cover brightness-110 contrast-110'
                         />
-                    ))}
+                    ) : (
+                        heroVideos.map((video, idx) => (
+                            <motion.video
+                                key={video}
+                                initial={{ opacity: 0, scale: 1.1 }}
+                                animate={{
+                                    opacity: activeVideo === idx ? 0.9 : 0,
+                                    scale: activeVideo === idx ? 1 : 1.1
+                                }}
+                                transition={{ duration: 2, ease: "easeInOut" }}
+                                src={video}
+                                autoPlay={true}
+                                muted={true}
+                                loop={true}
+                                playsInline={true}
+                                className='absolute inset-0 w-full h-full object-cover brightness-110 contrast-110 pointer-events-none'
+                            />
+                        ))
+                    )}
                     {/* Lighter Gradient Overlay for brightness */}
                     <div className='absolute inset-0 bg-gradient-to-b from-background/5 via-background/20 to-background z-10' />
                 </div>
