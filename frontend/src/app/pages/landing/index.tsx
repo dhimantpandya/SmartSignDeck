@@ -173,15 +173,22 @@ export default function LandingPage() {
                         ))}
                     </div>
 
-                    <div className='flex items-center gap-4'>
-                        <Button variant='ghost' onClick={() => navigate(Routes.SIGN_IN)} className='font-bold uppercase tracking-widest text-xs h-10 px-6'>
+                    <div className='flex items-center gap-2 sm:gap-4'>
+                        <Button
+                            variant='ghost'
+                            onClick={() => navigate(Routes.SIGN_IN)}
+                            className='font-bold uppercase tracking-widest text-[10px] sm:text-xs h-9 sm:h-10 px-3 sm:px-6'
+                        >
                             Login
                         </Button>
                         <motion.div
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
                         >
-                            <Button onClick={() => navigate(Routes.SIGN_UP)} className='font-bold uppercase tracking-widest text-xs h-10 px-6 shadow-[0_0_30px_-5px_hsl(var(--primary))] hover:shadow-[0_0_50px_-5px_hsl(var(--primary))] transition-all'>
+                            <Button
+                                onClick={() => navigate(Routes.SIGN_UP)}
+                                className='font-bold uppercase tracking-widest text-[10px] sm:text-xs h-9 sm:h-10 px-3 sm:px-6 shadow-[0_0_30px_-5px_hsl(var(--primary))] hover:shadow-[0_0_50px_-5px_hsl(var(--primary))] transition-all'
+                            >
                                 Get Started
                             </Button>
                         </motion.div>
@@ -346,10 +353,10 @@ export default function LandingPage() {
                                     <motion.div
                                         key={i}
                                         whileHover={{ scale: 1.05, border: '1px solid hsla(var(--primary), 0.5)' }}
-                                        className='flex items-center gap-3 p-5 bg-background/60 backdrop-blur-md rounded-2xl border border-white/10 shadow-xl transition-all group cursor-pointer'
+                                        className='flex items-center gap-2 sm:gap-3 p-3 sm:p-5 bg-background/60 backdrop-blur-md rounded-2xl border border-white/10 shadow-xl transition-all group cursor-pointer'
                                     >
-                                        <div className='text-primary group-hover:scale-125 transition-transform'>{ind.icon}</div>
-                                        <span className='font-bold text-sm uppercase tracking-wider'>{ind.name}</span>
+                                        <div className='text-primary group-hover:scale-125 transition-transform shrink-0'>{ind.icon}</div>
+                                        <span className='font-bold text-[10px] sm:text-sm uppercase tracking-wider truncate'>{ind.name}</span>
                                     </motion.div>
                                 ))}
                             </div>
