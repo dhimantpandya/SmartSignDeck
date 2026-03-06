@@ -8,7 +8,7 @@ import { useUserListTableColumns } from '../hooks/use-users-list-table-columns'
 import { User, UserListFilter } from '@/models/user.model'
 import { Button } from '@/components/custom/button'
 import { Search } from '@/components/search'
-import { IconEdit, IconTrash, IconUserPlus, IconUserShare } from '@tabler/icons-react'
+import { IconEdit, IconTrash, IconUserPlus, IconUserShare, IconUserCheck } from '@tabler/icons-react'
 import { useTableState } from '@/hooks/use-table-state'
 import DataTable from '@/components/ui/data-table'
 import { DataTableRowActions } from '@/components/ui/data-table-row-actions'
@@ -168,7 +168,7 @@ export const UsersList = () => {
       ...(isFriend ? [
         {
           label: 'Friend',
-          icon: <IconUserPlus className='mr-2 text-green-500' />,
+          icon: <IconUserCheck className='mr-2 text-green-500' />,
           disabled: true,
           onClick: () => { },
         }

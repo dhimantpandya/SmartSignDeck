@@ -185,7 +185,7 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
                       placeholder="name@example.com"
                       autoComplete="off"
                       {...field}
-                      className='h-12 rounded-xl border-white/20 bg-white/5 focus-visible:ring-primary/50'
+                      className='h-12 rounded-xl border-white/20 bg-white/5 text-white placeholder:text-white/40 focus-visible:ring-primary/50'
                     />
                   </FormControl>
                   <FormMessage />
@@ -206,7 +206,7 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
                       placeholder="********"
                       autoComplete="new-password"
                       {...field}
-                      className='h-12 rounded-xl border-white/20 bg-white/5 focus-visible:ring-primary/50'
+                      className='h-12 rounded-xl border-white/20 bg-white/5 text-white placeholder:text-white/40 focus-visible:ring-primary/50'
                     />
                   </FormControl>
                   <div className="flex justify-end">

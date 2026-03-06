@@ -143,6 +143,23 @@
   }
 }
 
+/* ============================================================
+   GLOBAL AUTOFILL FIX
+   Browsers (Chrome/Edge/Safari) inject their own background &
+   text color on autofilled inputs, overriding our dark theme.
+   - box-shadow trick neutralises the forced background
+   - -webkit-text-fill-color: inherit lets our CSS `color` win
+   ============================================================ */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
+  box-shadow: 0 0 0 1000px transparent inset !important;
+  -webkit-text-fill-color: inherit !important;
+  transition: background-color 5000s ease-in-out 0s !important;
+}
+
 @layer utilities {
 
   /* Chrome, Safari, and Opera */

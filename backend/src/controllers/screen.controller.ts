@@ -6,6 +6,7 @@ import ApiError from "../utils/ApiError";
 import catchAsync from "../utils/catchAsync";
 import screenService from "../services/screen.service";
 import { emitToScreen } from "../services/socket.service";
+import mongoose from "mongoose";
 
 const createScreen = catchAsync(async (req: Request, res: Response) => {
   const screen = await screenService.createScreen(req.body, req.user as any);
@@ -25,6 +26,11 @@ const getScreens = catchAsync(async (req: Request, res: Response) => {
   if (filter.isPublic === 'false') filter.isPublic = false;
   if (filter.trashed === 'true') filter.trashed = true;
   if (filter.trashed === 'false') filter.trashed = false;
+
+  // Explicit ObjectId casting for filters
+  if (filter.createdBy && mongoose.Types.ObjectId.isValid(filter.createdBy)) {
+    filter.createdBy = new mongoose.Types.ObjectId(filter.createdBy);
+  }
 
   const options = pick(req.query, ["sortBy", "limit", "page"]);
   const result = await screenService.queryScreens(filter, options, req.user as any);
