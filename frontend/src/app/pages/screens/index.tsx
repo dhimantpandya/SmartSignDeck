@@ -258,11 +258,11 @@ export default function Screens() {
                             <Avatar className="h-6 w-6">
                                 <AvatarImage src={screen.createdBy.avatar} />
                                 <AvatarFallback className="text-xs">
-                                    {screen.createdBy.first_name?.[0]}{screen.createdBy.last_name?.[0]}
+                                    {(screen.createdBy.first_name || '')[0]}{(screen.createdBy.last_name || '')[0]}
                                 </AvatarFallback>
                             </Avatar>
-                            <span className="text-xs">
-                                Created by: {screen.createdBy.first_name} {screen.createdBy.last_name} {checkIsOwner(screen) ? '(You)' : ''}
+                            <span className="text-xs font-medium">
+                                Created by : {screen.createdBy.first_name} {screen.createdBy.last_name} {checkIsOwner(screen) ? '(You)' : ''}
                             </span>
                         </div>
                     )}
@@ -305,7 +305,7 @@ export default function Screens() {
     )
 
     const myScreens = myScreensData?.results || []
-    const globalScreens = globalScreensData?.results || []
+    const globalScreens = (globalScreensData?.results || []).filter((s: any) => s.createdBy)
 
     return (
         <Layout>

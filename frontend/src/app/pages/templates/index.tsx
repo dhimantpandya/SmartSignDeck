@@ -331,11 +331,11 @@ export default function Templates() {
                             <Avatar className="h-6 w-6">
                                 <AvatarImage src={template.createdBy.avatar} />
                                 <AvatarFallback className="text-xs">
-                                    {template.createdBy.first_name?.[0]}{template.createdBy.last_name?.[0]}
+                                    {(template.createdBy.first_name || '')[0]}{(template.createdBy.last_name || '')[0]}
                                 </AvatarFallback>
                             </Avatar>
-                            <span className="text-xs">
-                                Created by: {template.createdBy.first_name} {template.createdBy.last_name} {checkIsOwner(template) ? '(You)' : ''}
+                            <span className="text-xs font-medium">
+                                Created by : {template.createdBy.first_name} {template.createdBy.last_name} {checkIsOwner(template) ? '(You)' : ''}
                             </span>
                         </div>
                     )}
@@ -420,7 +420,7 @@ export default function Templates() {
     )
 
     const myTemplates = myTemplatesData?.results || []
-    const globalTemplates = globalTemplatesData?.results || []
+    const globalTemplates = (globalTemplatesData?.results || []).filter((t: any) => t.createdBy)
 
     return (
         <Layout>

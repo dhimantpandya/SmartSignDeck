@@ -156,6 +156,16 @@ const updateUserById = async (
 const deleteUserById = async (userId: string): Promise<DeleteResult> => {
   const { emitToUser } = await import("./socket.service");
   emitToUser(userId, "user_deleted", { userId });
+
+  // Permanently delete user's content as requested (cascading delete)
+  const { Template, Screen, TemplateGroup, Playlist } = await import("../models");
+  await Promise.all([
+    Template.deleteMany({ createdBy: userId }),
+    Screen.deleteMany({ createdBy: userId }),
+    TemplateGroup.deleteMany({ createdBy: userId }),
+    Playlist.deleteMany({ createdBy: userId }),
+  ]);
+
   return await User.deleteOne({ _id: userId });
 };
 
