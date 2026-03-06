@@ -59,7 +59,7 @@ export default function Collaboration() {
     const [privateInputText, setPrivateInputText] = useState('')
     const [selectedProfileUser, setSelectedProfileUser] = useState<any>(null)
     const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false)
-    const { socket, setActiveChat } = useNotifications()
+    const { socket, setActiveChat, decrementRequestCount } = useNotifications()
     const [companyMembers, setCompanyMembers] = useState<any[]>([])
     const [onlineUserIds, setOnlineUserIds] = useState<Set<string>>(new Set())
 
@@ -84,6 +84,7 @@ export default function Collaboration() {
             queryClient.invalidateQueries({ queryKey: ['collaboration-requests'] })
             queryClient.invalidateQueries({ queryKey: ['templates'] })
             queryClient.invalidateQueries({ queryKey: ['notifications'] })
+            decrementRequestCount()
             toast({
                 title: `Request ${variables.status}`,
                 description: `You have ${variables.status} the collaboration request.`,
@@ -102,6 +103,8 @@ export default function Collaboration() {
         mutationFn: (requestId: string) => collaborationService.cancelRequest(requestId),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['collaboration-requests'] })
+            queryClient.invalidateQueries({ queryKey: ['notifications'] })
+            decrementRequestCount()
             toast({
                 title: 'Request Cancelled',
                 description: 'The collaboration request has been cancelled.',

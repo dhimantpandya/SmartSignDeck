@@ -23,6 +23,7 @@ interface CollaborateDialogProps {
     onClose: () => void
     templateId: string
     currentCollaborators: any[]
+    isOwner?: boolean
 }
 
 export const CollaborateDialog: FC<CollaborateDialogProps> = ({
@@ -30,6 +31,7 @@ export const CollaborateDialog: FC<CollaborateDialogProps> = ({
     onClose,
     templateId,
     currentCollaborators = [],
+    isOwner = false,
 }) => {
     const { user: currentUser } = useAuth()
     const queryClient = useQueryClient()
@@ -165,73 +167,83 @@ export const CollaborateDialog: FC<CollaborateDialogProps> = ({
                 </DialogHeader>
 
                 <div className="mt-4 space-y-4">
-                    <Tabs value={mode} onValueChange={(val: any) => setMode(val)} className="w-full">
-                        <TabsList className="grid w-full grid-cols-2">
-                            <TabsTrigger value="company" className="gap-2">
-                                <IconBuildingCommunity size={16} /> My Company
-                            </TabsTrigger>
-                            <TabsTrigger value="friends" className="gap-2">
-                                <IconUserHeart size={16} /> Friends
-                            </TabsTrigger>
-                        </TabsList>
-                    </Tabs>
+                    {isOwner ? (
+                        <>
+                            <Tabs value={mode} onValueChange={(val: any) => setMode(val)} className="w-full">
+                                <TabsList className="grid w-full grid-cols-2">
+                                    <TabsTrigger value="company" className="gap-2">
+                                        <IconBuildingCommunity size={16} /> My Company
+                                    </TabsTrigger>
+                                    <TabsTrigger value="friends" className="gap-2">
+                                        <IconUserHeart size={16} /> Friends
+                                    </TabsTrigger>
+                                </TabsList>
+                            </Tabs>
 
-                    {isLoading ? (
-                        <div className="flex h-40 items-center justify-center">
-                            <Loader />
-                        </div>
-                    ) : (
-                        <ScrollArea className="h-[300px] pr-4">
-                            {usersList && usersList.length > 0 ? (
-                                <div className="space-y-4">
-                                    {usersList.map((u: any) => {
-                                        const userId = u.id || u._id
-                                        const alreadyShared = isCollaborator(userId)
-                                        const pending = isPending(userId)
-
-                                        return (
-                                            <div key={userId} className="flex items-center justify-between group">
-                                                <div className="flex items-center gap-3">
-                                                    <Avatar className="h-10 w-10 border border-primary/10">
-                                                        <AvatarImage src={u.avatar} />
-                                                        <AvatarFallback>
-                                                            {u.first_name?.[0]}{u.last_name?.[0]}
-                                                        </AvatarFallback>
-                                                    </Avatar>
-                                                    <div>
-                                                        <p className="text-sm font-semibold">{u.first_name} {u.last_name}</p>
-                                                        <p className="text-xs text-muted-foreground">{u.email}</p>
-                                                    </div>
-                                                </div>
-                                                <Button
-                                                    size="sm"
-                                                    variant={alreadyShared ? "secondary" : pending ? "outline" : "default"}
-                                                    className="h-8 gap-2"
-                                                    onClick={() => !alreadyShared && !pending && sendRequestMutation.mutate(userId)}
-                                                    loading={sendRequestMutation.isPending}
-                                                    disabled={alreadyShared || pending}
-                                                >
-                                                    {alreadyShared ? (
-                                                        <><IconCheck size={14} /> Shared</>
-                                                    ) : pending ? (
-                                                        <>Pending</>
-                                                    ) : (
-                                                        <><IconUserPlus size={14} /> Share</>
-                                                    )}
-                                                </Button>
-                                            </div>
-                                        )
-                                    })}
+                            {isLoading ? (
+                                <div className="flex h-40 items-center justify-center">
+                                    <Loader />
                                 </div>
                             ) : (
-                                <div className="flex flex-col items-center justify-center h-full text-center p-6 bg-muted/30 rounded-xl border border-dashed">
-                                    <p className="text-sm font-medium">No {mode} found</p>
-                                    <p className="text-xs text-muted-foreground mt-1">
-                                        {mode === 'friends' ? 'Connect with other users to collaborate.' : 'Invite team members to your company.'}
-                                    </p>
-                                </div>
+                                <ScrollArea className="h-[300px] pr-4">
+                                    {usersList && usersList.length > 0 ? (
+                                        <div className="space-y-4">
+                                            {usersList.map((u: any) => {
+                                                const userId = u.id || u._id
+                                                const alreadyShared = isCollaborator(userId)
+                                                const pending = isPending(userId)
+
+                                                return (
+                                                    <div key={userId} className="flex items-center justify-between group">
+                                                        <div className="flex items-center gap-3">
+                                                            <Avatar className="h-10 w-10 border border-primary/10">
+                                                                <AvatarImage src={u.avatar} />
+                                                                <AvatarFallback>
+                                                                    {u.first_name?.[0]}{u.last_name?.[0]}
+                                                                </AvatarFallback>
+                                                            </Avatar>
+                                                            <div>
+                                                                <p className="text-sm font-semibold">{u.first_name} {u.last_name}</p>
+                                                                <p className="text-xs text-muted-foreground">{u.email}</p>
+                                                            </div>
+                                                        </div>
+                                                        <Button
+                                                            size="sm"
+                                                            variant={alreadyShared ? "secondary" : pending ? "outline" : "default"}
+                                                            className="h-8 gap-2"
+                                                            onClick={() => !alreadyShared && !pending && sendRequestMutation.mutate(userId)}
+                                                            loading={sendRequestMutation.isPending}
+                                                            disabled={alreadyShared || pending}
+                                                        >
+                                                            {alreadyShared ? (
+                                                                <><IconCheck size={14} /> Shared</>
+                                                            ) : pending ? (
+                                                                <>Pending</>
+                                                            ) : (
+                                                                <><IconUserPlus size={14} /> Share</>
+                                                            )}
+                                                        </Button>
+                                                    </div>
+                                                )
+                                            })}
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-col items-center justify-center h-full text-center p-6 bg-muted/30 rounded-xl border border-dashed">
+                                            <p className="text-sm font-medium">No {mode} found</p>
+                                            <p className="text-xs text-muted-foreground mt-1">
+                                                {mode === 'friends' ? 'Connect with other users to collaborate.' : 'Invite team members to your company.'}
+                                            </p>
+                                        </div>
+                                    )}
+                                </ScrollArea>
                             )}
-                        </ScrollArea>
+                        </>
+                    ) : (
+                        <div className="p-4 bg-muted/20 border border-dashed rounded-lg text-center">
+                            <p className="text-sm text-muted-foreground">
+                                Only the template owner can invite new collaborators.
+                            </p>
+                        </div>
                     )}
                 </div>
 

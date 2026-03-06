@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import { CollaborationRequest, Template, User } from "../models";
 import ApiError from "../utils/ApiError";
 import notificationService from "./notification.service";
+import { emitToTemplate } from "./socket.service";
 import { type CustomPaginateOptions } from "../models/plugins/paginate.plugin";
 
 /**
@@ -105,6 +106,13 @@ const respondToRequest = async (requestId: string, userId: string, status: "acce
                 // Refetch to confirm
                 const updatedTemplate = await Template.findById(template._id);
                 console.log(`[COLLAB] SUCCESS: Added User ${request.recipient} to Template ${template._id}. New collaborators:`, updatedTemplate?.collaborators);
+
+                // NOTIFY TEMPLATE ROOM
+                emitToTemplate(template.id, 'collaboration_accepted', {
+                    templateId: template.id,
+                    userId: request.recipient,
+                    collaborators: updatedTemplate?.collaborators
+                });
             } else {
                 console.log(`[COLLAB] INFO: User ${request.recipient} already in Template ${template._id} collaborators`);
             }

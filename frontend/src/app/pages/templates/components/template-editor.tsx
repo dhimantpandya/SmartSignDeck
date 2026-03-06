@@ -32,7 +32,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { GLOBAL_SCALE } from '@/utilities/fabric-utils'
 import { useNotifications } from '@/components/nav-notification-provider'
-import { CollaborateDialog } from './collaborate-dialog'
+import { useAuth } from '@/hooks/use-auth'
 import { Users } from 'lucide-react'
 
 interface Zone {
@@ -57,6 +57,7 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
     const canvasContainerRef = useRef<HTMLDivElement>(null)
     const canvasRef = useRef<fabric.Canvas | null>(null)
     const { socket } = useNotifications()
+    const { user } = useAuth()
 
     // State
     const [zones, setZones] = useState<Zone[]>(initialData?.zones || [])
@@ -72,6 +73,21 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
     const [showSidebar, setShowSidebar] = useState(false) // For mobile
     const [currentTemplateId, setCurrentTemplateId] = useState<string | null>(initialData?.id || initialData?._id || null)
 
+    const checkIsOwner = (template: any) => {
+        if (!template || !user) return false;
+        let createdById = null;
+        if (typeof template.createdBy === 'string') {
+            createdById = template.createdBy;
+        } else if (template.createdBy && typeof template.createdBy === 'object') {
+            createdById = template.createdBy.id || template.createdBy._id;
+        }
+        const currentUserId = user.id || (user as any)._id;
+        if (!createdById || !currentUserId) return false;
+        return createdById.toString() === currentUserId.toString();
+    }
+
+    const isOwner = checkIsOwner(initialData)
+
     const zonesRef = useRef<Zone[]>(zones)
     const lastBroadcastRef = useRef<number>(0)
     const transformingIdRef = useRef<string | null>(null)
@@ -85,14 +101,15 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
 
     // --- SOCKET SYNC ---
     useEffect(() => {
-        const templateId = currentTemplateId
+        const templateId = currentTemplateId?.toString().trim().toLowerCase()
         if (!socket || !templateId) return
 
         console.log('[COLLAB] Joining template room:', templateId)
         socket.emit('join_template', templateId)
 
         const handleRemoteUpdate = (data: any) => {
-            if (data.templateId !== templateId) return
+            const incomingId = data.templateId?.toString().trim().toLowerCase()
+            if (incomingId !== templateId) return
             console.log('[COLLAB] Remote update received:', data)
 
             if (data.zones) {
@@ -156,15 +173,29 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
             if (data.isPublic !== undefined) setIsPublic(data.isPublic)
         }
 
+        const handleCollabUpdate = async () => {
+            console.log('[COLLAB] Refreshing collaborators due to acceptance')
+            try {
+                const updated = await templateService.getTemplate(templateId)
+                if (updated && updated.collaborators) {
+                    setCollaborators(updated.collaborators)
+                }
+            } catch (err) {
+                console.error('Failed to refresh collaborators:', err)
+            }
+        }
+
         socket.on('template_updated', handleRemoteUpdate)
+        socket.on('collaboration_accepted', handleCollabUpdate)
 
         return () => {
             socket.off('template_updated', handleRemoteUpdate)
+            socket.off('collaboration_accepted', handleCollabUpdate)
         }
-    }, [socket, initialData])
+    }, [socket, currentTemplateId])
 
     const broadcastUpdate = (updates: any) => {
-        const templateId = initialData?.id || initialData?._id
+        const templateId = currentTemplateId?.toString().trim().toLowerCase()
         if (!socket || !templateId) return
 
         socket.emit('template_edit', {
@@ -472,7 +503,7 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
             setSelectedZoneId(null)
             toast({ title: `${activeObjects.length} zone(s) removed` })
         }
-    }, [socket, initialData, zones])
+    }, [socket, currentTemplateId, zones])
 
     const saveTemplate = async (isCollaborationAutoSave = false) => {
         if (zones.length === 0) {
@@ -1010,8 +1041,6 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                     </div>
                 </div>
 
-                {/* SCROLLABLE CANVAS CONTAINER */}
-
                 <CollaborateDialog
                     isOpen={isCollaborateOpen}
                     onClose={async () => {
@@ -1029,6 +1058,7 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                     }}
                     templateId={currentTemplateId as string}
                     currentCollaborators={collaborators}
+                    isOwner={isOwner}
                 />
 
                 {/* SCROLLABLE CANVAS CONTAINER */}

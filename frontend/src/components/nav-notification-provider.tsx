@@ -32,6 +32,7 @@ interface NotificationContextType {
     markAsRead: (id: string) => Promise<void>
     markAllAsRead: () => Promise<void>
     clearRequestBadges: () => void
+    decrementRequestCount: () => void
     clearChatNotifications: (type: 'company' | 'private', senderId?: string) => Promise<void>
     isChatOpen: boolean
     setIsChatOpen: (open: boolean) => void
@@ -367,6 +368,8 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
 
     const clearRequestBadges = () => setUnreadRequestCount(0)
 
+    const decrementRequestCount = () => setUnreadRequestCount(prev => Math.max(0, prev - 1))
+
     const suppressChatSection = (section: string) => {
         setSuppressedChatSections(prev => {
             const next = new Set(prev)
@@ -418,10 +421,12 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
                 unreadCount,
                 unreadChatCounts,
                 unreadCompanyChatCount,
+                unreadCompanyChatCount,
                 unreadRequestCount,
                 markAsRead,
                 markAllAsRead,
                 clearRequestBadges,
+                decrementRequestCount,
                 clearChatNotifications,
                 isChatOpen,
                 setIsChatOpen,
