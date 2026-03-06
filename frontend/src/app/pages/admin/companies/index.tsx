@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Layout } from '@/components/custom/layout'
 import ThemeSwitch from '@/components/theme-switch'
 import { UserNav } from '@/components/user-nav'
@@ -14,7 +14,6 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import {
     Building2,
-    Plus,
     Trash,
     Settings as SettingsIcon,
     ShieldCheck,
@@ -30,6 +29,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
+import { useAuth } from '@/hooks/use-auth'
+import { useNotifications } from '@/components/nav-notification-provider'
 
 // --- Management Modal Component ---
 function ManageCompanyModal({ company, isOpen, onClose }: { company: Company, isOpen: boolean, onClose: () => void }) {
@@ -279,12 +280,6 @@ export default function AdminCompanies() {
             toast({ title: 'Operation failed', description: err?.response?.data?.message || err.message, variant: 'destructive' })
         }
     })
-
-    const handleOpenCreate = () => {
-        setEditingCompany({ name: '', description: '' })
-        setIsDialogOpen(true)
-    }
-
 
     const handleSave = () => {
         if (!editingCompany?.name) return

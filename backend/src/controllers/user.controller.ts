@@ -38,13 +38,12 @@ const createUser = catchAsync(async (req: Request, res: Response) => {
       ...user,
       password,
     });
-  });
-
-// Global broadcast for real-time list update
-try { getIO().emit('user_updated', user); } catch (e) { }
-
-successResponse(res, userConstants.USER_CREATED, httpStatus.CREATED, user);
   }
+
+  // Global broadcast for real-time list update
+  try { getIO().emit('user_updated', user); } catch (e) { }
+
+  successResponse(res, userConstants.USER_CREATED, httpStatus.CREATED, user);
 });
 
 const getUsers = catchAsync(async (req: Request, res: Response) => {
