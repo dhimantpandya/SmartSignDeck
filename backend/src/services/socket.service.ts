@@ -6,6 +6,9 @@ import logger from "../config/logger";
 
 let io: Server;
 
+// Track active locks: templateId -> Map<zoneId, { userId: string, socketId: string, userName: string }>
+const activeLocks = new Map<string, Map<string, { userId: string; socketId: string; userName: string; color: string }>>();
+
 const cleanId = (id: any): string => {
     if (!id) return "";
     if (typeof id === 'string') return id.trim().toLowerCase();
@@ -122,17 +125,70 @@ const initSocket = (server: HttpServer | HttpsServer): Server => {
         socket.on("lock_zone", (data: { templateId: any, zoneId: string, userId: string, userName: string, color: string }) => {
             const tid = cleanId(data.templateId);
             if (!tid) return;
+
+            if (!activeLocks.has(tid)) {
+                activeLocks.set(tid, new Map());
+            }
+
+            const templateLocks = activeLocks.get(tid)!;
+            const existingLock = templateLocks.get(data.zoneId);
+
+            // If it's already locked by *someone else*, reject the lock
+            if (existingLock && existingLock.userId !== data.userId) {
+                logger.warn(`[SOCKET] Race condition prevented: Socket ${socket.id} tried to lock zone ${data.zoneId} held by ${existingLock.userId}`);
+                // Notify the loser that their lock failed
+                socket.emit("lock_rejected", { templateId: tid, zoneId: data.zoneId });
+                return;
+            }
+
+            // Otherwise, grant the lock and broadcast it
+            templateLocks.set(data.zoneId, {
+                userId: data.userId,
+                socketId: socket.id,
+                userName: data.userName,
+                color: data.color || '#4f46e5'
+            });
+
             socket.to(`template_${tid}`).emit("zone_locked", data);
         });
 
         socket.on("unlock_zone", (data: { templateId: any, zoneId: string }) => {
             const tid = cleanId(data.templateId);
             if (!tid) return;
+
+            const templateLocks = activeLocks.get(tid);
+            if (templateLocks) {
+                templateLocks.delete(data.zoneId);
+                // Clean up empty template lock maps
+                if (templateLocks.size === 0) {
+                    activeLocks.delete(tid);
+                }
+            }
+
             socket.to(`template_${tid}`).emit("zone_unlocked", data);
         });
 
         socket.on("disconnect", () => {
             logger.info(`Client disconnected: ${socket.id}`);
+
+            // 1. Release any locks held by this disconnected socket
+            for (const [tid, templateLocks] of activeLocks.entries()) {
+                let locksReleased = false;
+
+                for (const [zoneId, lockInfo] of templateLocks.entries()) {
+                    if (lockInfo.socketId === socket.id) {
+                        templateLocks.delete(zoneId);
+                        locksReleased = true;
+                        // Broadcast unlock to the room
+                        socket.to(`template_${tid}`).emit("zone_unlocked", { templateId: tid, zoneId });
+                        logger.info(`[SOCKET] Auto-unlocked zone ${zoneId} in ${tid} due to socket disconnect`);
+                    }
+                }
+
+                if (locksReleased && templateLocks.size === 0) {
+                    activeLocks.delete(tid);
+                }
+            }
 
             const uid = (socket as any).userId;
             if (uid && onlineUsers.has(uid)) {

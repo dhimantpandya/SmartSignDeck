@@ -265,6 +265,24 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
 
         const handleZoneLocked = (data: any) => {
             if (data.userId === (user?.id || (user as any)?._id)) return
+
+            // Force drop if we happen to have it selected (lost the race)
+            const canvas = canvasRef.current
+            if (canvas) {
+                const active = canvas.getActiveObject() as any
+                if (active && active.id === data.zoneId) {
+                    canvas.discardActiveObject()
+                    canvas.requestRenderAll()
+                    setSelectedZoneId(null)
+                    transformingIdRef.current = null
+                    toast({
+                        title: "Race condition resolved",
+                        description: `${data.userName} got the lock micro-seconds before you!`,
+                        variant: 'default'
+                    })
+                }
+            }
+
             setRemoteSelections(prev => ({
                 ...prev,
                 [data.zoneId]: {
@@ -273,6 +291,27 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                     color: data.color || '#4f46e5'
                 }
             }))
+        }
+
+        const handleLockRejected = (data: any) => {
+            // The server explicitly rejected our lock request (someone else has it)
+            const canvas = canvasRef.current
+            if (canvas) {
+                const active = canvas.getActiveObject() as any
+                // Even if not active, we should un-select internally just in case
+                if (active && active.id === data.zoneId) {
+                    canvas.discardActiveObject()
+                    canvas.requestRenderAll()
+                }
+            }
+            setSelectedZoneId(null)
+            transformingIdRef.current = null
+            toast({
+                title: "Lock Rejected",
+                description: "Someone else is actively editing this zone.",
+                variant: 'destructive'
+            })
+            // This will quickly trigger a fetch of the true state from the other user's broadcast
         }
 
         const handleZoneUnlocked = (data: any) => {
@@ -286,6 +325,7 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
         socket.on('template_updated', handleRemoteUpdate)
         socket.on('collaboration_accepted', handleCollabUpdate)
         socket.on('zone_locked', handleZoneLocked)
+        socket.on('lock_rejected', handleLockRejected)
         socket.on('zone_unlocked', handleZoneUnlocked)
 
         return () => {
@@ -301,6 +341,7 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
             socket.off('template_updated', handleRemoteUpdate)
             socket.off('collaboration_accepted', handleCollabUpdate)
             socket.off('zone_locked', handleZoneLocked)
+            socket.off('lock_rejected', handleLockRejected)
             socket.off('zone_unlocked', handleZoneUnlocked)
         }
     }, [socket, currentTemplateId, selectedZoneId])
