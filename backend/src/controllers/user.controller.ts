@@ -7,7 +7,7 @@ import { type IUser } from "../models/user.model";
 import Company from "../models/company.model";
 import { emailService, userService } from "../services";
 import notificationService from "../services/notification.service";
-import { emitToUser } from "../services/socket.service";
+import { emitToUser, getIO, cleanId } from "../services/socket.service";
 import catchAsync from "../utils/catchAsync";
 import * as constants from "../utils/constants/constants";
 import * as emailConstants from "../utils/constants/email.constants";
@@ -38,7 +38,12 @@ const createUser = catchAsync(async (req: Request, res: Response) => {
       ...user,
       password,
     });
-    successResponse(res, userConstants.USER_CREATED, httpStatus.CREATED, user);
+  });
+
+// Global broadcast for real-time list update
+try { getIO().emit('user_updated', user); } catch (e) { }
+
+successResponse(res, userConstants.USER_CREATED, httpStatus.CREATED, user);
   }
 });
 
@@ -282,6 +287,9 @@ const updateUser = catchAsync(async (req: Request, res: Response) => {
     });
   }
 
+  // Global broadcast for real-time list update (for all admins)
+  try { getIO().emit('user_updated', { id: user.id || (user as any)._id }); } catch (e) { }
+
   if (user) {
     // Populate companyId to get company name
     await user.populate('companyId');
@@ -328,6 +336,10 @@ const deleteUser = catchAsync(async (req: Request, res: Response) => {
   });
 
   await userService.deleteUserById(req.params.userId);
+
+  // Global broadcast for real-time list update
+  try { getIO().emit('user_deleted', { id: req.params.userId }); } catch (e) { }
+
   successResponse(res, userConstants.USER_DELETED, httpStatus.OK, {});
 });
 

@@ -49,8 +49,26 @@ export const UsersList = () => {
       console.log('[UsersList] New user registered:', newUser)
       queryClient.invalidateQueries({ queryKey: [QueryKeys.USER_LIST] })
     }
+
+    const handleUserUpdated = (data: any) => {
+      console.log('[UsersList] User updated event received:', data)
+      queryClient.invalidateQueries({ queryKey: [QueryKeys.USER_LIST] })
+    }
+
+    const handleUserDeleted = (data: any) => {
+      console.log('[UsersList] User deleted event received:', data)
+      queryClient.invalidateQueries({ queryKey: [QueryKeys.USER_LIST] })
+    }
+
     socket.on('new_user_registered', handleNewUser)
-    return () => { socket.off('new_user_registered', handleNewUser) }
+    socket.on('user_updated', handleUserUpdated)
+    socket.on('user_deleted', handleUserDeleted)
+
+    return () => {
+      socket.off('new_user_registered', handleNewUser)
+      socket.off('user_updated', handleUserUpdated)
+      socket.off('user_deleted', handleUserDeleted)
+    }
   }, [socket, queryClient])
 
   const [userForm, setUserForm] = useState<{
