@@ -70,6 +70,7 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
     const [isPreviewOpen, setIsPreviewOpen] = useState(false)
     const [isCollaborateOpen, setIsCollaborateOpen] = useState(false)
     const [showSidebar, setShowSidebar] = useState(false) // For mobile
+    const [currentTemplateId, setCurrentTemplateId] = useState<string | null>(initialData?.id || initialData?._id || null)
 
     const zonesRef = useRef<Zone[]>(zones)
     const lastBroadcastRef = useRef<number>(0)
@@ -84,7 +85,7 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
 
     // --- SOCKET SYNC ---
     useEffect(() => {
-        const templateId = initialData?.id || initialData?._id
+        const templateId = currentTemplateId
         if (!socket || !templateId) return
 
         console.log('[COLLAB] Joining template room:', templateId)
@@ -473,7 +474,7 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
         }
     }, [socket, initialData, zones])
 
-    const saveTemplate = async () => {
+    const saveTemplate = async (isCollaborationAutoSave = false) => {
         if (zones.length === 0) {
             toast({ title: 'Add at least one zone', variant: 'destructive' })
             return
@@ -501,20 +502,35 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                 isPublic,
             }
 
-            if (initialData?.id || initialData?._id) {
-                await templateService.updateTemplate(initialData.id || initialData._id, payload)
+            if (currentTemplateId) {
+                await templateService.updateTemplate(currentTemplateId, payload)
             } else {
                 const newTemplate = await templateService.createTemplate(payload)
-                // Auto-assign to group if requested
-                if (initialData?.autoAssignGroupId && newTemplate?.id) {
-                    await templateGroupService.addTemplatesToGroup(initialData.autoAssignGroupId, [newTemplate.id])
-                    queryClient.invalidateQueries({ queryKey: ['template-groups'] })
+                if (newTemplate?.id || newTemplate?._id) {
+                    const newId = newTemplate.id || newTemplate._id
+                    setCurrentTemplateId(newId)
+
+                    // Auto-assign to group if requested
+                    if (initialData?.autoAssignGroupId) {
+                        await templateGroupService.addTemplatesToGroup(initialData.autoAssignGroupId, [newId])
+                        queryClient.invalidateQueries({ queryKey: ['template-groups'] })
+                    }
+
+                    // Return the new ID so the caller can use it immediately
+                    if (isCollaborationAutoSave) {
+                        setIsSaving(false)
+                        queryClient.invalidateQueries({ queryKey: ['templates'] })
+                        return newId
+                    }
                 }
             }
 
             queryClient.invalidateQueries({ queryKey: ['templates'] })
-            toast({ title: initialData?.id ? 'Template updated!' : 'Template saved!' })
-            onCancel()
+            toast({ title: currentTemplateId ? 'Template updated!' : 'Template saved!' })
+
+            if (!isCollaborationAutoSave) {
+                onCancel()
+            }
         } catch (error: any) {
             toast({ title: 'Error', description: error.message, variant: 'destructive' })
         } finally {
@@ -960,11 +976,15 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                                 size="sm"
                                 className="h-9 gap-2 bg-background border-primary/20 hover:bg-primary/5 shadow-sm px-4 font-bold text-xs"
                                 onClick={async () => {
-                                    if (!initialData?.id && !initialData?._id) {
+                                    let templateId = currentTemplateId;
+                                    if (!templateId) {
                                         // Auto-save as draft first to get an ID
-                                        await saveTemplate();
+                                        const result = await saveTemplate(true);
+                                        templateId = result || null;
                                     }
-                                    setIsCollaborateOpen(true);
+                                    if (templateId) {
+                                        setIsCollaborateOpen(true);
+                                    }
                                 }}
                             >
                                 <Users size={16} className="text-primary" /> Collaborate
@@ -997,7 +1017,7 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                     onClose={async () => {
                         setIsCollaborateOpen(false)
                         // Refresh collaborators if needed
-                        const templateId = initialData?.id || initialData?._id
+                        const templateId = currentTemplateId
                         if (templateId) {
                             try {
                                 const updated = await templateService.getTemplate(templateId)
@@ -1007,7 +1027,7 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                             }
                         }
                     }}
-                    templateId={initialData?.id || initialData?._id}
+                    templateId={currentTemplateId as string}
                     currentCollaborators={collaborators}
                 />
 

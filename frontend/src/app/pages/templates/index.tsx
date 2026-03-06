@@ -537,10 +537,6 @@ export default function Templates() {
                                 <Globe size={16} />
                                 Global ({globalTemplates.length})
                             </TabsTrigger>
-                            <TabsTrigger value="collaboration" className="gap-2">
-                                <Users size={16} />
-                                Collaboration ({sharedWithMeData?.results?.length || 0})
-                            </TabsTrigger>
                         </TabsList>
 
                         <TabsContent value="my-templates" className="mt-6">
@@ -764,23 +760,6 @@ export default function Templates() {
                             </div>
                         )}
 
-                        <TabsContent value="collaboration" className="mt-6">
-                            {(sharedWithMeData?.results?.length || 0) > 0 ? (
-                                <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
-                                    {sharedWithMeData?.results.map((template: any) =>
-                                        renderTemplateCard(template, false, false)
-                                    )}
-                                </div>
-                            ) : (
-                                <div className='flex flex-col items-center justify-center rounded-lg border border-dashed p-20 text-center'>
-                                    <Users size={48} className='mb-4 text-muted-foreground' />
-                                    <h2 className='text-xl font-semibold'>No collaborative sessions</h2>
-                                    <p className='text-muted-foreground text-sm max-w-xs'>
-                                        Templates where you are a collaborator will appear here for real-time editing.
-                                    </p>
-                                </div>
-                            )}
-                        </TabsContent>
 
                         <TabsContent value="global" className="mt-6">
                             {isLoadingGlobal ? (
