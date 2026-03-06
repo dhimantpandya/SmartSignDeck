@@ -123,7 +123,7 @@ function ManageCompanyModal({ company, isOpen, onClose }: { company: Company, is
                         <TabsContent value="users" className="mt-0 outline-none">
                             <div className="flex items-center justify-between mb-4">
                                 <h4 className="font-semibold text-lg">Platform Users</h4>
-                                <Badge variant="outline">{userData?.data?.users?.length || 0} Members</Badge>
+                                <Badge variant="outline">{userData?.users?.length || 0} Members</Badge>
                             </div>
                             {isUsersLoading ? (
                                 <div className="flex flex-col gap-3">
@@ -131,7 +131,7 @@ function ManageCompanyModal({ company, isOpen, onClose }: { company: Company, is
                                 </div>
                             ) : (
                                 <div className="space-y-2">
-                                    {userData?.data?.users?.map((user: any) => (
+                                    {userData?.users?.map((user: any) => (
                                         <div key={user.id || user._id} className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/30 transition-colors">
                                             <div className="flex items-center gap-3">
                                                 <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center text-xs font-bold text-muted-foreground border">
