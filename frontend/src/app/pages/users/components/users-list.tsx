@@ -20,6 +20,7 @@ import { Cross2Icon } from '@radix-ui/react-icons'
 import { roleOptions } from '@/data/options'
 import { UserForm } from './user-form'
 import { UserProfileDialog } from './user-profile-dialog'
+import { LocalErrorBoundary } from '@/components/local-error-boundary'
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
 import { toast } from '@/components/ui/use-toast'
 import { Roles } from '@/validations/user.validation'
@@ -414,14 +415,16 @@ export const UsersList = () => {
         initialData={userForm.user}
         handleClose={handleUserFormClose}
       />
-      <UserProfileDialog
-        isOpen={isProfileOpen}
-        handleClose={() => {
-          setIsProfileOpen(false)
-          setSelectedProfileUser(undefined)
-        }}
-        user={selectedProfileUser}
-      />
+      <LocalErrorBoundary>
+        <UserProfileDialog
+          isOpen={isProfileOpen}
+          handleClose={() => {
+            setIsProfileOpen(false)
+            setSelectedProfileUser(undefined)
+          }}
+          user={selectedProfileUser}
+        />
+      </LocalErrorBoundary>
       <ConfirmationDialog
         isOpen={confirmDelete.isOpen}
         title="Delete User"
