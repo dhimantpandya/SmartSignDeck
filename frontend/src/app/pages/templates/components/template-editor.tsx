@@ -110,18 +110,58 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
             try {
                 const latest = await templateService.getTemplate(templateId)
                 if (latest && latest.zones) {
-                    console.log('[COLLAB] Persistent fetch successful:', (latest.zones as any[]).length, 'zones')
-                    setZones(latest.zones as any as Zone[])
+                    const freshZones = latest.zones as any as Zone[]
+                    console.log('[COLLAB] Persistent fetch successful:', freshZones.length, 'zones')
+
+                    // 1. Update React state
+                    setZones(freshZones)
                     setTemplateName(latest.name)
                     if ((latest as any).resolution) setResolution((latest as any).resolution)
                     if (typeof (latest as any).isPublic !== 'undefined') setIsPublic((latest as any).isPublic)
                     if ((latest as any).collaborators) setCollaborators((latest as any).collaborators)
+
+                    // 2. CRITICAL: Update the canvas objects directly
+                    //    The canvas was initialized from stale initialData.
+                    //    We must sync it to the real server state.
+                    const canvas = canvasRef.current
+                    if (canvas) {
+                        freshZones.forEach((latestZone: Zone) => {
+                            const obj = canvas.getObjects().find((o: any) => o.id === latestZone.id) as any
+                            if (obj) {
+                                // Zone exists on canvas — update position and scale
+                                obj.set({
+                                    left: latestZone.x * GLOBAL_SCALE,
+                                    top: latestZone.y * GLOBAL_SCALE,
+                                    scaleX: (latestZone.width * GLOBAL_SCALE) / obj.width,
+                                    scaleY: (latestZone.height * GLOBAL_SCALE) / obj.height,
+                                })
+                                obj.setCoords()
+                            } else {
+                                // Zone doesn't exist on canvas — add it
+                                addZoneToCanvas(canvas, latestZone)
+                            }
+                        })
+
+                        // Remove zones from canvas that are no longer in the latest save
+                        const freshIds = new Set(freshZones.map((z: Zone) => z.id))
+                        canvas.getObjects().forEach((o: any) => {
+                            if (o.id && !freshIds.has(o.id)) {
+                                canvas.remove(o)
+                            }
+                        })
+
+                        canvas.requestRenderAll()
+                        console.log('[COLLAB] Canvas synced to latest server state.')
+                    }
                 }
             } catch (err) {
                 console.error('[COLLAB] Failed to fetch latest template data:', err)
             }
         }
-        fetchLatest()
+
+        // Wait for canvas to be ready before syncing
+        const timer = setTimeout(fetchLatest, 300)
+        return () => clearTimeout(timer)
     }, []) // Only on mount
 
     // --- SOCKET SYNC ---
