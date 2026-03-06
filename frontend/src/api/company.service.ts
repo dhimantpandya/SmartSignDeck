@@ -26,6 +26,6 @@ export const companyService = {
     updateCompany: (id: string, data: Partial<Company>) =>
         apiService.patch<Company>(`/v1/companies/${id}`, data),
 
-    deleteCompany: (id: string) =>
-        apiService.delete<void>(`/v1/companies/${id}`),
+    deleteCompany: (id: string, data?: any) =>
+        apiService.delete<void>(`/v1/companies/${id}`, data),
 }

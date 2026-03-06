@@ -42,6 +42,25 @@ function ManageCompanyModal({ company, isOpen, onClose }: { company: Company, is
         enabled: !!company.id && isOpen
     })
 
+    const queryClient = useQueryClient()
+    const { socket } = useNotifications()
+
+    useEffect(() => {
+        if (!socket || !isOpen) return
+
+        const handleUpdate = () => {
+            queryClient.invalidateQueries({ queryKey: ['company-users', company.id] })
+        }
+
+        socket.on('user_updated', handleUpdate)
+        socket.on('user_deleted', handleUpdate)
+
+        return () => {
+            socket.off('user_updated', handleUpdate)
+            socket.off('user_deleted', handleUpdate)
+        }
+    }, [socket, isOpen, company.id, queryClient])
+
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="sm:max-w-[700px] h-[600px] flex flex-col p-0 overflow-hidden">
@@ -169,10 +188,33 @@ export default function AdminCompanies() {
     const [isDialogOpen, setIsDialogOpen] = useState(false)
     const [editingCompany, setEditingCompany] = useState<Partial<Company> | null>(null)
     const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
+    const [deletePassword, setDeletePassword] = useState('')
     const [managingCompany, setManagingCompany] = useState<Company | null>(null)
     const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({})
+    const { socket } = useNotifications()
 
     const queryClient = useQueryClient()
+    const { logout } = useAuth()
+
+    useEffect(() => {
+        if (!socket) return
+
+        const handleUpdate = () => {
+            queryClient.invalidateQueries({ queryKey: ['admin-companies'] })
+        }
+
+        socket.on('user_updated', handleUpdate)
+        socket.on('user_deleted', handleUpdate)
+        socket.on('company_updated', handleUpdate)
+        socket.on('company_deleted', handleUpdate)
+
+        return () => {
+            socket.off('user_updated', handleUpdate)
+            socket.off('user_deleted', handleUpdate)
+            socket.off('company_updated', handleUpdate)
+            socket.off('company_deleted', handleUpdate)
+        }
+    }, [socket, queryClient])
 
     const { data, isLoading } = useQuery({
         queryKey: ['admin-companies'],
@@ -216,10 +258,25 @@ export default function AdminCompanies() {
     })
 
     const deleteMutation = useMutation({
-        mutationFn: (id: string) => companyService.deleteCompany(id),
+        mutationFn: ({ id, password }: { id: string, password: string }) =>
+            companyService.deleteCompany(id, { password }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admin-companies'] })
             toast({ title: 'Company removed' })
+            setDeletePassword('')
+            setConfirmDelete(null)
+        },
+        onError: (err: any) => {
+            if (err?.response?.status === 401) {
+                toast({
+                    title: 'Security Protocol Initiated',
+                    description: 'Incorrect password. Automatic logout triggered.',
+                    variant: 'destructive'
+                })
+                logout()
+                return
+            }
+            toast({ title: 'Operation failed', description: err?.response?.data?.message || err.message, variant: 'destructive' })
         }
     })
 
@@ -252,14 +309,9 @@ export default function AdminCompanies() {
                             Super Admin Control Panel: Manage all registered companies.
                         </p>
                     </div>
-                    <Button onClick={handleOpenCreate} className="gap-2 shadow-lg">
-                        <Plus size={18} />
-                        Register Company
-                    </Button>
                 </div>
-
                 {isLoading ? (
-                    <div className="h-64 flex items-center justify-center">
+                    <div className="h-64 flex items-center justify-center" >
                         <Loader />
                     </div>
                 ) : (
@@ -396,7 +448,8 @@ export default function AdminCompanies() {
                             </TableBody>
                         </Table>
                     </Card>
-                )}
+                )
+                }
 
                 {/* Create/Edit Dialog */}
                 <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -444,29 +497,46 @@ export default function AdminCompanies() {
                 </Dialog>
 
                 {/* Management Modal */}
-                {managingCompany && (
-                    <ManageCompanyModal
-                        company={managingCompany}
-                        isOpen={!!managingCompany}
-                        onClose={() => setManagingCompany(null)}
-                    />
-                )}
+                {
+                    managingCompany && (
+                        <ManageCompanyModal
+                            company={managingCompany}
+                            isOpen={!!managingCompany}
+                            onClose={() => setManagingCompany(null)}
+                        />
+                    )
+                }
 
                 <ConfirmationDialog
                     isOpen={!!confirmDelete}
                     title="Delete Organization"
-                    message="Are you sure you want to delete this company? All data will be isolated or orphaned. This action cannot be undone."
+                    message="DANGER: This will permanently delete this company and ALL its active employees. Please enter your administrator password to confirm."
                     variant="destructive"
-                    confirmBtnText="Delete Organization"
+                    confirmBtnText="Confirm Permanent Deletion"
+                    isLoading={deleteMutation.isPending}
                     onConfirm={() => {
                         if (confirmDelete) {
-                            deleteMutation.mutate(confirmDelete)
+                            deleteMutation.mutate({ id: confirmDelete, password: deletePassword })
                         }
-                        setConfirmDelete(null)
                     }}
-                    onClose={() => setConfirmDelete(null)}
-                />
-            </Layout.Body>
-        </Layout>
+                    onClose={() => {
+                        setConfirmDelete(null)
+                        setDeletePassword('')
+                    }}
+                >
+                    <div className="mt-4 w-full px-4">
+                        <Label htmlFor="delete-password">Confirm Password</Label>
+                        <Input
+                            id="delete-password"
+                            type="password"
+                            placeholder="Your admin password"
+                            value={deletePassword}
+                            onChange={(e) => setDeletePassword(e.target.value)}
+                            className="mt-1"
+                        />
+                    </div>
+                </ConfirmationDialog>
+            </Layout.Body >
+        </Layout >
     )
 }

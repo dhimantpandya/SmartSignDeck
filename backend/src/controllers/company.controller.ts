@@ -4,6 +4,8 @@ import catchAsync from "../utils/catchAsync";
 import Company from "../models/company.model";
 import successResponse from "../helpers/responses/successResponse";
 import ApiError from "../utils/ApiError";
+import { getIO } from "../services/socket.service";
+import User from "../models/user.model";
 
 const createCompany = catchAsync(async (req: Request, res: Response) => {
     const User = (await import("../models/user.model")).default; // Dynamic import to avoid cycles if any
@@ -21,6 +23,10 @@ const createCompany = catchAsync(async (req: Request, res: Response) => {
         role: "user",
         onboardingCompleted: true
     });
+
+
+    // Global broadcast
+    try { getIO().emit('company_updated', company); } catch (e) { }
 
     successResponse(res, "Company created", httpStatus.CREATED, company);
 });
@@ -61,13 +67,37 @@ const getCompany = catchAsync(async (req: Request, res: Response) => {
 const updateCompany = catchAsync(async (req: Request, res: Response) => {
     const company = await Company.findByIdAndUpdate(req.params.companyId, req.body, { new: true });
     if (!company) throw new ApiError(httpStatus.NOT_FOUND, "Company not found");
+
+    // Global broadcast
+    try { getIO().emit('company_updated', company); } catch (e) { }
+
     successResponse(res, "Company updated", httpStatus.OK, company);
 });
 
 const deleteCompany = catchAsync(async (req: Request, res: Response) => {
-    const company = await Company.findByIdAndDelete(req.params.companyId);
+    const { password } = req.body;
+    const currentUser = req.user as any;
+
+    // 1. Verify Password
+    const user = await User.findById(currentUser.id || currentUser._id);
+    if (!user || !(await user.isPasswordMatch(password))) {
+        throw new ApiError(httpStatus.UNAUTHORIZED, "Incorrect password. Security protocol initiated.");
+    }
+
+    const companyId = req.params.companyId;
+    const company = await Company.findById(companyId);
     if (!company) throw new ApiError(httpStatus.NOT_FOUND, "Company not found");
-    successResponse(res, "Company deleted", httpStatus.OK);
+
+    // 2. Cascading Delete: Remove all users associated with this company
+    await User.deleteMany({ companyId });
+
+    // 3. Delete Company
+    await company.deleteOne();
+
+    // 4. Global broadcast
+    try { getIO().emit('company_deleted', { id: companyId }); } catch (e) { }
+
+    successResponse(res, "Company and all its employees deleted", httpStatus.OK);
 });
 
 export default {
