@@ -73,6 +73,7 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
     const [isCollaborateOpen, setIsCollaborateOpen] = useState(false)
     const [showSidebar, setShowSidebar] = useState(false) // For mobile
     const [currentTemplateId, setCurrentTemplateId] = useState<string | null>(initialData?.id || initialData?._id || null)
+    const [remoteSelections, setRemoteSelections] = useState<Record<string, { userId: string, userName: string, color: string, avatar?: string }>>({})
 
     const checkIsOwner = (template: any) => {
         if (!template || !user) return false;
@@ -99,6 +100,29 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
     useEffect(() => {
         zonesRef.current = zones
     }, [zones])
+
+    // --- ABSOLUTE PERSISTENCE (FETCH ON MOUNT) ---
+    useEffect(() => {
+        const templateId = currentTemplateId?.toString().trim().toLowerCase()
+        if (!templateId) return
+
+        const fetchLatest = async () => {
+            try {
+                const latest = await templateService.getTemplate(templateId)
+                if (latest && latest.zones) {
+                    console.log('[COLLAB] Persistent fetch successful:', (latest.zones as any[]).length, 'zones')
+                    setZones(latest.zones as any as Zone[])
+                    setTemplateName(latest.name)
+                    if ((latest as any).resolution) setResolution((latest as any).resolution)
+                    if (typeof (latest as any).isPublic !== 'undefined') setIsPublic((latest as any).isPublic)
+                    if ((latest as any).collaborators) setCollaborators((latest as any).collaborators)
+                }
+            } catch (err) {
+                console.error('[COLLAB] Failed to fetch latest template data:', err)
+            }
+        }
+        fetchLatest()
+    }, []) // Only on mount
 
     // --- SOCKET SYNC ---
     useEffect(() => {
@@ -153,6 +177,16 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                                 scaleY: (remoteZone.height * SCALE) / obj.height,
                             })
                             obj.setCoords()
+
+                            // Also sync remote tag position if present
+                            const tag = canvas.getObjects().find((o: any) => o._forZoneId === obj.id && o._isRemoteTag)
+                            if (tag) {
+                                tag.set({
+                                    left: obj.left,
+                                    top: obj.top - 5
+                                })
+                                tag.setCoords()
+                            }
                         } else {
                             addZoneToCanvas(canvas, remoteZone)
                         }
@@ -186,14 +220,132 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
             }
         }
 
+        const handleZoneLocked = (data: any) => {
+            if (data.userId === (user?.id || (user as any)?._id)) return
+            setRemoteSelections(prev => ({
+                ...prev,
+                [data.zoneId]: {
+                    userId: data.userId,
+                    userName: data.userName,
+                    color: data.color || '#4f46e5'
+                }
+            }))
+        }
+
+        const handleZoneUnlocked = (data: any) => {
+            setRemoteSelections(prev => {
+                const next = { ...prev }
+                delete next[data.zoneId]
+                return next
+            })
+        }
+
         socket.on('template_updated', handleRemoteUpdate)
         socket.on('collaboration_accepted', handleCollabUpdate)
+        socket.on('zone_locked', handleZoneLocked)
+        socket.on('zone_unlocked', handleZoneUnlocked)
 
         return () => {
+            if (transformingIdRef.current) {
+                emitUnlock(transformingIdRef.current)
+            } else if (selectedZoneId) {
+                // If we have a selected id but not transforming, unlock it
+                const templateId = currentTemplateId?.toString().trim().toLowerCase()
+                if (socket && templateId) {
+                    socket.emit('unlock_zone', { templateId, zoneId: selectedZoneId })
+                }
+            }
             socket.off('template_updated', handleRemoteUpdate)
             socket.off('collaboration_accepted', handleCollabUpdate)
+            socket.off('zone_locked', handleZoneLocked)
+            socket.off('zone_unlocked', handleZoneUnlocked)
         }
-    }, [socket, currentTemplateId])
+    }, [socket, currentTemplateId, selectedZoneId])
+
+    // --- VISUAL PRESENCE (REMOTE SELECTIONS) ---
+    useEffect(() => {
+        const canvas = canvasRef.current
+        if (!canvas) return
+
+        canvas.getObjects().forEach((obj: any) => {
+            if (!obj.id) return
+
+            const remote = remoteSelections[obj.id]
+            if (remote) {
+                // 1. Disable local selection
+                obj.set({
+                    selectable: false,
+                    evented: false, // Prevent even hover/click
+                    borderColor: remote.color,
+                    borderScaleFactor: 2,
+                    hasControls: false,
+                })
+
+                // 2. Add visual presence tag if missing
+                let tag = canvas.getObjects().find((o: any) => o._forZoneId === obj.id && o._isRemoteTag) as any
+                if (!tag) {
+                    tag = new fabric.Group([
+                        new fabric.Rect({
+                            fill: remote.color,
+                            height: 20,
+                            rx: 4,
+                            ry: 4,
+                            originX: 'left',
+                            originY: 'bottom',
+                        }),
+                        new fabric.Text(remote.userName, {
+                            fontSize: 10,
+                            fill: '#ffffff',
+                            fontFamily: 'Inter, sans-serif',
+                            fontWeight: 'bold',
+                            originX: 'left',
+                            originY: 'bottom',
+                        })
+                    ], {
+                        originX: 'left',
+                        originY: 'bottom',
+                        selectable: false,
+                        evented: false,
+                        // @ts-ignore
+                        _forZoneId: obj.id,
+                        _isRemoteTag: true
+                    })
+
+                    // Adjust rect width based on text
+                    const textObj = tag.getObjects()[1] as fabric.Text
+                    const rectObj = tag.getObjects()[0] as fabric.Rect
+                    rectObj.set({ width: textObj.width! + 10 })
+                    textObj.set({ left: 5, top: -2 })
+
+                    canvas.add(tag)
+                }
+
+                // Match position (roughly above the zone)
+                tag.set({
+                    left: obj.left,
+                    top: obj.top - 5,
+                    visible: true
+                })
+                tag.bringToFront()
+            } else {
+                // Restore if was previously locked
+                if (obj.borderColor !== obj.cornerStrokeColor) { // Check if it was remote colored
+                    obj.set({
+                        selectable: true,
+                        evented: true,
+                        borderColor: obj.cornerStrokeColor,
+                        borderScaleFactor: 1,
+                        hasControls: true
+                    })
+                }
+
+                const tag = canvas.getObjects().find((o: any) => o._forZoneId === obj.id && o._isRemoteTag)
+                if (tag) canvas.remove(tag)
+            }
+        })
+
+        canvas.requestRenderAll()
+    }, [remoteSelections])
 
     const broadcastUpdate = (updates: any) => {
         const templateId = currentTemplateId?.toString().trim().toLowerCase()
@@ -202,6 +354,35 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
         socket.emit('template_edit', {
             templateId,
             ...updates
+        })
+    }
+
+    const emitLock = (zoneId: string) => {
+        const templateId = currentTemplateId?.toString().trim().toLowerCase()
+        if (!socket || !templateId || !user) return
+
+        const userId = user.id || (user as any)._id || ''
+        // Generate a deterministic color from userId so each collaborator has a consistent color
+        const PALETTE = ['#4f46e5', '#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899']
+        const colorIndex = userId.split('').reduce((acc: number, c: string) => acc + c.charCodeAt(0), 0) % PALETTE.length
+        const userColor = PALETTE[colorIndex]
+
+        socket.emit('lock_zone', {
+            templateId,
+            zoneId,
+            userId,
+            userName: `${(user as any).first_name || ''} ${(user as any).last_name || ''}`.trim() || 'Collaborator',
+            color: userColor
+        })
+    }
+
+    const emitUnlock = (zoneId: string) => {
+        const templateId = currentTemplateId?.toString().trim().toLowerCase()
+        if (!socket || !templateId) return
+
+        socket.emit('unlock_zone', {
+            templateId,
+            zoneId
         })
     }
 
@@ -622,7 +803,10 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                     constrainObject(obj)
                     obj.setCoords()
                     canvas.renderAll()
-                    if (obj.id) setSelectedZoneId(obj.id)
+                    if (obj.id) {
+                        setSelectedZoneId(obj.id)
+                        emitLock(obj.id)
+                    }
                 }
             })
             canvas.on('selection:updated', (e) => {
@@ -635,12 +819,19 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                     constrainObject(obj)
                     obj.setCoords()
                     canvas.renderAll()
-                    if (obj.id) setSelectedZoneId(obj.id)
+                    if (obj.id) {
+                        setSelectedZoneId(obj.id)
+                        emitLock(obj.id)
+                    }
                 }
             })
-            canvas.on('selection:cleared', () => {
+            canvas.on('selection:cleared', (e) => {
+                const deselected = (e as any).deselected?.[0]
+                if (deselected?.id) {
+                    emitUnlock(deselected.id)
+                }
                 setSelectedZoneId(null)
-                transformingIdRef.current = null // Also clear if selection is dropped
+                transformingIdRef.current = null
             })
 
         } catch (error) {

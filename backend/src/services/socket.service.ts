@@ -119,6 +119,18 @@ const initSocket = (server: HttpServer | HttpsServer): Server => {
             logger.info(`[SOCKET] Template update broadcast to room template_${tid}`);
         });
 
+        socket.on("lock_zone", (data: { templateId: any, zoneId: string, userId: string, userName: string, color: string }) => {
+            const tid = cleanId(data.templateId);
+            if (!tid) return;
+            socket.to(`template_${tid}`).emit("zone_locked", data);
+        });
+
+        socket.on("unlock_zone", (data: { templateId: any, zoneId: string }) => {
+            const tid = cleanId(data.templateId);
+            if (!tid) return;
+            socket.to(`template_${tid}`).emit("zone_unlocked", data);
+        });
+
         socket.on("disconnect", () => {
             logger.info(`Client disconnected: ${socket.id}`);
 
