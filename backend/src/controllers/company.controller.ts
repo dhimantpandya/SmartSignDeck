@@ -52,6 +52,7 @@ const getCompanies = catchAsync(async (req: Request, res: Response) => {
                 created_at: 1,
                 updated_at: 1,
                 memberCount: { $size: "$members" },
+                _id: 1,
                 id: "$_id"
             }
         }

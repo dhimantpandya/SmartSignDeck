@@ -100,8 +100,9 @@ const getUsers = catchAsync(async (req: Request, res: Response) => {
     if (mongoose.Types.ObjectId.isValid(companyId as string)) {
       const company = await Company.findById(companyId);
       if (company) {
+        const trimmedName = company.name.trim();
         const relatedCompanies = await Company.find({
-          name: { $regex: new RegExp(`^${escapeRegExp(company.name)}$`, "i") }
+          name: { $regex: new RegExp(`^${escapeRegExp(trimmedName)}$`, "i") }
         });
         const companyIds = relatedCompanies.map(c => c._id);
         const companyNames = relatedCompanies.map(c => c.name);
