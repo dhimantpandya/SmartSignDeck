@@ -507,7 +507,7 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
             } else {
                 const newTemplate = await templateService.createTemplate(payload)
                 if (newTemplate?.id || newTemplate?._id) {
-                    const newId = newTemplate.id || newTemplate._id
+                    const newId = (newTemplate.id || newTemplate._id) as string
                     setCurrentTemplateId(newId)
 
                     // Auto-assign to group if requested
@@ -903,7 +903,7 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
 
                 <div className='mt-auto flex flex-col gap-2 border-t pt-4'>
                     <Button variant='ghost' size="sm" onClick={onCancel}>Cancel</Button>
-                    <Button loading={isSaving} size="sm" onClick={saveTemplate}>
+                    <Button loading={isSaving} size="sm" onClick={() => saveTemplate()}>
                         <IconDeviceFloppy className='mr-2' size={18} />
                         Save Layout
                     </Button>
