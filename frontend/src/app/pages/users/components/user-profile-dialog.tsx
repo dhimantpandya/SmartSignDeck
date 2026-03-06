@@ -69,7 +69,6 @@ export const UserProfileDialog: FC<UserProfileDialogProps> = ({
     })
 
     const user = profileUser // Alias for existing code
-    if (!user && !isOpen) return null // Guard: skip rendering when no user selected
     const isMe = currentUser?.id === (user?.id || (user as any)?._id)
     const friendsList = friendsData || []
     const sentReqs = sentRequestsData || []
@@ -127,6 +126,8 @@ export const UserProfileDialog: FC<UserProfileDialogProps> = ({
 
     const screens = screensData?.results || []
     const templates = templatesData?.results || []
+
+    if (!user && !isOpen) return null // Guard: skip rendering when no user selected
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
