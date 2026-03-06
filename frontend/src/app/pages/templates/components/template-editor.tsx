@@ -32,6 +32,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { GLOBAL_SCALE } from '@/utilities/fabric-utils'
 import { useNotifications } from '@/components/nav-notification-provider'
+import { CollaborateDialog } from './collaborate-dialog'
 import { useAuth } from '@/hooks/use-auth'
 import { Users } from 'lucide-react'
 

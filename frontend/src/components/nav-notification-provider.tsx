@@ -421,7 +421,6 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
                 unreadCount,
                 unreadChatCounts,
                 unreadCompanyChatCount,
-                unreadCompanyChatCount,
                 unreadRequestCount,
                 markAsRead,
                 markAllAsRead,
