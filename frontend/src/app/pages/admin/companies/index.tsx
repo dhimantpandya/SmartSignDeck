@@ -21,7 +21,9 @@ import {
     ChevronRight,
     ChevronDown,
     User as UserIcon,
-    CreditCard
+    CreditCard,
+    Eye,
+    EyeOff
 } from 'lucide-react'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
@@ -190,6 +192,7 @@ export default function AdminCompanies() {
     const [editingCompany, setEditingCompany] = useState<Partial<Company> | null>(null)
     const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
     const [deletePassword, setDeletePassword] = useState('')
+    const [showDeletePassword, setShowDeletePassword] = useState(false)
     const [managingCompany, setManagingCompany] = useState<Company | null>(null)
     const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({})
     const { socket } = useNotifications()
@@ -376,15 +379,21 @@ export default function AdminCompanies() {
                                                         >
                                                             <SettingsIcon size={14} />
                                                         </Button>
-                                                        <Button
-                                                            variant="outline"
-                                                            size="icon"
-                                                            className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive transition-all shadow-sm"
-                                                            onClick={() => setConfirmDelete(group[0].id)}
-                                                            title="Delete Organization"
-                                                        >
-                                                            <Trash size={14} />
-                                                        </Button>
+                                                        {group[0].name?.toLowerCase() !== 'smartsigndeck' && (
+                                                            <Button
+                                                                variant="outline"
+                                                                size="icon"
+                                                                className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive transition-all shadow-sm"
+                                                                onClick={() => {
+                                                                    setConfirmDelete(group[0].id)
+                                                                    setDeletePassword('')
+                                                                    setShowDeletePassword(false)
+                                                                }}
+                                                                title="Delete Organization"
+                                                            >
+                                                                <Trash size={14} />
+                                                            </Button>
+                                                        )}
                                                     </div>
                                                 </TableCell>
                                             </TableRow>
@@ -424,15 +433,21 @@ export default function AdminCompanies() {
                                                             >
                                                                 <SettingsIcon size={14} />
                                                             </Button>
-                                                            <Button
-                                                                variant="outline"
-                                                                size="icon"
-                                                                className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive transition-all shadow-sm"
-                                                                onClick={() => setConfirmDelete(company.id)}
-                                                                title="Delete Organization"
-                                                            >
-                                                                <Trash size={14} />
-                                                            </Button>
+                                                            {company.name?.toLowerCase() !== 'smartsigndeck' && (
+                                                                <Button
+                                                                    variant="outline"
+                                                                    size="icon"
+                                                                    className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive transition-all shadow-sm"
+                                                                    onClick={() => {
+                                                                        setConfirmDelete(company.id)
+                                                                        setDeletePassword('')
+                                                                        setShowDeletePassword(false)
+                                                                    }}
+                                                                    title="Delete Organization"
+                                                                >
+                                                                    <Trash size={14} />
+                                                                </Button>
+                                                            )}
                                                         </div>
                                                     </TableCell>
                                                 </TableRow>
@@ -517,18 +532,29 @@ export default function AdminCompanies() {
                     onClose={() => {
                         setConfirmDelete(null)
                         setDeletePassword('')
+                        setShowDeletePassword(false)
                     }}
                 >
                     <div className="mt-4 w-full px-4">
                         <Label htmlFor="delete-password">Confirm Password</Label>
-                        <Input
-                            id="delete-password"
-                            type="password"
-                            placeholder="Your admin password"
-                            value={deletePassword}
-                            onChange={(e) => setDeletePassword(e.target.value)}
-                            className="mt-1"
-                        />
+                        <div className="relative">
+                            <Input
+                                id="delete-password"
+                                type={showDeletePassword ? "text" : "password"}
+                                placeholder="Your admin password"
+                                value={deletePassword}
+                                onChange={(e) => setDeletePassword(e.target.value)}
+                                className="mt-1 pr-10"
+                                autoComplete="off"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowDeletePassword(!showDeletePassword)}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                                {showDeletePassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                            </button>
+                        </div>
                     </div>
                 </ConfirmationDialog>
             </Layout.Body >
