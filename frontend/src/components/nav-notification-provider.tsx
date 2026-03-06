@@ -169,6 +169,14 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
                 if (newNotif.type === 'friend_request') {
                     setUnreadRequestCount(prev => prev + 1)
                 }
+
+                // Show toast for system alerts (like role changes)
+                if (newNotif.type === 'system_alert') {
+                    toast({
+                        title: newNotif.title,
+                        description: newNotif.message,
+                    })
+                }
             }
         }
 
@@ -277,6 +285,27 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
             }, 3000);
         }
 
+        const handleRoleChanged = (data: { newRole: string }) => {
+            console.log('[SOCKET Provider] 🎭 Role changed to:', data.newRole)
+            const roleLabels: Record<string, string> = {
+                super_admin: 'Super Admin',
+                admin: 'Administrator',
+                user: 'User',
+                advertiser: 'Advertiser'
+            };
+            const label = roleLabels[data.newRole] || data.newRole;
+
+            toast({
+                title: "Role Updated",
+                description: `Your access level has been updated to ${label}.`,
+            })
+
+            // Proactively refresh user state to update permissions/UI (sidebar, etc.)
+            // Despite the user's "not sidebar only that bell notification" comment,
+            // having the correct local state is critical for app functionality.
+            refreshUser();
+        }
+
         const handleMessageSeen = (data: any) => {
             console.log('[SOCKET Provider] 👁️ message_seen event relaying:', data)
         }
@@ -295,6 +324,7 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
         socket.on('online_users_update', handlePresence)
         socket.on('user_status_change', handleStatusChange)
         socket.on('user_deleted', handleAccountDeleted)
+        socket.on('role_changed', handleRoleChanged)
         socket.on('message_seen', handleMessageSeen)
         socket.on('message_delivered', handleMessageDelivered)
         socket.on('message_deleted', handleMessageDeleted)
@@ -306,6 +336,7 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
             socket.off('online_users_update', handlePresence)
             socket.off('user_status_change', handleStatusChange)
             socket.off('user_deleted', handleAccountDeleted)
+            socket.off('role_changed', handleRoleChanged)
             socket.off('message_seen', handleMessageSeen)
             socket.off('message_delivered', handleMessageDelivered)
             socket.off('message_deleted', handleMessageDeleted)

@@ -6,6 +6,8 @@ import successResponse from "../helpers/responses/successResponse";
 import { type IUser } from "../models/user.model";
 import Company from "../models/company.model";
 import { emailService, userService } from "../services";
+import notificationService from "../services/notification.service";
+import { emitToUser } from "../services/socket.service";
 import catchAsync from "../utils/catchAsync";
 import * as constants from "../utils/constants/constants";
 import * as emailConstants from "../utils/constants/email.constants";
@@ -257,8 +259,28 @@ const updateUser = catchAsync(async (req: Request, res: Response) => {
     updateBody.onboardingCompleted = true;
   }
 
+  const oldRole = targetUser.role;
   const user = await userService.updateUserById(req.params.userId, updateBody);
   console.log('[DEBUG] User updated successfully:', user.email);
+
+  if (user && updateBody.role && updateBody.role !== oldRole) {
+    console.log(`[DEBUG] Role changed from ${oldRole} to ${user.role}. Triggering notification.`);
+
+    // Create persistent notification
+    await notificationService.createNotification(
+      user.id || (user as any)._id,
+      "system_alert",
+      "Role Updated",
+      `Your account role has been updated to ${user.role}.`,
+      currentUser.id || (currentUser as any)._id
+    );
+
+    // Emit real-time socket event
+    emitToUser(user.id || (user as any)._id, "role_changed", {
+      newRole: user.role,
+      updatedBy: currentUser.id || (currentUser as any)._id
+    });
+  }
 
   if (user) {
     // Populate companyId to get company name
