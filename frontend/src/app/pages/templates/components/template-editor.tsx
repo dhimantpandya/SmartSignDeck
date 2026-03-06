@@ -151,7 +151,12 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                         })
 
                         canvas.requestRenderAll()
-                        console.log('[COLLAB] Canvas synced to latest server state.')
+                        console.log('[COLLAB] Canvas synced to latest server state without delay.')
+                    } else {
+                        // Very rare case: canvas isn't mounted yet. Retry once after tiny delay.
+                        setTimeout(() => {
+                            if (canvasRef.current) fetchLatest()
+                        }, 50)
                     }
                 }
             } catch (err) {
@@ -159,9 +164,7 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
             }
         }
 
-        // Wait for canvas to be ready before syncing
-        const timer = setTimeout(fetchLatest, 300)
-        return () => clearTimeout(timer)
+        fetchLatest()
     }, []) // Only on mount
 
     // --- SOCKET SYNC ---
@@ -836,6 +839,14 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
             canvas.on('selection:created', (e) => {
                 const obj = e.selected?.[0] as any
                 if (obj) {
+                    // STRICT CONCURRENCY CHECK
+                    if (obj.id && remoteSelections[obj.id]) {
+                        canvas.discardActiveObject()
+                        canvas.requestRenderAll()
+                        toast({ title: "Zone is locked", description: `${remoteSelections[obj.id].userName} is currently editing this zone.` })
+                        return
+                    }
+
                     obj._lastValidLeft = obj.left
                     obj._lastValidTop = obj.top
                     // @ts-ignore
@@ -852,6 +863,14 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
             canvas.on('selection:updated', (e) => {
                 const obj = e.selected?.[0] as any
                 if (obj) {
+                    // STRICT CONCURRENCY CHECK
+                    if (obj.id && remoteSelections[obj.id]) {
+                        canvas.discardActiveObject()
+                        canvas.requestRenderAll()
+                        toast({ title: "Zone is locked", description: `${remoteSelections[obj.id].userName} is currently editing this zone.` })
+                        return
+                    }
+
                     obj._lastValidLeft = obj.left
                     obj._lastValidTop = obj.top
                     // @ts-ignore
@@ -1291,6 +1310,7 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                     templateId={currentTemplateId as string}
                     currentCollaborators={collaborators}
                     isOwner={isOwner}
+                    creator={initialData?.createdBy} // Pass creator explicitly
                 />
 
                 {/* SCROLLABLE CANVAS CONTAINER */}

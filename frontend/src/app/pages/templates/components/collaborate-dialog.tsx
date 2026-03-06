@@ -24,6 +24,7 @@ interface CollaborateDialogProps {
     templateId: string
     currentCollaborators: any[]
     isOwner?: boolean
+    creator?: any
 }
 
 export const CollaborateDialog: FC<CollaborateDialogProps> = ({
@@ -32,6 +33,7 @@ export const CollaborateDialog: FC<CollaborateDialogProps> = ({
     templateId,
     currentCollaborators = [],
     isOwner = false,
+    creator = null,
 }) => {
     const { user: currentUser } = useAuth()
     const queryClient = useQueryClient()
@@ -146,10 +148,18 @@ export const CollaborateDialog: FC<CollaborateDialogProps> = ({
         });
     }
 
-    const isLoading = mode === 'friends' ? isLoadingFriends : isLoadingCompany
     const usersList = mode === 'friends' ? friends : companyUsers
 
     console.log(`[CollabDebug] Dialog State - isOpen: ${isOpen}, pendingCount: ${pendingRequests?.results?.length || 0}`);
+
+    // Combine creator and collaborators for display
+    const allParticipants = []
+    if (creator) {
+        allParticipants.push({ ...creator, isCreator: true })
+    }
+    // Add currentCollaborators, filtering out the creator if they are somehow already in the array
+    const creatorId = creator ? extractId(creator) : null
+    allParticipants.push(...currentCollaborators.filter(c => extractId(c) !== creatorId))
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
@@ -180,7 +190,7 @@ export const CollaborateDialog: FC<CollaborateDialogProps> = ({
                                 </TabsList>
                             </Tabs>
 
-                            {isLoading ? (
+                            {isLoadingCompany || isLoadingFriends ? (
                                 <div className="flex h-40 items-center justify-center">
                                     <Loader />
                                 </div>
@@ -247,17 +257,18 @@ export const CollaborateDialog: FC<CollaborateDialogProps> = ({
                     )}
                 </div>
 
-                {currentCollaborators.length > 0 && (
+                {allParticipants.length > 0 && (
                     <div className="mt-4 pt-4 border-t">
                         <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">Current Collaborators</p>
                         <div className="flex flex-wrap gap-2">
-                            {currentCollaborators.map((c: any) => (
-                                <Badge key={c._id || c} variant="outline" className="gap-1 pl-1 py-1">
+                            {allParticipants.map((c: any) => (
+                                <Badge key={c._id || c.id || c} variant="outline" className={`gap-1 pl-1 py-1 ${c.isCreator ? 'border-primary/40 bg-primary/5' : ''}`}>
                                     <Avatar className="h-4 w-4">
                                         <AvatarImage src={c.avatar} />
                                         <AvatarFallback className="text-[8px]">{c.first_name?.[0]}</AvatarFallback>
                                     </Avatar>
-                                    {c.first_name || 'Collaborator'}
+                                    {c.first_name || 'Collaborator'} {c.last_name || ''}
+                                    {c.isCreator && <span className="text-[8px] uppercase tracking-wider text-primary ml-1 font-bold">Owner</span>}
                                 </Badge>
                             ))}
                         </div>
