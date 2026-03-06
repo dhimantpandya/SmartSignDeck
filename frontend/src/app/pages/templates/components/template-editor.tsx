@@ -955,21 +955,25 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                                 </Button>
                             </div>
 
-                            {(initialData?.id || initialData?._id) && (
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="h-9 gap-2 bg-background border-primary/20 hover:bg-primary/5 shadow-sm px-4 font-bold text-xs"
-                                    onClick={() => setIsCollaborateOpen(true)}
-                                >
-                                    <Users size={16} className="text-primary" /> Collaborate
-                                    {collaborators.length > 0 && (
-                                        <Badge variant="secondary" className="ml-1 px-1 h-4 min-w-4 flex items-center justify-center text-[10px]">
-                                            {collaborators.length}
-                                        </Badge>
-                                    )}
-                                </Button>
-                            )}
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-9 gap-2 bg-background border-primary/20 hover:bg-primary/5 shadow-sm px-4 font-bold text-xs"
+                                onClick={async () => {
+                                    if (!initialData?.id && !initialData?._id) {
+                                        // Auto-save as draft first to get an ID
+                                        await saveTemplate();
+                                    }
+                                    setIsCollaborateOpen(true);
+                                }}
+                            >
+                                <Users size={16} className="text-primary" /> Collaborate
+                                {collaborators.length > 0 && (
+                                    <Badge variant="secondary" className="ml-1 px-1 h-4 min-w-4 flex items-center justify-center text-[10px]">
+                                        {collaborators.length}
+                                    </Badge>
+                                )}
+                            </Button>
 
                             <Button
                                 variant="outline"
@@ -995,8 +999,12 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                         // Refresh collaborators if needed
                         const templateId = initialData?.id || initialData?._id
                         if (templateId) {
-                            const updated = await templateService.getTemplate(templateId)
-                            if (updated.collaborators) setCollaborators(updated.collaborators)
+                            try {
+                                const updated = await templateService.getTemplate(templateId)
+                                if (updated && updated.collaborators) setCollaborators(updated.collaborators)
+                            } catch (error) {
+                                console.error('[COLLAB] Failed to refresh collaborators:', error)
+                            }
                         }
                     }}
                     templateId={initialData?.id || initialData?._id}

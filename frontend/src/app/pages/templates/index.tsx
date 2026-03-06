@@ -26,6 +26,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Checkbox } from '@/components/ui/checkbox'
+import { CollaborateDialog } from './components/collaborate-dialog'
 
 
 export default function Templates() {
@@ -43,6 +44,8 @@ export default function Templates() {
     const [newGroupDesc, setNewGroupDesc] = useState('')
     const [selectedTemplates, setSelectedTemplates] = useState<string[]>([])
     const [confirmBulkDelete, setConfirmBulkDelete] = useState(false)
+    const [isCollaborateOpen, setIsCollaborateOpen] = useState(false)
+    const [selectedTemplateForCollab, setSelectedTemplateForCollab] = useState<any>(null)
     const queryClient = useQueryClient()
 
     const toggleTemplateSelection = (id: string) => {
@@ -405,14 +408,29 @@ export default function Templates() {
                             <Users size={16} className="mr-2" /> Edit Together
                         </Button>
                     ) : (
-                        <Button
-                            variant="default"
-                            size="sm"
-                            onClick={() => handleClone(template.id)}
-                            loading={cloneMutation.isPending}
-                        >
-                            <IconCopy size={16} className="mr-2" /> Use Template
-                        </Button>
+                        <div className="flex gap-2">
+                            {isOwner && (
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-8 gap-1.5 border-primary/20 hover:bg-primary/5 text-primary"
+                                    onClick={() => {
+                                        setSelectedTemplateForCollab(template)
+                                        setIsCollaborateOpen(true)
+                                    }}
+                                >
+                                    <Users size={14} /> Collaborate
+                                </Button>
+                            )}
+                            <Button
+                                variant="default"
+                                size="sm"
+                                onClick={() => handleClone(template.id)}
+                                loading={cloneMutation.isPending}
+                            >
+                                <IconCopy size={16} className="mr-2" /> Use Template
+                            </Button>
+                        </div>
                     )}
                 </div>
             </CardFooter>
@@ -518,6 +536,10 @@ export default function Templates() {
                             <TabsTrigger value="global" className="gap-2">
                                 <Globe size={16} />
                                 Global ({globalTemplates.length})
+                            </TabsTrigger>
+                            <TabsTrigger value="collaboration" className="gap-2">
+                                <Users size={16} />
+                                Collaboration ({sharedWithMeData?.results?.length || 0})
                             </TabsTrigger>
                         </TabsList>
 
@@ -742,6 +764,24 @@ export default function Templates() {
                             </div>
                         )}
 
+                        <TabsContent value="collaboration" className="mt-6">
+                            {(sharedWithMeData?.results?.length || 0) > 0 ? (
+                                <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
+                                    {sharedWithMeData?.results.map((template: any) =>
+                                        renderTemplateCard(template, false, false)
+                                    )}
+                                </div>
+                            ) : (
+                                <div className='flex flex-col items-center justify-center rounded-lg border border-dashed p-20 text-center'>
+                                    <Users size={48} className='mb-4 text-muted-foreground' />
+                                    <h2 className='text-xl font-semibold'>No collaborative sessions</h2>
+                                    <p className='text-muted-foreground text-sm max-w-xs'>
+                                        Templates where you are a collaborator will appear here for real-time editing.
+                                    </p>
+                                </div>
+                            )}
+                        </TabsContent>
+
                         <TabsContent value="global" className="mt-6">
                             {isLoadingGlobal ? (
                                 <div className="flex h-64 items-center justify-center">
@@ -864,6 +904,18 @@ export default function Templates() {
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>
+
+                {isCollaborateOpen && selectedTemplateForCollab && (
+                    <CollaborateDialog
+                        isOpen={isCollaborateOpen}
+                        onClose={() => {
+                            setIsCollaborateOpen(false)
+                            setSelectedTemplateForCollab(null)
+                        }}
+                        templateId={selectedTemplateForCollab.id}
+                        currentCollaborators={selectedTemplateForCollab.collaborators || []}
+                    />
+                )}
             </Layout.Body>
         </Layout>
     )

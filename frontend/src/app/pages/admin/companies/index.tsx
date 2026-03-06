@@ -537,24 +537,47 @@ export default function AdminCompanies() {
                 >
                     <div className="mt-4 w-full px-4">
                         <Label htmlFor="delete-password">Confirm Password</Label>
-                        <div className="relative">
+                        <div className="relative group">
+                            {/* 
+                                🛡️ ANTI-AUTOFILL HONEYPOT 
+                                Password managers often target the first visible password field.
+                                These hidden inputs divert their attention away from the real one.
+                            */}
+                            <input
+                                type="text"
+                                name="fake_user_name"
+                                style={{ display: 'none' }}
+                                tabIndex={-1}
+                                autoComplete="off"
+                            />
+                            <input
+                                type="password"
+                                name="fake_password"
+                                style={{ display: 'none' }}
+                                tabIndex={-1}
+                                autoComplete="off"
+                            />
+
                             <Input
                                 id="delete-password"
                                 type={showDeletePassword ? "text" : "password"}
                                 placeholder="Your admin password"
                                 value={deletePassword}
                                 onChange={(e) => setDeletePassword(e.target.value)}
-                                className="mt-1 pr-10"
-                                autoComplete="off"
+                                className="mt-1 pr-10 bg-muted/30 border-primary/10 transition-all focus:border-primary/40"
+                                autoComplete="new-password"
                             />
                             <button
                                 type="button"
                                 onClick={() => setShowDeletePassword(!showDeletePassword)}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors focus:outline-none"
                             >
                                 {showDeletePassword ? <EyeOff size={16} /> : <Eye size={16} />}
                             </button>
                         </div>
+                        <p className="text-[10px] text-muted-foreground mt-1.5 italic">
+                            Verification: Password must be entered manually for security.
+                        </p>
                     </div>
                 </ConfirmationDialog>
             </Layout.Body >
