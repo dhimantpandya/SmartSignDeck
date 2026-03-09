@@ -14,7 +14,8 @@ import {
     Clock,
     Reply,
     Copy,
-    Trash2
+    Trash2,
+    Users
 } from 'lucide-react'
 import { format, isToday, isYesterday } from 'date-fns'
 import {
@@ -37,6 +38,7 @@ import { Input } from '@/components/ui/input'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { cn, extractId, isSameId } from '../../lib/utils'
+import { userService } from '@/api/user.service'
 
 interface ChatSidebarProps {
     isOpen: boolean
@@ -66,6 +68,7 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
     const [friends, setFriends] = useState<any[]>([])
     const [selectedFriend, setSelectedFriend] = useState<any>(null)
     const [searchQuery, setSearchQuery] = useState('')
+    const [companyMembers, setCompanyMembers] = useState<any[]>([])
 
     const scrollRef = useRef<HTMLDivElement>(null)
     const selectedFriendRef = useRef<any>(null)
@@ -425,6 +428,21 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
         }
     }
 
+    const loadCompanyMembers = async () => {
+        if (!user?.companyId) return
+        try {
+            const res = await userService.getAllUsers({
+                pagination: { pageIndex: 0, pageSize: 100 },
+                filter: { companyId: extractId(user.companyId) }
+            })
+            if (res.status === 'success') {
+                setCompanyMembers(res.data.users)
+            }
+        } catch (err) {
+            console.error('Failed to load company members', err)
+        }
+    }
+
     useEffect(() => {
         // Scroll to bottom with a slight delay to ensure content is rendered
         const timer = setTimeout(() => {
@@ -440,6 +458,7 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
             setIsChatOpen(true)
             loadFriends()
             loadRequests()
+            loadCompanyMembers()
 
             // If opening and on company board, clear it
             if (activeTab === 'company') {
@@ -587,7 +606,69 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
                     <div className="flex-1 overflow-hidden relative flex flex-col mt-0 p-0 justify-start">
                         {/* Company Board */}
                         <TabsContent value="company" className="flex-1 m-0 p-0 flex flex-col overflow-hidden !mt-0 !pt-0 data-[state=inactive]:hidden">
-                            <div className="flex-1 overflow-y-auto p-3 flex flex-col justify-end custom-scrollbar">
+                            {/* Company Members Header */}
+                            <div className="flex items-center justify-between px-3 py-2 border-b bg-muted/30">
+                                <div className="flex flex-col">
+                                    <span className="text-[10px] font-bold text-foreground">Company Board</span>
+                                    <span className="text-[8px] text-muted-foreground">Coordinate with team</span>
+                                </div>
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="outline" size="sm" className="h-7 text-[9px] px-2 gap-1.5 bg-background border-border/50 hover:bg-accent shadow-sm transition-all">
+                                            <div className="flex items-center gap-1">
+                                                <div className={cn("w-1.5 h-1.5 rounded-full animate-pulse bg-emerald-500")} />
+                                                <span className="font-bold">
+                                                    {companyMembers.filter(m => onlineUsers.has(extractId(m)) || isSameId(user, m)).length} Online
+                                                </span>
+                                            </div>
+                                            <div className="w-px h-2.5 bg-border mx-0.5" />
+                                            <Users size={12} className="text-muted-foreground" />
+                                            <span>{companyMembers.length} Members</span>
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" className="w-64 p-0 bg-background border shadow-xl">
+                                        <div className="p-2 border-b bg-muted/20">
+                                            <h4 className="text-[10px] font-bold flex items-center gap-2">
+                                                <Building2 className="w-3 h-3 text-primary" />
+                                                Team Members
+                                            </h4>
+                                        </div>
+                                        <div className="max-h-[250px] overflow-y-scroll p-1 custom-scrollbar">
+                                            {companyMembers.map(member => {
+                                                const mid = extractId(member);
+                                                const isOnline = onlineUsers.has(mid) || isSameId(user, member);
+                                                return (
+                                                    <div key={mid} className="flex items-center gap-2 p-2 hover:bg-accent/50 rounded-md cursor-default">
+                                                        <div className="relative">
+                                                            <Avatar className="w-7 h-7 border">
+                                                                <AvatarImage src={member.avatar} />
+                                                                <AvatarFallback className="bg-primary/5 text-primary text-[9px] font-bold">
+                                                                    {member.first_name?.[0]}{member.last_name?.[0]}
+                                                                </AvatarFallback>
+                                                            </Avatar>
+                                                            <span className={cn(
+                                                                "absolute bottom-0 right-0 w-2 h-2 rounded-full border border-background",
+                                                                isOnline ? "bg-emerald-500" : "bg-destructive/30"
+                                                            )} />
+                                                        </div>
+                                                        <div className="flex flex-col gap-0.5 min-w-0">
+                                                            <span className="text-[10px] font-bold truncate">
+                                                                {member.first_name} {member.last_name}
+                                                                {isSameId(user, member) && <span className="ml-1 text-[8px] opacity-60">(You)</span>}
+                                                            </span>
+                                                            <span className="text-[8px] text-muted-foreground truncate italic">
+                                                                {isOnline ? 'Online now' : (member.lastSeen ? formatLastSeen(mid, member.lastSeen) : 'Offline')}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                )
+                                            })}
+                                        </div>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </div>
+
+                            <div className="flex-1 overflow-y-scroll p-3 flex flex-col justify-end custom-scrollbar">
                                 <div className="space-y-2">
                                     {boardMessages.length === 0 && (
                                         <div className="flex flex-col items-center justify-center h-full text-muted-foreground opacity-50">
@@ -734,7 +815,7 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
                                             </TooltipProvider>
                                         </div>
                                     </div>
-                                    <div className="flex-1 overflow-y-auto p-2" style={{ scrollbarWidth: 'thin', scrollbarColor: 'hsl(var(--primary)) transparent' }}>
+                                    <div className="flex-1 overflow-y-scroll p-2 custom-scrollbar">
                                         {filteredFriends.length === 0 && (
                                             <div className="text-center text-xs text-muted-foreground mt-10">
                                                 No connections found.
@@ -797,7 +878,7 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
                                         </div>
                                     </div>
                                     {/* Private Messages */}
-                                    <div className="flex-1 overflow-y-auto px-3 py-1 flex flex-col custom-scrollbar min-h-0">
+                                    <div className="flex-1 overflow-y-scroll px-3 py-1 flex flex-col custom-scrollbar min-h-0">
                                         <div className="space-y-4 py-2">
                                             {privateMessages.length === 0 && (
                                                 <div className="flex flex-col items-center justify-center h-full text-muted-foreground opacity-50">
@@ -978,7 +1059,7 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
                         </button>
                     </div>
                 </Tabs>
-            </div>
-        </aside>
+            </div >
+        </aside >
     )
 }

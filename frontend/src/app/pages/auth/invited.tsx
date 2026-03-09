@@ -61,7 +61,7 @@ export default function Invited() {
                         placeholder='https://smartsigndeck.com/sign-up?companyId=...'
                         value={link}
                         onChange={(e) => setLink(e.target.value)}
-                        className='h-12 rounded-xl border-white/20 bg-white/5 focus-visible:ring-primary/50'
+                        className='h-12 rounded-xl border-white/20 bg-white/5 focus-visible:ring-primary/50 text-[#1a1a2e]'
                     />
                 </div>
                 <Button onClick={handleJoin} className='mt-4 h-12 rounded-xl font-black uppercase tracking-widest shadow-xl w-full'>

@@ -620,10 +620,7 @@ export default function Collaboration() {
                                         </Badge>
                                     )}
                                 </TabsTrigger>
-                                <TabsTrigger value="company" className="justify-center md:justify-start gap-3 px-4 py-3 h-auto data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-xl transition-all hover:bg-primary/10 flex-shrink-0 whitespace-nowrap">
-                                    <Building2 size={18} />
-                                    <span className="font-medium">Company Board</span>
-                                </TabsTrigger>
+
                             </TabsList>
                         </div>
 
@@ -639,7 +636,7 @@ export default function Collaboration() {
                     </aside>
 
                     {/* Main Content Area */}
-                    <main className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-10 bg-muted/5">
+                    <main className="flex-1 overflow-y-scroll custom-scrollbar p-6 md:p-10 bg-muted/5">
                         <div className="max-w-6xl mx-auto pb-10">
                             <TabsContent value="friends" className="mt-0">
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-6">
@@ -880,199 +877,7 @@ export default function Collaboration() {
                                 </div>
                             </TabsContent>
 
-                            <TabsContent value="company" className="mt-0">
-                                <div className="max-w-5xl mx-auto">
-                                    <Card className="border-primary/10 shadow-xl overflow-hidden h-[calc(100vh-250px)] md:h-[700px] flex flex-col bg-background/50 backdrop-blur-sm">
-                                        <CardHeader className="bg-primary/5 border-b py-3 flex-shrink-0 z-10">
-                                            <div className="flex items-center justify-between w-full px-2">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="p-1.5 bg-primary/10 rounded-lg">
-                                                        <Building2 size={16} className="text-primary" />
-                                                    </div>
-                                                    <div>
-                                                        <CardTitle className="text-sm font-semibold">Live Company Discussion</CardTitle>
-                                                        <CardDescription className="text-[10px]">Coordinate in real-time with {user?.companyName || 'the team'}.</CardDescription>
-                                                    </div>
-                                                </div>
 
-                                                {/* Company Members Dropdown - Integrated into Header */}
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
-                                                        <Button variant="outline" size="sm" className="h-8 text-xs px-3 gap-2 bg-background/80 backdrop-blur-md border-border/50 hover:bg-accent/50 shadow-sm transition-all hover:scale-105">
-                                                            <div className="flex items-center gap-1.5">
-                                                                <div className={cn("w-2 h-2 rounded-full animate-pulse", socket?.connected ? "bg-emerald-500" : "bg-destructive")} />
-                                                                <span className="font-medium">
-                                                                    {companyMembers.filter(m => onlineUserIds.has(extractId(m)) || isSameId(user, m)).length} Online
-                                                                </span>
-                                                            </div>
-                                                            <div className="w-px h-3 bg-border mx-1" />
-                                                            <Users className="w-3.5 h-3.5 text-muted-foreground" />
-                                                            <span>{companyMembers.length} Members</span>
-                                                        </Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end" className="w-72 p-0 backdrop-blur-xl bg-background/95 border-border/50 shadow-xl">
-                                                        <div className="p-3 border-b border-border/50 bg-muted/20">
-                                                            <h4 className="text-xs font-semibold text-foreground flex items-center gap-2">
-                                                                <Building2 className="w-3.5 h-3.5 text-primary" />
-                                                                {user?.companyName || 'Company'} Team
-                                                            </h4>
-                                                            <p className="text-[10px] text-muted-foreground mt-0.5">
-                                                                Members can see this board
-                                                            </p>
-                                                        </div>
-                                                        <div className="max-h-[300px] overflow-y-auto p-1 custom-scrollbar">
-                                                            {companyMembers.map(member => {
-                                                                const isOnline = onlineUserIds.has(extractId(member)) || isSameId(user, member);
-                                                                return (
-                                                                    <DropdownMenuItem key={member.id} className="flex items-center gap-3 p-2 focus:bg-accent/50 rounded-md cursor-default">
-                                                                        <div className="relative">
-                                                                            <Avatar className="w-9 h-9 border border-border/50 shadow-sm">
-                                                                                <AvatarImage src={member.avatar} />
-                                                                                <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">
-                                                                                    {member.first_name?.[0]}{member.last_name?.[0]}
-                                                                                </AvatarFallback>
-                                                                            </Avatar>
-                                                                            {/* Real-time online indicator */}
-                                                                            <span className={cn(
-                                                                                "absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-[1.5px] border-background",
-                                                                                isOnline ? "bg-emerald-500" : "bg-destructive/50"
-                                                                            )} />
-                                                                        </div>
-                                                                        <div className="flex flex-col gap-0.5 min-w-0">
-                                                                            <span className="text-sm font-medium leading-none truncate w-full flex items-center gap-1.5">
-                                                                                {member.first_name} {member.last_name}
-                                                                                {isOnline && <span className="text-[9px] text-emerald-500 font-normal bg-emerald-500/10 px-1 rounded">Online</span>}
-                                                                            </span>
-                                                                            <span className="text-[10px] text-muted-foreground truncate w-full">
-                                                                                {member.role || 'Member'} • {member.email}
-                                                                            </span>
-                                                                        </div>
-                                                                        {isSameId(user, member) && (
-                                                                            <Badge variant="secondary" className="ml-auto text-[9px] h-4 px-1.5 font-normal">You</Badge>
-                                                                        )}
-                                                                    </DropdownMenuItem>
-                                                                )
-                                                            })}
-                                                        </div>
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
-                                            </div>
-                                        </CardHeader>
-
-                                        <CardContent className="p-0 flex-1 flex flex-col min-h-0 bg-muted/5 relative">
-                                            {/* Chat Container Background Effect */}
-                                            <div className="absolute inset-0 pointer-events-none opacity-[0.03] bg-[radial-gradient(circle_at_center,var(--primary)_0%,transparent_100%)] shadow-inner" />
-
-                                            {companyMessages.length === 0 ? (
-                                                <div className="flex-1 p-6 text-center flex flex-col items-center justify-center space-y-4 relative z-10">
-                                                    <div className="p-6 bg-background rounded-full shadow-inner border border-primary/5">
-                                                        <MessageSquare size={48} className="text-primary/20" />
-                                                    </div>
-                                                    <div className="max-w-xs">
-                                                        <h4 className="font-semibold text-foreground mb-1">No conversation here yet</h4>
-                                                        <p className="text-muted-foreground text-xs leading-relaxed">
-                                                            Be the first to start a discussion! Type a message below to coordinate with your team.
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                <div className="flex-1 overflow-y-scroll p-4 md:p-6 relative z-10" style={{ scrollbarWidth: 'thin', scrollbarColor: 'hsl(var(--primary) / 0.3) transparent' }}>
-                                                    <div className="max-w-4xl mx-auto space-y-6">
-                                                        {companyMessages.map((msg, i) => {
-                                                            if (!msg) return null;
-                                                            const msgSenderId = msg.senderId?.id || msg.senderId?._id || msg.senderId;
-                                                            const isOwnMessage = msgSenderId === user?.id;
-
-                                                            const senderName = msg.senderName ||
-                                                                (msg.senderId?.first_name ? `${msg.senderId.first_name} ${msg.senderId.last_name}` : 'Unknown User');
-                                                            const messageDate = msg.created_at;
-
-                                                            const senderAvatar = msg.senderId?.avatar || msg.avatar || null;
-                                                            const senderInitials = senderName.split(' ').map((n: string) => n[0]).join('').toUpperCase();
-
-                                                            return (
-                                                                <div key={i} className={`flex gap-3 ${isOwnMessage ? 'flex-row-reverse' : 'flex-row'}`}>
-                                                                    <Avatar className="h-9 w-9 flex-shrink-0 border-2 border-background shadow-sm">
-                                                                        <AvatarImage src={senderAvatar} />
-                                                                        <AvatarFallback className="text-[10px] font-bold bg-primary/10 text-primary">{senderInitials}</AvatarFallback>
-                                                                    </Avatar>
-
-                                                                    <div className={`flex flex-col ${isOwnMessage ? 'items-end' : 'items-start'} max-w-[80%] md:max-w-[70%]`}>
-                                                                        {!isOwnMessage && (
-                                                                            <span className="text-[10px] font-bold text-muted-foreground mb-1 ml-1 px-1">
-                                                                                {senderName}
-                                                                            </span>
-                                                                        )}
-                                                                        <div className={`group relative rounded-2xl px-4 py-2.5 shadow-sm transition-all hover:shadow-md ${isOwnMessage
-                                                                            ? 'bg-primary text-primary-foreground rounded-tr-none'
-                                                                            : 'bg-background border border-primary/5 text-foreground rounded-tl-none'
-                                                                            }`}>
-                                                                            <p className="text-sm leading-relaxed">{msg.text}</p>
-
-                                                                            {/* Hover Timestamp for self */}
-                                                                            <div className={cn(
-                                                                                "absolute -bottom-5 whitespace-nowrap text-[8px] text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity",
-                                                                                isOwnMessage ? "right-0" : "left-0"
-                                                                            )}>
-                                                                                {messageDate ? new Date(messageDate).toLocaleString('en-IN', {
-                                                                                    month: 'short',
-                                                                                    day: 'numeric',
-                                                                                    hour: '2-digit',
-                                                                                    minute: '2-digit',
-                                                                                    hour12: true
-                                                                                }) : 'Just now'}
-                                                                            </div>
-                                                                        </div>
-
-                                                                        {/* Fixed Timestamp for non-group hover or mobile */}
-                                                                        <span className="mt-1 px-1 text-[8px] text-muted-foreground/60 block group-hover:hidden">
-                                                                            {messageDate ? new Date(messageDate).toLocaleString('en-IN', {
-                                                                                month: 'short',
-                                                                                day: 'numeric',
-                                                                                hour: '2-digit',
-                                                                                minute: '2-digit',
-                                                                                hour12: true
-                                                                            }) : 'Just now'}
-                                                                        </span>
-                                                                    </div>
-                                                                </div>
-                                                            )
-                                                        })}
-                                                        <div ref={messagesEndRef} className="h-4" />
-                                                    </div>
-                                                </div>
-                                            )}
-
-                                            {/* Integrated Input Area - Exactly like Premium Chat */}
-                                            <div className="p-5 border-t bg-background flex-shrink-0 z-10">
-                                                <div className="flex gap-3 items-center">
-                                                    <div className="relative flex-1 group">
-                                                        <Input
-                                                            placeholder="Write a message to the company..."
-                                                            className="h-12 px-5 rounded-2xl bg-muted/30 border-primary/5 focus-visible:ring-primary/20 focus-visible:border-primary/30 transition-all text-sm pr-12"
-                                                            value={inputText}
-                                                            onChange={(e) => setInputText(e.target.value)}
-                                                            onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                                                            disabled={isSending}
-                                                        />
-                                                    </div>
-                                                    <Button
-                                                        size="icon"
-                                                        className="h-12 w-12 rounded-2xl shadow-lg shadow-primary/20 active:scale-95 transition-all flex-shrink-0"
-                                                        onClick={handleSendMessage}
-                                                        disabled={!inputText.trim() || isSending}
-                                                    >
-                                                        <Send size={18} className={isSending ? 'animate-pulse' : ''} />
-                                                    </Button>
-                                                </div>
-                                                <p className="mt-2 text-[9px] text-muted-foreground text-center opacity-60">
-                                                    Messages sent here are visible to all employees in your organization.
-                                                </p>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                </div>
-                            </TabsContent>
                         </div>
                     </main>
                 </Layout.Body>
