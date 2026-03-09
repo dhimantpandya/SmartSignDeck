@@ -4,6 +4,7 @@ import { Request, Response } from "express";
 import catchAsync from "../utils/catchAsync";
 import socialService from "../services/social.service";
 import successResponse from "../helpers/responses/successResponse";
+import errorResponse from "../helpers/responses/errorResponse";
 import User from "../models/user.model";
 
 const sendMessage = catchAsync(async (req: Request, res: Response) => {
@@ -189,6 +190,11 @@ const deleteMessage = catchAsync(async (req: Request, res: Response) => {
     if (scope === 'everyone') {
         if (!isSender) {
             return successResponse(res, "Only the sender can delete for everyone", httpStatus.FORBIDDEN, {});
+        }
+        // 🔒 Restrict "Delete for Everyone" if the message has been seen by anyone else
+        const seenByOthers = msg.seenBy.filter((s: any) => s.userId?.toString() !== user._id.toString());
+        if (seenByOthers.length > 0) {
+            return errorResponse("Cannot delete for everyone because this message has already been seen", httpStatus.FORBIDDEN, {});
         }
     } else {
         // 'me' scope

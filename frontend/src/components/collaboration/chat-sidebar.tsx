@@ -682,7 +682,7 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
                                 </DropdownMenu>
                             </div>
 
-                            <div className="flex-1 overflow-y-scroll p-3 flex flex-col justify-end custom-scrollbar !visible min-h-0">
+                            <div className="flex-1 overflow-y-scroll p-3 flex flex-col custom-scrollbar min-h-0">
                                 <div className="space-y-2">
                                     {boardMessages.length === 0 && (
                                         <div className="flex flex-col items-center justify-center h-full text-muted-foreground opacity-50">
@@ -829,7 +829,7 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
                                             </TooltipProvider>
                                         </div>
                                     </div>
-                                    <div className="flex-1 overflow-y-scroll p-2 custom-scrollbar !visible min-h-0">
+                                    <div className="flex-1 overflow-y-scroll p-2 custom-scrollbar min-h-0">
                                         {filteredFriends.length === 0 && (
                                             <div className="text-center text-xs text-muted-foreground mt-10">
                                                 No connections found.
@@ -892,7 +892,7 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
                                         </div>
                                     </div>
                                     {/* Private Messages */}
-                                    <div className="flex-1 overflow-y-scroll px-3 py-1 flex flex-col custom-scrollbar !visible min-h-0">
+                                    <div className="flex-1 overflow-y-scroll px-3 py-1 flex flex-col custom-scrollbar min-h-0">
                                         <div className="space-y-4 py-2">
                                             {privateMessages.length === 0 && (
                                                 <div className="flex flex-col items-center justify-center h-full text-muted-foreground opacity-50">

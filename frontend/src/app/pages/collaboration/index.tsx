@@ -777,7 +777,7 @@ export default function Collaboration() {
                         <DialogDescription>Private Conversation</DialogDescription>
                     </DialogHeader>
 
-                    <div className="flex-1 overflow-y-scroll p-4 space-y-4 bg-muted/5 custom-scrollbar !visible min-h-0">
+                    <div className="flex-1 overflow-y-scroll p-4 space-y-4 bg-muted/5 custom-scrollbar min-h-0">
                         {privateMessages.length === 0 ? (
                             <div className="text-center text-muted-foreground text-sm py-10">
                                 No messages yet. Say hi!
