@@ -271,7 +271,7 @@ export default function AdminCompanies() {
             setConfirmDelete(null)
         },
         onError: (err: any) => {
-            if (err?.response?.status === 401) {
+            if (err?.status === 401 || err?.response?.status === 401) {
                 toast({
                     title: 'Security Protocol Initiated',
                     description: 'Incorrect password. Automatic logout triggered.',

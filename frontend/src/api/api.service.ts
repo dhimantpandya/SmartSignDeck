@@ -68,7 +68,8 @@ class ApiService {
             'v1/auth/refresh-tokens', 'v1/auth/change-password', 'v1/auth/firebase'
           ]
           const url = originalRequest.url || ''
-          if (authEndpoints.some(endpoint => url.includes(endpoint))) {
+          if (authEndpoints.some(endpoint => url.includes(endpoint)) ||
+            (error.response?.data as any)?.message?.includes('Incorrect password')) {
             return Promise.reject(error)
           }
 
