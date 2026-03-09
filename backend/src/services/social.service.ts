@@ -166,6 +166,34 @@ const respondToFriendRequest = async (requestId: string, status: "accepted" | "r
     return request;
 };
 
+/**
+ * Creates an automatic connection (accepted friend request) between two users
+ */
+const createAutomaticConnection = async (user1Id: string, user2Id: string) => {
+    // Check if exists
+    const existing = await FriendRequest.findOne({
+        $or: [
+            { fromId: user1Id, toId: user2Id },
+            { fromId: user2Id, toId: user1Id }
+        ]
+    });
+
+    if (existing) {
+        if (existing.status === "accepted") return existing;
+        // If pending or rejected, we update to accepted
+        existing.status = "accepted";
+        await existing.save();
+    } else {
+        await FriendRequest.create({ fromId: user1Id, toId: user2Id, status: "accepted" });
+    }
+
+    // Send system messages to both users
+    await sendMessage(user1Id, "You are now connected with this user!", user2Id);
+    await sendMessage(user2Id, "You are now connected with this user!", user1Id);
+
+    return { message: "Automatic connection established" };
+};
+
 const getFriends = async (userId: string) => {
     const connections = await FriendRequest.find({
         status: "accepted",
@@ -226,5 +254,6 @@ export default {
     respondToFriendRequest,
     getFriends,
     getPendingRequests,
-    getSentRequests
+    getSentRequests,
+    createAutomaticConnection
 };

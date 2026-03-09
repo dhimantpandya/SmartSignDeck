@@ -198,11 +198,12 @@ const generateVerifyEmailOtp = async (
 /**
  * Generate a signed invitation token (JWT)
  */
-const generateInviteToken = (companyId: string, role: string): string => {
+const generateInviteToken = (companyId: string, role: string, inviterId: string): string => {
   const expires = moment().add(7, 'days'); // Invites valid for 7 days
   const payload = {
     companyId,
     role,
+    inviterId,
     type: tokenTypes.INVITATION,
     iat: moment().unix(),
     exp: expires.unix(),
@@ -213,7 +214,7 @@ const generateInviteToken = (companyId: string, role: string): string => {
 /**
  * Verify an invitation token
  */
-const verifyInviteToken = (token: string): { companyId: string, role: string } => {
+const verifyInviteToken = (token: string): { companyId: string, role: string, inviterId: string } => {
   const payload = jwt.verify(token, config.jwt.secret) as any;
   if (payload.type !== tokenTypes.INVITATION) {
     throw new Error("Invalid token type");
@@ -221,6 +222,7 @@ const verifyInviteToken = (token: string): { companyId: string, role: string } =
   return {
     companyId: payload.companyId,
     role: payload.role,
+    inviterId: payload.inviterId,
   };
 };
 

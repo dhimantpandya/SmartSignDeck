@@ -30,7 +30,9 @@ export const register = async (req: Request, res: Response) => {
         const inviteData = tokenService.verifyInviteToken(inviteToken as string);
         companyId = inviteData.companyId;
         role = inviteData.role;
-        console.log(`[AuthDebug] Valid invite token verified for ${email}. Overriding role to: ${role}`);
+        const inviterId = inviteData.inviterId;
+        console.log(`[AuthDebug] Valid invite token verified for ${email}. Overriding role to: ${role}, inviter: ${inviterId}`);
+        (req as any).inviterId = inviterId; // Store for pending signup
       } catch (e: any) {
         return res.status(httpStatus.BAD_REQUEST).json({
           status: "fail",
@@ -64,6 +66,7 @@ export const register = async (req: Request, res: Response) => {
       otp,
       otpExpires,
       role: role || "user",
+      inviterId: (req as any).inviterId, // Track who invited
       createdAt: new Date(),
     } as any);
 
@@ -125,7 +128,9 @@ export const firebaseLogin = async (req: Request, res: Response) => {
         const inviteData = tokenService.verifyInviteToken(inviteToken as string);
         companyId = inviteData.companyId;
         role = inviteData.role;
-        console.log(`[AuthDebug] Valid invite token verified for Google signup. Overriding role to: ${role}`);
+        const inviterId = inviteData.inviterId;
+        console.log(`[AuthDebug] Valid invite token verified for Google signup. Overriding role to: ${role}, inviter: ${inviterId}`);
+        (req as any).inviterId = inviterId;
       } catch (e: any) {
         return res.status(httpStatus.BAD_REQUEST).json({
           status: "fail",
@@ -234,6 +239,7 @@ export const firebaseLogin = async (req: Request, res: Response) => {
           otpExpires,
           role: role || "user",
           companyId, // Added companyId from invite
+          inviterId: (req as any).inviterId, // Track who invited
           avatar: picture || decodedToken.picture,
           createdAt: new Date(),
         };
@@ -501,6 +507,17 @@ export const verifyOtp = async (req: Request, res: Response) => {
       await pendingSignupService.deletePendingSignup(email);
       clearOtpAttempts(email);
 
+      // 🤝 AUTO-FRIEND: If invited, create automatic connection
+      if (pendingSignup.inviterId) {
+        try {
+          const socialService = (await import("../services/social.service")).default;
+          await socialService.createAutomaticConnection(pendingSignup.inviterId, user._id.toString());
+          console.log(`[Auth] Auto-friend connection created between ${pendingSignup.inviterId} and ${user._id}`);
+        } catch (socialErr) {
+          console.error("[Auth] Failed to create auto-friend connection:", socialErr);
+        }
+      }
+
       // 🔔 NOTIFY: New User Registered (Offloaded to background for performance)
       setImmediate(async () => {
         try {
@@ -620,7 +637,7 @@ export const generateInviteToken = async (req: Request, res: Response) => {
       throw new ApiError(httpStatus.FORBIDDEN, "Unauthorized role for generating invite links");
     }
 
-    const token = tokenService.generateInviteToken(companyId as string, role as string);
+    const token = tokenService.generateInviteToken(companyId as string, role as string, currentUser.id || currentUser._id);
     successResponse(res, "Invite token generated successfully", httpStatus.OK, { token });
   } catch (err: any) {
     console.error("[GenerateInviteToken Error]", err);
@@ -719,10 +736,10 @@ export const forgotPassword = async (req: Request, res: Response) => {
       // Security: Don't reveal if user exists or not, just say success
       return successResponse(res, "OTP sent to your email", httpStatus.OK);
     }
-    console.error(err);
+    console.error("[ForgotPassword Error]", err);
     res
-      .status(httpStatus.INTERNAL_SERVER_ERROR)
-      .json({ status: "error", message: "Failed to process request" });
+      .status(err.statusCode || httpStatus.INTERNAL_SERVER_ERROR)
+      .json({ status: "error", message: err.message || "Failed to process request" });
   }
 };
 

@@ -14,6 +14,7 @@ export interface IPendingSignup extends Document {
     otpExpires: Date;
     role?: string;
     avatar?: string;
+    inviterId?: string;
     created_at: Date;
     updated_at: Date;
 }
@@ -71,6 +72,10 @@ const pendingSignupSchema = new Schema<IPendingSignup>(
             trim: true,
         },
         avatar: {
+            type: String,
+            trim: true,
+        },
+        inviterId: {
             type: String,
             trim: true,
         },
