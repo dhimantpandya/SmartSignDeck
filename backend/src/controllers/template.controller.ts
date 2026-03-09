@@ -8,12 +8,14 @@ import templateService from "../services/template.service";
 import screenService from "../services/screen.service";
 import { emitToScreen } from "../services/socket.service";
 import mongoose from "mongoose";
-import TemplateGroup from '../models/TemplateGroup';
-import socketService from '../services/socket.service';
+import { getIO } from "../services/socket.service";
 
 const createTemplate = catchAsync(async (req: Request, res: Response) => {
     const template = await templateService.createTemplate(req.body, req.user as any);
-    socketService.emitToAllConnectedClients('template_published', template);
+    const io = getIO();
+    if (io) {
+        io.emit('template_published', { templateId: template._id });
+    }
     successResponse(
         res,
         "Template created successfully",
