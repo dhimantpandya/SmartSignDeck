@@ -250,9 +250,10 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                         }
                     })
 
-                    // Remove objects that were deleted remotely
+                    // Remove objects that were deleted remotely (but never remove presence tags)
                     const remoteIds = new Set(data.zones.map((z: any) => z.id))
                     canvas.getObjects().forEach((o: any) => {
+                        if (o._isRemoteTag) return // never auto-remove presence tags; managed by remoteSelections
                         if (o.id && !remoteIds.has(o.id) && o.id !== activeTransformId) {
                             canvas.remove(o)
                         }
@@ -425,7 +426,7 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                     top: obj.top - 5,
                     visible: true
                 })
-                tag.bringToFront()
+                canvas.bringObjectToFront(tag)
             } else {
                 // Restore if was previously locked
                 if (obj.borderColor !== obj.cornerStrokeColor) { // Check if it was remote colored
@@ -736,7 +737,7 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
 
         if (canvasRef.current) {
             const rect = addZoneToCanvas(canvasRef.current, newZone)
-                ; (rect as any).bringToFront()
+            canvasRef.current.bringObjectToFront(rect)
             canvasRef.current.setActiveObject(rect)
             setSelectedZoneId(newZone.id)
             canvasRef.current.requestRenderAll()
@@ -756,7 +757,7 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
         setZones(prev => [...prev, newZone])
         if (canvasRef.current) {
             const rect = addZoneToCanvas(canvasRef.current, newZone)
-                ; (rect as any).bringToFront()
+            canvasRef.current.bringObjectToFront(rect)
             canvasRef.current.setActiveObject(rect)
             setSelectedZoneId(newZone.id)
             canvasRef.current.requestRenderAll()
@@ -919,7 +920,7 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                     obj._lastValidLeft = obj.left
                     obj._lastValidTop = obj.top
                     // @ts-ignore
-                    obj.bringToFront()
+                    canvas.bringObjectToFront(obj)
                     constrainObject(obj)
                     obj.setCoords()
                     canvas.renderAll()
@@ -944,7 +945,7 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                     obj._lastValidLeft = obj.left
                     obj._lastValidTop = obj.top
                     // @ts-ignore
-                    obj.bringToFront()
+                    canvas.bringObjectToFront(obj)
                     constrainObject(obj)
                     obj.setCoords()
                     canvas.renderAll()
@@ -1185,7 +1186,7 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                                         if (obj) {
                                             canvas.setActiveObject(obj)
                                             // @ts-ignore
-                                            obj.bringToFront()
+                                            canvas.bringObjectToFront(obj)
                                             obj.setCoords()
                                             canvas.renderAll()
                                             setSelectedZoneId(zone.id)
