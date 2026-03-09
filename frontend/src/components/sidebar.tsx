@@ -34,6 +34,7 @@ export default function Sidebar({
     suppressedChatSections,
     isChatOpen,
     unreadNotifications, // Added to check for specific notif types
+    clearNotificationsByType,
   } = useNotifications()
 
   useEffect(() => {

@@ -379,6 +379,42 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
         })
     }
 
+    const clearChatNotifications = async (type: 'company' | 'private', senderId?: string) => {
+        // Optimistic update: Clear UI immediately
+        if (type === 'company') {
+            setUnreadCompanyChatCount(0)
+        } else if (type === 'private') {
+            if (senderId) {
+                setUnreadChatCounts(prev => {
+                    const next = { ...prev };
+                    delete next[senderId];
+                    return next;
+                });
+            } else {
+                setUnreadChatCounts({});
+            }
+        }
+
+        // Sync notifications list locally (optimistic)
+        setNotifications(prev => prev.map(n => {
+            if (n.type === 'new_chat') {
+                const nSenderId = extractId(n.senderId)
+                if (type === 'company' && !n.senderId) return { ...n, isRead: true };
+                if (type === 'private' && (!senderId || nSenderId === senderId)) return { ...n, isRead: true };
+            }
+            return n;
+        }));
+
+        try {
+            await apiService.patch('/v1/notifications/clear-chat', {
+                type: 'new_chat',
+                senderId: senderId
+            });
+        } catch (err) {
+            console.error('Failed to clear chat notifications', err)
+        }
+    }
+
     const clearNotificationsByType = async (types: string[]) => {
         // Optimistic update
         setNotifications(prev => prev.map(n =>
