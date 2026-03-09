@@ -136,7 +136,7 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
               name="first_name"
               render={({ field }) => (
                 <FormItem className="space-y-1">
-                  <FormLabel className='text-xs font-semibold text-[#1a1a2e]'>First Name</FormLabel>
+                  <FormLabel className='text-xs font-semibold text-white'>First Name</FormLabel>
                   <FormControl>
                     <Input
                       placeholder="John"
@@ -155,7 +155,7 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
               name="last_name"
               render={({ field }) => (
                 <FormItem className="space-y-1">
-                  <FormLabel className='text-xs font-semibold text-[#1a1a2e]'>Last Name</FormLabel>
+                  <FormLabel className='text-xs font-semibold text-white'>Last Name</FormLabel>
                   <FormControl>
                     <Input
                       placeholder="Doe"
@@ -174,7 +174,7 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
               name="email"
               render={({ field }) => (
                 <FormItem className="space-y-1">
-                  <FormLabel className='text-xs font-semibold text-[#1a1a2e]'>Email</FormLabel>
+                  <FormLabel className='text-xs font-semibold text-white'>Email</FormLabel>
                   <FormControl>
                     <Input
                       placeholder="email@example.com"
@@ -195,7 +195,7 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
                 name="companyName"
                 render={({ field }) => (
                   <FormItem className="space-y-1">
-                    <FormLabel className='text-xs font-semibold text-[#1a1a2e]'>Company Name</FormLabel>
+                    <FormLabel className='text-xs font-semibold text-white'>Company Name</FormLabel>
                     <FormControl>
                       <Input
                         placeholder="Acme Inc."
@@ -216,7 +216,7 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
               name="password"
               render={({ field }) => (
                 <FormItem className="space-y-1">
-                  <FormLabel className='text-xs font-semibold text-[#1a1a2e]'>Password</FormLabel>
+                  <FormLabel className='text-xs font-semibold text-white'>Password</FormLabel>
                   <FormControl>
                     <PasswordInput
                       placeholder="********"
@@ -237,7 +237,7 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
               name="confirmPassword"
               render={({ field }) => (
                 <FormItem className="space-y-1">
-                  <FormLabel className='text-xs font-semibold text-[#1a1a2e]'>Confirm Password</FormLabel>
+                  <FormLabel className='text-xs font-semibold text-white'>Confirm Password</FormLabel>
                   <FormControl>
                     <PasswordInput
                       placeholder="********"
@@ -261,7 +261,7 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
                 <span className='w-full border-t border-white/10' />
               </div>
               <div className='relative flex justify-center text-[10px] font-black uppercase tracking-[0.3em]'>
-                <span className='bg-transparent px-4 text-[#1a1a2e] font-bold'>
+                <span className='bg-transparent px-4 text-white font-bold'>
                   Or continue with
                 </span>
               </div>
@@ -378,7 +378,7 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
             </Button>
             <div className='mt-6 flex flex-col items-center gap-4 text-center text-[10px] font-bold uppercase tracking-[0.2em]'>
               <div className='flex items-center gap-2 text-white font-bold transition-colors'>
-                Need help? <Link to={Routes.CONTACT_US} className='text-[#1a1a2e] underline underline-offset-4 hover:text-[#1a1a2e]/80 transition-colors'>Reach out</Link>
+                Need help? <Link to={Routes.CONTACT_US} className='text-white underline underline-offset-4 hover:text-white/80 transition-colors'>Reach out</Link>
               </div>
               <div className='flex items-center gap-2 text-[#1a1a2e] font-bold'>
                 <span className='h-[1px] w-6 bg-white/20' />
@@ -389,7 +389,7 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
                 Have an invitation?{' '}
                 <Link
                   to={Routes.INVITED}
-                  className='text-[#1a1a2e] underline underline-offset-4 hover:text-[#1a1a2e]/80 transition-colors'
+                  className='text-white underline underline-offset-4 hover:text-white/80 transition-colors'
                 >
                   Join workspace
                 </Link>

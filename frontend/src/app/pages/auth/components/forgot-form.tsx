@@ -243,7 +243,7 @@ export function ForgotForm({ className, ...props }: ForgotFormProps) {
                 name='email'
                 render={({ field }) => (
                   <FormItem className='space-y-1'>
-                    <FormLabel className='text-xs font-semibold text-[#1a1a2e] md:text-muted-foreground'>Email</FormLabel>
+                    <FormLabel className='text-xs font-semibold text-white'>Email</FormLabel>
                     <FormControl>
                       <Input
                         placeholder='name@example.com'
@@ -269,8 +269,8 @@ export function ForgotForm({ className, ...props }: ForgotFormProps) {
           <form onSubmit={otpForm.handleSubmit(onOtpSubmit)}>
             <div className='grid gap-4'>
               <div className="flex flex-col space-y-2 text-center mb-4 w-full">
-                <h1 className="text-[10px] md:text-xs font-bold uppercase tracking-[0.1em] md:tracking-[0.2em] text-[#1a1a2e]/90 md:text-muted-foreground/60 break-words whitespace-normal w-full px-2">
-                  Enter the 6-digit code sent to <br className="hidden md:block" /> <span className="text-[#1a1a2e] md:text-foreground font-black break-all">{email}</span>
+                <h1 className="text-[10px] md:text-xs font-bold uppercase tracking-[0.1em] md:tracking-[0.2em] text-white/60 break-words whitespace-normal w-full px-2">
+                  Enter the 6-digit code sent to <br className="hidden md:block" /> <span className="text-white font-black break-all">{email}</span>
                 </h1>
               </div>
 
@@ -299,8 +299,8 @@ export function ForgotForm({ className, ...props }: ForgotFormProps) {
                     <FormMessage />
                     <div className="text-center mt-4">
                       {timeLeft > 0 ? (
-                        <span className="text-xs font-bold uppercase tracking-widest text-[#1a1a2e]/90 md:text-muted-foreground/60">
-                          Code expires in <span className="text-[#1a1a2e] md:text-foreground font-black">{formatTime(timeLeft)}</span>
+                        <span className="text-xs font-bold uppercase tracking-widest text-white/60">
+                          Code expires in <span className="text-white font-black">{formatTime(timeLeft)}</span>
                         </span>
                       ) : (
                         <span className="text-xs font-black uppercase tracking-widest text-destructive">OTP expired</span>
@@ -315,7 +315,7 @@ export function ForgotForm({ className, ...props }: ForgotFormProps) {
               <Button
                 type="button"
                 variant="ghost"
-                className="mt-2 text-[10px] font-black uppercase tracking-widest text-[#1a1a2e]/80 md:text-muted-foreground hover:text-[#1a1a2e] md:hover:text-primary transition-colors h-auto whitespace-normal break-words"
+                className="mt-2 text-[10px] font-black uppercase tracking-widest text-white/70 hover:text-white transition-colors h-auto whitespace-normal break-words"
                 onClick={handleResendOtp}
                 disabled={!canResend || resendCooldown > 0 || isLoading}
               >
@@ -338,7 +338,7 @@ export function ForgotForm({ className, ...props }: ForgotFormProps) {
                 name="password"
                 render={({ field }) => (
                   <FormItem className="space-y-1">
-                    <FormLabel className='text-xs font-semibold text-[#1a1a2e] md:text-muted-foreground'>New Password</FormLabel>
+                    <FormLabel className='text-xs font-semibold text-white'>New Password</FormLabel>
                     <FormControl>
                       <PasswordInput
                         placeholder="********"
@@ -356,7 +356,7 @@ export function ForgotForm({ className, ...props }: ForgotFormProps) {
                 name="confirmPassword"
                 render={({ field }) => (
                   <FormItem className="space-y-1">
-                    <FormLabel className='text-xs font-semibold text-[#1a1a2e] md:text-muted-foreground'>Confirm Password</FormLabel>
+                    <FormLabel className='text-xs font-semibold text-white'>Confirm Password</FormLabel>
                     <FormControl>
                       <PasswordInput
                         placeholder="********"
