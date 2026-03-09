@@ -6,7 +6,7 @@ const errorResponse = (
   statusCode: number,
   data: Record<string, unknown>,
 ): void => {
-  throw new ApiError(statusCode, message, config.env !== "production");
+  throw new ApiError(statusCode, message, true);
 };
 
 export default errorResponse;
