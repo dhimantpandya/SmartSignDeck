@@ -227,23 +227,44 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
 
                         const obj = canvas.getObjects().find((o: any) => o.id === remoteZone.id) as any
                         if (obj) {
-                            // Smoothly update position and scale
-                            obj.set({
-                                left: remoteZone.x * SCALE,
-                                top: remoteZone.y * SCALE,
-                                scaleX: (remoteZone.width * SCALE) / obj.width,
-                                scaleY: (remoteZone.height * SCALE) / obj.height,
-                            })
-                            obj.setCoords()
+                            // Smoothly animate to new position for fluid real-time movement
+                            const targetLeft = remoteZone.x * SCALE
+                            const targetTop = remoteZone.y * SCALE
+                            const targetScaleX = (remoteZone.width * SCALE) / obj.width
+                            const targetScaleY = (remoteZone.height * SCALE) / obj.height
 
-                            // Also sync remote tag position if present
+                            // Use direct set for small deltas (instant) or animate for larger moves
+                            const dx = Math.abs(obj.left - targetLeft)
+                            const dy = Math.abs(obj.top - targetTop)
+                            if (dx + dy > 2) {
+                                obj.animate(
+                                    { left: targetLeft, top: targetTop, scaleX: targetScaleX, scaleY: targetScaleY },
+                                    {
+                                        duration: 80,
+                                        onChange: () => {
+                                            // Also keep label tag in sync during animation
+                                            const tag = canvas.getObjects().find((o: any) => o._forZoneId === obj.id && o._isRemoteTag) as any
+                                            if (tag) {
+                                                tag.set({ left: obj.left, top: obj.top - 30 })
+                                                tag.setCoords()
+                                            }
+                                            canvas.requestRenderAll()
+                                        },
+                                        easing: (t: number, b: number, c: number, d: number) => c * t / d + b, // linear
+                                    }
+                                )
+                            } else {
+                                obj.set({ left: targetLeft, top: targetTop, scaleX: targetScaleX, scaleY: targetScaleY })
+                                obj.setCoords()
+                            }
+
+                            // Also sync remote tag position if present and not mid-animation
                             const tag = canvas.getObjects().find((o: any) => o._forZoneId === obj.id && o._isRemoteTag)
                             if (tag) {
-                                tag.set({
+                                (tag as any).set({
                                     left: obj.left,
-                                    top: obj.top - 5
-                                })
-                                tag.setCoords()
+                                    top: obj.top - 30
+                                }); (tag as any).setCoords()
                             }
                         } else {
                             addZoneToCanvas(canvas, remoteZone)
@@ -384,48 +405,56 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                 // 2. Add visual presence tag if missing
                 let tag = canvas.getObjects().find((o: any) => o._forZoneId === obj.id && o._isRemoteTag) as any
                 if (!tag) {
-                    tag = new fabric.Group([
-                        new fabric.Rect({
-                            fill: remote.color,
-                            height: 20,
-                            rx: 4,
-                            ry: 4,
-                            originX: 'left',
-                            originY: 'bottom',
-                        }),
-                        new fabric.Text(remote.userName, {
-                            fontSize: 10,
-                            fill: '#ffffff',
-                            fontFamily: 'Inter, sans-serif',
-                            fontWeight: 'bold',
-                            originX: 'left',
-                            originY: 'bottom',
-                        })
-                    ], {
-                        originX: 'left',
-                        originY: 'bottom',
+                    const FONT_SIZE = 11
+                    const PAD_H = 10
+                    const PAD_V = 4
+
+                    // Create text first to measure it
+                    const labelText = new fabric.Text(remote.userName, {
+                        fontSize: FONT_SIZE,
+                        fill: '#ffffff',
+                        fontFamily: 'Inter, sans-serif',
+                        fontWeight: 'bold',
+                        left: PAD_H,
+                        top: PAD_V,
+                    })
+
+                    const textW = labelText.width ?? 60
+                    const textH = labelText.height ?? FONT_SIZE
+                    const rectW = textW + (PAD_H * 2)
+                    const rectH = textH + (PAD_V * 2)
+
+                    const bgRect = new fabric.Rect({
+                        width: rectW,
+                        height: rectH,
+                        fill: remote.color,
+                        rx: 4,
+                        ry: 4,
+                        left: 0,
+                        top: 0
+                    })
+
+                    // Center the text perfectly within the rect inside the group
+                    tag = new fabric.Group([bgRect, labelText], {
                         selectable: false,
                         evented: false,
                         // @ts-ignore
                         _forZoneId: obj.id,
-                        _isRemoteTag: true
+                        _isRemoteTag: true,
+                        originX: 'left',
+                        originY: 'bottom' // keep origin bottom so we can easily stick it above the zone
                     })
-
-                    // Adjust rect width based on text
-                    const textObj = tag.getObjects()[1] as fabric.Text
-                    const rectObj = tag.getObjects()[0] as fabric.Rect
-                    rectObj.set({ width: textObj.width! + 10 })
-                    textObj.set({ left: 5, top: -2 })
 
                     canvas.add(tag)
                 }
 
-                // Match position (roughly above the zone)
+                // Position the label snugly above the zone's top-left corner
                 tag.set({
                     left: obj.left,
-                    top: obj.top - 5,
+                    top: obj.top - 2,
                     visible: true
                 })
+                tag.setCoords()
                 canvas.bringObjectToFront(tag)
             } else {
                 // Restore if was previously locked

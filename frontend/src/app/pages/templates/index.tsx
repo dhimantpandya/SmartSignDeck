@@ -405,7 +405,7 @@ export default function Templates() {
                     <Button variant="ghost" size="sm" onClick={() => setPreviewTemplate(template)}>
                         <Eye size={16} className="mr-1" /> Preview
                     </Button>
-                    {isOwner ? (
+                    {isOwner && !inGroupView ? (
                         <>
                             <Button variant="ghost" size="sm" onClick={() => handleEdit(template)}>
                                 <IconEdit size={16} className="mr-1" /> Edit
@@ -416,7 +416,7 @@ export default function Templates() {
                                 <IconTrash size={16} className="mr-1" /> Delete
                             </Button>
                         </>
-                    ) : template.collaborators?.some((c: any) => (c.id || c._id || c) === user?.id) ? (
+                    ) : template.collaborators?.some((c: any) => (c.id || c._id || c) === user?.id) && !inGroupView ? (
                         <Button
                             variant="default"
                             size="sm"
@@ -427,7 +427,7 @@ export default function Templates() {
                         </Button>
                     ) : (
                         <div className="flex gap-2">
-                            {isOwner && (
+                            {isOwner && !inGroupView && (
                                 <Button
                                     variant="outline"
                                     size="sm"
