@@ -343,7 +343,7 @@ export function ForgotForm({ className, ...props }: ForgotFormProps) {
                       <PasswordInput
                         placeholder="********"
                         {...field}
-                        className='h-12 rounded-xl border-white/20 bg-white/5 focus-visible:ring-primary/50'
+                        className='h-12 rounded-xl border-white/20 bg-white/5 text-[#1a1a2e] placeholder:text-[#1a1a2e]/60 focus-visible:ring-primary/50'
                       />
                     </FormControl>
                     <PasswordStrengthIndicator password={field.value} className="mt-2" />
@@ -361,7 +361,7 @@ export function ForgotForm({ className, ...props }: ForgotFormProps) {
                       <PasswordInput
                         placeholder="********"
                         {...field}
-                        className='h-12 rounded-xl border-white/20 bg-white/5 focus-visible:ring-primary/50'
+                        className='h-12 rounded-xl border-white/20 bg-white/5 text-[#1a1a2e] placeholder:text-[#1a1a2e]/60 focus-visible:ring-primary/50'
                       />
                     </FormControl>
                     <FormMessage />

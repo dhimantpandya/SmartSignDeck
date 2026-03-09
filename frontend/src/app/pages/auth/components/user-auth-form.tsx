@@ -185,7 +185,7 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
                       placeholder="name@example.com"
                       autoComplete="off"
                       {...field}
-                      className='h-12 rounded-xl border-white/20 bg-white/5 text-[#1a1a2e] placeholder:text-[#1a1a2e]/60 md:text-white md:placeholder:text-white/40 focus-visible:ring-primary/50'
+                      className='h-12 rounded-xl border-white/20 bg-white/5 text-[#1a1a2e] placeholder:text-[#1a1a2e]/60 focus-visible:ring-primary/50'
                     />
                   </FormControl>
                   <FormMessage />

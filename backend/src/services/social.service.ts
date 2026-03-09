@@ -170,6 +170,12 @@ const respondToFriendRequest = async (requestId: string, status: "accepted" | "r
  * Creates an automatic connection (accepted friend request) between two users
  */
 const createAutomaticConnection = async (user1Id: string, user2Id: string) => {
+    if (!user1Id || !user2Id) {
+        console.error(`[SOCIAL] Cannot create auto-connection: missing user IDs. inviter=${user1Id}, invitee=${user2Id}`);
+        return null;
+    }
+    console.log(`[SOCIAL] Creating auto-connection between ${user1Id} and ${user2Id}`);
+
     // Check if exists
     const existing = await FriendRequest.findOne({
         $or: [
@@ -179,17 +185,23 @@ const createAutomaticConnection = async (user1Id: string, user2Id: string) => {
     });
 
     if (existing) {
+        console.log(`[SOCIAL] Connection already exists between ${user1Id} and ${user2Id}. Status: ${existing.status}`);
         if (existing.status === "accepted") return existing;
         // If pending or rejected, we update to accepted
         existing.status = "accepted";
         await existing.save();
     } else {
         await FriendRequest.create({ fromId: user1Id, toId: user2Id, status: "accepted" });
+        console.log(`[SOCIAL] Created NEW accepted friend request between ${user1Id} and ${user2Id}`);
     }
 
     // Send system messages to both users
-    await sendMessage(user1Id, "You are now connected with this user!", user2Id);
-    await sendMessage(user2Id, "You are now connected with this user!", user1Id);
+    try {
+        await sendMessage(user1Id, "You are now connected with this user!", user2Id);
+        await sendMessage(user2Id, "You are now connected with this user!", user1Id);
+    } catch (msgErr) {
+        console.error("[SOCIAL] Failed to send auto-connection system messages:", msgErr);
+    }
 
     return { message: "Automatic connection established" };
 };
