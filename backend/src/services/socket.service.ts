@@ -114,12 +114,38 @@ const initSocket = (server: HttpServer | HttpsServer): Server => {
             logger.info(`[SOCKET] Socket ${socket.id} joined template room: template_${tid}`);
         });
 
-        socket.on("template_edit", (data: { templateId: any, [key: string]: any }) => {
+        socket.on("template_edit", (data: { templateId: any, zones?: any[], [key: string]: any }) => {
             const tid = cleanId(data.templateId);
             if (!tid) return;
-            // Broadcast to others in the same template room
-            socket.to(`template_${tid}`).emit("template_updated", data);
-            logger.info(`[SOCKET] Template update broadcast to room template_${tid}`);
+
+            const templateLocks = activeLocks.get(tid);
+            const senderUserId = (socket as any).userId;
+
+            // Enforce locking: Only broadcast updates for zones that the user holds the lock for
+            let zonesToBroadcast = data.zones;
+            if (data.zones && templateLocks && senderUserId) {
+                zonesToBroadcast = data.zones.filter((zone: any) => {
+                    const lock = templateLocks.get(zone.id);
+                    // If no lock exists, or if the lock is held by the sender, allow it
+                    // If the lock is held by someone else, filter it out
+                    if (lock && lock.userId !== senderUserId) {
+                        logger.warn(`[SOCKET] Unauthorized zone edit ignored: User ${senderUserId} tried to edit zone ${zone.id} locked by ${lock.userId}`);
+                        return false;
+                    }
+                    return true;
+                });
+            }
+
+            const payload = { ...data };
+            if (zonesToBroadcast) {
+                payload.zones = zonesToBroadcast;
+            }
+
+            // Only broadcast if there's actually something left to send
+            if (Object.keys(payload).length > 1) { // templateId is always there
+                socket.to(`template_${tid}`).emit("template_updated", payload);
+                logger.debug(`[SOCKET] Template update broadcast to room template_${tid} (Filtered: ${data.zones?.length !== zonesToBroadcast?.length})`);
+            }
         });
 
         socket.on("lock_zone", (data: { templateId: any, zoneId: string, userId: string, userName: string, color: string }) => {

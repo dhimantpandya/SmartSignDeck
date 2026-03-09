@@ -888,6 +888,18 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                 if (options.target) {
                     const obj = options.target as any
                     obj.setCoords()
+
+                    // PROACTIVE LOCKING: Request lock as soon as mouse goes down
+                    if (obj.id) {
+                        const remote = remoteSelectionsRef.current[obj.id]
+                        if (remote) {
+                            // If it's already locked by someone else, we shouldn't even be able to click it
+                            // but this is an extra safety layer
+                            canvas.discardActiveObject()
+                        } else {
+                            emitLock(obj.id)
+                        }
+                    }
                     canvas.renderAll()
                 }
             })
