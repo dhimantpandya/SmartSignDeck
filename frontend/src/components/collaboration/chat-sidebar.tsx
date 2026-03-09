@@ -446,7 +446,7 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
         try {
             const res = await userService.getAllUsers({
                 pagination: { pageIndex: 0, pageSize: 100 },
-                filter: { companyId: extractId(user.companyId) }
+                filter: { companyId: extractId(user.companyId), role: [], search: '' }
             })
             if (res.status === 'success') {
                 setCompanyMembers(res.data.users)

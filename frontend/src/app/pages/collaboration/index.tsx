@@ -230,10 +230,6 @@ export default function Collaboration() {
         loadData()
     }, [user])
 
-    useEffect(() => {
-        loadData()
-    }, [user])
-
     // Update active chat context so NotificationProvider knows when to suppress badges
     useEffect(() => {
         if (activeTab === 'company') {
