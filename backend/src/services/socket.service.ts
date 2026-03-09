@@ -114,39 +114,49 @@ const initSocket = (server: HttpServer | HttpsServer): Server => {
             logger.info(`[SOCKET] Socket ${socket.id} joined template room: template_${tid}`);
         });
 
-        socket.on("template_edit", (data: { templateId: any, zones?: any[], [key: string]: any }) => {
+        socket.on("template_edit", (data: { templateId: any, zones?: any[], isPublic?: boolean, [key: string]: any }) => {
             const tid = cleanId(data.templateId);
             if (!tid) return;
 
             const templateLocks = activeLocks.get(tid);
             const senderUserId = (socket as any).userId;
 
-            // Enforce locking: Only broadcast updates for zones that the user holds the lock for
-            let zonesToBroadcast = data.zones;
+            // Enforce locking: Only filter zones when:
+            // 1. There are zones in the payload
+            // 2. There are active locks in the template room
+            // 3. We know who the sender is (senderUserId is available)
+            let payload = { ...data };
+
             if (data.zones && templateLocks && senderUserId) {
-                zonesToBroadcast = data.zones.filter((zone: any) => {
+                const allowedZones = data.zones.filter((zone: any) => {
+                    if (!zone.id) return true; // Allow zones without IDs (new zones)
                     const lock = templateLocks.get(zone.id);
-                    // If no lock exists, or if the lock is held by the sender, allow it
-                    // If the lock is held by someone else, filter it out
+                    // Allow if: no lock exists for this zone, or the lock is held by the sender
                     if (lock && lock.userId !== senderUserId) {
                         logger.warn(`[SOCKET] Unauthorized zone edit ignored: User ${senderUserId} tried to edit zone ${zone.id} locked by ${lock.userId}`);
                         return false;
                     }
                     return true;
                 });
+
+                // If all zones were filtered out and there's nothing else to broadcast, skip
+                if (allowedZones.length === 0 && Object.keys(data).length <= 2) { // templateId + zones
+                    return;
+                }
+                payload.zones = allowedZones;
             }
 
-            const payload = { ...data };
-            if (zonesToBroadcast) {
-                payload.zones = zonesToBroadcast;
-            }
+            // Broadcast to other collaborators in this template's room
+            socket.to(`template_${tid}`).emit("template_updated", payload);
 
-            // Only broadcast if there's actually something left to send
-            if (Object.keys(payload).length > 1) { // templateId is always there
-                socket.to(`template_${tid}`).emit("template_updated", payload);
-                logger.debug(`[SOCKET] Template update broadcast to room template_${tid} (Filtered: ${data.zones?.length !== zonesToBroadcast?.length})`);
+            // If the template was just made public, broadcast a global event
+            // so other users' template lists refresh in real-time
+            if (data.isPublic === true) {
+                io.emit("template_published", { templateId: tid });
+                logger.info(`[SOCKET] Template ${tid} marked as public - broadcasting template_published`);
             }
         });
+
 
         socket.on("lock_zone", (data: { templateId: any, zoneId: string, userId: string, userName: string, color: string }) => {
             const tid = cleanId(data.templateId);

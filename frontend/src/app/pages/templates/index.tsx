@@ -27,6 +27,7 @@ import { Label } from '@/components/ui/label'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Checkbox } from '@/components/ui/checkbox'
 import { CollaborateDialog } from './components/collaborate-dialog'
+import { useNotifications } from '@/components/nav-notification-provider'
 
 
 export default function Templates() {
@@ -47,6 +48,23 @@ export default function Templates() {
     const [isCollaborateOpen, setIsCollaborateOpen] = useState(false)
     const [selectedTemplateForCollab, setSelectedTemplateForCollab] = useState<any>(null)
     const queryClient = useQueryClient()
+    const { socket } = useNotifications()
+
+    // Real-time global template updates via socket
+    useEffect(() => {
+        if (!socket) return
+
+        const handleTemplatePublished = () => {
+            // Refresh global templates list when anyone makes a template public
+            queryClient.invalidateQueries({ queryKey: ['templates', 'global'] })
+        }
+
+        socket.on('template_published', handleTemplatePublished)
+
+        return () => {
+            socket.off('template_published', handleTemplatePublished)
+        }
+    }, [socket, queryClient])
 
     const toggleTemplateSelection = (id: string) => {
         setSelectedTemplates(prev =>
