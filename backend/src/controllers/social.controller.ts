@@ -26,9 +26,15 @@ const sendMessage = catchAsync(async (req: Request, res: Response) => {
     // Use robust cleanId which now handles objects/definitions
     const cSenderId = cleanId(user._id);
     const cRecipientId = cleanId(recipientId);
-    const cCompanyId = cleanId(companyId);
+    let cCompanyId = cleanId(companyId);
 
-    console.log(`[SOCIAL_CTRL] Sending msg. Text: "${text.substring(0, 10)}...", CompID: ${companyId} -> Clean: ${cCompanyId}`);
+    // Fallback: If no companyId in body AND no recipientId, use user's companyId
+    if (!cCompanyId && !cRecipientId && user.companyId) {
+        cCompanyId = cleanId(user.companyId);
+        console.log(`[SOCIAL_CTRL] 🔄 Fallback applied: Using user.companyId (${cCompanyId})`);
+    }
+
+    console.log(`[SOCIAL_CTRL] Sending msg. Text: "${text.substring(0, 10)}...", CompID: ${cCompanyId}`);
 
     // 1. Broadcast for real-time chat window synchronization
     broadcastChat({

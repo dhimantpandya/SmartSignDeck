@@ -274,8 +274,8 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
         const companyId = extractId(user.companyId)
         console.log('[ChatSidebar] 🔌 Joining rooms:', { uid, companyId, rawCompanyId: user.companyId })
         if (uid) socket.emit('join_user', uid)
-        if (user.companyId) {
-            console.log('[ChatSidebar] 📡 Emitting join_company with:', companyId)
+        if (companyId) {
+            console.log('[ChatSidebar] 📡 Emitting join_company with cleaned ID:', companyId)
             socket.emit('join_company', companyId)
         }
 
