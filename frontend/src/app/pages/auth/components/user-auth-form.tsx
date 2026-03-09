@@ -375,7 +375,7 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
                 <div className='flex items-center gap-2 text-white font-bold transition-colors'>
                   Need help? <Link to={Routes.CONTACT_US} className='text-white underline underline-offset-4 hover:text-white/80 transition-colors'>Reach out</Link>
                 </div>
-                <div className='flex items-center gap-2 text-[#1a1a2e] font-bold'>
+                <div className='flex items-center gap-2 text-white font-bold'>
                   <span className='h-[1px] w-6 bg-white/20' />
                   <span>OR</span>
                   <span className='h-[1px] w-6 bg-white/20' />
