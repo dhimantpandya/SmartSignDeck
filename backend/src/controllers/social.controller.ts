@@ -191,10 +191,12 @@ const deleteMessage = catchAsync(async (req: Request, res: Response) => {
         if (!isSender) {
             return successResponse(res, "Only the sender can delete for everyone", httpStatus.FORBIDDEN, {});
         }
-        // 🔒 Restrict "Delete for Everyone" if the message has been seen by anyone else
-        const seenByOthers = msg.seenBy.filter((s: any) => s.userId?.toString() !== user._id.toString());
-        if (seenByOthers.length > 0) {
-            return errorResponse("Cannot delete for everyone because this message has already been seen", httpStatus.FORBIDDEN, {});
+        // 🔒 Restrict "Delete for Everyone" for private messages if the message has been seen by others
+        if (!msg.companyId) {
+            const seenByOthers = msg.seenBy.filter((s: any) => s.userId?.toString() !== user._id.toString());
+            if (seenByOthers.length > 0) {
+                return errorResponse("Cannot delete for everyone because this message has already been seen", httpStatus.FORBIDDEN, {});
+            }
         }
     } else {
         // 'me' scope
