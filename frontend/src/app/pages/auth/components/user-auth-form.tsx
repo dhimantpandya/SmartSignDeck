@@ -372,7 +372,7 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
 
 
               <div className='mt-6 flex flex-col items-center gap-4 text-center text-[10px] font-bold uppercase tracking-[0.2em]'>
-                <div className='flex items-center gap-2 text-white font-bold transition-colors'>
+                <div className='flex items-center gap-2 text-[#1a1a2e] font-bold transition-colors'>
                   Need help? <Link to={Routes.CONTACT_US} className='text-[#1a1a2e] underline underline-offset-4 hover:text-[#1a1a2e]/80 transition-colors'>Reach out</Link>
                 </div>
                 <div className='flex items-center gap-2 text-[#1a1a2e] font-bold'>
@@ -380,7 +380,7 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
                   <span>OR</span>
                   <span className='h-[1px] w-6 bg-white/20' />
                 </div>
-                <div className='text-white font-bold'>
+                <div className='text-[#1a1a2e] font-bold'>
                   Have an invitation?{' '}
                   <Link to={Routes.INVITED} className='text-[#1a1a2e] underline underline-offset-4 hover:text-[#1a1a2e]/80 transition-colors'>
                     Join workspace
