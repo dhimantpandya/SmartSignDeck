@@ -24,6 +24,13 @@ router.patch("/read-all", auth(), catchAsync(async (req, res) => {
     res.status(httpStatus.NO_CONTENT).send();
 }));
 
+router.patch("/read-by-type", auth(), catchAsync(async (req, res) => {
+    const { types } = req.body;
+    const userId = req.user!._id || req.user!.id;
+    await notificationService.markNotificationsByTypeAsRead(userId, types);
+    res.status(httpStatus.NO_CONTENT).send();
+}));
+
 router.patch("/clear-chat", auth(), catchAsync(async (req, res) => {
     const { type, senderId } = req.body;
     const userId = req.user!._id || req.user!.id;

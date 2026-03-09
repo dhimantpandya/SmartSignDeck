@@ -43,6 +43,7 @@ interface NotificationContextType {
     onlineUsers: Set<string>
     lastSeenMap: Record<string, string>
     unreadNotifications: Notification[]
+    clearNotificationsByType: (types: string[]) => Promise<void>
 }
 
 const NotificationContext = createContext<NotificationContextType | null>(null)
@@ -378,39 +379,23 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
         })
     }
 
-    const clearChatNotifications = async (type: 'company' | 'private', senderId?: string) => {
-        // Optimistic update: Clear UI immediately
-        if (type === 'company') {
-            setUnreadCompanyChatCount(0)
-        } else if (type === 'private') {
-            if (senderId) {
-                setUnreadChatCounts(prev => {
-                    const next = { ...prev };
-                    delete next[senderId];
-                    return next;
-                });
-            } else {
-                setUnreadChatCounts({});
-            }
+    const clearNotificationsByType = async (types: string[]) => {
+        // Optimistic update
+        setNotifications(prev => prev.map(n =>
+            types.includes(n.type) ? { ...n, isRead: true } : n
+        ))
+
+        const countToClear = notifications.filter(n => !n.isRead && types.includes(n.type)).length
+        setUnreadCount(prev => Math.max(0, prev - countToClear))
+
+        if (types.includes('friend_request')) {
+            setUnreadRequestCount(0)
         }
 
-        // Sync notifications list locally (optimistic)
-        setNotifications(prev => prev.map(n => {
-            if (n.type === 'new_chat') {
-                const nSenderId = extractId(n.senderId)
-                if (type === 'company' && !n.senderId) return { ...n, isRead: true };
-                if (type === 'private' && (!senderId || nSenderId === senderId)) return { ...n, isRead: true };
-            }
-            return n;
-        }));
-
         try {
-            await apiService.patch('/v1/notifications/clear-chat', {
-                type: 'new_chat',
-                senderId: senderId
-            });
+            await apiService.patch('/v1/notifications/read-by-type', { types })
         } catch (err) {
-            console.error('Failed to clear chat notifications', err)
+            console.error('Failed to clear notifications by type', err)
         }
     }
 
@@ -435,7 +420,8 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
                 setActiveChat: setActiveChatInfo,
                 unreadNotifications: notifications.filter(n => !n.isRead),
                 onlineUsers,
-                lastSeenMap
+                lastSeenMap,
+                clearNotificationsByType
             }}
         >
             {children}

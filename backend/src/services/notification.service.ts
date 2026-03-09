@@ -84,6 +84,17 @@ const markChatAsRead = async (userId: string, type: string, senderId?: string) =
     return result;
 };
 
+/**
+ * Mark all notifications of specific types as read for a user
+ */
+const markNotificationsByTypeAsRead = async (userId: string, types: string[]) => {
+    const cUserId = cleanId(userId);
+    return await Notification.updateMany(
+        { recipientId: cUserId, type: { $in: types }, isRead: false },
+        { isRead: true }
+    );
+};
+
 export default {
     createNotification,
     getUserNotifications,
@@ -91,4 +102,5 @@ export default {
     markAsRead,
     markAllAsRead,
     markChatAsRead,
+    markNotificationsByTypeAsRead,
 };

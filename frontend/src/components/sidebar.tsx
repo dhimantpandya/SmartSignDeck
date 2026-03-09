@@ -99,6 +99,8 @@ export default function Sidebar({
   useEffect(() => {
     if (currentPath?.includes('/collaboration')) {
       if (unreadRequestCount > 0) clearRequestBadges()
+      // Also clear template/invite notifications
+      clearNotificationsByType(['company_invite', 'collaboration_request'])
     }
     if (currentPath?.includes('/admin/requests')) {
       if (adminRequestCount > 0) setAdminRequestCount(0)
