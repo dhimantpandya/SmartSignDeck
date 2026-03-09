@@ -395,11 +395,18 @@ export const UsersList = () => {
               defaultValue=''
             >
               <option value=''>Select Role to Copy Link</option>
-              {roleOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
+              {roleOptions
+                .filter((option) => {
+                  if (user?.role === 'super_admin') return true
+                  if (user?.role === 'admin') return true
+                  if (user?.role === 'user') return option.value === Roles.USER
+                  return false // Advertisers or unknown roles cannot invite
+                })
+                .map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
             </select>
           </div>
           {user?.role === 'super_admin' && (

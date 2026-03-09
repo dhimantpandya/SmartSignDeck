@@ -603,9 +603,21 @@ export const verifyOtp = async (req: Request, res: Response) => {
 export const generateInviteToken = async (req: Request, res: Response) => {
   try {
     const { companyId, role } = req.query;
+    const currentUser = req.user as any;
 
     if (!companyId || !role) {
       throw new ApiError(httpStatus.BAD_REQUEST, "companyId and role are required");
+    }
+
+    // Role-based restrictions
+    if (currentUser.role === 'user') {
+      if (role !== 'user') {
+        throw new ApiError(httpStatus.FORBIDDEN, "Users can only generate invite links for the 'user' role");
+      }
+    } else if (currentUser.role === 'advertiser') {
+      throw new ApiError(httpStatus.FORBIDDEN, "Advertisers are not allowed to generate invite links");
+    } else if (currentUser.role !== 'super_admin' && currentUser.role !== 'admin') {
+      throw new ApiError(httpStatus.FORBIDDEN, "Unauthorized role for generating invite links");
     }
 
     const token = tokenService.generateInviteToken(companyId as string, role as string);

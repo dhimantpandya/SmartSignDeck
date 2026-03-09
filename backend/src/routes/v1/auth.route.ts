@@ -30,7 +30,7 @@ router.get("/diagnose-cors", authController.diagnoseCors);
 // ===== REGISTER =====
 router.get(
   "/invite-token",
-  auth("manageUsers"),
+  auth(),
   authController.generateInviteToken
 );
 router.post("/register", validate(register), authController.register);

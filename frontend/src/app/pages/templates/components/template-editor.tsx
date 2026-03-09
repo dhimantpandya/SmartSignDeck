@@ -91,6 +91,9 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
     const isOwner = checkIsOwner(initialData)
 
     const zonesRef = useRef<Zone[]>(zones)
+    const socketRef = useRef(socket)
+    const currentTemplateIdRef = useRef(currentTemplateId)
+    const remoteSelectionsRef = useRef(remoteSelections)
     const lastBroadcastRef = useRef<number>(0)
     const transformingIdRef = useRef<string | null>(null)
     const THROTTLE_MS = 50 // 20fps sync for smooth movement
@@ -100,6 +103,18 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
     useEffect(() => {
         zonesRef.current = zones
     }, [zones])
+
+    useEffect(() => {
+        socketRef.current = socket
+    }, [socket])
+
+    useEffect(() => {
+        currentTemplateIdRef.current = currentTemplateId
+    }, [currentTemplateId])
+
+    useEffect(() => {
+        remoteSelectionsRef.current = remoteSelections
+    }, [remoteSelections])
 
     // --- ABSOLUTE PERSISTENCE (FETCH ON MOUNT) ---
     useEffect(() => {
@@ -432,10 +447,10 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
     }, [remoteSelections])
 
     const broadcastUpdate = (updates: any) => {
-        const templateId = currentTemplateId?.toString().trim().toLowerCase()
-        if (!socket || !templateId) return
+        const templateId = currentTemplateIdRef.current?.toString().trim().toLowerCase()
+        if (!socketRef.current || !templateId) return
 
-        socket.emit('template_edit', {
+        socketRef.current.emit('template_edit', {
             templateId,
             ...updates
         })
@@ -881,10 +896,11 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                 const obj = e.selected?.[0] as any
                 if (obj) {
                     // STRICT CONCURRENCY CHECK
-                    if (obj.id && remoteSelections[obj.id]) {
+                    const remote = remoteSelectionsRef.current[obj.id]
+                    if (obj.id && remote) {
                         canvas.discardActiveObject()
                         canvas.requestRenderAll()
-                        toast({ title: "Zone is locked", description: `${remoteSelections[obj.id].userName} is currently editing this zone.` })
+                        toast({ title: "Zone is locked", description: `${remote.userName} is currently editing this zone.` })
                         return
                     }
 
@@ -905,10 +921,11 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                 const obj = e.selected?.[0] as any
                 if (obj) {
                     // STRICT CONCURRENCY CHECK
-                    if (obj.id && remoteSelections[obj.id]) {
+                    const remote = remoteSelectionsRef.current[obj.id]
+                    if (obj.id && remote) {
                         canvas.discardActiveObject()
                         canvas.requestRenderAll()
-                        toast({ title: "Zone is locked", description: `${remoteSelections[obj.id].userName} is currently editing this zone.` })
+                        toast({ title: "Zone is locked", description: `${remote.userName} is currently editing this zone.` })
                         return
                     }
 
