@@ -428,6 +428,19 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
         }
     }
 
+    const loadCompanyBoard = async () => {
+        if (!user?.companyId) return
+        try {
+            const res = await socialService.getCompanyBoard()
+            if (Array.isArray(res)) {
+                // reverse to get chronological
+                setBoardMessages(res.reverse())
+            }
+        } catch (err) {
+            console.error('Failed to load company board history', err)
+        }
+    }
+
     const loadCompanyMembers = async () => {
         if (!user?.companyId) return
         try {
@@ -459,6 +472,7 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
             loadFriends()
             loadRequests()
             loadCompanyMembers()
+            loadCompanyBoard()
 
             // If opening and on company board, clear it
             if (activeTab === 'company') {
@@ -584,7 +598,7 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
                         clearChatNotifications('private', extractId(selectedFriend))
                     }
                 }} className="flex-1 flex flex-col overflow-hidden gap-0">
-                    <TabsList className="grid w-full grid-cols-4 rounded-none bg-muted/50 p-0 h-10 m-0">
+                    <TabsList className="grid w-full grid-cols-2 rounded-none bg-muted/50 p-0 h-10 m-0">
                         <TabsTrigger value="company" className="rounded-none data-[state=active]:bg-background border-b-2 border-transparent data-[state=active]:border-primary transition-all text-[10px] px-1 relative">
                             Board
                             {unreadCompanyChatCount > 0 && !suppressedChatSections.has('company') && (
@@ -668,7 +682,7 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
                                 </DropdownMenu>
                             </div>
 
-                            <div className="flex-1 overflow-y-scroll p-3 flex flex-col justify-end custom-scrollbar">
+                            <div className="flex-1 overflow-y-scroll p-3 flex flex-col justify-end custom-scrollbar !visible min-h-0">
                                 <div className="space-y-2">
                                     {boardMessages.length === 0 && (
                                         <div className="flex flex-col items-center justify-center h-full text-muted-foreground opacity-50">
@@ -815,7 +829,7 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
                                             </TooltipProvider>
                                         </div>
                                     </div>
-                                    <div className="flex-1 overflow-y-scroll p-2 custom-scrollbar">
+                                    <div className="flex-1 overflow-y-scroll p-2 custom-scrollbar !visible min-h-0">
                                         {filteredFriends.length === 0 && (
                                             <div className="text-center text-xs text-muted-foreground mt-10">
                                                 No connections found.
@@ -878,7 +892,7 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
                                         </div>
                                     </div>
                                     {/* Private Messages */}
-                                    <div className="flex-1 overflow-y-scroll px-3 py-1 flex flex-col custom-scrollbar min-h-0">
+                                    <div className="flex-1 overflow-y-scroll px-3 py-1 flex flex-col custom-scrollbar !visible min-h-0">
                                         <div className="space-y-4 py-2">
                                             {privateMessages.length === 0 && (
                                                 <div className="flex flex-col items-center justify-center h-full text-muted-foreground opacity-50">

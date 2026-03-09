@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { Layout } from '@/components/custom/layout'
 import ThemeSwitch from '@/components/theme-switch'
 import { UserNav } from '@/components/user-nav'
@@ -10,12 +10,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { UserProfileDialog } from '@/app/pages/users/components/user-profile-dialog'
 import { socialService } from '@/api/social.service'
 import { userService } from '@/api/user.service'
@@ -27,7 +21,6 @@ import {
     Users,
     UserPlus,
     MessageSquare,
-    Building2,
     Search as SearchIcon,
     Send,
     FileText,
@@ -39,7 +32,6 @@ import {
 import { Link } from 'react-router-dom'
 import { Routes } from '@/utilities/routes'
 import { Input } from '@/components/ui/input'
-import { cn } from '@/lib/utils'
 import Loader from '@/components/loader'
 
 export default function Collaboration() {
@@ -50,18 +42,14 @@ export default function Collaboration() {
     const [isLoading, setIsLoading] = useState(false)
     const [sentRequests, setSentRequests] = useState<any[]>([])
     const [receivedRequests, setReceivedRequests] = useState<any[]>([])
-    const [companyMessages, setCompanyMessages] = useState<any[]>([])
-    const [inputText, setInputText] = useState('')
-    const [isSending, setIsSending] = useState(false)
     const [activeTab, setActiveTab] = useState('friends')
     const [selectedFriend, setSelectedFriend] = useState<any>(null)
     const [privateMessages, setPrivateMessages] = useState<any[]>([])
     const [privateInputText, setPrivateInputText] = useState('')
     const [selectedProfileUser, setSelectedProfileUser] = useState<any>(null)
+    const [isSending, setIsSending] = useState(false)
     const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false)
     const { socket, setActiveChat, decrementRequestCount } = useNotifications()
-    const [companyMembers, setCompanyMembers] = useState<any[]>([])
-    const [onlineUserIds, setOnlineUserIds] = useState<Set<string>>(new Set())
 
     const queryClient = useQueryClient()
 
@@ -238,32 +226,9 @@ export default function Collaboration() {
         );
     };
 
-    // Fetch company members
     useEffect(() => {
-        if (user?.companyId) {
-            const cid = extractId(user.companyId)
-            userService.getAllUsers({
-                pagination: { pageIndex: 0, pageSize: 100 },
-                filter: { companyId: cid } as any // Type assertion to avoid strict checks if model not updated
-            }).then(res => {
-                if (res.data?.users) {
-                    setCompanyMembers(res.data.users)
-                }
-            }).catch(err => console.error("Failed to fetch company members", err))
-        }
-    }, [user?.companyId])
-
-    const messagesEndRef = useRef<HTMLDivElement | null>(null)
-
-    // Auto-scroll to bottom when new messages arrive or when switching to the board tab
-    useEffect(() => {
-        if (activeTab === 'company') {
-            const timer = setTimeout(() => {
-                messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-            }, 100)
-            return () => clearTimeout(timer)
-        }
-    }, [companyMessages, activeTab])
+        loadData()
+    }, [user])
 
     useEffect(() => {
         loadData()
@@ -310,22 +275,7 @@ export default function Collaboration() {
 
         const handleNewChat = (data: any) => {
             console.log('[Collaboration] 🔵 New chat received:', data)
-            if (data.type === 'company' || data.companyId) {
-                console.log('[Collaboration] Processing company message')
-                setCompanyMessages((prev) => {
-                    // Prevent duplicate if added optimistically
-                    // Relaxed dedupe logic: Match text and sender, ignore exact timestamp to avoid timezone/clock skew issues
-                    const isDup = prev.some(m =>
-                        m.text === data.text &&
-                        isSameId(m.senderId, data.senderId) &&
-                        (m.isOptimistic || Math.abs(new Date(m.created_at || new Date()).getTime() - new Date(data.created_at || new Date()).getTime()) < 5000)
-                    )
-                    if (isDup) {
-                        return prev.map(m => (m.isOptimistic && m.text === data.text) ? { ...data, isOptimistic: false } : m)
-                    }
-                    return [...prev, data]
-                })
-            } else if (data.type === 'private' || data.recipientId) {
+            if (data.type === 'private' || data.recipientId) {
                 console.log('[Collaboration] Processing private message')
                 const friendId = extractId(selectedFriend)
                 const msgSenderId = extractId(data.senderId)
@@ -362,27 +312,11 @@ export default function Collaboration() {
             }
         }
 
-        const handleUserStatusChange = (data: { userId: string, status: 'online' | 'offline' }) => {
-            setOnlineUserIds(prev => {
-                const next = new Set(prev)
-                if (data.status === 'online') {
-                    next.add(data.userId)
-                } else {
-                    next.delete(data.userId)
-                }
-                return next
-            })
-        }
 
-        const handleOnlineUsersUpdate = (userIds: string[]) => {
-            setOnlineUserIds(new Set(userIds))
-        }
 
         socket.on('friend_request_received', handleFriendRequestReceived)
         socket.on('friend_request_accepted', handleFriendRequestAccepted)
         socket.on('new_chat', handleNewChat)
-        socket.on('user_status_change', handleUserStatusChange)
-        socket.on('online_users_update', handleOnlineUsersUpdate)
 
         // Ensure rooms are joined (idempotent on backend)
         const uid = extractId(user)
@@ -419,15 +353,6 @@ export default function Collaboration() {
             const receivedRes = await socialService.getReceivedRequests()
             if (Array.isArray(receivedRes)) {
                 setReceivedRequests(receivedRes.filter(Boolean));
-            }
-
-            // Load company board messages
-            if (user?.companyId) {
-                const messagesRes = await socialService.getCompanyBoard()
-                if (Array.isArray(messagesRes)) {
-                    // Backend returns { created_at: -1 }, so we reverse for chronological
-                    setCompanyMessages(messagesRes.filter(Boolean).reverse())
-                }
             }
         } catch (err) {
             console.error('Failed to load social data', err)
@@ -531,54 +456,14 @@ export default function Collaboration() {
         }
     }
 
-    const handleSendMessage = async () => {
-        if (!inputText.trim() || !user || isSending) return
 
-        setIsSending(true)
-        const companyId = extractId(user.companyId)
-        const senderId = extractId(user)
-
-        const payload = {
-            text: inputText,
-            companyId,
-            senderName: `${user.first_name} ${user.last_name}`,
-            senderId,
-            avatar: user.avatar,
-            type: 'company'
-        }
-
-        try {
-            // Optimistic Update
-            const optimisticMsg = {
-                ...payload,
-                created_at: new Date().toISOString(),
-                isOptimistic: true // Mark for tracing
-            }
-            setCompanyMessages(prev => [...prev, optimisticMsg])
-
-            socket?.emit('send_chat', payload)
-            setInputText('')
-            await socialService.sendMessage({
-                text: inputText,
-                companyId
-            })
-        } catch (err: any) {
-            toast({
-                title: 'Failed to send message',
-                description: err.message,
-                variant: 'destructive'
-            })
-        } finally {
-            setIsSending(false)
-        }
-    }
 
     return (
         <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
             <Layout fixed>
                 <Layout.Header>
                     <div className="flex items-center gap-2">
-                        <Building2 size={24} className="text-primary" />
+                        <Users size={24} className="text-primary" />
                         <h1 className='text-xl font-bold tracking-tight'>Collaboration Hub</h1>
                     </div>
                     <div className='ml-auto flex items-center space-x-4'>
@@ -896,7 +781,7 @@ export default function Collaboration() {
                         <DialogDescription>Private Conversation</DialogDescription>
                     </DialogHeader>
 
-                    <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-muted/5">
+                    <div className="flex-1 overflow-y-scroll p-4 space-y-4 bg-muted/5 custom-scrollbar !visible min-h-0">
                         {privateMessages.length === 0 ? (
                             <div className="text-center text-muted-foreground text-sm py-10">
                                 No messages yet. Say hi!
