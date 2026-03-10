@@ -19,6 +19,7 @@ import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils'
+import { motion, AnimatePresence } from 'framer-motion'
 
 export default function RecycleBin() {
     const [activeTab, setActiveTabOriginal] = useState('screens')
@@ -26,6 +27,7 @@ export default function RecycleBin() {
     const [selectedIds, setSelectedIds] = useState<string[]>([])
     const [restoringIds, setRestoringIds] = useState<string[]>([])
     const [purgingIds, setPurgingIds] = useState<string[]>([])
+    const [isGlobalLoading, setIsGlobalLoading] = useState(false) // New state for global restoration loading
     const queryClient = useQueryClient()
 
     const setActiveTab = (tab: string) => {
@@ -96,16 +98,21 @@ export default function RecycleBin() {
                 }
             })
 
+            // Trigger toast instantly
+            const displayType = type === 'screen' ? 'Screen' : type === 'template' ? 'Template' : 'Group'
+            toast({ title: `${ids.length > 1 ? (displayType === 'Group' ? 'Groups' : `${displayType}s`) : displayType} restored` })
+
+            // Start global loading overlay for sync safety
+            setIsGlobalLoading(true)
+            setTimeout(() => setIsGlobalLoading(false), 2500)
+
             return { previousData, key }
         },
-        onSuccess: (_, { ids, type }) => {
+        onSuccess: (_, { type }) => {
             const key = type === 'screen' ? 'screens' : type === 'template' ? 'templates' : 'template-groups'
             queryClient.invalidateQueries({ queryKey: [key] })
             queryClient.invalidateQueries({ queryKey: ['dashboard'] })
-            const displayType = type === 'screen' ? 'Screen' : type === 'template' ? 'Template' : 'Group'
-            toast({ title: `${ids.length > 1 ? (displayType === 'Group' ? 'Groups' : `${displayType}s`) : displayType} restored` })
             setSelectedIds([])
-            setRestoringIds(prev => prev.filter(id => !ids.includes(id)))
         },
         onError: (error: any, { ids }, context: any) => {
             if (context?.previousData) {
@@ -144,16 +151,19 @@ export default function RecycleBin() {
                 }
             })
 
-            return { previousData, key }
-        },
-        onSuccess: (_, { ids, type }) => {
-            const key = type === 'screen' ? 'screens' : type === 'template' ? 'templates' : 'template-groups'
-            queryClient.invalidateQueries({ queryKey: [key] })
-            queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+            // Trigger toast instantly
             const displayType = type === 'screen' ? 'Screen' : type === 'template' ? 'Template' : 'Group'
             toast({ title: `${ids.length > 1 ? `${displayType}s` : displayType} permanently deleted` })
+
+            // Start global loading overlay for sync safety
+            setIsGlobalLoading(true)
+            setTimeout(() => setIsGlobalLoading(false), 2500)
+
+            return { previousData, key }
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['dashboard'] })
             setSelectedIds([])
-            setPurgingIds(prev => prev.filter(id => !ids.includes(id)))
         },
         onError: (error: any, { ids }, context: any) => {
             if (context?.previousData) {
@@ -470,6 +480,29 @@ export default function RecycleBin() {
                     onClose={() => setConfirmDelete(null)}
                 />
             </Layout.Body>
+
+            {/* Sync Safety Overlay */}
+            <AnimatePresence>
+                {isGlobalLoading && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-background/60 backdrop-blur-md"
+                    >
+                        <div className="flex flex-col items-center gap-4">
+                            <div className="relative">
+                                <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full" />
+                                <IconLoader2 className="h-12 w-12 text-primary animate-spin relative" />
+                            </div>
+                            <div className="text-center space-y-1">
+                                <h3 className="font-black text-xl tracking-tight uppercase">Syncing Workspace</h3>
+                                <p className="text-sm text-muted-foreground font-medium">Please wait while we prepare your data...</p>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </Layout>
     )
 }

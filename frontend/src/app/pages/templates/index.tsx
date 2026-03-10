@@ -196,6 +196,9 @@ export default function Templates() {
                 }
             })
 
+            // Trigger toast instantly
+            toast({ title: 'Template moved to Recycle Bin', description: 'You can restore it within 30 days.' })
+
             return { previousQueries }
         },
         onError: (error: any, __, context: any) => {
@@ -210,9 +213,6 @@ export default function Templates() {
                 description: error?.message || 'Failed to move template to Recycle Bin.',
                 variant: 'destructive',
             })
-        },
-        onSuccess: () => {
-            toast({ title: 'Template moved to Recycle Bin', description: 'You can restore it within 30 days.' })
         },
         onSettled: () => {
             // Always refetch after error or success to ensure sync
