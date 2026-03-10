@@ -170,10 +170,10 @@ export const GuideBuddy = () => {
             else if (lowerInput.match(/\b(really|oh|wow|cool|okay|ok|thanks|thank you)\b/)) {
                 response = `Absolutely! I'm here to make SmartSignDeck easy for you. What else can I explain?`
             }
-            else if (lowerInput.includes('rate') || lowerInput.includes('think of this')) {
+            else if (lowerInput.match(/\brate\b/)) {
                 response = "I think we're making great progress, Dhimant! I'm learning more about the system every second. My goal is to be the ultimate 10/10 expert for you."
             }
-            else if (lowerInput.match(/\b(new|help|start|can i do|what to do)\b/)) {
+            else if (lowerInput.match(/\b(new|help|start|can i do|what to do|use|features|website|how to)\b/)) {
                 response = "Welcome! Here's how you can get started: **Basics** (Create Templates, Groups, Screens, Playlists) and **Top Features** (Real-time Collaboration, Slider-Capture, and Deep Analytics). Which would you like to learn about first?"
                 setCurrentTopic(null)
             }
@@ -189,9 +189,13 @@ export const GuideBuddy = () => {
                     'group': 'groups',
                     'collection': 'groups',
                     'slidebar': 'slider',
+                    'collaborate': 'collaboration',
                     'friend': 'collaboration',
                     'people': 'collaboration',
                     'request': 'collaboration',
+                    'role': 'users',
+                    'admin': 'users',
+                    'advertiser': 'users',
                     'trash': 'recycle bin'
                 }
 
@@ -260,6 +264,8 @@ export const GuideBuddy = () => {
                     } else if (lowerInput.includes('zone') || lowerInput.includes('drag')) {
                         response = systemKnowledge['canvas']?.[1] || "Drag zones to reposition them; you can add Text, Media, or Mixed zones from the sidebar."
                         setCurrentTopic('canvas')
+                    } else {
+                        response = "I'm only trained to help with SmartSignDeck system features. Please ask about Templates, Screens, Collaboration, Analytics, Playlists, Roles, or the Recycle Bin!"
                     }
                 }
             }
