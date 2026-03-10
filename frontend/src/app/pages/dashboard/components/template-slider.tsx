@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/custom/button'
-import { IconArrowRight, IconEye as Eye, IconSparkles, IconChevronLeft, IconChevronRight, IconDeviceTv } from '@tabler/icons-react'
+import { IconArrowRight, IconSparkles, IconChevronLeft, IconChevronRight, IconDeviceTv } from '@tabler/icons-react'
 import { Routes } from '@/utilities/routes'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'

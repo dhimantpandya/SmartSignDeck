@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { IconX, IconMessageCircle, IconSparkles, IconHelp } from '@tabler/icons-react'
+import { IconX, IconSparkles } from '@tabler/icons-react'
 import { Button } from '@/components/custom/button'
-import { cn } from '@/lib/utils'
 
 export const GuideBuddy = () => {
     const [isVisible, setIsVisible] = useState(false)
