@@ -53,18 +53,19 @@ export default function Templates() {
     useEffect(() => {
         if (!socket) return
 
-        const invalidateGlobalTemplates = () => {
-            queryClient.invalidateQueries({ queryKey: ['templates', 'global'] })
+        const invalidateTemplates = () => {
+            // Invalidate everything under 'templates' to catch Global, My Templates, and Metadata (Last Changed By) updates
+            queryClient.invalidateQueries({ queryKey: ['templates'] })
         }
 
-        socket.on('template_published', invalidateGlobalTemplates)
-        socket.on('template_deleted', invalidateGlobalTemplates)
-        socket.on('template_updated', invalidateGlobalTemplates)
+        socket.on('template_published', invalidateTemplates)
+        socket.on('template_deleted', invalidateTemplates)
+        socket.on('template_updated', invalidateTemplates)
 
         return () => {
-            socket.off('template_published', invalidateGlobalTemplates)
-            socket.off('template_deleted', invalidateGlobalTemplates)
-            socket.off('template_updated', invalidateGlobalTemplates)
+            socket.off('template_published', invalidateTemplates)
+            socket.off('template_deleted', invalidateTemplates)
+            socket.off('template_updated', invalidateTemplates)
         }
     }, [socket, queryClient])
 

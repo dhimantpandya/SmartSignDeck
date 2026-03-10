@@ -328,6 +328,19 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                     color: data.color || '#4f46e5'
                 }
             }))
+
+            // CRITICAL: If we were the one trying to select it, the handler above (handleZoneLocked)
+            // will handle the race. But we also want to ensure the object is no longer selectable locally.
+            if (canvas) {
+                const obj = canvas.getObjects().find((o: any) => o.id === data.zoneId) as any
+                if (obj) {
+                    obj.set({
+                        selectable: false,
+                        evented: false
+                    })
+                    canvas.requestRenderAll()
+                }
+            }
         }
 
         const handleLockRejected = (data: any) => {
@@ -340,6 +353,17 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                     canvas.discardActiveObject()
                     canvas.requestRenderAll()
                 }
+
+                // SECURE: Disable the object locally immediately
+                const obj = canvas.getObjects().find((o: any) => o.id === data.zoneId) as any
+                if (obj) {
+                    obj.set({
+                        selectable: false,
+                        evented: false,
+                        hasControls: false
+                    })
+                    canvas.requestRenderAll()
+                }
             }
             setSelectedZoneId(null)
             transformingIdRef.current = null
@@ -348,7 +372,6 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                 description: "Someone else is actively editing this zone.",
                 variant: 'destructive'
             })
-            // This will quickly trigger a fetch of the true state from the other user's broadcast
         }
 
         const handleZoneUnlocked = (data: any) => {
@@ -923,14 +946,31 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                     if (obj.id) {
                         const remote = remoteSelectionsRef.current[obj.id]
                         if (remote) {
-                            // If it's already locked by someone else, we shouldn't even be able to click it
-                            // but this is an extra safety layer
+                            // SECURE: Hard-stop selection if we know it's locked
                             canvas.discardActiveObject()
+                            obj.set({ selectable: false, evented: false })
+                            canvas.requestRenderAll()
                         } else {
                             emitLock(obj.id)
                         }
                     }
                     canvas.renderAll()
+                }
+            })
+
+            // Fix for double-click bypass
+            canvas.on('mouse:dblclick', (options) => {
+                if (options.target) {
+                    const obj = options.target as any
+                    if (obj.id) {
+                        const remote = remoteSelectionsRef.current[obj.id]
+                        if (remote) {
+                            canvas.discardActiveObject()
+                            obj.set({ selectable: false, evented: false })
+                            canvas.requestRenderAll()
+                            toast({ title: "Zone is locked", description: `${remote.userName} is currently editing this zone.` })
+                        }
+                    }
                 }
             })
 
@@ -941,6 +981,7 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                     const remote = remoteSelectionsRef.current[obj.id]
                     if (obj.id && remote) {
                         canvas.discardActiveObject()
+                        obj.set({ selectable: false, evented: false }) // Reinforce
                         canvas.requestRenderAll()
                         toast({ title: "Zone is locked", description: `${remote.userName} is currently editing this zone.` })
                         return
@@ -966,6 +1007,7 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                     const remote = remoteSelectionsRef.current[obj.id]
                     if (obj.id && remote) {
                         canvas.discardActiveObject()
+                        obj.set({ selectable: false, evented: false }) // Reinforce
                         canvas.requestRenderAll()
                         toast({ title: "Zone is locked", description: `${remote.userName} is currently editing this zone.` })
                         return
@@ -987,7 +1029,11 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
             canvas.on('selection:cleared', (e) => {
                 const deselected = (e as any).deselected?.[0]
                 if (deselected?.id) {
-                    emitUnlock(deselected.id)
+                    // Only unlock if it's NOT remote locked (prevents us from unlocking others' zones by accident)
+                    const remote = remoteSelectionsRef.current[deselected.id]
+                    if (!remote) {
+                        emitUnlock(deselected.id)
+                    }
                 }
                 setSelectedZoneId(null)
                 transformingIdRef.current = null

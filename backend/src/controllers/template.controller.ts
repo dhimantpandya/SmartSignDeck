@@ -88,6 +88,15 @@ const updateTemplate = catchAsync(async (req: Request, res: Response) => {
             templateId: req.params.templateId,
         });
     });
+
+    // Notify dashboards
+    const io = getIO();
+    if (io) {
+        io.emit('template_updated', {
+            templateId: req.params.templateId,
+            lastModifiedBy: template.lastModifiedBy
+        });
+    }
 });
 
 const deleteTemplate = catchAsync(async (req: Request, res: Response) => {
@@ -99,6 +108,16 @@ const deleteTemplate = catchAsync(async (req: Request, res: Response) => {
 
 const restoreTemplate = catchAsync(async (req: Request, res: Response) => {
     const template = await templateService.restoreTemplateById(req.params.templateId, req.user as any);
+
+    // Notify dashboards to refresh lists (Global/My Templates)
+    const io = getIO();
+    if (io) {
+        if (template.isPublic) {
+            io.emit('template_published', { templateId: template._id || template.id });
+        }
+        io.emit('template_updated', { templateId: template._id || template.id });
+    }
+
     successResponse(res, "Template restored successfully", httpStatus.OK, template as any);
 });
 
