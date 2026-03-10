@@ -34,82 +34,69 @@ export const GuideBuddy = () => {
 
     const systemKnowledge: Record<string, string[]> = {
         'templates': [
-            'Templates are reusable designs for your signage.',
-            'Global templates are public, while My Templates are private.',
-            'To create a template together: Go to the Collaboration section, invite your teammate, and you both can edit the same canvas live! You\'ll see their colored name labels when they select zones.',
-            'Click "Capture This Layout" in the slider to instantly copy a zone structure.',
-            'To create a template manually: Go to the Templates page and click "Create Template". You can choose a resolution and then add Text, Media, or Mixed zones using the sidebar tools!',
+            'Templates are used to save hours of design time while keeping your branding 100% consistent across all screens.',
+            'Why use them? Create a design once, and reuse it forever instead of building from scratch every time.',
+            'To create together: Go to Collaboration -> Invite teammate. You both edit the same canvas live with colored labels showing who is moving what!',
+            'To create manually: Go to Templates page -> Click "Create Template" -> Select resolution -> Add Text, Media, or Mixed zones from the sidebar.',
             'Templates come in 4 types: My (Private), Shared (Collaboration), Groups (Org-wide), and Global (Public System-wide).'
         ],
         'screens': [
-            'Screens represent your physical displays.',
-            'You can assign a playlist or a specific template to a screen from the Screen Management page.',
-            'Online status: Screens ping every 2 mins. If no ping for >2 mins, they show as "offline".',
-            'To add a new screen, click "Add Screen" on the Screens page and follow the setup instructions.',
+            'Screens are the physical displays where your customers see your content.',
+            'Why create them? To remotely manage what is playing on your TVs or monitors from anywhere in the world.',
+            'How to create: Go to Screens page -> Click "Add Screen" -> Follow the Setup guide -> Link it to a Template or Playlist.',
+            'Online status: Screens check in every 2 minutes. If no check-in for >2 mins, they show as "offline".',
             'Global Screens are public presets; Private Screens are your own custom displays.'
         ],
         'collaboration': [
-            'Collaboration allows you to work with teammates in real-time. You can share templates, chat live, and edit the same canvas together!',
-            'How to send a request: Go to the Collaboration page, search for a teammate by email, and click "Invite". Once they accept, you can share templates!',
+            'Collaboration lets teams build signage 10x faster by working together in real-time.',
+            'How to send friend request: Open Collaboration -> Go to "Find People" -> Search for their email -> Click "Add Friend". You will receive a notification when they accept!',
             'Real-time: You see others typing and moving zones instantly. Zones get locked with a colored label when someone is editing them.',
-            'Colored labels: Each teammate has a unique color so you know who is working where.',
-            'Manage requests in the "Connections" tab within the Collaboration hub.'
+            'Manage requests: Track all your invites and connections in the "Connections" tab within the Collaboration hub.'
         ],
         'recycle bin': [
-            'Deleted items stay here for 30 days before being purged forever.',
+            'The Recycle Bin is your safety net; deleted items stay here for 30 days before being purged.',
+            'Why use it? To easily undo accidental deletions without losing your hard work.',
+            'How to restore: Go to the Recycle Bin -> Select the section (Templates or Screens) -> Click the "Restore" (clockwise arrow) icon on your item.',
             'Strict Privacy: Only YOU can see your recycle bin. Even Admins cannot see what you\'ve deleted!',
-            'You can restore templates or screens instantly. We even show a safety loader to make sure your workspace is synced before you continue!',
-            'To purge an item permanently, select it and click "Purge".'
+            'Restoring Groups: You can restore whole template groups the same way as individual templates!'
         ],
         'sync': [
-            'Everything in SmartSignDeck is real-time.',
-            'We use hyper-speed tech to ensure zone movements are 60fps.',
+            'Our hyper-speed sync technology ensures your workspace is always up-to-date across all collaborators.',
             'Wait for the "Syncing Workspace" message when restoring items to ensure data consistency.'
         ],
         'users': [
-            'The Users section is for Team Management.',
-            'Roles: User (Standard), Admin (Team Manager), Super Admin (System wide), Advertiser (Limited viewing).',
-            'Wait, why can I see it? Even if you aren\'t an admin, you can see the team overview and your own profile settings. Organization admins use this section to manage roles and permissions.',
-            'Admins can add, remove, or edit team members from this component.'
+            'The Users section is for Team Management and Role Assignment.',
+            'Total Roles (4): Super Admin (System control), Admin (Team Manager), User (Creator), and Advertiser (Analytics).',
+            'Advertisers: Can view-only analytics and export detailed PDF reports for clients.',
+            'Wait, why can I see it? Even if you aren\'t an admin, you can see the team overview and your own profile settings. Organization admins use this section to manage roles and permissions.'
         ],
         'analytics': [
-            'The Analytics dashboard shows your signage performance.',
-            'Metrics: "Plays" = Total times content was shown; "Screen Time" = Live uptime percentage.',
-            'You can check how many plays happened on specific days, unique viewer counts, and screen uptime.',
-            'Use the date picker in Analytics to see exactly what happened last Monday or any other time!'
+            'Analytics helps you measure the impact of your signage with real data.',
+            'Why use it? To see which content gets the most "Plays" and ensure your screens have 100% uptime.',
+            'Monday Plays: Use the date picker to see exactly how many plays happened last Monday or any other specific day!'
         ],
         'playlists': [
-            'Playlists allow you to sequence multiple templates together.',
-            'Scheduling: You can set specific start and end times for each playlist on your screens.',
-            'Create or edit playlists in the "Playlists" section by dragging and dropping templates into the order you want.',
-            'To add media: Simply drag templates into the playlist timeline.'
+            'Playlists allow you to sequence multiple designs to play automatically throughout the day.',
+            'Why create one? To automate your content schedule so you don\'t have to manually change templates.',
+            'How to create: Go to Playlists -> Click "Create" -> Drag and drop templates into the timeline -> Set the play duration for each.'
+        ],
+        'groups': [
+            'Groups (Collections) allow you to organize your templates by project, like "Summer Sale" or "Menu Boards".',
+            'Why use them? To keep your workspace clean and find related designs instantly instead of searching through a long list.',
+            'How to create: Go to Templates -> Click "Create Group" -> Enter name -> Click the "Folder" icon on any template card to add it to your collection.',
+            'Group Edit: You can now Preview, Edit, and Delete templates directly from within your group view!'
         ],
         'slider': [
-            'The "Inspiration Slider" on the dashboard shows premium designs.',
-            'How to use: Simply click "Capture This Layout" on any slide. It will instantly create a new template for you with that exact zone structure!',
-            'It helps you visualize how zones (Text, Mixed, Media) work together.'
-        ],
-        'notifications': [
-            'The Bell icon shows your alerts.',
-            'You\'ll get notified about connection requests, template invites, and collaborative messages here.'
-        ],
-        'profile': [
-            'Manage your identity in the Profile section.',
-            'You can update your profile picture, change your display name, set your gender, and switch the system language.'
+            'The Inspiration Slider shows you premium "Best-in-Class" designs.',
+            'Why use it? To jumpstart your creativity! If you like a layout, just click "Capture This Layout" to copy it instantly.'
         ],
         'canvas': [
-            'The Canvas Editor is where you build designs.',
-            'How to drag & create: Drag existing zones to move them. Use the sidebar tools to add new Text, Mixed, or Media zones.',
-            'Zone types: "Text" for messages; "Media" for videos/images; "Mixed" for both.',
-            'Zones get locked live so collaborators don\'t overwrite your work.'
+            'The Canvas Editor is where your designs come to life.',
+            'How to build: Drag existing zones to move them. Use the sidebar tools to add new Text, Media, or Mixed zones.'
         ],
         'chat': [
-            'The Chat Sidebar (in Collaboration) lets you message teammates live.',
+            'Live Chat lets you message teammates instantly while you collaborate.',
             'Messaging is real-time; green dots show who is currently online and active in your team.'
-        ],
-        'connections': [
-            'SmartSignDeck (Super Admin) is your default system friend to help you get started.',
-            'Find people by email to expand your network. Once connected, you can see their online status and collaborate!'
         ]
     }
 
@@ -180,24 +167,54 @@ export const GuideBuddy = () => {
                         lowerInput.startsWith('good evening') ? 'Good evening' : 'Hi'
                 response = `${greeting} ${firstName}! How can I help you with SmartSignDeck today?`
             }
-            else if (lowerInput.match(/^(really|oh|wow|cool|okay|ok|thanks|thank you|means)\b/) && !currentTopic) {
+            else if (lowerInput.match(/\b(really|oh|wow|cool|okay|ok|thanks|thank you)\b/)) {
                 response = `Absolutely! I'm here to make SmartSignDeck easy for you. What else can I explain?`
             }
             else if (lowerInput.includes('rate') || lowerInput.includes('think of this')) {
                 response = "I think we're making great progress, Dhimant! I'm learning more about the system every second. My goal is to be the ultimate 10/10 expert for you."
             }
+            else if (lowerInput.match(/\b(new|help|start|can i do|what to do)\b/)) {
+                response = "Welcome! Here's how you can get started: **Basics** (Create Templates, Groups, Screens, Playlists) and **Top Features** (Real-time Collaboration, Slider-Capture, and Deep Analytics). Which would you like to learn about first?"
+                setCurrentTopic(null)
+            }
             else {
                 // Feature Mapping with weighted search
                 let matchedKey = null
 
-                // 1. Action Override (Priority for specific intents)
-                if (lowerInput.includes('restore') || lowerInput.includes('trash') || lowerInput.includes('recycle') || lowerInput.includes('deleted')) {
-                    matchedKey = 'recycle bin'
-                } else if (lowerInput.includes('manual') || (lowerInput.includes('create') && !lowerInput.includes('slider'))) {
-                    matchedKey = 'templates'
+                // 1. Singular/Plural Expansion Mapping
+                const keyMap: Record<string, string> = {
+                    'template': 'templates',
+                    'screen': 'screens',
+                    'playlist': 'playlists',
+                    'group': 'groups',
+                    'collection': 'groups',
+                    'slidebar': 'slider',
+                    'friend': 'collaboration',
+                    'people': 'collaboration',
+                    'request': 'collaboration',
+                    'trash': 'recycle bin'
                 }
 
-                // 2. Direct Keyword Match (if no action override)
+                // Apply mapping
+                for (const [s, p] of Object.entries(keyMap)) {
+                    if (lowerInput.includes(s)) {
+                        matchedKey = p
+                        break
+                    }
+                }
+
+                // 2. Action Override (Priority for specific intents)
+                if (lowerInput.includes('restore') || lowerInput.includes('deleted')) {
+                    matchedKey = 'recycle bin'
+                } else if (lowerInput.includes('manual') || (lowerInput.includes('create') && !lowerInput.includes('slider') && !lowerInput.includes('slidebar'))) {
+                    // Try to find the specific category they want to create
+                    if (lowerInput.includes('group')) matchedKey = 'groups'
+                    else if (lowerInput.includes('screen')) matchedKey = 'screens'
+                    else if (lowerInput.includes('playlist')) matchedKey = 'playlists'
+                    else matchedKey = 'templates'
+                }
+
+                // 3. Direct Keyword Match (if no mapping or action override)
                 if (!matchedKey) {
                     for (const key of Object.keys(systemKnowledge)) {
                         if (lowerInput.includes(key)) {
@@ -207,38 +224,42 @@ export const GuideBuddy = () => {
                     }
                 }
 
-                // 3. Handle follow-ups like "means", "more", "tell me" using currentTopic
-                if (!matchedKey && currentTopic && (lowerInput.includes('means') || lowerInput.includes('more') || lowerInput.includes('what') || lowerInput.includes('tell me') || lowerInput.includes('use') || lowerInput.includes('how'))) {
+                // 4. Topic Hijacking Prevention (Only follow up if no new keyword detected)
+                if (!matchedKey && currentTopic && (lowerInput.match(/\b(means|more|elaborate|use|tell me)\b/))) {
                     matchedKey = currentTopic
                 }
 
                 if (matchedKey) {
                     const facts = systemKnowledge[matchedKey]
-                    // If it's templates and they asked about manual, try to find that specific fact
-                    if (matchedKey === 'templates' && (lowerInput.includes('manual') || lowerInput.includes('manually'))) {
-                        response = facts[4]
-                    } else if (matchedKey === 'recycle bin' && lowerInput.includes('restore')) {
-                        response = facts[2]
+                    // Precision Indexing
+                    if (lowerInput.includes('how') || lowerInput.includes('manual') || lowerInput.includes('steps') || lowerInput.includes('send')) {
+                        // All "How" procedural facts are at index 2 or 3 usually
+                        if (matchedKey === 'templates') response = facts[3]
+                        else if (matchedKey === 'screens') response = facts[2]
+                        else if (matchedKey === 'collaboration') response = facts[1]
+                        else if (matchedKey === 'recycle bin') response = facts[2]
+                        else if (matchedKey === 'playlists') response = facts[2]
+                        else if (matchedKey === 'groups') response = facts[2]
+                        else response = facts[Math.floor(Math.random() * facts.length)]
+                    } else if (lowerInput.includes('why') || lowerInput.includes('purpose') || lowerInput.includes('use of')) {
+                        response = facts[1] // Fact 1 is now "Why" for most keys
                     } else if (lowerInput.includes('what is') || lowerInput.includes('what are') || lowerInput.includes('tell me about')) {
                         response = facts[0] // Always give definition for "what is"
+                    } else if (matchedKey === 'users' && (lowerInput.includes('role') || lowerInput.includes('admin') || lowerInput.includes('advertiser'))) {
+                        if (lowerInput.includes('advertiser')) response = facts[2]
+                        else response = facts[1] // The roles list
                     } else {
                         response = facts[Math.floor(Math.random() * facts.length)]
                     }
                     setCurrentTopic(matchedKey)
                 } else {
-                    // 4. System-wide fallback for common terms
+                    // 5. System-wide fallback for common terms
                     if (lowerInput.includes('online') || lowerInput.includes('offline')) {
-                        response = systemKnowledge['screens']?.[2] || "Screens check in every 2 minutes. If no ping is received, they show as offline."
+                        response = systemKnowledge['screens']?.[3] || "Screens check in every 2 minutes. If no ping is received, they show as offline."
                         setCurrentTopic('screens')
-                    } else if (lowerInput.includes('how to find') || lowerInput.includes('buddy') || lowerInput.includes('friend')) {
-                        response = systemKnowledge['connections']?.[0] || "SmartSignDeck (Super Admin) is your default system friend."
-                        setCurrentTopic('connections')
                     } else if (lowerInput.includes('zone') || lowerInput.includes('drag')) {
                         response = systemKnowledge['canvas']?.[1] || "Drag zones to reposition them; you can add Text, Media, or Mixed zones from the sidebar."
                         setCurrentTopic('canvas')
-                    } else if (lowerInput.includes('admin') || lowerInput.includes('role')) {
-                        response = systemKnowledge['users']?.[2] || "Roles include User, Admin, Super Admin, and Advertiser."
-                        setCurrentTopic('users')
                     }
                 }
             }

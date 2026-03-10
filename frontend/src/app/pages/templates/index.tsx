@@ -27,6 +27,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Checkbox } from '@/components/ui/checkbox'
 import { CollaborateDialog } from './components/collaborate-dialog'
 import { useNotifications } from '@/components/nav-notification-provider'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 
 
 export default function Templates() {
@@ -461,40 +462,57 @@ export default function Templates() {
                 <CardFooter className="flex justify-between border-t bg-muted/20 px-4 py-2 shrink-0">
                     <div className="flex gap-1">
                         {inGroupView ? (
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 text-destructive hover:bg-destructive/10"
-                                onClick={() => removeFromGroupMutation.mutate({ groupId: selectedGroupId!, templateId: template.id })}
-                                title="Remove from Group"
-                            >
-                                <FolderPlus className="h-4 w-4 rotate-45" />
-                            </Button>
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-8 text-destructive hover:bg-destructive/10"
+                                            onClick={() => removeFromGroupMutation.mutate({ groupId: selectedGroupId!, templateId: template.id })}
+                                        >
+                                            <FolderPlus className="h-4 w-4 rotate-45" />
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>Remove from this Collection</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
                         ) : (
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                        <Folder className="h-4 w-4" />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="start" className="w-56">
-                                    <DropdownMenuLabel>Assign to Group</DropdownMenuLabel>
-                                    <DropdownMenuSeparator />
-                                    {groupsData?.results && groupsData.results.length > 0 ? (
-                                        groupsData.results.map((group: any) => (
-                                            <DropdownMenuItem
-                                                key={group.id}
-                                                onClick={() => assignToGroupMutation.mutate({ groupId: group.id, templateId: template.id })}
-                                            >
-                                                <Folder className="mr-2 h-4 w-4" />
-                                                <span>{group.name}</span>
-                                            </DropdownMenuItem>
-                                        ))
-                                    ) : (
-                                        <DropdownMenuItem disabled>No groups found</DropdownMenuItem>
-                                    )}
-                                </DropdownMenuContent>
-                            </DropdownMenu>
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                                    <Folder className="h-4 w-4" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="start" className="w-56">
+                                                <DropdownMenuLabel>Assign to Group</DropdownMenuLabel>
+                                                <DropdownMenuSeparator />
+                                                {groupsData?.results && groupsData.results.length > 0 ? (
+                                                    groupsData.results.map((group: any) => (
+                                                        <DropdownMenuItem
+                                                            key={group.id}
+                                                            onClick={() => assignToGroupMutation.mutate({ groupId: group.id, templateId: template.id })}
+                                                        >
+                                                            <Folder className="mr-2 h-4 w-4" />
+                                                            <span>{group.name}</span>
+                                                        </DropdownMenuItem>
+                                                    ))
+                                                ) : (
+                                                    <DropdownMenuItem disabled>No groups found</DropdownMenuItem>
+                                                )}
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>Add to Collection</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
                         )}
                     </div>
                     <div className="flex gap-2">
@@ -511,7 +529,7 @@ export default function Templates() {
                             >
                                 <IconCopy size={16} className="mr-2" /> Use Template
                             </Button>
-                        ) : isOwner && !inGroupView ? (
+                        ) : (isOwner || inGroupView) && !isGlobalView ? (
                             <>
                                 <Button variant="ghost" size="sm" onClick={() => handleEdit(template)}>
                                     <IconEdit size={16} className="mr-1" /> Edit
