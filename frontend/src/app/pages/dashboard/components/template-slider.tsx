@@ -246,6 +246,11 @@ export const TemplateSlider = ({ templates, isLoading }: TemplateSliderProps) =>
                                 {baseItems.length} Items
                             </div>
                         )}
+                        {isShowingInspiration && (
+                            <div className="hidden lg:flex items-center gap-2 bg-purple-500/20 text-purple-400 text-[10px] font-black px-4 py-1.5 rounded-full border border-purple-500/30 shadow-[0_0_15px_rgba(168,85,247,0.2)] uppercase tracking-wide animate-pulse">
+                                ✨ TIP: Click layout to capture zones instantly
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -470,7 +475,7 @@ export const TemplateSlider = ({ templates, isLoading }: TemplateSliderProps) =>
                                                     <Button
                                                         variant="default"
                                                         size="sm"
-                                                        className="w-full h-8 gap-2 font-black text-[9px] uppercase tracking-tighter shadow-2xl bg-white text-black border-0 rounded-lg hover:scale-[1.02] transition-transform"
+                                                        className="w-full h-9 gap-2 font-black text-[10px] uppercase tracking-tighter shadow-2xl bg-white text-black border-0 rounded-xl hover:bg-white/90 hover:scale-[1.02] active:scale-[0.98] transition-all"
                                                         onClick={(e) => {
                                                             e.stopPropagation();
                                                             if (isShowingInspiration) {
@@ -481,7 +486,8 @@ export const TemplateSlider = ({ templates, isLoading }: TemplateSliderProps) =>
                                                         }}
                                                         loading={bootstrapMutation.isPending}
                                                     >
-                                                        <Eye size={12} /> {isShowingInspiration ? 'Preview Concept' : 'View Screen Details'}
+                                                        <IconSparkles size={14} className="text-purple-600" />
+                                                        {isShowingInspiration ? 'Capture This Layout' : 'View Screen Details'}
                                                     </Button>
                                                 )}
                                             </div>

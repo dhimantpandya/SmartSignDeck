@@ -75,8 +75,6 @@ export default function RecycleBin() {
     const restoreMutation = useMutation({
         mutationFn: async ({ ids, type }: { ids: string[], type: string }) => {
             setRestoringIds(prev => [...prev, ...ids])
-            // Wait for animation
-            await new Promise(resolve => setTimeout(resolve, 600))
             const promises = ids.map(id => {
                 if (type === 'screen') return screenService.restoreScreen(id)
                 if (type === 'template') return templateService.restoreTemplate(id)
@@ -84,6 +82,21 @@ export default function RecycleBin() {
                 return Promise.resolve()
             })
             return Promise.all(promises)
+        },
+        onMutate: async ({ ids, type }) => {
+            const key = type === 'screen' ? 'screens' : type === 'template' ? 'templates' : 'template-groups'
+            await queryClient.cancelQueries({ queryKey: [key, 'trashed'] })
+            const previousData = queryClient.getQueryData([key, 'trashed'])
+
+            queryClient.setQueryData([key, 'trashed'], (old: any) => {
+                if (!old || !old.results) return old
+                return {
+                    ...old,
+                    results: old.results.filter((item: any) => !ids.includes(item.id || item._id))
+                }
+            })
+
+            return { previousData, key }
         },
         onSuccess: (_, { ids, type }) => {
             const key = type === 'screen' ? 'screens' : type === 'template' ? 'templates' : 'template-groups'
@@ -94,16 +107,22 @@ export default function RecycleBin() {
             setSelectedIds([])
             setRestoringIds(prev => prev.filter(id => !ids.includes(id)))
         },
-        onError: (_, { ids }) => {
+        onError: (error: any, { ids }, context: any) => {
+            if (context?.previousData) {
+                queryClient.setQueryData([context.key, 'trashed'], context.previousData)
+            }
             setRestoringIds(prev => prev.filter(id => !ids.includes(id)))
-        }
+            toast({
+                title: 'Restoration Failed',
+                description: error?.message || 'Failed to restore item(s).',
+                variant: 'destructive',
+            })
+        },
     })
 
     const permanentDeleteMutation = useMutation({
         mutationFn: async ({ ids, type }: { ids: string[], type: string }) => {
             setPurgingIds(prev => [...prev, ...ids])
-            // Wait for animation
-            await new Promise(resolve => setTimeout(resolve, 600))
             const promises = ids.map(id => {
                 if (type === 'screen') return screenService.permanentDeleteScreen(id)
                 if (type === 'template') return templateService.permanentDeleteTemplate(id)
@@ -111,6 +130,21 @@ export default function RecycleBin() {
                 return Promise.resolve()
             })
             return Promise.all(promises)
+        },
+        onMutate: async ({ ids, type }) => {
+            const key = type === 'screen' ? 'screens' : type === 'template' ? 'templates' : 'template-groups'
+            await queryClient.cancelQueries({ queryKey: [key, 'trashed'] })
+            const previousData = queryClient.getQueryData([key, 'trashed'])
+
+            queryClient.setQueryData([key, 'trashed'], (old: any) => {
+                if (!old || !old.results) return old
+                return {
+                    ...old,
+                    results: old.results.filter((item: any) => !ids.includes(item.id || item._id))
+                }
+            })
+
+            return { previousData, key }
         },
         onSuccess: (_, { ids, type }) => {
             const key = type === 'screen' ? 'screens' : type === 'template' ? 'templates' : 'template-groups'
@@ -121,9 +155,17 @@ export default function RecycleBin() {
             setSelectedIds([])
             setPurgingIds(prev => prev.filter(id => !ids.includes(id)))
         },
-        onError: (_, { ids }) => {
+        onError: (error: any, { ids }, context: any) => {
+            if (context?.previousData) {
+                queryClient.setQueryData([context.key, 'trashed'], context.previousData)
+            }
             setPurgingIds(prev => prev.filter(id => !ids.includes(id)))
-        }
+            toast({
+                title: 'Purge Failed',
+                description: error?.message || 'Failed to permanently delete item(s).',
+                variant: 'destructive',
+            })
+        },
     })
 
     const calculateDaysRemaining = (deletedAt: string | null | undefined) => {

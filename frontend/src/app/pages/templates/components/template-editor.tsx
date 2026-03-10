@@ -96,7 +96,7 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
     const remoteSelectionsRef = useRef(remoteSelections)
     const lastBroadcastRef = useRef<number>(0)
     const transformingIdRef = useRef<string | null>(null)
-    const THROTTLE_MS = 50 // 20fps sync for smooth movement
+    const THROTTLE_MS = 16 // ~60fps sync for hyper-smooth movement
 
     const queryClient = useQueryClient()
 
@@ -585,6 +585,7 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
             strokeUniform: true,
             originX: 'center',
             originY: 'center',
+            objectCaching: false, // Performance: Disable caching for smooth real-time transformation
         })
 
         const labelText = (zone.type || 'mixed').toUpperCase() + ' ZONE'
@@ -620,6 +621,7 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
             cornerSize: 10,
             cornerStyle: 'circle',
             borderColor: borderColor,
+            objectCaching: false, // Performance: Disable caching for the group to prevent blurry/laggy scaling
         })
 
         // Enable all 8 resize handles

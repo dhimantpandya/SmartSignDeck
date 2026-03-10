@@ -32,6 +32,7 @@ import { useAuth } from '@/hooks/use-auth'
 
 import { useNavigate } from 'react-router-dom'
 import { Routes } from '@/utilities/routes'
+import { GuideBuddy } from '@/components/GuideBuddy'
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('overview')
@@ -336,6 +337,7 @@ export default function Dashboard() {
           </Tabs>
         </div>
       </Layout.Body>
+      <GuideBuddy />
     </Layout >
   )
 }

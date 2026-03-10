@@ -180,30 +180,65 @@ export default function Templates() {
 
     const deleteMutation = useMutation({
         mutationFn: (id: string) => templateService.deleteTemplate(id),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['templates'] })
-            queryClient.invalidateQueries({ queryKey: ['template-groups'] })
-            queryClient.invalidateQueries({ queryKey: ['template-groups', 'detail'] })
-            queryClient.invalidateQueries({ queryKey: ['dashboard'] }) // Update counts
-            toast({ title: 'Template moved to Recycle Bin', description: 'You can restore it within 30 days.' })
+        onMutate: async (id) => {
+            // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
+            await queryClient.cancelQueries({ queryKey: ['templates'] })
+
+            // Snapshot the previous value
+            const previousQueries = queryClient.getQueriesData({ queryKey: ['templates'] })
+
+            // Optimistically update to the new value across all relevant template queries
+            queryClient.setQueriesData({ queryKey: ['templates'] }, (old: any) => {
+                if (!old || !old.results) return old
+                return {
+                    ...old,
+                    results: old.results.filter((t: any) => (t.id || t._id) !== id)
+                }
+            })
+
+            return { previousQueries }
         },
-        onError: (error: any) => {
+        onError: (error: any, __, context: any) => {
+            // If the mutation fails, use the context returned from onMutate to roll back
+            if (context?.previousQueries) {
+                context.previousQueries.forEach(([queryKey, oldData]: [any, any]) => {
+                    queryClient.setQueryData(queryKey, oldData)
+                })
+            }
             toast({
                 title: 'Operation Failed',
                 description: error?.message || 'Failed to move template to Recycle Bin.',
                 variant: 'destructive',
             })
         },
+        onSuccess: () => {
+            toast({ title: 'Template moved to Recycle Bin', description: 'You can restore it within 30 days.' })
+        },
+        onSettled: () => {
+            // Always refetch after error or success to ensure sync
+            queryClient.invalidateQueries({ queryKey: ['templates'] })
+            queryClient.invalidateQueries({ queryKey: ['template-groups'] })
+            queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+        },
     })
 
     const bulkDeleteMutation = useMutation({
         mutationFn: (ids: string[]) => templateService.bulkDeleteTemplates(ids),
-        onSuccess: (data: any) => {
-            queryClient.invalidateQueries({ queryKey: ['templates'] })
-            queryClient.invalidateQueries({ queryKey: ['template-groups'] })
-            queryClient.invalidateQueries({ queryKey: ['template-groups', 'detail'] })
-            queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+        onMutate: async (ids) => {
+            await queryClient.cancelQueries({ queryKey: ['templates'] })
+            const previousQueries = queryClient.getQueriesData({ queryKey: ['templates'] })
 
+            queryClient.setQueriesData({ queryKey: ['templates'] }, (old: any) => {
+                if (!old || !old.results) return old
+                return {
+                    ...old,
+                    results: old.results.filter((t: any) => !ids.includes(t.id || t._id))
+                }
+            })
+
+            return { previousQueries }
+        },
+        onSuccess: (data: any) => {
             const deletedCount = data.deletedCount || 0
             const errors = data.errors || []
 
@@ -224,12 +259,22 @@ export default function Templates() {
 
             clearSelection()
         },
-        onError: (error: any) => {
+        onError: (error: any, __, context: any) => {
+            if (context?.previousQueries) {
+                context.previousQueries.forEach(([queryKey, oldData]: [any, any]) => {
+                    queryClient.setQueryData(queryKey, oldData)
+                })
+            }
             toast({
                 title: 'Bulk Deletion Failed',
                 description: error?.message || 'Failed to delete some templates.',
                 variant: 'destructive'
             })
+        },
+        onSettled: () => {
+            queryClient.invalidateQueries({ queryKey: ['templates'] })
+            queryClient.invalidateQueries({ queryKey: ['template-groups'] })
+            queryClient.invalidateQueries({ queryKey: ['dashboard'] })
         }
     })
 
