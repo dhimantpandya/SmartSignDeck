@@ -38,6 +38,7 @@ export const GuideBuddy = () => {
             'Global templates are public, while My Templates are private.',
             'To create a template together: Go to the Collaboration section, invite your teammate, and you both can edit the same canvas live! You\'ll see their colored name labels when they select zones.',
             'Click "Capture This Layout" in the slider to instantly copy a zone structure.',
+            'To create a template manually: Go to the Templates page and click "Create Template". You can choose a resolution and then add Text, Media, or Mixed zones using the sidebar tools!',
             'Templates come in 4 types: My (Private), Shared (Collaboration), Groups (Org-wide), and Global (Public System-wide).'
         ],
         'screens': [
@@ -48,6 +49,7 @@ export const GuideBuddy = () => {
             'Global Screens are public presets; Private Screens are your own custom displays.'
         ],
         'collaboration': [
+            'Collaboration allows you to work with teammates in real-time. You can share templates, chat live, and edit the same canvas together!',
             'How to send a request: Go to the Collaboration page, search for a teammate by email, and click "Invite". Once they accept, you can share templates!',
             'Real-time: You see others typing and moving zones instantly. Zones get locked with a colored label when someone is editing them.',
             'Colored labels: Each teammate has a unique color so you know who is working where.',
@@ -178,32 +180,53 @@ export const GuideBuddy = () => {
                         lowerInput.startsWith('good evening') ? 'Good evening' : 'Hi'
                 response = `${greeting} ${firstName}! How can I help you with SmartSignDeck today?`
             }
-            else if (lowerInput.includes('how are you')) {
-                response = `I'm doing great, ${firstName}! Ready to help you build some amazing signage.`
+            else if (lowerInput.match(/^(really|oh|wow|cool|okay|ok|thanks|thank you|means)\b/) && !currentTopic) {
+                response = `Absolutely! I'm here to make SmartSignDeck easy for you. What else can I explain?`
+            }
+            else if (lowerInput.includes('rate') || lowerInput.includes('think of this')) {
+                response = "I think we're making great progress, Dhimant! I'm learning more about the system every second. My goal is to be the ultimate 10/10 expert for you."
             }
             else {
                 // Feature Mapping with weighted search
                 let matchedKey = null
 
-                // 1. Direct Keyword Match
-                for (const key of Object.keys(systemKnowledge)) {
-                    if (lowerInput.includes(key)) {
-                        matchedKey = key
-                        break
+                // 1. Action Override (Priority for specific intents)
+                if (lowerInput.includes('restore') || lowerInput.includes('trash') || lowerInput.includes('recycle') || lowerInput.includes('deleted')) {
+                    matchedKey = 'recycle bin'
+                } else if (lowerInput.includes('manual') || (lowerInput.includes('create') && !lowerInput.includes('slider'))) {
+                    matchedKey = 'templates'
+                }
+
+                // 2. Direct Keyword Match (if no action override)
+                if (!matchedKey) {
+                    for (const key of Object.keys(systemKnowledge)) {
+                        if (lowerInput.includes(key)) {
+                            matchedKey = key
+                            break
+                        }
                     }
                 }
 
-                // 2. Handle follow-ups like "means", "more", "tell me" using currentTopic
-                if (!matchedKey && currentTopic && (lowerInput.includes('means') || lowerInput.includes('more') || lowerInput.includes('what') || lowerInput.includes('tell me') || lowerInput.includes('use'))) {
+                // 3. Handle follow-ups like "means", "more", "tell me" using currentTopic
+                if (!matchedKey && currentTopic && (lowerInput.includes('means') || lowerInput.includes('more') || lowerInput.includes('what') || lowerInput.includes('tell me') || lowerInput.includes('use') || lowerInput.includes('how'))) {
                     matchedKey = currentTopic
                 }
 
                 if (matchedKey) {
                     const facts = systemKnowledge[matchedKey]
-                    response = facts[Math.floor(Math.random() * facts.length)]
+                    // If it's templates and they asked about manual, try to find that specific fact
+                    if (matchedKey === 'templates' && (lowerInput.includes('manual') || lowerInput.includes('manually'))) {
+                        response = facts[4]
+                    } else if (matchedKey === 'recycle bin' && lowerInput.includes('restore')) {
+                        response = facts[2]
+                    } else if (lowerInput.includes('what is') || lowerInput.includes('what are') || lowerInput.includes('tell me about')) {
+                        response = facts[0] // Always give definition for "what is"
+                    } else {
+                        response = facts[Math.floor(Math.random() * facts.length)]
+                    }
                     setCurrentTopic(matchedKey)
                 } else {
-                    // 3. System-wide fallback for common terms
+                    // 4. System-wide fallback for common terms
                     if (lowerInput.includes('online') || lowerInput.includes('offline')) {
                         response = systemKnowledge['screens']?.[2] || "Screens check in every 2 minutes. If no ping is received, they show as offline."
                         setCurrentTopic('screens')
@@ -214,7 +237,7 @@ export const GuideBuddy = () => {
                         response = systemKnowledge['canvas']?.[1] || "Drag zones to reposition them; you can add Text, Media, or Mixed zones from the sidebar."
                         setCurrentTopic('canvas')
                     } else if (lowerInput.includes('admin') || lowerInput.includes('role')) {
-                        response = systemKnowledge['users']?.[1] || "Roles include User, Admin, Super Admin, and Advertiser."
+                        response = systemKnowledge['users']?.[2] || "Roles include User, Admin, Super Admin, and Advertiser."
                         setCurrentTopic('users')
                     }
                 }
