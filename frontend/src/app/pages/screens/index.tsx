@@ -130,15 +130,55 @@ export default function Screens() {
 
     const deleteMutation = useMutation({
         mutationFn: (id: string) => screenService.deleteScreen(id),
+        onMutate: async (id: string) => {
+            // Cancel any outgoing refetches
+            await queryClient.cancelQueries({ queryKey: ['screens'] })
+
+            // Snapshot the previous value
+            const previousScreens = queryClient.getQueryData(['screens', 'my'])
+
+            // Optimistically update to the new value
+            queryClient.setQueryData(['screens', 'my'], (old: any) => {
+                if (!old || !old.docs) return old
+                return {
+                    ...old,
+                    docs: old.docs.filter((s: any) => s.id !== id && s._id !== id),
+                    totalDocs: (old.totalDocs || 1) - 1
+                }
+            })
+
+            return { previousScreens }
+        },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['screens'] })
             queryClient.invalidateQueries({ queryKey: ['dashboard'] }) // Update counts
             toast({ title: 'Screen moved to Recycle Bin', description: 'You can restore it within 30 days.' })
         },
+        onError: (err, id, context: any) => {
+            if (context?.previousScreens) {
+                queryClient.setQueryData(['screens', 'my'], context.previousScreens)
+            }
+            toast({ title: 'Deletion failed', variant: 'destructive' })
+        }
     })
 
     const bulkDeleteMutation = useMutation({
         mutationFn: (ids: string[]) => screenService.bulkDeleteScreens(ids),
+        onMutate: async (ids: string[]) => {
+            await queryClient.cancelQueries({ queryKey: ['screens'] })
+            const previousScreens = queryClient.getQueryData(['screens', 'my'])
+
+            queryClient.setQueryData(['screens', 'my'], (old: any) => {
+                if (!old || !old.docs) return old
+                return {
+                    ...old,
+                    docs: old.docs.filter((s: any) => !ids.includes(s.id) && !ids.includes(s._id)),
+                    totalDocs: Math.max(0, (old.totalDocs || ids.length) - ids.length)
+                }
+            })
+
+            return { previousScreens }
+        },
         onSuccess: (data: any) => {
             queryClient.invalidateQueries({ queryKey: ['screens'] })
             queryClient.invalidateQueries({ queryKey: ['dashboard'] })
@@ -149,7 +189,10 @@ export default function Screens() {
             })
             clearSelection()
         },
-        onError: (error: any) => {
+        onError: (error: any, ids, context: any) => {
+            if (context?.previousScreens) {
+                queryClient.setQueryData(['screens', 'my'], context.previousScreens)
+            }
             toast({
                 title: 'Bulk Deletion Failed',
                 description: error?.response?.data?.message || 'Failed to delete some screens.',

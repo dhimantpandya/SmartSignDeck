@@ -30,14 +30,10 @@ const queryTemplateGroups = async (
     const user = (options as any).user;
 
     if (user && user.role !== "super_admin") {
-        const companyIdStr = (user.companyId || "").toString();
         const userIdStr = (user.id || user._id || "").toString();
-
-        if (user.role === 'admin') {
-            if (companyIdStr) finalFilter.companyId = companyIdStr;
-        } else {
-            // Regular user: Only own content
-            if (userIdStr) finalFilter.createdBy = userIdStr;
+        // Strict Privacy: Only show groups created by the user, even for Admins
+        if (userIdStr) {
+            finalFilter.createdBy = userIdStr;
         }
     }
 

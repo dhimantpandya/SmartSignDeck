@@ -68,6 +68,7 @@ const queryScreens = async (filter: any, options: CustomPaginateOptions, user: I
   // 2. Apply security/tenant filtering
   if (user.role !== "super_admin") {
     // 🔒 Robust ID Check
+    // 🔒 Strict Privacy: Only show own content
     const userIdStr = (user._id || (user as any).id || "").toString();
     const companyIdStr = (user.companyId || "").toString();
     const requestedCreatedBy = (filter.createdBy || "").toString();
@@ -75,45 +76,24 @@ const queryScreens = async (filter: any, options: CustomPaginateOptions, user: I
     const isQueryingOwn = requestedCreatedBy && userIdStr && requestedCreatedBy === userIdStr;
     const isRecycleBinQuery = finalFilter.deletedAt !== null;
     const isQueryingPublic = finalFilter.isPublic === true;
-    const isQueryingByCreator = !!finalFilter.createdBy;
 
     if (isRecycleBinQuery) {
-      // 🗑️ Recycle Bin Isolation: Strictly same user ONLY
+      // 🗑️ Recycle Bin: Strictly same user ONLY (No admin override)
       finalFilter.createdBy = new mongoose.Types.ObjectId(userIdStr);
     } else if (isQueryingPublic) {
       // 🌍 Global View: Allow seeing public screens
       finalFilter.isPublic = true;
     } else {
-      // 🔒 Account Isolation: 
-      // - Admins see everything in the same company.
-      // - Regular users ('user' role) ONLY see what they created.
-      if (user.role === 'admin') {
-        if (companyIdStr && mongoose.Types.ObjectId.isValid(companyIdStr)) {
-          finalFilter.companyId = new mongoose.Types.ObjectId(companyIdStr);
-        }
-      } else {
-        // Regular user: Only own content
-        if (userIdStr && mongoose.Types.ObjectId.isValid(userIdStr)) {
-          finalFilter.createdBy = new mongoose.Types.ObjectId(userIdStr);
-        }
-      }
-
-      // 👤 Strict User Isolation: Honor the 'createdBy' filter if provided by the frontend.
-      if (isQueryingOwn && userIdStr && mongoose.Types.ObjectId.isValid(userIdStr)) {
-        finalFilter.createdBy = new mongoose.Types.ObjectId(userIdStr);
-      }
+      // 🔒 Strict Isolation: Always restrict to current user
+      finalFilter.createdBy = new mongoose.Types.ObjectId(userIdStr);
 
       // 🌍 Ensure public items are always allowed in general queries
       if (!finalFilter.$or) {
         finalFilter.$or = [
           { isPublic: true },
-          { createdBy: finalFilter.createdBy || new mongoose.Types.ObjectId(userIdStr) }
+          { createdBy: finalFilter.createdBy }
         ];
-        if (user.role === 'admin' && companyIdStr && mongoose.Types.ObjectId.isValid(companyIdStr)) {
-          finalFilter.$or.push({ companyId: new mongoose.Types.ObjectId(companyIdStr) });
-        }
         delete finalFilter.createdBy;
-        delete finalFilter.companyId;
       }
     }
   }

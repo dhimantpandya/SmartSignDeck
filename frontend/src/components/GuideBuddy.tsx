@@ -20,6 +20,7 @@ export const GuideBuddy = () => {
     const [step, setStep] = useState(0)
     const [messages, setMessages] = useState<Message[]>([])
     const [inputValue, setInputValue] = useState('')
+    const [currentTopic, setCurrentTopic] = useState<string | null>(null)
     const chatEndRef = useRef<HTMLDivElement>(null)
     const { user } = useAuth()
 
@@ -36,21 +37,25 @@ export const GuideBuddy = () => {
             'Templates are reusable designs for your signage.',
             'Global templates are public, while My Templates are private.',
             'To create a template together: Go to the Collaboration section, invite your teammate, and you both can edit the same canvas live! You\'ll see their colored name labels when they select zones.',
-            'Click "Capture This Layout" in the slider to instantly copy a zone structure.'
+            'Click "Capture This Layout" in the slider to instantly copy a zone structure.',
+            'Templates come in 4 types: My (Private), Shared (Collaboration), Groups (Org-wide), and Global (Public System-wide).'
         ],
         'screens': [
             'Screens represent your physical displays.',
             'You can assign a playlist or a specific template to a screen from the Screen Management page.',
-            'Online status tells you if the screen is currently connected and playing.',
-            'To add a new screen, click "Add Screen" on the Screens page and follow the setup instructions.'
+            'Online status: Screens ping every 2 mins. If no ping for >2 mins, they show as "offline".',
+            'To add a new screen, click "Add Screen" on the Screens page and follow the setup instructions.',
+            'Global Screens are public presets; Private Screens are your own custom displays.'
         ],
         'collaboration': [
             'How to send a request: Go to the Collaboration page, search for a teammate by email, and click "Invite". Once they accept, you can share templates!',
             'Real-time: You see others typing and moving zones instantly. Zones get locked with a colored label when someone is editing them.',
-            'Colored labels: Each teammate has a unique color so you know who is working where.'
+            'Colored labels: Each teammate has a unique color so you know who is working where.',
+            'Manage requests in the "Connections" tab within the Collaboration hub.'
         ],
         'recycle bin': [
             'Deleted items stay here for 30 days before being purged forever.',
+            'Strict Privacy: Only YOU can see your recycle bin. Even Admins cannot see what you\'ve deleted!',
             'You can restore templates or screens instantly. We even show a safety loader to make sure your workspace is synced before you continue!',
             'To purge an item permanently, select it and click "Purge".'
         ],
@@ -61,22 +66,48 @@ export const GuideBuddy = () => {
         ],
         'users': [
             'The Users section is for Team Management.',
+            'Roles: User (Standard), Admin (Team Manager), Super Admin (System wide), Advertiser (Limited viewing).',
             'Wait, why can I see it? Even if you aren\'t an admin, you can see the team overview and your own profile settings. Organization admins use this section to manage roles and permissions.',
             'Admins can add, remove, or edit team members from this component.'
         ],
         'analytics': [
             'The Analytics dashboard shows your signage performance.',
+            'Metrics: "Plays" = Total times content was shown; "Screen Time" = Live uptime percentage.',
             'You can check how many plays happened on specific days, unique viewer counts, and screen uptime.',
             'Use the date picker in Analytics to see exactly what happened last Monday or any other time!'
         ],
         'playlists': [
             'Playlists allow you to sequence multiple templates together.',
-            'You can schedule a playlist to start and end at specific times on your screens.',
-            'Create or edit playlists in the "Playlists" section by dragging and dropping templates into the order you want.'
+            'Scheduling: You can set specific start and end times for each playlist on your screens.',
+            'Create or edit playlists in the "Playlists" section by dragging and dropping templates into the order you want.',
+            'To add media: Simply drag templates into the playlist timeline.'
         ],
         'slider': [
-            'The Inspiration Slider on the dashboard shows premium designs.',
-            'How to use: Simply click "Capture This Layout" on any slide. It will instantly create a new template for you with that exact zone structure!'
+            'The "Inspiration Slider" on the dashboard shows premium designs.',
+            'How to use: Simply click "Capture This Layout" on any slide. It will instantly create a new template for you with that exact zone structure!',
+            'It helps you visualize how zones (Text, Mixed, Media) work together.'
+        ],
+        'notifications': [
+            'The Bell icon shows your alerts.',
+            'You\'ll get notified about connection requests, template invites, and collaborative messages here.'
+        ],
+        'profile': [
+            'Manage your identity in the Profile section.',
+            'You can update your profile picture, change your display name, set your gender, and switch the system language.'
+        ],
+        'canvas': [
+            'The Canvas Editor is where you build designs.',
+            'How to drag & create: Drag existing zones to move them. Use the sidebar tools to add new Text, Mixed, or Media zones.',
+            'Zone types: "Text" for messages; "Media" for videos/images; "Mixed" for both.',
+            'Zones get locked live so collaborators don\'t overwrite your work.'
+        ],
+        'chat': [
+            'The Chat Sidebar (in Collaboration) lets you message teammates live.',
+            'Messaging is real-time; green dots show who is currently online and active in your team.'
+        ],
+        'connections': [
+            'SmartSignDeck (Super Admin) is your default system friend to help you get started.',
+            'Find people by email to expand your network. Once connected, you can see their online status and collaborate!'
         ]
     }
 
@@ -151,17 +182,40 @@ export const GuideBuddy = () => {
                 response = `I'm doing great, ${firstName}! Ready to help you build some amazing signage.`
             }
             else {
-                // Feature Mapping
-                for (const [key, facts] of Object.entries(systemKnowledge)) {
-                    if (lowerInput.includes(key) ||
-                        (lowerInput.includes('what is') && lowerInput.includes(key)) ||
-                        (lowerInput.includes('means') && lowerInput.includes(key)) ||
-                        (lowerInput.includes('how to') && lowerInput.includes(key))) {
+                // Feature Mapping with weighted search
+                let matchedKey = null
 
-                        // Pick a random fact or a specific "how to" if it exists in the array
-                        // For now we just pick random, but the array has been enriched
-                        response = facts[Math.floor(Math.random() * facts.length)]
+                // 1. Direct Keyword Match
+                for (const key of Object.keys(systemKnowledge)) {
+                    if (lowerInput.includes(key)) {
+                        matchedKey = key
                         break
+                    }
+                }
+
+                // 2. Handle follow-ups like "means", "more", "tell me" using currentTopic
+                if (!matchedKey && currentTopic && (lowerInput.includes('means') || lowerInput.includes('more') || lowerInput.includes('what') || lowerInput.includes('tell me') || lowerInput.includes('use'))) {
+                    matchedKey = currentTopic
+                }
+
+                if (matchedKey) {
+                    const facts = systemKnowledge[matchedKey]
+                    response = facts[Math.floor(Math.random() * facts.length)]
+                    setCurrentTopic(matchedKey)
+                } else {
+                    // 3. System-wide fallback for common terms
+                    if (lowerInput.includes('online') || lowerInput.includes('offline')) {
+                        response = systemKnowledge['screens']?.[2] || "Screens check in every 2 minutes. If no ping is received, they show as offline."
+                        setCurrentTopic('screens')
+                    } else if (lowerInput.includes('how to find') || lowerInput.includes('buddy') || lowerInput.includes('friend')) {
+                        response = systemKnowledge['connections']?.[0] || "SmartSignDeck (Super Admin) is your default system friend."
+                        setCurrentTopic('connections')
+                    } else if (lowerInput.includes('zone') || lowerInput.includes('drag')) {
+                        response = systemKnowledge['canvas']?.[1] || "Drag zones to reposition them; you can add Text, Media, or Mixed zones from the sidebar."
+                        setCurrentTopic('canvas')
+                    } else if (lowerInput.includes('admin') || lowerInput.includes('role')) {
+                        response = systemKnowledge['users']?.[1] || "Roles include User, Admin, Super Admin, and Advertiser."
+                        setCurrentTopic('users')
                     }
                 }
             }

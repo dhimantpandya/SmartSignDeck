@@ -869,6 +869,30 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                 isPublic,
             }
 
+            console.log('[SAVE] Starting save for template:', templateName)
+
+            // OPTIMISTIC UI: For new templates, we want it to show up in the list IMMEDIATELY
+            if (!currentTemplateId) {
+                const tempId = `temp-${Date.now()}`
+                const optimisticTemplate = {
+                    ...payload,
+                    _id: tempId,
+                    id: tempId,
+                    createdBy: user,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                }
+
+                queryClient.setQueryData(['templates'], (old: any) => {
+                    if (!old || !old.docs) return old
+                    return {
+                        ...old,
+                        docs: [optimisticTemplate, ...old.docs],
+                        totalDocs: (old.totalDocs || 0) + 1
+                    }
+                })
+            }
+
             if (currentTemplateId) {
                 await templateService.updateTemplate(currentTemplateId, payload)
             } else {
@@ -892,7 +916,8 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                 }
             }
 
-            queryClient.invalidateQueries({ queryKey: ['templates'] })
+            // Final sync after real server response
+            await queryClient.invalidateQueries({ queryKey: ['templates'] })
             toast({ title: currentTemplateId ? 'Template updated!' : 'Template saved!' })
 
             if (!isCollaborationAutoSave) {

@@ -109,21 +109,16 @@ const queryTemplates = async (filter: any, options: CustomPaginateOptions, user:
     } else if (isQueryingShared && userId) {
       // 🤝 Explicit Shared Query: Just stick to the collaborators filter
       finalFilter.collaborators = userId;
-    } else {
-      // 🔒 Account Isolation: 
-      // - Admins see everything in the same company.
-      // - Regular users ('user' role) ONLY see what they created or what is shared with them.
+      // 🔒 Strict Isolation: Always restrict to current user
       const securityConditions: any[] = [];
 
-      if (user.role === 'admin') {
-        if (companyIdStr && mongoose.Types.ObjectId.isValid(companyIdStr)) {
-          securityConditions.push({ companyId: new mongoose.Types.ObjectId(companyIdStr) });
-        }
-      } else {
-        // Regular user: Only own content
-        if (userId) {
-          securityConditions.push({ createdBy: userId });
-        }
+      if (userId) {
+        securityConditions.push({ createdBy: userId });
+      }
+
+      // 🤝 Add Shared access
+      if (userId) {
+        securityConditions.push({ collaborators: userId });
       }
 
       // 🌍 ALWAYS Add Public access

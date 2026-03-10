@@ -169,13 +169,46 @@ export default function Templates() {
 
     const createGroupMutation = useMutation({
         mutationFn: (data: { name: string; description?: string }) => templateGroupService.createGroup(data),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['template-groups'] })
-            toast({ title: 'Group created', description: 'Template group created successfully.' })
+        onMutate: async (data) => {
+            await queryClient.cancelQueries({ queryKey: ['template-groups'] })
+            const previousGroups = queryClient.getQueryData(['template-groups', user?.id])
+
+            const tempId = `temp-group-${Date.now()}`
+            const optimisticGroup = {
+                id: tempId,
+                _id: tempId,
+                name: data.name,
+                description: data.description || '',
+                templates: [],
+                createdBy: user?.id,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            }
+
+            queryClient.setQueryData(['template-groups', user?.id], (old: any) => {
+                if (!old || !old.results) return old
+                return {
+                    ...old,
+                    results: [optimisticGroup, ...old.results]
+                }
+            })
+
             setIsCreateGroupOpen(false)
             setNewGroupName('')
             setNewGroupDesc('')
+
+            return { previousGroups }
         },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['template-groups'] })
+            toast({ title: 'Group created', description: 'Template group created successfully.' })
+        },
+        onError: (err, data, context: any) => {
+            if (context?.previousGroups) {
+                queryClient.setQueryData(['template-groups', user?.id], context.previousGroups)
+            }
+            toast({ title: 'Failed to create group', variant: 'destructive' })
+        }
     })
 
     const deleteMutation = useMutation({
