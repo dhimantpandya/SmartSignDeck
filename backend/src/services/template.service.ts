@@ -50,6 +50,7 @@ const createTemplate = async (templateBody: any, user: IUser) => {
     ...templateBody,
     companyId: user.companyId,
     createdBy: user._id,
+    lastModifiedBy: user._id,
   };
 
   return await Template.create(payload);
@@ -142,7 +143,10 @@ const queryTemplates = async (filter: any, options: CustomPaginateOptions, user:
 
   const templates = await Template.paginate(finalFilter, {
     ...options,
-    populate: { path: "createdBy", select: "id _id first_name last_name email avatar" }
+    populate: [
+      { path: "createdBy", select: "id _id first_name last_name email avatar" },
+      { path: "lastModifiedBy", select: "id _id first_name last_name email avatar" }
+    ]
   });
 
   return templates;
@@ -155,10 +159,15 @@ const queryTemplates = async (filter: any, options: CustomPaginateOptions, user:
  * @returns {Promise<Template>}
  */
 const getTemplateById = async (id: string, user?: IUser) => {
-  const template = await Template.findById(id).populate({
-    path: "collaborators",
-    select: "id _id first_name last_name email avatar"
-  });
+  const template = await Template.findById(id)
+    .populate({
+      path: "collaborators",
+      select: "id _id first_name last_name email avatar"
+    })
+    .populate({
+      path: "lastModifiedBy",
+      select: "id _id first_name last_name email avatar"
+    });
   if (!template) return null;
 
   // If user is provided, check read permissions
@@ -195,6 +204,9 @@ const updateTemplateById = async (templateId: string, updateBody: any, user: IUs
   if (user.role !== "super_admin" && !isCreator && !isCollaborator) {
     throw new ApiError(httpStatus.FORBIDDEN, "You do not have permission to update this template. Only the creator and invited collaborators can edit.");
   }
+
+  // Inject lastModifiedBy
+  updateBody.lastModifiedBy = user._id || (user as any).id;
 
   Object.assign(template, updateBody);
   await template.save();

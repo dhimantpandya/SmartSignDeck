@@ -92,6 +92,8 @@ const updateTemplate = catchAsync(async (req: Request, res: Response) => {
 
 const deleteTemplate = catchAsync(async (req: Request, res: Response) => {
     await templateService.deleteTemplateById(req.params.templateId, req.user as any);
+    const io = getIO();
+    if (io) io.emit('template_deleted', { templateId: req.params.templateId });
     res.status(httpStatus.NO_CONTENT).send();
 });
 
@@ -102,11 +104,17 @@ const restoreTemplate = catchAsync(async (req: Request, res: Response) => {
 
 const permanentDeleteTemplate = catchAsync(async (req: Request, res: Response) => {
     await templateService.permanentDeleteTemplateById(req.params.templateId, req.user as any);
+    const io = getIO();
+    if (io) io.emit('template_deleted', { templateId: req.params.templateId });
     res.status(httpStatus.NO_CONTENT).send();
 });
 
 const bulkDeleteTemplates = catchAsync(async (req: Request, res: Response) => {
     const result = await templateService.deleteTemplatesByIds(req.body.ids, req.user as any);
+    const io = getIO();
+    if (io && req.body.ids && Array.isArray(req.body.ids)) {
+        req.body.ids.forEach((id: string) => io.emit('template_deleted', { templateId: id }));
+    }
     successResponse(
         res,
         "Templates processed for deletion",

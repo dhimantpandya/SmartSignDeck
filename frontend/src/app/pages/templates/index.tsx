@@ -16,7 +16,6 @@ import { useAuth } from '@/hooks/use-auth'
 import { Badge } from '@/components/ui/badge'
 import { Globe, Lock, User, Eye, FolderPlus, Folder, Users } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useSearchParams } from 'react-router-dom'
 import { PreviewModal } from '@/components/preview-modal'
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
@@ -54,15 +53,18 @@ export default function Templates() {
     useEffect(() => {
         if (!socket) return
 
-        const handleTemplatePublished = () => {
-            // Refresh global templates list when anyone makes a template public
+        const invalidateGlobalTemplates = () => {
             queryClient.invalidateQueries({ queryKey: ['templates', 'global'] })
         }
 
-        socket.on('template_published', handleTemplatePublished)
+        socket.on('template_published', invalidateGlobalTemplates)
+        socket.on('template_deleted', invalidateGlobalTemplates)
+        socket.on('template_updated', invalidateGlobalTemplates)
 
         return () => {
-            socket.off('template_published', handleTemplatePublished)
+            socket.off('template_published', invalidateGlobalTemplates)
+            socket.off('template_deleted', invalidateGlobalTemplates)
+            socket.off('template_updated', invalidateGlobalTemplates)
         }
     }, [socket, queryClient])
 
@@ -327,119 +329,101 @@ export default function Templates() {
         return createdById.toString() === currentUserId.toString();
     }
 
-    const renderTemplateCard = (template: any, isOwner: boolean, inGroupView: boolean = false) => (
-        <Card key={template.id} className="overflow-hidden">
-            <CardHeader className="bg-muted/50 pb-4">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <Checkbox
-                            checked={selectedTemplates.includes(template.id)}
-                            onCheckedChange={() => toggleTemplateSelection(template.id)}
-                            onClick={(e) => e.stopPropagation()}
-                        />
-                        <CardTitle className="text-lg">{template.name}</CardTitle>
-                    </div>
-                    {template.isPublic ? <Badge variant="secondary" className="gap-1"><Globe size={10} /> Global</Badge> : <Badge variant="outline" className="gap-1"><Lock size={10} /> Private</Badge>}
+    const renderTemplateCard = (template: any, isOwner: boolean, inGroupView: boolean = false, isGlobalView: boolean = false) => {
+        let lastModifiedBlock = null;
+        if (template.lastModifiedBy) {
+            const modifierDate = template.updated_at ? new Date(template.updated_at) : new Date(template.created_at);
+
+            // Format modifier time as e.g. "Sunday 11:48 PM"
+            const options: Intl.DateTimeFormatOptions = { weekday: 'long', hour: 'numeric', minute: '2-digit', hour12: true };
+            const timeStr = modifierDate.toLocaleDateString(undefined, options).replace(/, /g, ' ');
+
+            lastModifiedBlock = (
+                <div className="flex items-center gap-2 mt-2 pt-2 border-t">
+                    <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">
+                        Last changed by: <span className="font-bold text-foreground">
+                            {template.lastModifiedBy.first_name} {template.lastModifiedBy.last_name || ''}
+                        </span> at {timeStr}
+                    </span>
                 </div>
-            </CardHeader>
-            <CardContent className="pt-4">
-                <div className="flex flex-col gap-1 text-sm text-muted-foreground">
-                    <span>Resolution: {template.resolution}</span>
-                    <span>Zones: {template.zones.length}</span>
-                    <span>Created: {new Date(template.created_at).toLocaleDateString()}</span>
-                    {template.createdBy && (
-                        <div className="flex items-center gap-2 mt-2 pt-2 border-t">
-                            <Avatar className="h-6 w-6">
-                                <AvatarImage src={template.createdBy.avatar} />
-                                <AvatarFallback className="text-xs">
-                                    {(template.createdBy.first_name || '')[0]}{(template.createdBy.last_name || '')[0]}
-                                </AvatarFallback>
-                            </Avatar>
-                            <span className="text-xs font-medium">
-                                Created by : {template.createdBy.first_name} {template.createdBy.last_name} {checkIsOwner(template) ? '(You)' : ''}
-                            </span>
+            );
+        }
+
+        return (
+            <Card key={template.id} className="overflow-hidden flex flex-col h-full">
+                <CardHeader className="bg-muted/50 pb-4 shrink-0">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <Checkbox
+                                checked={selectedTemplates.includes(template.id)}
+                                onCheckedChange={() => toggleTemplateSelection(template.id)}
+                                onClick={(e) => e.stopPropagation()}
+                            />
+                            <CardTitle className="text-lg">{template.name}</CardTitle>
                         </div>
-                    )}
-                </div>
-            </CardContent>
-            <CardFooter className="flex justify-between border-t bg-muted/20 px-4 py-2">
-                <div className="flex gap-1">
-                    {inGroupView ? (
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 text-destructive hover:bg-destructive/10"
-                            onClick={() => removeFromGroupMutation.mutate({ groupId: selectedGroupId!, templateId: template.id })}
-                            title="Remove from Group"
-                        >
-                            <FolderPlus className="h-4 w-4 rotate-45" />
-                        </Button>
-                    ) : (
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                    <Folder className="h-4 w-4" />
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="start" className="w-56">
-                                <DropdownMenuLabel>Assign to Group</DropdownMenuLabel>
-                                <DropdownMenuSeparator />
-                                {groupsData?.results && groupsData.results.length > 0 ? (
-                                    groupsData.results.map((group: any) => (
-                                        <DropdownMenuItem
-                                            key={group.id}
-                                            onClick={() => assignToGroupMutation.mutate({ groupId: group.id, templateId: template.id })}
-                                        >
-                                            <Folder className="mr-2 h-4 w-4" />
-                                            <span>{group.name}</span>
-                                        </DropdownMenuItem>
-                                    ))
-                                ) : (
-                                    <DropdownMenuItem disabled>No groups found</DropdownMenuItem>
-                                )}
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                    )}
-                </div>
-                <div className="flex gap-2">
-                    <Button variant="ghost" size="sm" onClick={() => setPreviewTemplate(template)}>
-                        <Eye size={16} className="mr-1" /> Preview
-                    </Button>
-                    {isOwner && !inGroupView ? (
-                        <>
-                            <Button variant="ghost" size="sm" onClick={() => handleEdit(template)}>
-                                <IconEdit size={16} className="mr-1" /> Edit
+                        {template.isPublic ? <Badge variant="secondary" className="gap-1"><Globe size={10} /> Global</Badge> : <Badge variant="outline" className="gap-1"><Lock size={10} /> Private</Badge>}
+                    </div>
+                </CardHeader>
+                <CardContent className="pt-4 flex-grow">
+                    <div className="flex flex-col gap-1 text-sm text-muted-foreground">
+                        <span>Resolution: {template.resolution}</span>
+                        <span>Zones: {template.zones.length}</span>
+                        <span>Created: {new Date(template.created_at).toLocaleDateString()}</span>
+                        {template.createdBy && (
+                            <div className="flex items-center gap-2 mt-2 pt-2 border-t">
+                                <span className="text-xs font-medium text-foreground">
+                                    Created by : {template.createdBy.first_name} {template.createdBy.last_name} {checkIsOwner(template) ? '(You)' : ''}
+                                </span>
+                            </div>
+                        )}
+                        {lastModifiedBlock}
+                    </div>
+                </CardContent>
+                <CardFooter className="flex justify-between border-t bg-muted/20 px-4 py-2 shrink-0">
+                    <div className="flex gap-1">
+                        {inGroupView ? (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 text-destructive hover:bg-destructive/10"
+                                onClick={() => removeFromGroupMutation.mutate({ groupId: selectedGroupId!, templateId: template.id })}
+                                title="Remove from Group"
+                            >
+                                <FolderPlus className="h-4 w-4 rotate-45" />
                             </Button>
-                            <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => {
-                                setConfirmDelete(template.id)
-                            }}>
-                                <IconTrash size={16} className="mr-1" /> Delete
-                            </Button>
-                        </>
-                    ) : template.collaborators?.some((c: any) => (c.id || c._id || c) === user?.id) && !inGroupView ? (
-                        <Button
-                            variant="default"
-                            size="sm"
-                            className="bg-indigo-600 hover:bg-indigo-700"
-                            onClick={() => handleEdit(template)}
-                        >
-                            <Users size={16} className="mr-2" /> Edit Together
+                        ) : (
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                        <Folder className="h-4 w-4" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="start" className="w-56">
+                                    <DropdownMenuLabel>Assign to Group</DropdownMenuLabel>
+                                    <DropdownMenuSeparator />
+                                    {groupsData?.results && groupsData.results.length > 0 ? (
+                                        groupsData.results.map((group: any) => (
+                                            <DropdownMenuItem
+                                                key={group.id}
+                                                onClick={() => assignToGroupMutation.mutate({ groupId: group.id, templateId: template.id })}
+                                            >
+                                                <Folder className="mr-2 h-4 w-4" />
+                                                <span>{group.name}</span>
+                                            </DropdownMenuItem>
+                                        ))
+                                    ) : (
+                                        <DropdownMenuItem disabled>No groups found</DropdownMenuItem>
+                                    )}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        )}
+                    </div>
+                    <div className="flex gap-2">
+                        <Button variant="ghost" size="sm" onClick={() => setPreviewTemplate(template)}>
+                            <Eye size={16} className="mr-1" /> Preview
                         </Button>
-                    ) : (
-                        <div className="flex gap-2">
-                            {isOwner && !inGroupView && (
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="h-8 gap-1.5 border-primary/20 hover:bg-primary/5 text-primary"
-                                    onClick={() => {
-                                        setSelectedTemplateForCollab(template)
-                                        setIsCollaborateOpen(true)
-                                    }}
-                                >
-                                    <Users size={14} /> Collaborate
-                                </Button>
-                            )}
+
+                        {isGlobalView ? (
                             <Button
                                 variant="default"
                                 size="sm"
@@ -448,12 +432,56 @@ export default function Templates() {
                             >
                                 <IconCopy size={16} className="mr-2" /> Use Template
                             </Button>
-                        </div>
-                    )}
-                </div>
-            </CardFooter>
-        </Card>
-    )
+                        ) : isOwner && !inGroupView ? (
+                            <>
+                                <Button variant="ghost" size="sm" onClick={() => handleEdit(template)}>
+                                    <IconEdit size={16} className="mr-1" /> Edit
+                                </Button>
+                                <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => {
+                                    setConfirmDelete(template.id)
+                                }}>
+                                    <IconTrash size={16} className="mr-1" /> Delete
+                                </Button>
+                            </>
+                        ) : template.collaborators?.some((c: any) => (c.id || c._id || c) === user?.id) && !inGroupView ? (
+                            <Button
+                                variant="default"
+                                size="sm"
+                                className="bg-indigo-600 hover:bg-indigo-700"
+                                onClick={() => handleEdit(template)}
+                            >
+                                <Users size={16} className="mr-2" /> Edit Together
+                            </Button>
+                        ) : (
+                            <div className="flex gap-2">
+                                {isOwner && !inGroupView && (
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-8 gap-1.5 border-primary/20 hover:bg-primary/5 text-primary"
+                                        onClick={() => {
+                                            setSelectedTemplateForCollab(template)
+                                            setIsCollaborateOpen(true)
+                                        }}
+                                    >
+                                        <Users size={14} /> Collaborate
+                                    </Button>
+                                )}
+                                <Button
+                                    variant="default"
+                                    size="sm"
+                                    onClick={() => handleClone(template.id)}
+                                    loading={cloneMutation.isPending}
+                                >
+                                    <IconCopy size={16} className="mr-2" /> Use Template
+                                </Button>
+                            </div>
+                        )}
+                    </div>
+                </CardFooter>
+            </Card>
+        )
+    }
 
     const myTemplates = myTemplatesData?.results || []
     const globalTemplates = (globalTemplatesData?.results || []).filter((t: any) => t.createdBy)
@@ -797,7 +825,7 @@ export default function Templates() {
                                         </label>
                                     </div>
                                     <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
-                                        {globalTemplates.map((template: any) => renderTemplateCard(template, checkIsOwner(template), false))}
+                                        {globalTemplates.map((template: any) => renderTemplateCard(template, checkIsOwner(template), false, true))}
                                     </div>
                                 </>
                             ) : (

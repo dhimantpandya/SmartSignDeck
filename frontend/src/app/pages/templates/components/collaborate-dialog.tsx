@@ -102,6 +102,22 @@ export const CollaborateDialog: FC<CollaborateDialogProps> = ({
         }
     })
 
+    const removeCollaboratorMutation = useMutation({
+        mutationFn: (collaboratorId: string) =>
+            collaborationService.removeCollaborator(templateId, collaboratorId),
+        onSuccess: () => {
+            toast({ title: 'Collaborator removed' })
+            queryClient.invalidateQueries({ queryKey: ['templates'] })
+        },
+        onError: (err: any) => {
+            toast({
+                title: 'Removal failed',
+                description: err.response?.data?.message || err.message,
+                variant: 'destructive'
+            })
+        }
+    })
+
     const extractId = (obj: any): string => {
         if (!obj) return ''
         if (typeof obj === 'string') return obj.trim().toLowerCase()
@@ -262,13 +278,29 @@ export const CollaborateDialog: FC<CollaborateDialogProps> = ({
                         <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">Current Collaborators</p>
                         <div className="flex flex-wrap gap-2">
                             {allParticipants.map((c: any) => (
-                                <Badge key={c._id || c.id || c} variant="outline" className={`gap-1 pl-1 py-1 ${c.isCreator ? 'border-primary/40 bg-primary/5' : ''}`}>
+                                <Badge key={c._id || c.id || c} variant="outline" className={`gap-1 pl-1 py-1 pr-2 ${c.isCreator ? 'border-primary/40 bg-primary/5' : ''}`}>
                                     <Avatar className="h-4 w-4">
                                         <AvatarImage src={c.avatar} />
                                         <AvatarFallback className="text-[8px]">{c.first_name?.[0]}</AvatarFallback>
                                     </Avatar>
                                     {c.first_name || 'Collaborator'} {c.last_name || ''}
-                                    {c.isCreator && <span className="text-[8px] uppercase tracking-wider text-primary ml-1 font-bold">Owner</span>}
+                                    {c.isCreator ? (
+                                        <span className="text-[8px] uppercase tracking-wider text-primary ml-1 font-bold">Owner</span>
+                                    ) : (
+                                        isOwner && (
+                                            <button
+                                                className="ml-1 text-muted-foreground hover:text-destructive rounded-full p-0.5 hover:bg-destructive/10 transition-colors"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    removeCollaboratorMutation.mutate(c.id || c._id);
+                                                }}
+                                                disabled={removeCollaboratorMutation.isPending}
+                                                title="Remove Access"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+                                            </button>
+                                        )
+                                    )}
                                 </Badge>
                             ))}
                         </div>
