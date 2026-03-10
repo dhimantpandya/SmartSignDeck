@@ -203,7 +203,7 @@ export default function Templates() {
             queryClient.invalidateQueries({ queryKey: ['template-groups'] })
             toast({ title: 'Group created', description: 'Template group created successfully.' })
         },
-        onError: (err, data, context: any) => {
+        onError: (_err, _data, context: any) => {
             if (context?.previousGroups) {
                 queryClient.setQueryData(['template-groups', user?.id], context.previousGroups)
             }

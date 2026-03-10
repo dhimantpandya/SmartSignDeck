@@ -154,7 +154,7 @@ export default function Screens() {
             queryClient.invalidateQueries({ queryKey: ['dashboard'] }) // Update counts
             toast({ title: 'Screen moved to Recycle Bin', description: 'You can restore it within 30 days.' })
         },
-        onError: (err, id, context: any) => {
+        onError: (_err, _id, context: any) => {
             if (context?.previousScreens) {
                 queryClient.setQueryData(['screens', 'my'], context.previousScreens)
             }
@@ -189,13 +189,13 @@ export default function Screens() {
             })
             clearSelection()
         },
-        onError: (error: any, ids, context: any) => {
+        onError: (_error: any, _ids, context: any) => {
             if (context?.previousScreens) {
                 queryClient.setQueryData(['screens', 'my'], context.previousScreens)
             }
             toast({
                 title: 'Bulk Deletion Failed',
-                description: error?.response?.data?.message || 'Failed to delete some screens.',
+                description: _error?.response?.data?.message || 'Failed to delete some screens.',
                 variant: 'destructive'
             })
         }
