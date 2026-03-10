@@ -104,6 +104,11 @@ export default function RecycleBin() {
 
             // Start global loading overlay for sync safety
             setIsGlobalLoading(true)
+
+            // Proactive sync: Start loading the target section immediately
+            queryClient.invalidateQueries({ queryKey: [key] })
+            queryClient.prefetchQuery({ queryKey: [key] })
+
             setTimeout(() => setIsGlobalLoading(false), 2500)
 
             return { previousData, key }
@@ -490,14 +495,26 @@ export default function RecycleBin() {
                         exit={{ opacity: 0 }}
                         className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-background/60 backdrop-blur-md"
                     >
-                        <div className="flex flex-col items-center gap-4">
+                        <div className="bg-background/80 backdrop-blur-xl p-8 rounded-3xl border border-primary/20 shadow-[0_20px_50px_rgba(0,0,0,0.3)] flex flex-col items-center gap-4 max-w-sm mx-4">
                             <div className="relative">
-                                <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full" />
+                                <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full animate-pulse" />
                                 <IconLoader2 className="h-12 w-12 text-primary animate-spin relative" />
                             </div>
                             <div className="text-center space-y-1">
-                                <h3 className="font-black text-xl tracking-tight uppercase">Syncing Workspace</h3>
-                                <p className="text-sm text-muted-foreground font-medium">Please wait while we prepare your data...</p>
+                                <h3 className="font-black text-xl tracking-tight uppercase bg-clip-text text-transparent bg-gradient-to-br from-foreground to-foreground/60">
+                                    Syncing Workspace
+                                </h3>
+                                <p className="text-sm text-muted-foreground font-medium">
+                                    Preparing your data for instant access...
+                                </p>
+                            </div>
+                            <div className="w-full bg-primary/10 h-1 rounded-full overflow-hidden mt-2">
+                                <motion.div
+                                    initial={{ width: "0%" }}
+                                    animate={{ width: "100%" }}
+                                    transition={{ duration: 2.5, ease: "linear" }}
+                                    className="h-full bg-primary"
+                                />
                             </div>
                         </div>
                     </motion.div>

@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { IconX, IconSparkles, IconSend, IconMessageCircle, IconRobot } from '@tabler/icons-react'
+import { IconX, IconSparkles, IconSend, IconMessageCircle, IconRobot, IconActivity, IconListDetails, IconUsers } from '@tabler/icons-react'
 import { Button } from '@/components/custom/button'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
+import { useAuth } from '@/hooks/use-auth'
 
 interface Message {
     id: string;
@@ -20,6 +21,7 @@ export const GuideBuddy = () => {
     const [messages, setMessages] = useState<Message[]>([])
     const [inputValue, setInputValue] = useState('')
     const chatEndRef = useRef<HTMLDivElement>(null)
+    const { user } = useAuth()
 
     const scrollToBottom = () => {
         chatEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -33,30 +35,48 @@ export const GuideBuddy = () => {
         'templates': [
             'Templates are reusable designs for your signage.',
             'Global templates are public, while My Templates are private.',
-            'You can clone any global template to make it your own.',
+            'To create a template together: Go to the Collaboration section, invite your teammate, and you both can edit the same canvas live! You\'ll see their colored name labels when they select zones.',
             'Click "Capture This Layout" in the slider to instantly copy a zone structure.'
         ],
         'screens': [
             'Screens represent your physical displays.',
-            'You can assign a playlist or a specific template to a screen.',
+            'You can assign a playlist or a specific template to a screen from the Screen Management page.',
             'Online status tells you if the screen is currently connected and playing.',
-            'You can add a new screen from the Dashboard or Screen Management page.'
+            'To add a new screen, click "Add Screen" on the Screens page and follow the setup instructions.'
         ],
         'collaboration': [
-            'Multiple users can edit the same template in real-time.',
-            'Zones get locked when someone selects them to prevent conflicts.',
-            'Collaborators have colored labels with their names on the canvas.',
-            'You can invite teammates by clicking "Invite" in the Collaboration section.'
+            'How to send a request: Go to the Collaboration page, search for a teammate by email, and click "Invite". Once they accept, you can share templates!',
+            'Real-time: You see others typing and moving zones instantly. Zones get locked with a colored label when someone is editing them.',
+            'Colored labels: Each teammate has a unique color so you know who is working where.'
         ],
         'recycle bin': [
-            'Deleted templates and screens go to the Recycle Bin.',
-            'Items are permanently purged after 30 days.',
-            'You can restore items instantly to their original location.'
+            'Deleted items stay here for 30 days before being purged forever.',
+            'You can restore templates or screens instantly. We even show a safety loader to make sure your workspace is synced before you continue!',
+            'To purge an item permanently, select it and click "Purge".'
         ],
         'sync': [
-            'Our system uses real-time sync for all changes.',
-            'Zone movements are optimized to 60fps for a smooth experience.',
-            'Toasts and UI updates are optimistic, meaning they happen instantly!'
+            'Everything in SmartSignDeck is real-time.',
+            'We use hyper-speed tech to ensure zone movements are 60fps.',
+            'Wait for the "Syncing Workspace" message when restoring items to ensure data consistency.'
+        ],
+        'users': [
+            'The Users section is for Team Management.',
+            'Wait, why can I see it? Even if you aren\'t an admin, you can see the team overview and your own profile settings. Organization admins use this section to manage roles and permissions.',
+            'Admins can add, remove, or edit team members from this component.'
+        ],
+        'analytics': [
+            'The Analytics dashboard shows your signage performance.',
+            'You can check how many plays happened on specific days, unique viewer counts, and screen uptime.',
+            'Use the date picker in Analytics to see exactly what happened last Monday or any other time!'
+        ],
+        'playlists': [
+            'Playlists allow you to sequence multiple templates together.',
+            'You can schedule a playlist to start and end at specific times on your screens.',
+            'Create or edit playlists in the "Playlists" section by dragging and dropping templates into the order you want.'
+        ],
+        'slider': [
+            'The Inspiration Slider on the dashboard shows premium designs.',
+            'How to use: Simply click "Capture This Layout" on any slide. It will instantly create a new template for you with that exact zone structure!'
         ]
     }
 
@@ -74,11 +94,29 @@ export const GuideBuddy = () => {
         {
             title: "Real-Time Collaboration",
             content: "Invite teammates to edit templates together. You'll see their movements and choices live on your screen.",
+            action: "Next Tip"
+        },
+        {
+            title: "Analytics Dashboard",
+            content: "Track screen performance, total plays, and unique viewers in real-time to measure your impact.",
+            icon: <IconActivity size={18} className="text-primary" />,
+            action: "Next Tip"
+        },
+        {
+            title: "Playlist Sequencing",
+            content: "Chain templates into playlists and schedule them to play at specific times on your screens.",
+            icon: <IconListDetails size={18} className="text-primary" />,
+            action: "Next Tip"
+        },
+        {
+            title: "Team Management",
+            content: "Use the 'Users' section to manage team roles. Invite buddies to your organization with just an email.",
+            icon: <IconUsers size={18} className="text-primary" />,
             action: "Got it"
         },
         {
             title: "Need help?",
-            content: "Click me anytime if you feel lost! You're ready to start designing.",
+            content: "Click me anytime or use the 'Ask Question' tab to chat with me about system features!",
             action: "Start Exploring"
         }
     ]
@@ -98,13 +136,33 @@ export const GuideBuddy = () => {
 
         // AI Response Logic
         setTimeout(() => {
-            let response = "I'm sorry, I'm only trained to help with SmartSignDeck system features. Please ask about Templates, Screens, Collaboration, or the Recycle Bin!"
+            let response = "I'm sorry, I'm only trained to help with SmartSignDeck system features. Please ask about Templates, Screens, Collaboration, Analytics, Playlists, or the Recycle Bin!"
             const lowerInput = inputValue.toLowerCase()
+            const firstName = user?.first_name || 'Friend'
 
-            for (const [key, facts] of Object.entries(systemKnowledge)) {
-                if (lowerInput.includes(key)) {
-                    response = facts[Math.floor(Math.random() * facts.length)]
-                    break
+            // Handle Greetings
+            if (lowerInput.match(/^(hi|hello|hey|good morning|good afternoon|good evening|yo)\b/)) {
+                const greeting = lowerInput.startsWith('good morning') ? 'Good morning' :
+                    lowerInput.startsWith('good afternoon') ? 'Good afternoon' :
+                        lowerInput.startsWith('good evening') ? 'Good evening' : 'Hi'
+                response = `${greeting} ${firstName}! How can I help you with SmartSignDeck today?`
+            }
+            else if (lowerInput.includes('how are you')) {
+                response = `I'm doing great, ${firstName}! Ready to help you build some amazing signage.`
+            }
+            else {
+                // Feature Mapping
+                for (const [key, facts] of Object.entries(systemKnowledge)) {
+                    if (lowerInput.includes(key) ||
+                        (lowerInput.includes('what is') && lowerInput.includes(key)) ||
+                        (lowerInput.includes('means') && lowerInput.includes(key)) ||
+                        (lowerInput.includes('how to') && lowerInput.includes(key))) {
+
+                        // Pick a random fact or a specific "how to" if it exists in the array
+                        // For now we just pick random, but the array has been enriched
+                        response = facts[Math.floor(Math.random() * facts.length)]
+                        break
+                    }
                 }
             }
 
@@ -153,7 +211,10 @@ export const GuideBuddy = () => {
 
                             {!isChatMode ? (
                                 <div className="space-y-3">
-                                    <h3 className="font-black text-lg leading-tight tracking-tight text-foreground">{tips[step].title}</h3>
+                                    <div className="flex items-center gap-3">
+                                        {tips[step].icon}
+                                        <h3 className="font-black text-lg leading-tight tracking-tight text-foreground">{tips[step].title}</h3>
+                                    </div>
                                     <p className="text-sm text-muted-foreground leading-relaxed font-medium">{tips[step].content}</p>
 
                                     <div className="flex items-center justify-between pt-2">
