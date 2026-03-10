@@ -13,7 +13,7 @@ interface Message {
 }
 
 export const GuideBuddy = () => {
-    const [isVisible, setIsVisible] = useState(false)
+    const isVisible = true
     const [showBubble, setShowBubble] = useState(false)
     const [isChatMode, setIsChatMode] = useState(false)
     const [step, setStep] = useState(0)
