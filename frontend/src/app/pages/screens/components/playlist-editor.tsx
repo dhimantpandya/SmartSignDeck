@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { useAuth } from '@/hooks/use-auth'
 import { Button } from '@/components/custom/button'
 import { IconPlus, IconTrash, IconPhoto, IconMovie, IconTrashX, IconPlayerPlay, IconArrowsSort, IconExternalLink } from '@tabler/icons-react'
 import { toast } from '@/components/ui/use-toast'
@@ -25,7 +24,6 @@ interface PlaylistEditorProps {
 }
 
 export default function PlaylistEditor({ zone, items, onChange }: PlaylistEditorProps) {
-    const { user } = useAuth()
     const [mediaTypeLock, setMediaTypeLock] = useState<'image' | 'video' | 'both'>('both')
     const [isProcessing, setIsProcessing] = useState(false)
     const [confirmAction, setConfirmAction] = useState<{ type: 'remove' | 'clear', index?: number } | null>(null)
