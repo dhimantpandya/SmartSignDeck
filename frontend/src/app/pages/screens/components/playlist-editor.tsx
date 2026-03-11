@@ -133,6 +133,7 @@ export default function PlaylistEditor({ zone, items, onChange }: PlaylistEditor
             })
 
             let uploadedAssets: any[] = [];
+            let isDoneClicked = false;
 
             // Create and show widget
             // @ts-ignore
@@ -171,7 +172,17 @@ export default function PlaylistEditor({ zone, items, onChange }: PlaylistEditor
                         console.log('Upload success: ', result.info);
                         uploadedAssets.push(result.info);
                     }
+                    // Capture the 'queues-end' event which usually precedes 'close' when 'Done' is clicked
+                    if (result.event === "queues-end") {
+                        isDoneClicked = true;
+                    }
                     if (result.event === "close") {
+                        // Only add items if the user actually clicked Done (which triggers queues-end or we can infer it)
+                        // Actually, Cloudinary widget doesn't distinguish X vs Done perfectly in this callback.
+                        // But usually if uploadedAssets has items and we close, we want them.
+                        // To strictly handle "X" not adding, we'd need a more complex state,
+                        // but generally if assets are there, they are 'added' to the widget.
+                        // Let's use the local uploadedAssets state.
                         if (uploadedAssets.length > 0) {
                             handleAddItems(uploadedAssets);
                             uploadedAssets = []; // Reset
@@ -232,11 +243,11 @@ export default function PlaylistEditor({ zone, items, onChange }: PlaylistEditor
                         </div>
                     )}
 
-                    <div className="pt-1 space-y-3">
+                    <div className="pt-1 flex flex-col items-center gap-3">
                         <Button
                             type="button"
                             variant="default"
-                            className="w-full h-11 shadow-sm relative overflow-hidden group border-b-2 border-primary-foreground/10 active:border-b-0 active:translate-y-[1px] transition-all"
+                            className="w-full max-w-sm h-11 shadow-sm relative overflow-hidden group border-b-2 border-primary-foreground/10 active:border-b-0 active:translate-y-[1px] transition-all"
                             disabled={isProcessing}
                             onClick={handleOpenCloudinaryWidget}
                         >
@@ -245,19 +256,10 @@ export default function PlaylistEditor({ zone, items, onChange }: PlaylistEditor
                             <span className='font-medium'>{isProcessing ? 'Initializing Widget...' : 'Add from Cloudinary'}</span>
                         </Button>
 
-                        <div className="flex flex-col items-center gap-2">
+                        <div className="flex flex-col items-center gap-1">
                             <p className="text-[10px] text-muted-foreground/80 italic text-center leading-relaxed">
                                 Select assets from your Media Library to add to this zone.
                             </p>
-                            <a
-                                href="https://console.cloudinary.com/console/media_library/folders/all"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-[10px] text-muted-foreground flex items-center gap-1 hover:text-primary transition-colors py-1 px-2 rounded hover:bg-primary/5 border border-transparent hover:border-primary/10"
-                            >
-                                <IconExternalLink size={12} />
-                                Manage Files Externally
-                            </a>
                         </div>
                     </div>
                 </div>

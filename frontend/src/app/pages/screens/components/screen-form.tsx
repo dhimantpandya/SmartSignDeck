@@ -419,8 +419,8 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
         if (selectedZoneId && mediaSectionRef.current) {
             // Delay slightly to allow UI to expand if needed
             setTimeout(() => {
-                mediaSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }, 100);
+                mediaSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 150);
         }
     }, [selectedZoneId])
 
@@ -625,7 +625,7 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
                     }
                 }
             })
-            widget.show()
+            widget.open()
         } catch (error: any) {
             toast({ title: 'Error', description: error.message, variant: 'destructive' })
         }
@@ -676,21 +676,10 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
                                         {zone.type !== 'text' && (
                                             <>
                                                 {/* Only hide button for linked playlists in DEFAULT tab */}
-                                                {activeTab === 'default' && zoneContent?.sourceType === 'playlist' && zoneContent?.playlistId ? (
+                                                {activeTab === 'default' && zoneContent?.sourceType === 'playlist' && zoneContent?.playlistId && (
                                                     <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-500`}>
                                                         LINKED
                                                     </span>
-                                                ) : (
-                                                    <Button
-                                                        size="sm"
-                                                        variant={isSelected ? "secondary" : "outline"}
-                                                        className={`h-6 w-auto px-2 gap-1 text-[10px] ${isSelected ? 'bg-white/20 hover:bg-white/30 text-white border-transparent' : 'text-muted-foreground hover:text-foreground'}`}
-                                                        onClick={(e) => { e.stopPropagation(); handleOpenCloudinaryWidget(zone.id); }}
-                                                        title="Quickly add media from Cloudinary"
-                                                    >
-                                                        <IconCloudUpload size={12} />
-                                                        <span className="hidden sm:inline">Add Media</span>
-                                                    </Button>
                                                 )}
                                             </>
                                         )}
@@ -712,26 +701,6 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
                                 <h4 className='text-xs font-bold uppercase tracking-widest text-primary truncate'>
                                     {selectedTemplate?.zones.find((z: any) => z.id === selectedZoneId || z.id.toLowerCase() === selectedZoneId.toLowerCase())?.name || selectedZoneId}
                                 </h4>
-
-                                {(() => {
-                                    const zone = selectedTemplate?.zones.find((z: any) => (z.id || z._id) === selectedZoneId || (z.id || z._id)?.toLowerCase() === selectedZoneId?.toLowerCase());
-                                    if (!zone) return null; // Defensive check for zone existence
-
-                                    if (zone.type !== 'text') {
-                                        return (
-                                            <Button
-                                                size="sm"
-                                                variant="default"
-                                                className="h-7 px-3 gap-1.5 text-[10px] font-bold bg-primary hover:bg-primary/90 text-primary-foreground ml-4 shadow-sm animate-in zoom-in-50 duration-300"
-                                                onClick={() => handleOpenCloudinaryWidget(selectedZoneId)}
-                                            >
-                                                <IconCloudUpload size={14} />
-                                                ADD FROM CLOUDINARY
-                                            </Button>
-                                        );
-                                    }
-                                    return null;
-                                })()}
                             </div>
                             <Button size="sm" variant="ghost" className="h-6 w-6 p-0 hover:bg-primary/20 rounded-full flex-shrink-0" onClick={() => setSelectedZoneId(null)}>×</Button>
                         </div>
