@@ -32,7 +32,8 @@ export function ProfilePictureForm() {
       // Get signature from backend
       const { signature, timestamp, cloud_name, api_key } = await apiService.get<any>('/v1/cloudinary/signature', {
         params: {
-          timestamp: Math.round(new Date().getTime() / 1000)
+          timestamp: Math.round(new Date().getTime() / 1000),
+          source: 'uw' // 🔑 Required for Upload Widget signature
         }
       })
 

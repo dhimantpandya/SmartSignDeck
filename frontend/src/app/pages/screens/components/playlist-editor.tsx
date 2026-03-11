@@ -128,7 +128,7 @@ export default function PlaylistEditor({ zone, items, onChange }: PlaylistEditor
             const { signature, timestamp, cloud_name, api_key } = await apiService.get<any>('/v1/cloudinary/signature', {
                 params: {
                     timestamp: Math.round(new Date().getTime() / 1000),
-                    // Removed username as it's not needed for Upload Widget
+                    source: 'uw' // 🔑 Required for Upload Widget signature
                 }
             })
 
