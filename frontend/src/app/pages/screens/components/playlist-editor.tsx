@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Button } from '@/components/custom/button'
-import { IconPlus, IconTrash, IconPhoto, IconMovie, IconTrashX, IconPlayerPlay, IconArrowsSort, IconExternalLink } from '@tabler/icons-react'
+import { IconPlus, IconTrash, IconPhoto, IconMovie, IconTrashX, IconPlayerPlay, IconArrowsSort } from '@tabler/icons-react'
 import { toast } from '@/components/ui/use-toast'
 import { apiService } from '@/api'
 import {
@@ -21,9 +21,10 @@ interface PlaylistEditorProps {
     zone: any
     items: PlaylistItem[] | undefined
     onChange: (items: PlaylistItem[]) => void
+    scrollRef?: React.RefObject<HTMLDivElement>
 }
 
-export default function PlaylistEditor({ zone, items, onChange }: PlaylistEditorProps) {
+export default function PlaylistEditor({ zone, items, onChange, scrollRef }: PlaylistEditorProps) {
     const [mediaTypeLock, setMediaTypeLock] = useState<'image' | 'video' | 'both'>('both')
     const [isProcessing, setIsProcessing] = useState(false)
     const [confirmAction, setConfirmAction] = useState<{ type: 'remove' | 'clear', index?: number } | null>(null)
@@ -130,10 +131,7 @@ export default function PlaylistEditor({ zone, items, onChange }: PlaylistEditor
                     timestamp: Math.round(new Date().getTime() / 1000),
                     source: 'uw' // 🔑 Required for Upload Widget signature
                 }
-            })
-
-            let uploadedAssets: any[] = [];
-            let isDoneClicked = false;
+            })            let isDoneClicked = false;
 
             // Create and show widget
             // @ts-ignore
@@ -169,27 +167,21 @@ export default function PlaylistEditor({ zone, items, onChange }: PlaylistEditor
             }, (error: any, result: any) => {
                 if (!error && result) {
                     if (result.event === "success") {
-                        console.log('Upload success: ', result.info);
                         uploadedAssets.push(result.info);
                     }
-                    // Capture the 'queues-end' event which usually precedes 'close' when 'Done' is clicked
                     if (result.event === "queues-end") {
                         isDoneClicked = true;
                     }
                     if (result.event === "close") {
-                        // Only add items if the user actually clicked Done (which triggers queues-end or we can infer it)
-                        // Actually, Cloudinary widget doesn't distinguish X vs Done perfectly in this callback.
-                        // But usually if uploadedAssets has items and we close, we want them.
-                        // To strictly handle "X" not adding, we'd need a more complex state,
-                        // but generally if assets are there, they are 'added' to the widget.
-                        // Let's use the local uploadedAssets state.
-                        if (uploadedAssets.length > 0) {
+                        // Only add if user finished a queue (clicked Done)
+                        // This prevents 'X' from adding files that were already 100%
+                        if (isDoneClicked && uploadedAssets.length > 0) {
                             handleAddItems(uploadedAssets);
-                            uploadedAssets = []; // Reset
                         }
+                        uploadedAssets = []; // Clear
                     }
                 }
-            })
+            }) })
 
             widget.open();
 
@@ -205,7 +197,7 @@ export default function PlaylistEditor({ zone, items, onChange }: PlaylistEditor
         <TooltipProvider>
             <div className='space-y-4'>
                 {/* Header/Controls */}
-                <div className='flex flex-col gap-3 p-4 bg-muted/30 rounded-lg border border-border/50 backdrop-blur-sm'>
+                <div ref={scrollRef} className='flex flex-col gap-3 p-4 bg-muted/30 rounded-lg border border-border/50 backdrop-blur-sm shadow-sm'>
                     <div className='flex items-center justify-between'>
                         <div className='flex items-center gap-2'>
                             <div className='w-2 h-2 rounded-full bg-primary animate-pulse' />

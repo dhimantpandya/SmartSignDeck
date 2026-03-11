@@ -9,7 +9,7 @@ import { templateService, Template } from '@/api/template.service'
 import { apiService } from '@/api'
 import { toast } from '@/components/ui/use-toast'
 import { playlistService, Playlist } from '@/api/playlist.service'
-import { IconDeviceFloppy, IconArrowLeft, IconPlayerPlay, IconCloudUpload, IconPlaylist } from '@tabler/icons-react'
+import { IconDeviceFloppy, IconArrowLeft, IconPlayerPlay, IconPlaylist } from '@tabler/icons-react'
 import { useAuth } from '@/hooks/use-auth'
 import TextZoneEditor from './text-zone-editor'
 import PlaylistEditor from './playlist-editor'
@@ -59,6 +59,8 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
     }, [initialData, selectedTemplateId])
     const [schedules, setSchedules] = useState<any[]>(initialData?.schedules || [])
     const [activeTab, setActiveTab] = useState('default')
+    const mediaSectionRef = useRef<HTMLDivElement>(null)
+    const playlistEditorRef = useRef<HTMLDivElement>(null)
     const [selectedZoneId, setSelectedZoneId] = useState<string | null>(null)
     const [isSaving, setIsSaving] = useState(false)
     const [playbackIndices, setPlaybackIndices] = useState<Record<string, number>>({})
@@ -416,11 +418,11 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
 
     // Auto-scroll to zone editor when a zone is selected
     useEffect(() => {
-        if (selectedZoneId && mediaSectionRef.current) {
+        if (selectedZoneId && playlistEditorRef.current) {
             // Delay slightly to allow UI to expand if needed
             setTimeout(() => {
-                mediaSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }, 150);
+                playlistEditorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 200);
         }
     }, [selectedZoneId])
 
@@ -525,109 +527,6 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
             setSelectedZoneId(clickedZone.id)
         } else {
             setSelectedZoneId(null)
-        }
-    }
-
-    const handleOpenCloudinaryWidget = async (zoneId: string) => {
-        try {
-            // @ts-ignore
-            if (!window.cloudinary || !window.cloudinary.createUploadWidget) {
-                throw new Error("Cloudinary SDK not loaded. Please refresh the page.")
-            }
-
-            const { signature, timestamp, cloud_name, api_key } = await apiService.get<any>('/v1/cloudinary/signature', {
-                params: {
-                    timestamp: Math.round(new Date().getTime() / 1000),
-                    source: 'uw' // 🔑 Required for Upload Widget signature
-                }
-            })
-
-            let uploadedItems: any[] = [];
-
-            // @ts-ignore
-            const widget = window.cloudinary.createUploadWidget({
-                cloudName: cloud_name,
-                apiKey: api_key,
-                uploadSignatureTimestamp: timestamp,
-                uploadSignature: signature,
-                multiple: true,
-                maxFiles: 15,
-                sources: ['local', 'url', 'camera'],
-                resourceType: 'auto',
-                clientAllowedFormats: ['png', 'jpg', 'jpeg', 'mp4', 'mov', 'webm'],
-                z_index: 9999,
-                // UI Refinements
-                showAdvancedOptions: true,
-                styles: {
-                    palette: {
-                        window: "#FFFFFF",
-                        windowBorder: "#90A0B3",
-                        tabIcon: "#0078FF",
-                        menuIcons: "#5A616A",
-                        textDark: "#000000",
-                        textLight: "#FFFFFF",
-                        link: "#0078FF",
-                        action: "#FF620C",
-                        inactiveTabIcon: "#0E2F5A",
-                        error: "#F44235",
-                        inProgress: "#0078FF",
-                        complete: "#20B832",
-                        sourceBg: "#E4EBF1"
-                    }
-                }
-            }, (error: any, result: any) => {
-                if (!error && result) {
-                    if (result.event === "success") {
-                        const asset = result.info;
-                        const zone = selectedTemplate?.zones.find((z: any) => z.id === zoneId || z.id.toLowerCase() === zoneId.toLowerCase());
-                        const zoneType = zone?.type?.toLowerCase() || 'mixed';
-                        const assetType = asset.resource_type === 'video' || asset.secure_url.match(/\.(mp4|mov|webm)$/i) ? 'video' : 'image';
-
-                        // 🔒 Strict Type Guard
-                        if (zoneType !== 'mixed' && zoneType !== assetType) {
-                            // Notify later or use a custom UI, but for now log it
-                            console.warn(`Skipped ${asset.original_filename}: Type mismatch`);
-                        } else {
-                            uploadedItems.push({
-                                url: asset.secure_url,
-                                type: assetType,
-                                duration: assetType === 'video' ? (Math.round(Number(asset.duration)) || 10) : 10
-                            });
-                        }
-                    }
-
-                    // 🏁 Final closure - this fires when user clicks "Done" or "X"
-                    if (result.event === "close") {
-                        if (uploadedItems.length > 0) {
-                            const itemsToAdd = [...uploadedItems];
-                            uploadedItems = []; // Clear for safety
-
-                            // Apply to state
-                            if (activeTab === 'default') {
-                                setDefaultContent((prev: any) => {
-                                    const currentPlaylist = prev[zoneId]?.playlist || [];
-                                    return {
-                                        ...prev,
-                                        [zoneId]: { ...prev[zoneId], playlist: [...currentPlaylist, ...itemsToAdd] }
-                                    }
-                                });
-                            } else {
-                                const currentPlaylist = activeContent[zoneId]?.playlist || [];
-                                handleZoneContentChange(zoneId, { playlist: [...currentPlaylist, ...itemsToAdd] });
-                            }
-                            
-                            // Toast only after closing to be visible
-                            toast({ 
-                                title: `Upload Complete`, 
-                                description: `Successfully added ${itemsToAdd.length} items to the zone.` 
-                            });
-                        }
-                    }
-                }
-            })
-            widget.open()
-        } catch (error: any) {
-            toast({ title: 'Error', description: error.message, variant: 'destructive' })
         }
     }
 
@@ -810,6 +709,7 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
                                                 zone={zone}
                                                 items={zoneContent.playlist || []}
                                                 onChange={(items) => handleZoneContentChange(selectedZoneId, { playlist: items })}
+                                                scrollRef={playlistEditorRef}
                                             />
                                         )}
                                     </div>
