@@ -27,7 +27,9 @@ interface PlaylistEditorProps {
 export default function PlaylistEditor({ zone, items, onChange, scrollRef }: PlaylistEditorProps) {
     const [mediaTypeLock, setMediaTypeLock] = useState<'image' | 'video' | 'both'>('both')
     const [isProcessing, setIsProcessing] = useState(false)
-    const [confirmAction, setConfirmAction] = useState<{ type: 'remove' | 'clear', index?: number } | null>(null)
+    const [confirmAction, setConfirmAction] = useState<{ type: 'remove' | 'clear' | 'bulk_remove', index?: number } | null>(null)
+    const [selectedIndices, setSelectedIndices] = useState<number[]>([])
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null)
     const safeItems = items || []
 
     const handleAddItems = (assets: any[]) => {
@@ -173,8 +175,6 @@ export default function PlaylistEditor({ zone, items, onChange, scrollRef }: Pla
                     }
                     if (result.event === "queues-end") {
                         isDoneClicked = true;
-                        // If user clicks "Done", they expect the things they just saw finished to be added.
-                        // We can also trigger add here, but usually wait for close to be safe with UI.
                     }
                     if (result.event === "close") {
                         // User closed the window.
@@ -208,7 +208,32 @@ export default function PlaylistEditor({ zone, items, onChange, scrollRef }: Pla
                             <div className='w-2 h-2 rounded-full bg-primary animate-pulse' />
                             <span className='text-xs font-semibold uppercase tracking-wider text-muted-foreground'>Playlist Controls</span>
                         </div>
-                        {safeItems.length > 0 && (
+                        <div className='flex items-center gap-2'>
+                            {safeItems.length > 0 && (
+                                <div className="flex items-center gap-1">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className={`h-7 text-[10px] ${selectedIndices.length === safeItems.length ? 'bg-primary/10' : ''}`}
+                                        onClick={() => {
+                                            if (selectedIndices.length === safeItems.length) setSelectedIndices([])
+                                            else setSelectedIndices(safeItems.map((_, i) => i))
+                                        }}
+                                    >
+                                        {selectedIndices.length === safeItems.length ? 'Deselect All' : 'Select All'}
+                                    </Button>
+                                    {selectedIndices.length > 0 && (
+                                        <Button
+                                            variant="destructive"
+                                            size="sm"
+                                            className='h-7 text-[10px]'
+                                            onClick={() => setConfirmAction({ type: 'bulk_remove' })}
+                                        >
+                                            Remove ({selectedIndices.length})
+                                        </Button>
+                                    )}
+                                </div>
+                            )}
                             <Button
                                 variant="ghost"
                                 size="sm"
@@ -218,7 +243,7 @@ export default function PlaylistEditor({ zone, items, onChange, scrollRef }: Pla
                                 <IconTrashX size={14} className='mr-1' />
                                 Clear All
                             </Button>
-                        )}
+                        </div>
                     </div>
 
                     {/* Type Lock for Mixed Zones */}
@@ -266,16 +291,33 @@ export default function PlaylistEditor({ zone, items, onChange, scrollRef }: Pla
                     {safeItems.map((item, i) => (
                         <div
                             key={i}
-                            className='flex items-center gap-3 p-2.5 border rounded-lg bg-card/60 hover:bg-muted/40 transition-all group relative border-border/40 hover:border-primary/20 shadow-sm hover:shadow-md'
+                            className={`flex items-center gap-3 p-2.5 border rounded-lg transition-all group relative shadow-sm hover:shadow-md ${
+                                selectedIndices.includes(i) ? 'bg-primary/5 border-primary/40' : 'bg-card/60 border-border/40 hover:bg-muted/40 hover:border-primary/20'
+                            }`}
                         >
-                            <div className='absolute left-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-30 transition-opacity cursor-grab text-muted-foreground hidden sm:block'>
+                            {/* Checkbox for Selection */}
+                            <div 
+                                className={`w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center cursor-pointer transition-colors ${
+                                    selectedIndices.includes(i) ? 'bg-primary border-primary' : 'bg-background border-border group-hover:border-primary/40'
+                                }`}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedIndices(prev => 
+                                        prev.includes(i) ? prev.filter(idx => idx !== i) : [...prev, i]
+                                    )
+                                }}
+                            >
+                                {selectedIndices.includes(i) && <div className="w-2 h-2 rounded-full bg-white animate-in zoom-in-50" />}
+                            </div>
+
+                            <div className='absolute left-7 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-30 transition-opacity cursor-grab text-muted-foreground hidden sm:block'>
                                 <IconArrowsSort size={12} />
                             </div>
 
                             {/* Thumbnail Container */}
                             <div
                                 className='w-20 h-12 bg-black/90 rounded-md overflow-hidden flex-shrink-0 border border-border/80 relative transition-transform active:scale-95 cursor-zoom-in'
-                                onClick={() => window.open(item.url, '_blank')}
+                                onClick={() => setPreviewUrl(item.url)}
                                 title="Click to view full size"
                             >
                                 {item.type === 'video' ? (
@@ -396,22 +438,92 @@ export default function PlaylistEditor({ zone, items, onChange, scrollRef }: Pla
 
                 <ConfirmationDialog
                     isOpen={!!confirmAction}
-                    title={confirmAction?.type === 'clear' ? "Clear Playlist" : "Remove Item"}
-                    message={confirmAction?.type === 'clear'
-                        ? "Are you sure you want to clear the entire playlist? This cannot be undone."
-                        : "Are you sure you want to remove this item from the playlist?"}
+                    title={
+                        confirmAction?.type === 'clear' ? "Clear Playlist" : 
+                        confirmAction?.type === 'bulk_remove' ? "Remove Selected" : 
+                        "Remove Item"
+                    }
+                    message={
+                        confirmAction?.type === 'clear' ? "Are you sure you want to clear the entire playlist?" :
+                        confirmAction?.type === 'bulk_remove' ? `Are you sure you want to remove ${selectedIndices.length} selected items?` :
+                        "Are you sure you want to remove this item?"
+                    }
                     variant="destructive"
-                    confirmBtnText={confirmAction?.type === 'clear' ? "Clear All" : "Remove"}
+                    confirmBtnText={
+                        confirmAction?.type === 'clear' ? "Clear All" : 
+                        confirmAction?.type === 'bulk_remove' ? "Remove Selected" : 
+                        "Remove"
+                    }
                     onConfirm={() => {
                         if (confirmAction?.type === 'clear') {
                             onChange([])
+                            setSelectedIndices([])
+                        } else if (confirmAction?.type === 'bulk_remove') {
+                            const newItems = safeItems.filter((_, i) => !selectedIndices.includes(i))
+                            onChange(newItems)
+                            setSelectedIndices([])
                         } else if (confirmAction?.type === 'remove' && confirmAction.index !== undefined) {
-                            onChange(safeItems.filter((_, i) => i !== confirmAction.index))
+                            const targetIdx = confirmAction.index;
+                            onChange(safeItems.filter((_, i) => i !== targetIdx))
+                            setSelectedIndices(prev => prev.filter(idx => idx !== targetIdx).map(idx => idx > targetIdx ? idx - 1 : idx))
                         }
                         setConfirmAction(null)
                     }}
                     onClose={() => setConfirmAction(null)}
                 />
+
+                {/* Full Screen Preview Modal */}
+                {previewUrl && (
+                    <div 
+                        className="fixed inset-0 z-[10000] bg-black/95 backdrop-blur-md flex items-center justify-center p-4 sm:p-12 animate-in fade-in duration-300"
+                        onClick={() => setPreviewUrl(null)}
+                    >
+                        <div className="absolute top-6 right-6 flex gap-4">
+                            <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    window.open(previewUrl, '_blank');
+                                }}
+                            >
+                                Open in New Tab
+                            </Button>
+                            <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="text-white hover:bg-white/10 rounded-full h-10 w-10 text-xl"
+                                onClick={() => setPreviewUrl(null)}
+                            >
+                                ×
+                            </Button>
+                        </div>
+                        
+                        <div className="relative w-full h-full flex items-center justify-center">
+                            {previewUrl.match(/\.(mp4|webm|ogg|mov)$/i) || previewUrl.includes('video/upload') ? (
+                                <video 
+                                    src={previewUrl} 
+                                    className="max-w-full max-h-full rounded-lg shadow-2xl" 
+                                    controls 
+                                    autoPlay 
+                                    onClick={(e) => e.stopPropagation()} 
+                                />
+                            ) : (
+                                <img 
+                                    src={previewUrl} 
+                                    className="max-w-full max-h-full object-contain rounded-lg shadow-2xl animate-in zoom-in-95 duration-300" 
+                                    alt="Preview" 
+                                    onClick={(e) => e.stopPropagation()} 
+                                />
+                            )}
+                        </div>
+                        
+                        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 text-white/60 text-xs font-medium tracking-widest uppercase">
+                            Click anywhere to close
+                        </div>
+                    </div>
+                )}
             </div>
         </TooltipProvider>
     )
