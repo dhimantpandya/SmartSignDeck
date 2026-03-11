@@ -521,59 +521,64 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
     const handleOpenCloudinaryWidget = async (zoneId: string) => {
         try {
             // @ts-ignore
-            if (!window.cloudinary || !window.cloudinary.createMediaLibrary) {
+            if (!window.cloudinary || !window.cloudinary.createUploadWidget) {
                 throw new Error("Cloudinary SDK not loaded. Please refresh the page.")
             }
 
-            const { signature, timestamp, cloud_name, api_key, username } = await apiService.get<any>('/v1/cloudinary/signature', {
+            const { signature, timestamp, cloud_name, api_key } = await apiService.get<any>('/v1/cloudinary/signature', {
                 params: {
-                    timestamp: Math.round(new Date().getTime() / 1000),
-                    username: user?.email // 🔑 Use user email as username for DAM 
+                    timestamp: Math.round(new Date().getTime() / 1000)
                 }
             })
 
             // @ts-ignore
-            const widget = window.cloudinary.createMediaLibrary({
-                cloud_name, api_key, timestamp, signature, username,
-                button_class: 'hidden', multiple: true, max_files: 15, z_index: 9999
-            }, {
-                insertHandler: (data: any) => {
-                    if (data && data.assets) {
-                        const zone = selectedTemplate?.zones.find((z: any) => z.id === zoneId || z.id.toLowerCase() === zoneId.toLowerCase());
-                        const zoneType = zone?.type?.toLowerCase() || 'mixed';
+            const widget = window.cloudinary.createUploadWidget({
+                cloudName: cloud_name,
+                apiKey: api_key,
+                uploadSignatureTimestamp: timestamp,
+                uploadSignature: signature,
+                multiple: true,
+                maxFiles: 15,
+                sources: ['local', 'url', 'camera'],
+                resourceType: 'auto',
+                clientAllowedFormats: ['png', 'jpg', 'jpeg', 'mp4', 'mov', 'webm'],
+                z_index: 9999
+            }, (error: any, result: any) => {
+                if (!error && result && result.event === "success") {
+                    const asset = result.info;
+                    const zone = selectedTemplate?.zones.find((z: any) => z.id === zoneId || z.id.toLowerCase() === zoneId.toLowerCase());
+                    const zoneType = zone?.type?.toLowerCase() || 'mixed';
+                    const assetType = asset.resource_type === 'video' || asset.secure_url.match(/\.(mp4|mov|webm)$/i) ? 'video' : 'image';
 
-                        const newPlaylistItems: any[] = [];
-                        let skippedCount = 0;
-
-                        data.assets.forEach((asset: any) => {
-                            const assetType = asset.resource_type === 'video' || asset.secure_url.match(/\.(mp4|mov|webm)$/i) ? 'video' : 'image';
-
-                            // 🔒 Strict Type Guard
-                            if (zoneType !== 'mixed' && zoneType !== assetType) {
-                                skippedCount++;
-                                return;
-                            }
-
-                            newPlaylistItems.push({
-                                url: asset.secure_url,
-                                type: assetType,
-                                duration: assetType === 'video' ? (Math.round(Number(asset.duration)) || 10) : 10
-                            });
+                    // 🔒 Strict Type Guard
+                    if (zoneType !== 'mixed' && zoneType !== assetType) {
+                        toast({
+                            title: `Item skipped`,
+                            description: `This is a ${zoneType}-only zone.`,
+                            variant: 'destructive'
                         });
+                        return;
+                    }
 
-                        if (newPlaylistItems.length > 0) {
-                            const currentPlaylist = activeContent[zoneId]?.playlist || [];
-                            handleZoneContentChange(zoneId, { playlist: [...currentPlaylist, ...newPlaylistItems] });
-                            toast({ title: `Added ${newPlaylistItems.length} items` });
-                        }
+                    const newItem = {
+                        url: asset.secure_url,
+                        type: assetType,
+                        duration: assetType === 'video' ? (Math.round(Number(asset.duration)) || 10) : 10
+                    };
 
-                        if (skippedCount > 0) {
-                            toast({
-                                title: `${skippedCount} items skipped`,
-                                description: `This is a ${zoneType}-only zone.`,
-                                variant: 'destructive'
-                            });
-                        }
+                    // We need to use functional update to avoid race conditions when multiple files are uploaded
+                    if (activeTab === 'default') {
+                        setDefaultContent((prev: any) => {
+                            const currentPlaylist = prev[zoneId]?.playlist || [];
+                            return {
+                                ...prev,
+                                [zoneId]: { ...prev[zoneId], playlist: [...currentPlaylist, newItem] }
+                            }
+                        });
+                    } else {
+                        // Schedules are trickier, but current implementation does it this way:
+                        const currentPlaylist = activeContent[zoneId]?.playlist || [];
+                        handleZoneContentChange(zoneId, { playlist: [...currentPlaylist, newItem] });
                     }
                 }
             })

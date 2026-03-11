@@ -122,40 +122,39 @@ export default function PlaylistEditor({ zone, items, onChange }: PlaylistEditor
         setIsProcessing(true)
         try {
             // @ts-ignore
-            if (!window.cloudinary || !window.cloudinary.createMediaLibrary) {
+            if (!window.cloudinary || !window.cloudinary.createUploadWidget) {
                 throw new Error("Cloudinary SDK not loaded. Please refresh the page.")
             }
 
             // Get signature from backend
-            const { signature, timestamp, cloud_name, api_key, username } = await apiService.get<any>('/v1/cloudinary/signature', {
+            const { signature, timestamp, cloud_name, api_key } = await apiService.get<any>('/v1/cloudinary/signature', {
                 params: {
                     timestamp: Math.round(new Date().getTime() / 1000),
-                    username: user?.email || '' // 🔑 Use email for DAM auth
+                    // Removed username as it's not needed for Upload Widget
                 }
             })
 
             // Create and show widget
             // @ts-ignore
-            const widget = window.cloudinary.createMediaLibrary({
-                cloud_name: cloud_name,
-                api_key: api_key,
-                timestamp: timestamp,
-                signature: signature,
-                username: username,
-                button_class: 'hidden',
+            const widget = window.cloudinary.createUploadWidget({
+                cloudName: cloud_name,
+                apiKey: api_key,
+                uploadSignatureTimestamp: timestamp,
+                uploadSignature: signature,
                 multiple: true,
-                max_files: 15,
-                inline_container: null, // Ensure modal
+                maxFiles: 15,
+                sources: ['local', 'url', 'camera'], // Restricted to reliable sources
+                resourceType: 'auto',
+                clientAllowedFormats: ['png', 'jpg', 'jpeg', 'mp4', 'mov', 'webm'],
                 z_index: 9999
-            }, {
-                insertHandler: (data: any) => {
-                    if (data && data.assets) {
-                        handleAddItems(data.assets);
-                    }
+            }, (error: any, result: any) => {
+                if (!error && result && result.event === "success") {
+                    console.log('Done! Here is the image info: ', result.info);
+                    handleAddItems([result.info]);
                 }
             })
 
-            widget.show();
+            widget.open();
 
         } catch (error: any) {
             console.error(error);

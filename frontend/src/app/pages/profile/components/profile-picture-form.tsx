@@ -36,21 +36,23 @@ export function ProfilePictureForm() {
         }
       })
 
-      // Open Cloudinary Media Library Widget
+      // Open Cloudinary Upload Widget
       // @ts-ignore - Cloudinary added via script tag
-      window.cloudinary.openMediaLibrary({
-        cloud_name: cloud_name,
-        api_key: api_key,
-        timestamp: timestamp,
-        signature: signature,
-        button_class: 'hidden',
-        multiple: false, // Only one profile picture
-      }, {
-        insertHandler: async (data: any) => {
-          const asset = data.assets[0]
-          if (asset) {
-            await updateProfile(asset.secure_url)
-          }
+      window.cloudinary.openUploadWidget({
+        cloudName: cloud_name,
+        apiKey: api_key,
+        uploadSignatureTimestamp: timestamp,
+        uploadSignature: signature,
+        multiple: false,
+        cropping: true,
+        croppingAspectRatio: 1,
+        showSkipCropButton: false,
+        resourceType: 'image',
+        clientAllowedFormats: ['png', 'jpg', 'jpeg'],
+        z_index: 9999
+      }, async (error: any, result: any) => {
+        if (!error && result && result.event === "success") {
+          await updateProfile(result.info.secure_url)
         }
       })
     } catch (error: any) {
