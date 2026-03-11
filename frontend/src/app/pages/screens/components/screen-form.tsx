@@ -414,6 +414,16 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
 
     }, [selectedTemplate, selectedZoneId, activeContent, playbackIndices])
 
+    // Auto-scroll to zone editor when a zone is selected
+    useEffect(() => {
+        if (selectedZoneId && mediaSectionRef.current) {
+            // Delay slightly to allow UI to expand if needed
+            setTimeout(() => {
+                mediaSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+        }
+    }, [selectedZoneId])
+
     // Handlers
     const handleZoneContentChange = (zoneId: string, newContentData: any, tabId: string = activeTab) => {
         if (tabId === 'default') {
@@ -545,7 +555,26 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
                 sources: ['local', 'url', 'camera'],
                 resourceType: 'auto',
                 clientAllowedFormats: ['png', 'jpg', 'jpeg', 'mp4', 'mov', 'webm'],
-                z_index: 9999
+                z_index: 9999,
+                // UI Refinements
+                showAdvancedOptions: true,
+                styles: {
+                    palette: {
+                        window: "#FFFFFF",
+                        windowBorder: "#90A0B3",
+                        tabIcon: "#0078FF",
+                        menuIcons: "#5A616A",
+                        textDark: "#000000",
+                        textLight: "#FFFFFF",
+                        link: "#0078FF",
+                        action: "#FF620C",
+                        inactiveTabIcon: "#0E2F5A",
+                        error: "#F44235",
+                        inProgress: "#0078FF",
+                        complete: "#20B832",
+                        sourceBg: "#E4EBF1"
+                    }
+                }
             }, (error: any, result: any) => {
                 if (!error && result) {
                     if (result.event === "success") {
@@ -556,11 +585,8 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
 
                         // 🔒 Strict Type Guard
                         if (zoneType !== 'mixed' && zoneType !== assetType) {
-                            toast({
-                                title: `Item skipped`,
-                                description: `${asset.original_filename || 'Item'} is a ${assetType}, but this is a ${zoneType}-only zone.`,
-                                variant: 'destructive'
-                            });
+                            // Notify later or use a custom UI, but for now log it
+                            console.warn(`Skipped ${asset.original_filename}: Type mismatch`);
                         } else {
                             uploadedItems.push({
                                 url: asset.secure_url,
@@ -570,25 +596,32 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
                         }
                     }
 
-                    if (result.event === "queues-end" && uploadedItems.length > 0) {
-                        const itemsToAdd = [...uploadedItems];
-                        uploadedItems = []; // Reset
+                    // 🏁 Final closure - this fires when user clicks "Done" or "X"
+                    if (result.event === "close") {
+                        if (uploadedItems.length > 0) {
+                            const itemsToAdd = [...uploadedItems];
+                            uploadedItems = []; // Clear for safety
 
-                        // We need to use functional update to avoid race conditions
-                        if (activeTab === 'default') {
-                            setDefaultContent((prev: any) => {
-                                const currentPlaylist = prev[zoneId]?.playlist || [];
-                                return {
-                                    ...prev,
-                                    [zoneId]: { ...prev[zoneId], playlist: [...currentPlaylist, ...itemsToAdd] }
-                                }
+                            // Apply to state
+                            if (activeTab === 'default') {
+                                setDefaultContent((prev: any) => {
+                                    const currentPlaylist = prev[zoneId]?.playlist || [];
+                                    return {
+                                        ...prev,
+                                        [zoneId]: { ...prev[zoneId], playlist: [...currentPlaylist, ...itemsToAdd] }
+                                    }
+                                });
+                            } else {
+                                const currentPlaylist = activeContent[zoneId]?.playlist || [];
+                                handleZoneContentChange(zoneId, { playlist: [...currentPlaylist, ...itemsToAdd] });
+                            }
+                            
+                            // Toast only after closing to be visible
+                            toast({ 
+                                title: `Upload Complete`, 
+                                description: `Successfully added ${itemsToAdd.length} items to the zone.` 
                             });
-                        } else {
-                            const currentPlaylist = activeContent[zoneId]?.playlist || [];
-                            handleZoneContentChange(zoneId, { playlist: [...currentPlaylist, ...itemsToAdd] });
                         }
-                        
-                        toast({ title: `Added ${itemsToAdd.length} items to zone` });
                     }
                 }
             })

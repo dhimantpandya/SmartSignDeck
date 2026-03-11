@@ -146,17 +146,36 @@ export default function PlaylistEditor({ zone, items, onChange }: PlaylistEditor
                 sources: ['local', 'url', 'camera'], // Restricted to reliable sources
                 resourceType: 'auto',
                 clientAllowedFormats: ['png', 'jpg', 'jpeg', 'mp4', 'mov', 'webm'],
-                z_index: 9999
+                z_index: 9999,
+                showAdvancedOptions: true,
+                styles: {
+                    palette: {
+                        window: "#FFFFFF",
+                        windowBorder: "#90A0B3",
+                        tabIcon: "#0078FF",
+                        menuIcons: "#5A616A",
+                        textDark: "#000000",
+                        textLight: "#FFFFFF",
+                        link: "#0078FF",
+                        action: "#FF620C",
+                        inactiveTabIcon: "#0E2F5A",
+                        error: "#F44235",
+                        inProgress: "#0078FF",
+                        complete: "#20B832",
+                        sourceBg: "#E4EBF1"
+                    }
+                }
             }, (error: any, result: any) => {
                 if (!error && result) {
                     if (result.event === "success") {
                         console.log('Upload success: ', result.info);
                         uploadedAssets.push(result.info);
                     }
-                    if (result.event === "queues-end" && uploadedAssets.length > 0) {
-                        console.log('All uploads done, adding items:', uploadedAssets);
-                        handleAddItems(uploadedAssets);
-                        uploadedAssets = []; // Reset for next use
+                    if (result.event === "close") {
+                        if (uploadedAssets.length > 0) {
+                            handleAddItems(uploadedAssets);
+                            uploadedAssets = []; // Reset
+                        }
                     }
                 }
             })
