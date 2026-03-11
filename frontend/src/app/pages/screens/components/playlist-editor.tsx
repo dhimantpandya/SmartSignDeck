@@ -132,6 +132,8 @@ export default function PlaylistEditor({ zone, items, onChange }: PlaylistEditor
                 }
             })
 
+            let uploadedAssets: any[] = [];
+
             // Create and show widget
             // @ts-ignore
             const widget = window.cloudinary.createUploadWidget({
@@ -146,9 +148,16 @@ export default function PlaylistEditor({ zone, items, onChange }: PlaylistEditor
                 clientAllowedFormats: ['png', 'jpg', 'jpeg', 'mp4', 'mov', 'webm'],
                 z_index: 9999
             }, (error: any, result: any) => {
-                if (!error && result && result.event === "success") {
-                    console.log('Done! Here is the image info: ', result.info);
-                    handleAddItems([result.info]);
+                if (!error && result) {
+                    if (result.event === "success") {
+                        console.log('Upload success: ', result.info);
+                        uploadedAssets.push(result.info);
+                    }
+                    if (result.event === "queues-end" && uploadedAssets.length > 0) {
+                        console.log('All uploads done, adding items:', uploadedAssets);
+                        handleAddItems(uploadedAssets);
+                        uploadedAssets = []; // Reset for next use
+                    }
                 }
             })
 

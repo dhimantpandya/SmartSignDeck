@@ -532,6 +532,8 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
                 }
             })
 
+            let uploadedItems: any[] = [];
+
             // @ts-ignore
             const widget = window.cloudinary.createUploadWidget({
                 cloudName: cloud_name,
@@ -545,41 +547,48 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
                 clientAllowedFormats: ['png', 'jpg', 'jpeg', 'mp4', 'mov', 'webm'],
                 z_index: 9999
             }, (error: any, result: any) => {
-                if (!error && result && result.event === "success") {
-                    const asset = result.info;
-                    const zone = selectedTemplate?.zones.find((z: any) => z.id === zoneId || z.id.toLowerCase() === zoneId.toLowerCase());
-                    const zoneType = zone?.type?.toLowerCase() || 'mixed';
-                    const assetType = asset.resource_type === 'video' || asset.secure_url.match(/\.(mp4|mov|webm)$/i) ? 'video' : 'image';
+                if (!error && result) {
+                    if (result.event === "success") {
+                        const asset = result.info;
+                        const zone = selectedTemplate?.zones.find((z: any) => z.id === zoneId || z.id.toLowerCase() === zoneId.toLowerCase());
+                        const zoneType = zone?.type?.toLowerCase() || 'mixed';
+                        const assetType = asset.resource_type === 'video' || asset.secure_url.match(/\.(mp4|mov|webm)$/i) ? 'video' : 'image';
 
-                    // 🔒 Strict Type Guard
-                    if (zoneType !== 'mixed' && zoneType !== assetType) {
-                        toast({
-                            title: `Item skipped`,
-                            description: `This is a ${zoneType}-only zone.`,
-                            variant: 'destructive'
-                        });
-                        return;
+                        // 🔒 Strict Type Guard
+                        if (zoneType !== 'mixed' && zoneType !== assetType) {
+                            toast({
+                                title: `Item skipped`,
+                                description: `${asset.original_filename || 'Item'} is a ${assetType}, but this is a ${zoneType}-only zone.`,
+                                variant: 'destructive'
+                            });
+                        } else {
+                            uploadedItems.push({
+                                url: asset.secure_url,
+                                type: assetType,
+                                duration: assetType === 'video' ? (Math.round(Number(asset.duration)) || 10) : 10
+                            });
+                        }
                     }
 
-                    const newItem = {
-                        url: asset.secure_url,
-                        type: assetType,
-                        duration: assetType === 'video' ? (Math.round(Number(asset.duration)) || 10) : 10
-                    };
+                    if (result.event === "queues-end" && uploadedItems.length > 0) {
+                        const itemsToAdd = [...uploadedItems];
+                        uploadedItems = []; // Reset
 
-                    // We need to use functional update to avoid race conditions when multiple files are uploaded
-                    if (activeTab === 'default') {
-                        setDefaultContent((prev: any) => {
-                            const currentPlaylist = prev[zoneId]?.playlist || [];
-                            return {
-                                ...prev,
-                                [zoneId]: { ...prev[zoneId], playlist: [...currentPlaylist, newItem] }
-                            }
-                        });
-                    } else {
-                        // Schedules are trickier, but current implementation does it this way:
-                        const currentPlaylist = activeContent[zoneId]?.playlist || [];
-                        handleZoneContentChange(zoneId, { playlist: [...currentPlaylist, newItem] });
+                        // We need to use functional update to avoid race conditions
+                        if (activeTab === 'default') {
+                            setDefaultContent((prev: any) => {
+                                const currentPlaylist = prev[zoneId]?.playlist || [];
+                                return {
+                                    ...prev,
+                                    [zoneId]: { ...prev[zoneId], playlist: [...currentPlaylist, ...itemsToAdd] }
+                                }
+                            });
+                        } else {
+                            const currentPlaylist = activeContent[zoneId]?.playlist || [];
+                            handleZoneContentChange(zoneId, { playlist: [...currentPlaylist, ...itemsToAdd] });
+                        }
+                        
+                        toast({ title: `Added ${itemsToAdd.length} items to zone` });
                     }
                 }
             })
