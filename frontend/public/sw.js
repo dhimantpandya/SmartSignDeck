@@ -40,7 +40,9 @@ self.addEventListener('fetch', (event) => {
             caches.open(MEDIA_CACHE_NAME).then((cache) => {
                 return cache.match(request).then((response) => {
                     return response || fetch(request).then((networkResponse) => {
-                        cache.put(request, networkResponse.clone());
+                        if (networkResponse.status !== 206) {
+                            cache.put(request, networkResponse.clone());
+                        }
                         return networkResponse;
                     });
                 });
@@ -56,9 +58,11 @@ self.addEventListener('fetch', (event) => {
         fetch(request)
             .then((networkResponse) => {
                 const responseClone = networkResponse.clone();
-                caches.open(CACHE_NAME).then((cache) => {
-                    cache.put(request, responseClone);
-                });
+                if (networkResponse.status !== 206) {
+                    caches.open(CACHE_NAME).then((cache) => {
+                        cache.put(request, responseClone);
+                    });
+                }
                 return networkResponse;
             })
             .catch(() => {

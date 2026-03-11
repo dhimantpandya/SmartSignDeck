@@ -18,42 +18,7 @@ mongoose
     logger.info("Connected to MongoDB");
     console.log("Using database:", mongoose.connection.db.databaseName);
 
-    // --- AUTO SEED: Setup default admin and connections ---
-    try {
-      const { seedService } = await import("./services");
-      await seedService.setupDefaultAdmin();
-    } catch (seedErr) {
-      logger.error("Seeding failed", seedErr);
-    }
-    // -----------------------------------------------------
-
-    // --- MIGRATION: Company Data Normalization ---
-    try {
-      await migrationService.runCompanyMigration();
-    } catch (migErr) {
-      logger.error("Company migration failed", migErr);
-    }
-    // ---------------------------------------------
-
-    // --- MIGRATION: Drop unique company name index ---
-    try {
-      if (mongoose.connection.db) {
-        const collection = mongoose.connection.db.collection('companies');
-        const indexExists = await collection.indexExists('name_1');
-        if (indexExists) {
-          await collection.dropIndex('name_1');
-          logger.info("Dropped unique index 'name_1' from companies collection");
-        }
-      }
-    } catch (err: any) {
-      // Ignore if index doesn't exist
-      if (err.code !== 27) {
-        logger.error("Failed to drop name_1 index", err);
-      }
-    }
-    // -------------------------------------------------
-
-    // Start HTTP server
+    // Start HTTP server immediately to satisfy health checks
     const httpServer = http.createServer(app);
 
     // Initialize Socket.io
@@ -62,7 +27,43 @@ mongoose
     httpServer.listen(config.port, "0.0.0.0", () => {
       logger.info(`HTTP Server running on port ${config.port}`);
       logger.info(`[DEPLOY-CHECK] New version started at: ${new Date().toISOString()}`);
-      cleanupService.startCleanupJob();
+
+      // Run heavy tasks in the background
+      (async () => {
+        // --- AUTO SEED: Setup default admin and connections ---
+        try {
+          const { seedService } = await import("./services");
+          await seedService.setupDefaultAdmin();
+        } catch (seedErr) {
+          logger.error("Seeding failed", seedErr);
+        }
+
+        // --- MIGRATION: Company Data Normalization ---
+        try {
+          await migrationService.runCompanyMigration();
+        } catch (migErr) {
+          logger.error("Company migration failed", migErr);
+        }
+
+        // --- MIGRATION: Drop unique company name index ---
+        try {
+          if (mongoose.connection.db) {
+            const collection = mongoose.connection.db.collection('companies');
+            const indexExists = await collection.indexExists('name_1');
+            if (indexExists) {
+              await collection.dropIndex('name_1');
+              logger.info("Dropped unique index 'name_1' from companies collection");
+            }
+          }
+        } catch (err: any) {
+          if (err.code !== 27) {
+            logger.error("Failed to drop name_1 index", err);
+          }
+        }
+
+        cleanupService.startCleanupJob();
+        logger.info("[Startup] Background tasks completed.");
+      })();
     });
     server = httpServer;
   })
