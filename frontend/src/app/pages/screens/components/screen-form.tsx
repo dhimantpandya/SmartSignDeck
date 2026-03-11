@@ -434,13 +434,18 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
             }))
         } else if (tabId.startsWith('schedule-')) {
             const index = parseInt(tabId.split('-')[1])
-            const newSchedules = [...schedules]
-            const currentZoneContent = newSchedules[index].content[zoneId] || { type: 'text' }
-            newSchedules[index].content = {
-                ...newSchedules[index].content,
-                [zoneId]: { ...currentZoneContent, ...newContentData }
-            }
-            setSchedules(newSchedules)
+            setSchedules(prev => {
+                const newS = [...prev]
+                const currentZoneContent = newS[index].content[zoneId] || { type: 'text' }
+                newS[index] = {
+                    ...newS[index],
+                    content: {
+                        ...newS[index].content,
+                        [zoneId]: { ...currentZoneContent, ...newContentData }
+                    }
+                }
+                return newS
+            })
         }
     }
 

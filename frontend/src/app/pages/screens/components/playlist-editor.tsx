@@ -173,14 +173,17 @@ export default function PlaylistEditor({ zone, items, onChange, scrollRef }: Pla
                     }
                     if (result.event === "queues-end") {
                         isDoneClicked = true;
+                        // If user clicks "Done", they expect the things they just saw finished to be added.
+                        // We can also trigger add here, but usually wait for close to be safe with UI.
                     }
                     if (result.event === "close") {
-                        // Only add if user finished a queue (clicked Done)
-                        // This prevents 'X' from adding files that were already 100%
+                        // User closed the window.
+                        // If they clicked Done (which triggers queues-end), add the items.
                         if (isDoneClicked && uploadedAssets.length > 0) {
                             handleAddItems(uploadedAssets);
                         }
-                        uploadedAssets = []; // Clear
+                        uploadedAssets = []; // Reset local session
+                        isDoneClicked = false;
                     }
                 }
             })
