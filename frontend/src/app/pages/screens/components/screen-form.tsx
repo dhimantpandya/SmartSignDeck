@@ -102,9 +102,9 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
     }, [templatesData])
 
     const activeContent = useMemo(() => {
-        if (activeTab === 'default') return defaultContent
+        if (activeTab === 'default') return defaultContent || {}
         const scheduleIndex = parseInt(activeTab.split('-')[1])
-        if (!schedules[scheduleIndex]) return {}
+        if (!schedules || !schedules[scheduleIndex]) return {}
         return schedules[scheduleIndex].content || {}
     }, [activeTab, defaultContent, schedules])
 
@@ -435,15 +435,21 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
         } else if (tabId.startsWith('schedule-')) {
             const index = parseInt(tabId.split('-')[1])
             setSchedules(prev => {
+                if (!prev || !prev[index]) return prev
                 const newS = [...prev]
-                const currentZoneContent = newS[index].content[zoneId] || { type: 'text' }
-                newS[index] = {
-                    ...newS[index],
-                    content: {
-                        ...newS[index].content,
-                        [zoneId]: { ...currentZoneContent, ...newContentData }
-                    }
+                const targetSchedule = { ...newS[index] }
+                
+                // Absolute defensive check for content
+                if (!targetSchedule.content) targetSchedule.content = {}
+                
+                const currentZoneContent = targetSchedule.content[zoneId] || { type: 'text' }
+                
+                targetSchedule.content = {
+                    ...targetSchedule.content,
+                    [zoneId]: { ...currentZoneContent, ...newContentData }
                 }
+                
+                newS[index] = targetSchedule
                 return newS
             })
         }
