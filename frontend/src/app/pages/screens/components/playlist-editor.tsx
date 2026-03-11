@@ -131,7 +131,9 @@ export default function PlaylistEditor({ zone, items, onChange, scrollRef }: Pla
                     timestamp: Math.round(new Date().getTime() / 1000),
                     source: 'uw' // 🔑 Required for Upload Widget signature
                 }
-            })            let isDoneClicked = false;
+            })
+            let isDoneClicked = false;
+            let uploadedAssets: any[] = [];
 
             // Create and show widget
             // @ts-ignore
@@ -181,7 +183,7 @@ export default function PlaylistEditor({ zone, items, onChange, scrollRef }: Pla
                         uploadedAssets = []; // Clear
                     }
                 }
-            }) })
+            })
 
             widget.open();
 

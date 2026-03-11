@@ -66,7 +66,6 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
     const [playbackIndices, setPlaybackIndices] = useState<Record<string, number>>({})
 
     const canvasRef = useRef<HTMLCanvasElement>(null)
-    const mediaSectionRef = useRef<HTMLDivElement>(null)
     const mediaCache = useRef<Record<string, HTMLImageElement | HTMLVideoElement>>({})
 
     const queryClient = useQueryClient()
