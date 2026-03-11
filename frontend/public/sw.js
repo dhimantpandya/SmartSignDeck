@@ -1,4 +1,4 @@
-const CACHE_NAME = 'smart-sign-deck-v2';
+const CACHE_NAME = 'smart-sign-deck-v3';
 const MEDIA_CACHE_NAME = 'smart-sign-media-v1';
 
 // Assets to cache immediately
@@ -33,6 +33,12 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
     const { request } = event;
     const url = new URL(request.url);
+
+    // Skip interception for API calls - This prevents "fake" 503 errors 
+    // from the SW during network blips or cache inconsistencies.
+    if (url.pathname.startsWith('/v1')) {
+        return;
+    }
 
     // Special handling for media (images/videos) - Cache First
     if (url.origin.includes('cloudinary.com') || request.destination === 'image' || request.destination === 'video') {
