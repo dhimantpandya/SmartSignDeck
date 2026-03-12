@@ -5,7 +5,6 @@ import { useAuth } from '@/hooks/use-auth'
 import { Routes } from '@/utilities/routes'
 import { ChatSidebar } from './collaboration/chat-sidebar'
 import { useNotifications } from './nav-notification-provider'
-import { useState } from 'react'
 
 export default function AppShell() {
   const [isCollapsed, setIsCollapsed] = useIsCollapsed()
