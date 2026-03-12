@@ -17,5 +17,8 @@ export const USER_WITH_CREDENTIALS_SUBJECT =
 export const ACCOUNT_DELETED_TEMPLATE = "account_deleted_template";
 export const ACCOUNT_DELETED_SUBJECT = "Your account has been deleted";
 
+export const ORGANIZATION_DELETED_TEMPLATE = "organization_deleted_template";
+export const ORGANIZATION_DELETED_SUBJECT = "Organization and Account Removal Alert";
+
 export const DELETE_CONFIRMATION_TEMPLATE = "delete_confirmation_template";
 export const DELETE_CONFIRMATION_SUBJECT = "Confirm your account deletion";

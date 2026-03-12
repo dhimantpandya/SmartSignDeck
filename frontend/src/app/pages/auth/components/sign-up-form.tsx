@@ -1,5 +1,5 @@
 // src/components/forms/SignUpForm.tsx
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -52,11 +52,13 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
   })
 
   // Pre-fill from navigation state (e.g. redirected from Login)
-  if (location.state && !form.formState.isDirty) {
-    if (location.state.email) form.setValue('email', location.state.email);
-    if (location.state.first_name) form.setValue('first_name', location.state.first_name);
-    if (location.state.last_name) form.setValue('last_name', location.state.last_name);
-  }
+  useEffect(() => {
+    if (location.state) {
+      if (location.state.email) form.setValue('email', location.state.email);
+      if (location.state.first_name) form.setValue('first_name', location.state.first_name);
+      if (location.state.last_name) form.setValue('last_name', location.state.last_name);
+    }
+  }, [location.state, form]);
 
   const onSubmit = async (data: SignupRequest) => {
     setIsLoading(true)

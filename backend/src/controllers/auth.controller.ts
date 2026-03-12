@@ -368,7 +368,6 @@ export const login = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
     const clientIp = req.ip || req.socket.remoteAddress || 'unknown';
-    console.log(`[AuthDebug] Login attempt from IP: ${clientIp}, Email: "${email}"`);
     const user = await authService.loginUserWithEmailAndPassword(
       email,
       password,
@@ -381,7 +380,10 @@ export const login = async (req: Request, res: Response) => {
     successResponse(res, "Login successful", httpStatus.OK, { user, tokens });
   } catch (err: any) {
     const status = err.statusCode || httpStatus.INTERNAL_SERVER_ERROR;
-    const message = err.message || "Server error";
+    // Requirement: Generic error message for password/auth failures
+    const message = (err.message?.toLowerCase().includes("password") || status === httpStatus.UNAUTHORIZED) 
+      ? "Incorrect password" 
+      : (err.message || "Server error");
     res.status(status).json({ status: "error", message });
   }
 };
@@ -469,6 +471,12 @@ export const verifyOtp = async (req: Request, res: Response) => {
         if (company) {
           console.log(`[AuthDebug] User ${user.email} joined existing company via invite: "${company.name}" (ID: ${company._id})`);
 
+          // Requirement: Reactivate company when user joins
+          if (!company.isActive) {
+            await Company.findByIdAndUpdate(company._id, { isActive: true });
+            console.log(`[Status] Company ${company.name} reactivated (user joined via invite).`);
+          }
+
           const { default: User } = await import("../models/user.model");
           if (User) {
             await User.findByIdAndUpdate(user._id, {
@@ -485,10 +493,16 @@ export const verifyOtp = async (req: Request, res: Response) => {
           company = await Company.create({
             name: normalizedName,
             ownerId: user._id,
+            isActive: true, // New companies are active by default
           });
           console.log(`[AuthDebug] Created new company: "${normalizedName}" for user: ${user.email}`);
         } else {
           console.log(`[AuthDebug] User ${user.email} joined existing company: "${normalizedName}" (ID: ${company._id})`);
+          // Requirement: Reactivate company when user joins
+          if (!company.isActive) {
+            await Company.findByIdAndUpdate(company._id, { isActive: true });
+            console.log(`[Status] Company ${company.name} reactivated (user joined via name match).`);
+          }
         }
 
         // Update user with companyId

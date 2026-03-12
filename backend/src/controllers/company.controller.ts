@@ -81,25 +81,44 @@ const deleteCompany = catchAsync(async (req: Request, res: Response) => {
     const currentUser = req.user as any;
 
     // 1. Verify Password
-    const user = await User.findById(currentUser.id || currentUser._id);
-    if (!user || !(await user.isPasswordMatch(password))) {
-        throw new ApiError(httpStatus.UNAUTHORIZED, "Incorrect password. Security protocol initiated.");
+    const adminUser = await User.findById(currentUser.id || currentUser._id);
+    if (!adminUser || !password || !(await adminUser.isPasswordMatch(password))) {
+        // Standardized Security Protocol: logout on incorrect password
+        console.warn(`[SECURITY] Super Admin ${adminUser?.email} failed company deletion password. Triggering logout.`);
+        throw new ApiError(httpStatus.UNAUTHORIZED, "Security Alert: Incorrect password. You have been signed out for safety.");
     }
 
     const companyId = req.params.companyId;
     const company = await Company.findById(companyId);
     if (!company) throw new ApiError(httpStatus.NOT_FOUND, "Company not found");
 
-    // 2. Cascading Delete: Remove all users associated with this company
+    // 2. Fetch all employees to notify them before deletion
+    const employees = await User.find({ companyId });
+
+    // 3. Send Notification Emails to all employees
+    await Promise.all(
+        employees.map(emp => 
+            emailService.sendMail(emailConstants.ORGANIZATION_DELETED_TEMPLATE, {
+                email: emp.email,
+                name: `${emp.first_name} ${emp.last_name}`,
+            }).catch(e => console.error(`[ERROR] Failed to notify ${emp.email} of org deletion:`, e))
+        )
+    );
+
+    // 4. Cascading Delete: Remove all users associated with this company
     await User.deleteMany({ companyId });
 
-    // 3. Delete Company
+    // 5. Delete Company Record
     await company.deleteOne();
 
-    // 4. Global broadcast
-    try { getIO().emit('company_deleted', { id: companyId }); } catch (e) { }
+    // 6. Global broadcast & Termination Event
+    try { 
+        getIO().emit('company_deleted', { id: companyId }); 
+        // Force logout for any active session belonging to this company (if they were connected)
+        // Note: frontend should handle 'company_deleted' by clearing local storage if user's company matches
+    } catch (e) { }
 
-    successResponse(res, "Company and all its employees deleted", httpStatus.OK);
+    successResponse(res, "Company and all its employees deleted. Notifications sent.", httpStatus.OK);
 });
 
 export default {

@@ -217,9 +217,9 @@ export default function OtpForm({ className, ...props }: OtpFormProps) {
                     <span className="text-xs font-bold uppercase tracking-widest text-[#1a1a2e]/90 md:text-muted-foreground/60">
                       Code expires in <span className="text-[#1a1a2e] md:text-foreground font-black">{formatTime(timeLeft)}</span>
                     </span>
-                  ) : (
+                  ) : !isLoading ? (
                     <span className="text-xs font-black uppercase tracking-widest text-destructive">OTP expired</span>
-                  )}
+                  ) : null}
                 </FormDescription>
                 {form.formState.isSubmitted && <FormMessage />}
               </FormItem>

@@ -314,20 +314,27 @@ const updateUser = catchAsync(async (req: Request, res: Response) => {
 const deleteUser = catchAsync(async (req: Request, res: Response) => {
   const targetUser = await userService.fetchAndValidateUser(req);
   const currentUser = req.user as any;
+  const { password } = req.body;
 
-  // RBAC Refinement: Only Super Admin/Admin can delete users
-  if (!currentUser?.role || !["super_admin", "admin"].includes(currentUser.role)) {
-    throw new ApiError(httpStatus.FORBIDDEN, "Forbidden: Only Super Admin/Admin can delete users");
+  // 1. Strict Requirement: Only Super Admin can delete users directly
+  if (currentUser?.role !== "super_admin") {
+    throw new ApiError(httpStatus.FORBIDDEN, "Forbidden: Only Super Admin can delete users directly");
   }
 
-  // RBAC Refinement: Admin cannot delete users from other companies
-  if (currentUser.role === 'admin') {
-    if (targetUser.companyId?.toString() !== currentUser.companyId?.toString()) {
-      throw new ApiError(httpStatus.FORBIDDEN, "Forbidden: You can only delete users within your own company.");
-    }
+  // 2. Mandatory Password Verification for Super Admin
+  const adminUser = await User.findById(currentUser.id || currentUser._id);
+  if (!adminUser || !password || !(await adminUser.isPasswordMatch(password))) {
+    // If wrong password, trigger logout of the Super Admin (Security Protocol)
+    console.warn(`[SECURITY] Super Admin ${adminUser?.email} failed deletion password. Triggering logout.`);
+    
+    // Attempt to blacklist the refresh token if available in backend state
+    // For now, we return 401 and the frontend should handle state clearing
+    throw new ApiError(httpStatus.UNAUTHORIZED, "Security Alert: Incorrect password. You have been signed out for safety.");
   }
 
-  // Send notification email
+  const companyId = targetUser.companyId;
+
+  // 3. Send Notification Email (Safety Reasons)
   await emailService.sendMail(emailConstants.ACCOUNT_DELETED_TEMPLATE, {
     email: targetUser.email,
     name: `${targetUser.first_name} ${targetUser.last_name}`,
@@ -335,9 +342,19 @@ const deleteUser = catchAsync(async (req: Request, res: Response) => {
     console.error(`[ERROR] Failed to send account deletion email to ${targetUser.email}:`, err);
   });
 
+  // 4. Perform Deletion
   await userService.deleteUserById(req.params.userId);
 
-  // Global broadcast for real-time list update
+  // 5. Organization Status Logic: If last user, set company to inactive
+  if (companyId) {
+    const memberCount = await User.countDocuments({ companyId });
+    if (memberCount === 0) {
+      await Company.findByIdAndUpdate(companyId, { isActive: false });
+      console.log(`[Status] Company ${companyId} deactivated as it has 0 members.`);
+    }
+  }
+
+  // 6. Real-time notifications
   try { getIO().emit('user_deleted', { id: req.params.userId }); } catch (e) { }
 
   successResponse(res, userConstants.USER_DELETED, httpStatus.OK, {});

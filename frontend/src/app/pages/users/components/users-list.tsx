@@ -409,7 +409,9 @@ export const UsersList = () => {
                 ))}
             </select>
           </div>
-          {user?.role === 'super_admin' && (
+{/* 
+            Requirement: Remove 'Create User' button from Super Admin
+            {user?.role === 'super_admin' && (
             <Button
               variant='default'
               onClick={() => handleUserFormOpen()}
@@ -418,7 +420,7 @@ export const UsersList = () => {
               <IconUserPlus className='mr-2 h-4 w-4' />
               Create User
             </Button>
-          )}
+          )} */}
         </div>
       </div>
 
