@@ -189,7 +189,10 @@ export default function Dashboard() {
           >
             <div className='w-full overflow-x-auto pb-2'>
               <TabsList>
-                <TabsTrigger value='overview'>Overview</TabsTrigger>
+                {!isAdvertiser && (
+                  <TabsTrigger value='overview'>Overview</TabsTrigger>
+                )}
+                <TabsTrigger value='analytics'>Analytics</TabsTrigger>
                 {user?.role !== 'advertiser' && (
                   <TabsTrigger value='templates' className='gap-2'>
                     <IconLayout size={16} /> Templates ({stats?.totalTemplates ?? 0})
@@ -235,19 +238,58 @@ export default function Dashboard() {
                   <Card className='hover:shadow-lg transition-shadow duration-500 border-primary/5'>
                     <CardHeader>
                       <CardTitle>Quick Actions</CardTitle>
-                      <CardDescription>Standard operations for your signage.</CardDescription>
+                      <CardDescription>
+                        Standard operations for your signage
+                      </CardDescription>
                     </CardHeader>
-                    <CardContent className="grid grid-cols-2 gap-2">
-                      {user?.role !== 'advertiser' && (
-                        <Button variant="outline" className="flex flex-col h-20 gap-1 hover:bg-primary/5 hover:border-primary/30 transition-all group/action" onClick={() => navigate(`${Routes.TEMPLATES}?create=true`)}>
-                          <IconLayout size={20} className="group-hover/action:scale-110 transition-transform" />
-                          <span className="text-xs">New Template</span>
-                        </Button>
-                      )}
-                      <Button variant="outline" className={cn("flex flex-col h-20 gap-1 hover:bg-primary/5 hover:border-primary/30 transition-all group/action", user?.role === 'advertiser' && "col-span-2")} onClick={() => navigate(`${Routes.SCREENS}?create=true`)}>
-                        <IconDeviceTv size={20} className="group-hover/action:scale-110 transition-transform" />
-                        <span className="text-xs">Add Screen</span>
-                      </Button>
+                    <CardContent className='grid gap-2'>
+                        {isAdvertiser ? (
+                            <>
+                                <Button
+                                    variant='outline'
+                                    className='justify-start'
+                                    onClick={() => navigate('/analytics')}
+                                >
+                                    <IconChartBar className='mr-2' size={18} />
+                                    View Performance
+                                </Button>
+                                <Button
+                                    variant='outline'
+                                    className='justify-start'
+                                    onClick={() => navigate('/analytics?report=true')}
+                                >
+                                    <IconFileAnalytics className='mr-2' size={18} />
+                                    Generate Report
+                                </Button>
+                            </>
+                        ) : (
+                            <>
+                                <Button
+                                    variant='outline'
+                                    className='justify-start'
+                                    onClick={() => navigate('/screens?create=true')}
+                                >
+                                    <Plus className='mr-2' size={18} />
+                                    Add Screen
+                                </Button>
+                                <Button
+                                    variant='outline'
+                                    className='justify-start'
+                                    onClick={() => navigate('/templates')}
+                                >
+                                    <IconTemplate className='mr-2' size={18} />
+                                    New Template
+                                </Button>
+                                <Button
+                                    variant='outline'
+                                    className='justify-start'
+                                    onClick={() => navigate('/collaboration')}
+                                >
+                                    <IconUsers className='mr-2' size={18} />
+                                    Collaboration Hub
+                                </Button>
+                            </>
+                        )}
                     </CardContent>
                   </Card>
                   <Card className='hover:shadow-lg transition-shadow duration-500 border-primary/5'>

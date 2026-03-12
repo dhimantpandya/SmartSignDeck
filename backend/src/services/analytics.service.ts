@@ -413,20 +413,22 @@ const getPlaybackLogs = async (startDate: Date, endDate: Date, companyId: string
  * @param {Array} logs
  * @returns {string}
  */
-const exportLogsToCSV = (logs: any[]) => {
+const exportLogsToCSV = (logs: any[]): string => {
+    // 1. Convert Mongoose documents to plain objects if needed
+    const plainLogs = logs.map((log) => (log.toObject ? log.toObject() : log));
+
     const fields = [
-        { label: "Screen Name", value: "screenId.name" },
-        { label: "Location", value: "screenId.location" },
-        { label: "Template", value: "templateId.name" },
+        { label: "Date", value: (row: any) => new Date(row.startTime).toLocaleString() },
+        { label: "Screen", value: (row: any) => row.screenId?.name || "Deleted Screen" },
+        { label: "Template", value: (row: any) => row.templateId?.name || "Deleted Template" },
+        { label: "Zone", value: "zoneId" },
         { label: "Content URL", value: "contentUrl" },
         { label: "Type", value: "contentType" },
-        { label: "Start Time", value: (row: any) => format(row.startTime, "yyyy-MM-dd HH:mm:ss") },
-        { label: "End Time", value: (row: any) => row.endTime ? format(row.endTime, "yyyy-MM-dd HH:mm:ss") : "N/A" },
         { label: "Duration (s)", value: "duration" },
     ];
 
-    const parser = new Parser({ fields });
-    return parser.parse(logs);
+    const json2csvParser = new Parser({ fields });
+    return json2csvParser.parse(plainLogs);
 };
 
 /**

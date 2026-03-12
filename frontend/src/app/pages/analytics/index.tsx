@@ -36,6 +36,7 @@ export default function Analytics() {
         startDate: format(subDays(new Date(), 7), 'yyyy-MM-dd'),
         endDate: format(new Date(), 'yyyy-MM-dd'),
     })
+    const [viewMode, setViewMode] = useState<'individual' | 'company'>('individual')
 
     const { user } = useAuth()
     const queryClient = useQueryClient()
@@ -92,28 +93,28 @@ export default function Analytics() {
 
     // Fetch analytics summary
     const { data: summary, isLoading: summaryLoading } = useQuery({
-        queryKey: ['analytics-summary', dateRange],
+        queryKey: ['analytics-summary', dateRange, viewMode],
         queryFn: () =>
             apiService.get<any>(
-                `/v1/analytics/summary?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`
+                `/v1/analytics/summary?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}&userId=${viewMode === 'individual' ? user?.id : 'company'}`
             ),
     })
 
     // Fetch playback timeline
     const { data: timeline, isLoading: timelineLoading } = useQuery({
-        queryKey: ['analytics-timeline', dateRange],
+        queryKey: ['analytics-timeline', dateRange, viewMode],
         queryFn: () =>
             apiService.get<any>(
-                `/v1/analytics/timeline?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}&interval=day`
+                `/v1/analytics/timeline?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}&interval=day&userId=${viewMode === 'individual' ? user?.id : 'company'}`
             ),
     })
 
     // Fetch content performance
     const { data: contentPerformance, isLoading: contentLoading } = useQuery({
-        queryKey: ['analytics-content', dateRange],
+        queryKey: ['analytics-content', dateRange, viewMode],
         queryFn: () =>
             apiService.get<any>(
-                `/v1/analytics/content?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}&limit=10`
+                `/v1/analytics/content?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}&limit=10&userId=${viewMode === 'individual' ? user?.id : 'company'}`
             ),
     })
 
@@ -176,7 +177,7 @@ export default function Analytics() {
             }
 
             const blob = await apiService.download(
-                `/v1/analytics/export/${type}?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`
+                `/v1/analytics/export/${type}?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}&userId=${viewMode === 'individual' ? user?.id : 'company'}`
             )
             const url = window.URL.createObjectURL(blob)
             const link = document.createElement('a')
@@ -227,7 +228,21 @@ export default function Analytics() {
                             Proof-of-Play insights and performance metrics
                         </p>
                     </div>
-                    <div className='flex gap-2'>
+                    <div className='flex items-center gap-2'>
+                        {/* VIEW MODE TOGGLE (Advertiser / Admin only) */}
+                        {['admin', 'super_admin', 'advertiser'].includes((user as any)?.role) && (
+                            <Select value={viewMode} onValueChange={(val) => setViewMode(val as any)}>
+                                <SelectTrigger className='w-[160px] bg-primary/5 border-primary/20 font-medium'>
+                                    <IconChartBar size={16} className='mr-2 text-primary' />
+                                    <SelectValue placeholder='View Mode' />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value='individual'>My Content</SelectItem>
+                                    <SelectItem value='company'>All Company</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        )}
+
                         <Select defaultValue='7days' onValueChange={handleDateRangeChange}>
                             <SelectTrigger className='w-[180px]'>
                                 <IconCalendar size={16} className='mr-2' />

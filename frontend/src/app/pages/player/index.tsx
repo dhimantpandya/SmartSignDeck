@@ -122,7 +122,7 @@ export default function ScreenPlayer() {
         fetchPlaybackData()
 
         // 5-minute auto-refresh and ping (backup) - Pass true for background
-        const interval = setInterval(() => fetchPlaybackData(0, true), 5 * 60 * 1000)
+        const interval = setInterval(() => fetchPlaybackData(0, true), 1 * 60 * 1000)
         return () => {
             clearInterval(interval)
             clearTimeout(safetyTimer)
