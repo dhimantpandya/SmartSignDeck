@@ -28,10 +28,10 @@ export default function OtpForm({ className, ...props }: OtpFormProps) {
   const navigate = useNavigate()
   const email = searchParams.get('email') || ''
 
-  // Timer state (10 minutes = 600 seconds) persistent through reloads
+  // Timer state (2 minutes = 120 seconds) persistent through reloads
   const [timeLeft, setTimeLeft] = useState(() => {
     const expiresAt = localStorage.getItem('otp_expires_at')
-    if (!expiresAt) return 600
+    if (!expiresAt) return 120
     const remaining = Math.floor((Number(expiresAt) - Date.now()) / 1000)
     return remaining > 0 ? remaining : 0
   })
@@ -159,13 +159,13 @@ export default function OtpForm({ className, ...props }: OtpFormProps) {
     try {
       await authService.resendOtp(email)
       toast({ title: 'OTP resent successfully! Check your email.' })
-      const otpExpiresAt = Date.now() + 600 * 1000
+      const otpExpiresAt = Date.now() + 120 * 1000
       const resendAvailableAt = Date.now() + 60 * 1000
 
       localStorage.setItem('otp_expires_at', otpExpiresAt.toString())
       localStorage.setItem('resend_available_at', resendAvailableAt.toString())
 
-      setTimeLeft(600) // Reset timer to 10 minutes
+      setTimeLeft(120) // Reset timer to 2 minutes
       setResendCooldown(60) // 60 second cooldown before next resend
       setCanResend(false)
       form.reset()

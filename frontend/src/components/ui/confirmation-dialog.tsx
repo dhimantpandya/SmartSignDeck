@@ -73,7 +73,10 @@ export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
             {cancelBtnText}
           </AlertDialogCancel>
           <AlertDialogAction
-            onClick={onConfirm}
+            onClick={(e) => {
+              e.preventDefault() // Prevent auto-close — let parent control dialog visibility
+              onConfirm()
+            }}
             disabled={isLoading}
             className={cn(
               variant === 'destructive' && "bg-destructive hover:bg-destructive/90",

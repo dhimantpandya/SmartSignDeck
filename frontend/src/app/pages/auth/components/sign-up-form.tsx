@@ -81,7 +81,7 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
         role: data.role || inviteRole || undefined,
         inviteToken: inviteToken || undefined,
       })
-      const expiresIn = 600 // 10 minutes
+      const expiresIn = 120 // 2 minutes
       localStorage.setItem('otp_expires_at', (Date.now() + expiresIn * 1000).toString())
       toast({ title: 'Registration successful! Check your email for OTP.' })
       form.reset()
@@ -94,7 +94,7 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
           title: 'Account exists but email is not verified',
           description: 'A new OTP has been sent. Redirecting to verification page...',
         })
-        const expiresIn = 600 // 10 minutes
+        const expiresIn = 120 // 2 minutes
         localStorage.setItem('otp_expires_at', (Date.now() + expiresIn * 1000).toString())
         setTimeout(() => {
           navigate(`/otp?email=${data.email}`)
@@ -315,7 +315,7 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
                   );
 
 
-                  const expiresIn = 600; // 10 minutes
+                  const expiresIn = 120; // 2 minutes
                   localStorage.setItem('otp_expires_at', (Date.now() + expiresIn * 1000).toString());
 
                   toast({

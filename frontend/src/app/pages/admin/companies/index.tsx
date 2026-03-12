@@ -190,7 +190,7 @@ function ManageCompanyModal({ company, isOpen, onClose }: { company: Company, is
 export default function AdminCompanies() {
     const [isDialogOpen, setIsDialogOpen] = useState(false)
     const [editingCompany, setEditingCompany] = useState<Partial<Company> | null>(null)
-    const [confirmDelete, setConfirmDelete] = useState<{ id: string; groupName: string } | null>(null)
+    const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
     const [deletePassword, setDeletePassword] = useState('')
     const [managingCompany, setManagingCompany] = useState<Company | null>(null)
     const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({})
@@ -265,9 +265,9 @@ export default function AdminCompanies() {
             companyService.deleteCompany(id, { password }),
         onSuccess: () => {
             setDeletePassword('')
-            // We only close the dialog and refetch after ALL deletions complete
-            // Each individual success fires, we only fully close when this is the last one
+            setConfirmDelete(null)
             queryClient.invalidateQueries({ queryKey: ['admin-companies'] })
+            toast({ title: 'Organization deleted successfully.' })
         },
         onError: (err: any) => {
             if (err?.status === 401 || err?.response?.status === 401) {
@@ -282,37 +282,6 @@ export default function AdminCompanies() {
             toast({ title: 'Operation failed', description: err?.response?.data?.message || err.message, variant: 'destructive' })
         }
     })
-
-    const handleConfirmGroupDelete = () => {
-        if (!confirmDelete) return
-        // Delete ALL companies in the group (same name) to prevent the two-click bug
-        const groupToDelete = groupedCompanies[confirmDelete.groupName] || []
-        if (groupToDelete.length === 0) {
-            // Fallback to single ID delete
-            deleteMutation.mutate({ id: confirmDelete.id, password: deletePassword })
-        } else {
-            // Delete all instances in parallel, close dialog after all done
-            Promise.all(
-                groupToDelete.map(c => companyService.deleteCompany(c.id, { password: deletePassword }))
-            ).then(() => {
-                setDeletePassword('')
-                setConfirmDelete(null)
-                queryClient.invalidateQueries({ queryKey: ['admin-companies'] })
-                toast({ title: 'Organization and all instances deleted successfully.' })
-            }).catch((err: any) => {
-                if (err?.status === 401 || err?.response?.status === 401) {
-                    toast({
-                        title: 'Security Protocol Initiated',
-                        description: 'Incorrect password. Automatic logout triggered.',
-                        variant: 'destructive'
-                    })
-                    logout()
-                    return
-                }
-                toast({ title: 'Operation failed', description: err?.response?.data?.message || err?.message, variant: 'destructive' })
-            })
-        }
-    }
 
     const handleSave = () => {
         if (!editingCompany?.name) return
@@ -423,7 +392,7 @@ export default function AdminCompanies() {
                                                                 size="icon"
                                                                 className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive transition-all shadow-sm"
                                                                 onClick={() => {
-                                                                    setConfirmDelete({ id: group[0].id, groupName: groupName })
+                                                                    setConfirmDelete(group[0].id)
                                                                     setDeletePassword('')
                                                                 }}
                                                                 title="Delete Organization"
@@ -476,7 +445,7 @@ export default function AdminCompanies() {
                                                                     size="icon"
                                                                     className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive transition-all shadow-sm"
                                                                     onClick={() => {
-                                                                        setConfirmDelete({ id: company.id, groupName: company.name })
+                                                                        setConfirmDelete(company.id)
                                                                         setDeletePassword('')
                                                                     }}
                                                                     title="Delete Organization"
@@ -560,7 +529,11 @@ export default function AdminCompanies() {
                     variant="destructive"
                     confirmBtnText="Confirm Permanent Deletion"
                     isLoading={deleteMutation.isPending}
-                    onConfirm={handleConfirmGroupDelete}
+                    onConfirm={() => {
+                        if (confirmDelete) {
+                            deleteMutation.mutate({ id: confirmDelete, password: deletePassword })
+                        }
+                    }}
                     onClose={() => {
                         setConfirmDelete(null)
                         setDeletePassword('')
