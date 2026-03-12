@@ -335,8 +335,8 @@ const deleteUser = catchAsync(async (req: Request, res: Response) => {
 
   const companyId = targetUser.companyId;
 
-  // 3. Send Notification Email (Safety Reasons)
-  await emailService.sendMail(emailConstants.ACCOUNT_DELETED_TEMPLATE, {
+  // 3. Send Notification Email (Safety Reasons) - Non-blocking
+  emailService.sendMail(emailConstants.ACCOUNT_DELETED_TEMPLATE, {
     email: targetUser.email,
     name: `${targetUser.first_name} ${targetUser.last_name}`,
   }).catch(err => {

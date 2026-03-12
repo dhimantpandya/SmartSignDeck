@@ -22,7 +22,7 @@ export const loginUserWithEmailAndPassword = async (
 
   if (!user) {
     throw new ApiError(
-      httpStatus.UNAUTHORIZED,
+      httpStatus.NOT_FOUND,
       "Email is not registered, please sign up first",
     );
   }
@@ -247,6 +247,10 @@ export const verifyEmailOtp = async (
     // Default role should be regular user; super_admin is seeded separately
     updateBody.role = 'user';
     updateBody.companyName = undefined; // Clear the temporary field
+  } else if (user.companyId) {
+    // Re-activate company if it was inactive (e.g. last user joined back)
+    await Company.findByIdAndUpdate(user.companyId, { isActive: true });
+    console.log(`[Status] Company ${user.companyId} re-activated as a user verified their email.`);
   }
 
   await Token.deleteMany({ user: user._id, type: tokenTypes.VERIFY_EMAIL });

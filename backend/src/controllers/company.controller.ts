@@ -97,15 +97,13 @@ const deleteCompany = catchAsync(async (req: Request, res: Response) => {
     // 2. Fetch all employees to notify them before deletion
     const employees = await User.find({ companyId });
 
-    // 3. Send Notification Emails to all employees
-    await Promise.all(
-        employees.map(emp => 
-            emailService.sendMail(emailConstants.ORGANIZATION_DELETED_TEMPLATE, {
-                email: emp.email,
-                name: `${emp.first_name} ${emp.last_name}`,
-            }).catch((e: any) => console.error(`[ERROR] Failed to notify ${emp.email} of org deletion:`, e))
-        )
-    );
+    // 3. Send Notification Emails to all employees (Fire and forget to avoid blocking UI)
+    employees.forEach(emp => {
+        emailService.sendMail(emailConstants.ORGANIZATION_DELETED_TEMPLATE, {
+            email: emp.email,
+            name: `${emp.first_name} ${emp.last_name}`,
+        }).catch((e: any) => console.error(`[ERROR] Failed to notify ${emp.email} of org deletion:`, e));
+    });
 
     // 4. Cascading Delete: Remove all users associated with this company
     await User.deleteMany({ companyId });

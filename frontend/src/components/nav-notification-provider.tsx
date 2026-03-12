@@ -296,9 +296,9 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
             navigate('/sign-in')
         }
 
-        const handleCompanyDeleted = (data: { companyId: string }) => {
+        const handleCompanyDeleted = (data: { id: string }) => {
             const myCompanyId = extractCompanyId(user)
-            if (!myCompanyId || myCompanyId !== data.companyId) return
+            if (!myCompanyId || myCompanyId !== data.id) return
 
             console.warn('[SOCKET PRIORITY] Your organization was deleted. Performance logout triggered.')
             toast({

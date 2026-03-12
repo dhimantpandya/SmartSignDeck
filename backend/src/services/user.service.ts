@@ -48,6 +48,12 @@ const createUser = async (userBody: Partial<IUser>): Promise<IUser> => {
     const user = await User.create(userData);
     console.log(`[UserDebug] User created successfully: ${user._id}`);
 
+    // Re-activate company if it was inactive
+    if (user.companyId) {
+      await Company.findByIdAndUpdate(user.companyId, { isActive: true });
+      console.log(`[Status] Company ${user.companyId} re-activated due to new user creation.`);
+    }
+
     // Auto-connect with smartsigndeck super admin (Non-blocking)
     setImmediate(async () => {
       try {

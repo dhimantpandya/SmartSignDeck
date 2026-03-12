@@ -124,7 +124,7 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
               email: form.getValues('email'),
             },
           })
-        }, 2000)
+        }, 1000)
         return
       }
 

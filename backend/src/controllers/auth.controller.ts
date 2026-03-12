@@ -380,8 +380,11 @@ export const login = async (req: Request, res: Response) => {
     successResponse(res, "Login successful", httpStatus.OK, { user, tokens });
   } catch (err: any) {
     const status = err.statusCode || httpStatus.INTERNAL_SERVER_ERROR;
-    // Requirement: Generic error message for password/auth failures
-    const message = (err.message?.toLowerCase().includes("password") || status === httpStatus.UNAUTHORIZED) 
+    // Requirement: Generic error message only for actual matching password failures
+    const isIncorrectPassword = (err.message?.toLowerCase().includes("password") || status === httpStatus.UNAUTHORIZED);
+    const isNotRegistered = err.message?.toLowerCase().includes("not registered");
+
+    const message = (isIncorrectPassword && !isNotRegistered) 
       ? "Incorrect password" 
       : (err.message || "Server error");
     res.status(status).json({ status: "error", message });
