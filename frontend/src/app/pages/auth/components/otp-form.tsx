@@ -220,7 +220,7 @@ export default function OtpForm({ className, ...props }: OtpFormProps) {
                     <span className="text-xs font-black uppercase tracking-widest text-amber-500">Timer ended — try submitting or resend OTP</span>
                   ) : null}
                 </FormDescription>
-                {form.formState.isSubmitted && <FormMessage />}
+                {form.formState.isSubmitted && form.getValues('otp')?.length > 0 && form.getValues('otp')?.length < 6 && <FormMessage />}
               </FormItem>
             )}
           />

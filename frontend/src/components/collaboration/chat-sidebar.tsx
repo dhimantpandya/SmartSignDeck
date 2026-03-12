@@ -57,7 +57,9 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
         socket,
         setActiveChat,
         onlineUsers,
-        lastSeenMap
+        lastSeenMap,
+        pendingChatFriend,
+        clearPendingChatFriend
     } = useNotifications()
     const { toast } = useToast()
 
@@ -483,6 +485,14 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
             setIsChatOpen(false)
         }
     }, [isOpen])
+
+    useEffect(() => {
+        if (isOpen && pendingChatFriend) {
+            setActiveTab('private')
+            setSelectedFriend(pendingChatFriend)
+            clearPendingChatFriend()
+        }
+    }, [isOpen, pendingChatFriend])
 
     // Clear notifications or suppress badges when tab changes
     useEffect(() => {

@@ -45,6 +45,9 @@ interface NotificationContextType {
     lastSeenMap: Record<string, string>
     unreadNotifications: Notification[]
     clearNotificationsByType: (types: string[]) => Promise<void>
+    openChatWithFriend: (friend: any) => void
+    pendingChatFriend: any | null
+    clearPendingChatFriend: () => void
 }
 
 const NotificationContext = createContext<NotificationContextType | null>(null)
@@ -68,6 +71,7 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
     const [unreadCompanyChatCount, setUnreadCompanyChatCount] = useState(0)
     const [unreadRequestCount, setUnreadRequestCount] = useState(0)
     const [isChatOpen, setIsChatOpen] = useState(false)
+    const [pendingChatFriend, setPendingChatFriend] = useState<any | null>(null)
     const [suppressedChatSections, setSuppressedChatSections] = useState<Set<string>>(new Set())
     const [activeChatInfo, setActiveChatInfo] = useState<{ type: 'company' | 'private' | null; id?: string | null }>({ type: null, id: null })
     const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set())
@@ -440,6 +444,15 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
         }
     }
 
+    const openChatWithFriend = (friend: any) => {
+        setPendingChatFriend(friend)
+        setIsChatOpen(true)
+    }
+
+    const clearPendingChatFriend = () => {
+        setPendingChatFriend(null)
+    }
+
     const clearNotificationsByType = async (types: string[]) => {
         // Optimistic update
         setNotifications(prev => prev.map(n =>
@@ -482,7 +495,10 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
                 unreadNotifications: notifications.filter(n => !n.isRead),
                 onlineUsers,
                 lastSeenMap,
-                clearNotificationsByType
+                clearNotificationsByType,
+                openChatWithFriend,
+                pendingChatFriend,
+                clearPendingChatFriend
             }}
         >
             {children}

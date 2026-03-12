@@ -9,7 +9,7 @@ import { Button } from '@/components/custom/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
+
 import { UserProfileDialog } from '@/app/pages/users/components/user-profile-dialog'
 import { socialService } from '@/api/social.service'
 import { userService } from '@/api/user.service'
@@ -31,7 +31,6 @@ import {
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Routes } from '@/utilities/routes'
-import { Input } from '@/components/ui/input'
 import Loader from '@/components/loader'
 
 export default function Collaboration() {
@@ -43,13 +42,9 @@ export default function Collaboration() {
     const [sentRequests, setSentRequests] = useState<any[]>([])
     const [receivedRequests, setReceivedRequests] = useState<any[]>([])
     const [activeTab, setActiveTab] = useState('friends')
-    const [selectedFriend, setSelectedFriend] = useState<any>(null)
-    const [privateMessages, setPrivateMessages] = useState<any[]>([])
-    const [privateInputText, setPrivateInputText] = useState('')
     const [selectedProfileUser, setSelectedProfileUser] = useState<any>(null)
-    const [isSending, setIsSending] = useState(false)
     const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false)
-    const { socket, setActiveChat, decrementRequestCount } = useNotifications()
+    const { socket, setActiveChat, decrementRequestCount, openChatWithFriend } = useNotifications()
 
     const queryClient = useQueryClient()
 
@@ -112,6 +107,8 @@ export default function Collaboration() {
         return r.status === 'pending' || r.status === 'pending'; // redundant but safe
     }).length || 0
 
+
+
     const extractId = (obj: any): string => {
         if (!obj) return ''
         if (typeof obj === 'string') return obj.trim().toLowerCase()
@@ -119,12 +116,6 @@ export default function Collaboration() {
         const id = obj._id || obj.id || obj.userId || obj.friendId || (obj.sender && (obj.sender._id || obj.sender.id)) || (obj.recipient && (obj.recipient._id || obj.recipient.id))
         if (id) return id.toString().trim().toLowerCase()
         return ''
-    }
-
-    const isSameId = (id1: any, id2: any): boolean => {
-        const s1 = extractId(id1)
-        const s2 = extractId(id2)
-        return !!s1 && !!s2 && s1 === s2
     }
 
     const renderTemplateInviteCard = (request: any, isIncoming: boolean) => {
@@ -230,21 +221,7 @@ export default function Collaboration() {
         loadData()
     }, [user])
 
-    // Update active chat context so NotificationProvider knows when to suppress badges
-    useEffect(() => {
-        if (activeTab === 'company') {
-            setActiveChat({ type: 'company' })
-        } else if (activeTab === 'private' && selectedFriend) {
-            setActiveChat({ type: 'private', id: extractId(selectedFriend) })
-        } else {
-            setActiveChat({ type: null, id: null })
-        }
 
-        return () => {
-            // Only clear if we are navigating AWAY from collaboration entirely
-            // (handled by unmount in real world, but let's be safe)
-        }
-    }, [activeTab, selectedFriend])
 
     // Cleanup on unmount
     useEffect(() => {
@@ -269,50 +246,12 @@ export default function Collaboration() {
             loadData()
         }
 
-        const handleNewChat = (data: any) => {
-            console.log('[Collaboration] 🔵 New chat received:', data)
-            if (data.type === 'private' || data.recipientId) {
-                console.log('[Collaboration] Processing private message')
-                const friendId = extractId(selectedFriend)
-                const msgSenderId = extractId(data.senderId)
-                const msgRecipientId = extractId(data.recipientId)
-                const myId = extractId(user)
 
-                const isFromFriend = isSameId(msgSenderId, friendId)
-                const isFromMeToFriend = isSameId(msgSenderId, myId) && isSameId(msgRecipientId, friendId)
-
-                console.log('[Collaboration] 🕵️ Private match debug:', {
-                    friendId, msgSenderId, msgRecipientId, myId,
-                    isFromFriend, isFromMeToFriend,
-                    hasSelectedFriend: !!selectedFriend
-                })
-
-                if (isFromFriend || isFromMeToFriend) {
-                    console.log('[Collaboration] ✅ Match found! Appending message to state')
-                    setPrivateMessages((prev) => {
-                        // Prevent duplicate if added optimistically
-                        const isDup = prev.some(m =>
-                            m.text === data.text &&
-                            isSameId(m.senderId, data.senderId) &&
-                            (m.isOptimistic || Math.abs(new Date(m.created_at).getTime() - new Date(data.created_at).getTime()) < 3000)
-                        )
-                        if (isDup) {
-                            console.log('[Collaboration] ⏭️ Merging/Replacing duplicate private message')
-                            return prev.map(m => (m.isOptimistic && m.text === data.text) ? { ...data, isOptimistic: false } : m)
-                        }
-                        return [...prev, data]
-                    })
-                } else {
-                    console.log('[Collaboration] ❌ Message discarded (irrelevant to current chat or friend not selected)')
-                }
-            }
-        }
 
 
 
         socket.on('friend_request_received', handleFriendRequestReceived)
         socket.on('friend_request_accepted', handleFriendRequestAccepted)
-        socket.on('new_chat', handleNewChat)
 
         // Ensure rooms are joined (idempotent on backend)
         const uid = extractId(user)
@@ -328,9 +267,8 @@ export default function Collaboration() {
             console.log('[Collaboration] Removing listeners from shared socket')
             socket.off('friend_request_received', handleFriendRequestReceived)
             socket.off('friend_request_accepted', handleFriendRequestAccepted)
-            socket.off('new_chat', handleNewChat)
         }
-    }, [socket, user, selectedFriend]) // selectedFriend dependency ensures listener uses latest value
+    }, [socket, user])
 
     const loadData = async () => {
         try {
@@ -398,59 +336,10 @@ export default function Collaboration() {
     }
 
     const handleDM = async (friend: any) => {
-        setSelectedFriend(friend)
-        // Load messages
-        try {
-            if (user && friend) {
-                const msgs = await socialService.getChatHistory(friend.id)
-                setPrivateMessages(msgs.reverse())
-            }
-        } catch (err) {
-            console.error(err)
-        }
+        openChatWithFriend(friend)
     }
 
-    const handleSendPrivateMessage = async () => {
-        if (!privateInputText.trim() || !user || !selectedFriend || isSending) return
 
-        setIsSending(true)
-        const recipientId = extractId(selectedFriend)
-        const senderId = extractId(user)
-
-        const payload = {
-            text: privateInputText,
-            recipientId,
-            senderName: `${user.first_name} ${user.last_name}`,
-            senderId,
-            avatar: user.avatar,
-            type: 'private'
-        }
-
-        try {
-            // Optimistic Update
-            const optimisticMsg = {
-                ...payload,
-                created_at: new Date().toISOString(),
-                isOptimistic: true // Mark for tracing
-            }
-            setPrivateMessages(prev => [...prev, optimisticMsg])
-
-            socket?.emit('send_chat', payload)
-            setPrivateInputText('')
-            await socialService.sendMessage({
-                text: privateInputText,
-                recipientId
-            })
-        } catch (err: any) {
-            toast({
-                title: 'Failed to send message',
-                description: err.message,
-                variant: 'destructive'
-            })
-        } finally {
-            setIsSending(false)
-        }
-    }
 
 
 
@@ -763,67 +652,7 @@ export default function Collaboration() {
                     </main>
                 </Layout.Body>
             </Layout>
-
-            <Dialog open={!!selectedFriend} onOpenChange={(open) => !open && setSelectedFriend(null)}>
-                <DialogContent className="sm:max-w-md h-[80vh] flex flex-col p-0 gap-0 overflow-hidden">
-                    <DialogHeader className="px-6 py-4 border-b">
-                        <DialogTitle className="flex items-center gap-2">
-                            <Avatar className="h-8 w-8">
-                                <AvatarImage src={selectedFriend?.avatar} />
-                                <AvatarFallback>{selectedFriend?.first_name?.[0]}</AvatarFallback>
-                            </Avatar>
-                            {selectedFriend?.first_name} {selectedFriend?.last_name}
-                        </DialogTitle>
-                        <DialogDescription>Private Conversation</DialogDescription>
-                    </DialogHeader>
-
-                    <div className="flex-1 overflow-y-scroll p-4 space-y-4 bg-muted/5 custom-scrollbar min-h-0">
-                        {privateMessages.length === 0 ? (
-                            <div className="text-center text-muted-foreground text-sm py-10">
-                                No messages yet. Say hi!
-                            </div>
-                        ) : (
-                            privateMessages.map((msg, i) => {
-                                if (!msg) return null;
-                                const msgSenderId = msg.senderId?.id || msg.senderId?._id || msg.senderId;
-                                const isOwn = msgSenderId === user?.id;
-                                return (
-                                    <div key={i} className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
-                                        <div className={`max-w-[70%] rounded-xl px-4 py-2 ${isOwn ? 'bg-primary text-primary-foreground rounded-tr-none' : 'bg-muted border rounded-tl-none'
-                                            }`}>
-                                            <p className="text-sm">{msg.text}</p>
-                                            <span className="text-[9px] opacity-70 block mt-1 text-right">
-                                                {msg.created_at ? new Date(msg.created_at).toLocaleString('en-IN', {
-                                                    month: 'short',
-                                                    day: 'numeric',
-                                                    hour: '2-digit',
-                                                    minute: '2-digit',
-                                                    hour12: true
-                                                }) : 'Just now'}
-                                            </span>
-                                        </div>
-                                    </div>
-                                )
-                            })
-                        )}
-                    </div>
-
-                    <div className="p-4 border-t bg-background">
-                        <div className="flex gap-2">
-                            <Input
-                                placeholder="Type a message..."
-                                value={privateInputText}
-                                onChange={(e) => setPrivateInputText(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && handleSendPrivateMessage()}
-                            />
-                            <Button size="icon" onClick={handleSendPrivateMessage} disabled={!privateInputText.trim() || isSending}>
-                                <Send size={18} />
-                            </Button>
-                        </div>
-                    </div>
-                </DialogContent>
-            </Dialog>
-
+                  {/* Chat Dialog removed - now using global ChatSidebar via openChatWithFriend */}
             <UserProfileDialog
                 isOpen={isProfileDialogOpen}
                 handleClose={() => {

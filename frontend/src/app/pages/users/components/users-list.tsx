@@ -85,9 +85,9 @@ export const UsersList = () => {
 
   const { mutate: deleteUser } = useMutation({
     mutationFn: ({ userId, password }: { userId: string, password?: string }) => userService.deleteUser(userId, password),
-    onSuccess: (response) => {
+    onSuccess: () => {
       toast({
-        title: response.message,
+        title: "User deleted",
       })
       queryClient.invalidateQueries({ queryKey: [QueryKeys.USER_LIST] })
       setConfirmPassword('')

@@ -5,11 +5,15 @@ import pick from "../utils/pick";
 import ApiError from "../utils/ApiError";
 import catchAsync from "../utils/catchAsync";
 import screenService from "../services/screen.service";
-import { emitToScreen } from "../services/socket.service";
+import { emitToScreen, getIO } from "../services/socket.service";
 import mongoose from "mongoose";
 
 const createScreen = catchAsync(async (req: Request, res: Response) => {
   const screen = await screenService.createScreen(req.body, req.user as any);
+  const io = getIO();
+  if (io && screen.isPublic) {
+    io.emit('screen_published', { screenId: screen._id || screen.id });
+  }
   successResponse(
     res,
     "Screen created successfully",
@@ -60,26 +64,45 @@ const updateScreen = catchAsync(async (req: Request, res: Response) => {
     screenId: req.params.screenId
   });
 
+  const io = getIO();
+  if (io) {
+      if (screen.isPublic) io.emit('screen_published', { screenId: screen._id || screen.id });
+      io.emit('screen_updated', { screenId: screen._id || screen.id });
+  }
+
   successResponse(res, "Screen updated successfully", httpStatus.OK, screen);
 });
 
 const deleteScreen = catchAsync(async (req: Request, res: Response) => {
   await screenService.deleteScreenById(req.params.screenId, req.user as any);
+  const io = getIO();
+  if (io) io.emit('screen_deleted', { screenId: req.params.screenId });
   res.status(httpStatus.NO_CONTENT).send();
 });
 
 const restoreScreen = catchAsync(async (req: Request, res: Response) => {
   const screen = await screenService.restoreScreenById(req.params.screenId, req.user as any);
+  const io = getIO();
+  if (io) {
+      if (screen.isPublic) io.emit('screen_published', { screenId: screen._id || screen.id });
+      io.emit('screen_updated', { screenId: screen._id || screen.id });
+  }
   successResponse(res, "Screen restored successfully", httpStatus.OK, screen);
 });
 
 const permanentDeleteScreen = catchAsync(async (req: Request, res: Response) => {
   await screenService.permanentDeleteScreenById(req.params.screenId, req.user as any);
+  const io = getIO();
+  if (io) io.emit('screen_deleted', { screenId: req.params.screenId });
   res.status(httpStatus.NO_CONTENT).send();
 });
 
 const bulkDeleteScreens = catchAsync(async (req: Request, res: Response) => {
   const result = await screenService.deleteScreensByIds(req.body.ids, req.user as any);
+  const io = getIO();
+  if (io && req.body.ids && Array.isArray(req.body.ids)) {
+      req.body.ids.forEach((id: string) => io.emit('screen_deleted', { screenId: id }));
+  }
   successResponse(
     res,
     "Screens processed for deletion",

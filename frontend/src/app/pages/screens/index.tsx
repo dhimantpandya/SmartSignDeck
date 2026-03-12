@@ -7,7 +7,6 @@ import { IconHome, IconDeviceTv, IconPlus, IconTrash, IconEdit, IconPlayerPlay, 
 import { Button } from '@/components/custom/button'
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { io } from 'socket.io-client'
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
 import { toast } from '@/components/ui/use-toast'
 import Loader from '@/components/loader'
@@ -21,6 +20,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Globe, User, Folder, Folders } from 'lucide-react'
 import { useSearchParams, useParams } from 'react-router-dom'
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
+import { useNotifications } from '@/components/nav-notification-provider'
 
 export default function Screens() {
     const { user } = useAuth()
@@ -34,6 +34,7 @@ export default function Screens() {
     const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
     const [selectedScreens, setSelectedScreens] = useState<string[]>([])
     const queryClient = useQueryClient()
+    const { socket } = useNotifications()
 
     const toggleScreenSelection = (id: string) => {
         setSelectedScreens(prev =>
@@ -60,10 +61,24 @@ export default function Screens() {
         }
     }
 
+    // Real-time global screen updates via socket
     useEffect(() => {
-        const s = io(import.meta.env.VITE_APP_URL || 'http://localhost:5000')
-        return () => { s.disconnect() }
-    }, [])
+        if (!socket) return
+
+        const invalidateScreens = () => {
+            queryClient.invalidateQueries({ queryKey: ['screens'] })
+        }
+
+        socket.on('screen_published', invalidateScreens)
+        socket.on('screen_deleted', invalidateScreens)
+        socket.on('screen_updated', invalidateScreens)
+
+        return () => {
+            socket.off('screen_published', invalidateScreens)
+            socket.off('screen_deleted', invalidateScreens)
+            socket.off('screen_updated', invalidateScreens)
+        }
+    }, [socket, queryClient])
 
     useEffect(() => {
         if (routeId) {
