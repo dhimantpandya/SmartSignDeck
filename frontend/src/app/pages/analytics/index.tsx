@@ -47,7 +47,8 @@ export default function Analytics() {
     useEffect(() => {
         if (!user?.companyId) return
 
-        const socket = io(import.meta.env.VITE_APP_URL || 'http://localhost:3000')
+        const socketUrl = import.meta.env.VITE_API_URL || window.location.origin
+        const socket = io(socketUrl)
 
         socket.on('connect', () => {
             console.log('Analytics connected to socket')
