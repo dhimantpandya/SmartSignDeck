@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/use-auth'
 import { io, Socket } from 'socket.io-client'
 import { apiService } from '@/api'
@@ -48,9 +49,18 @@ interface NotificationContextType {
 
 const NotificationContext = createContext<NotificationContextType | null>(null)
 
+const extractCompanyId = (user: any) => {
+    if (!user) return null
+    if (typeof user.companyId === 'object') {
+        return (user.companyId?._id || user.companyId?.id || '').toString()
+    }
+    return (user.companyId || '').toString()
+}
+
 export const NotificationProvider = ({ children }: { children: React.ReactNode }) => {
-    const { user, refreshUser } = useAuth()
+    const { user, logout, refreshUser } = useAuth()
     const { toast } = useToast()
+    const navigate = useNavigate()
     const [socket, setSocket] = useState<Socket | null>(null)
     const [notifications, setNotifications] = useState<Notification[]>([])
     const [unreadCount, setUnreadCount] = useState(0)
@@ -276,36 +286,28 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
             const myId = extractId(user)
             if (!myId || myId !== data.id) return
 
-            console.warn('[SOCKET Provider] 🔞 Account deleted by administrator. Logging out...')
+            console.warn('[SOCKET PRIORITY] Your account was deleted. Performance logout triggered.')
             toast({
-                title: "Account Deleted",
-                description: "Your account has been deleted by an administrator. You will be logged out now.",
-                variant: "destructive",
-                duration: 10000,
+                title: 'Security Notice',
+                description: 'Your account has been removed for safety reasons.',
+                variant: 'destructive',
             })
-            // Force logout
-            setTimeout(() => {
-                tokenStore.clearTokens()
-                window.location.href = '/sign-in'
-            }, 3000)
+            logout()
+            navigate('/sign-in')
         }
 
-        const handleCompanyDeleted = (data: { id: string }) => {
-            const myCompanyId = extractId(user?.companyId)
-            if (!myCompanyId || myCompanyId !== data.id) return
+        const handleCompanyDeleted = (data: { companyId: string }) => {
+            const myCompanyId = extractCompanyId(user)
+            if (!myCompanyId || myCompanyId !== data.companyId) return
 
-            console.warn('[SOCKET Provider] 🏢 Organization deleted. Logging out...')
+            console.warn('[SOCKET PRIORITY] Your organization was deleted. Performance logout triggered.')
             toast({
-                title: "Organization Removed",
-                description: "Your organization has been removed by an administrator. Your access has been terminated.",
-                variant: "destructive",
-                duration: 10000,
+                title: 'Organization Warning',
+                description: 'Your organization has been removed for safety reasons.',
+                variant: 'destructive',
             })
-            // Force logout
-            setTimeout(() => {
-                tokenStore.clearTokens()
-                window.location.href = '/sign-in'
-            }, 3000)
+            logout()
+            navigate('/sign-in')
         }
 
         const handleRoleChanged = (data: { newRole: string }) => {

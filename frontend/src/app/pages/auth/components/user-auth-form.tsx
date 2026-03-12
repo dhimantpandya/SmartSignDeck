@@ -113,8 +113,8 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
 
       if (isUnregistered) {
         toast({
-          title: 'Email is not registered',
-          description: 'Redirecting you to the sign-up page...',
+          title: 'Not Registered',
+          description: 'Please signup first, redirecting you to the signup page...',
         })
 
         // Wait a bit so the user can see the message
@@ -310,8 +310,8 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
 
                     if (isUserNotFound) {
                       toast({
-                        title: 'Email is not registered',
-                        description: 'Redirecting you to the sign-up page...',
+                        title: 'Not Registered',
+                        description: 'Please signup first, redirecting you to the signup page...',
                       })
 
                       const { auth } = await import('@/lib/firebase');

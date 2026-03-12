@@ -484,6 +484,7 @@ export const UsersList = () => {
               placeholder="Enter your password to confirm"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
+              autoComplete="new-password"
               className="mt-2"
             />
             <p className="text-[10px] text-muted-foreground mt-2 text-left italic">

@@ -57,6 +57,12 @@ export function SignUpForm({ className, ...props }: SignUpFormProps) {
       if (location.state.email) form.setValue('email', location.state.email);
       if (location.state.first_name) form.setValue('first_name', location.state.first_name);
       if (location.state.last_name) form.setValue('last_name', location.state.last_name);
+    } else {
+      // Clear fields if no state (manual navigation)
+      // This ensures that if the user clicks a manual link, pre-filled Google info is gone
+      form.setValue('email', '');
+      form.setValue('first_name', '');
+      form.setValue('last_name', '');
     }
   }, [location.state, form]);
 

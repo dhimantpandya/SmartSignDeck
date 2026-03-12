@@ -348,8 +348,16 @@ export default function AdminCompanies() {
                                                     </div>
                                                 </TableCell>
                                                 <TableCell>
-                                                    <Badge variant="secondary" className="bg-green-500/10 text-green-600 border-green-500/20 font-bold px-2 py-0">
-                                                        Active
+                                                    <Badge 
+                                                        variant="secondary" 
+                                                        className={cn(
+                                                            "font-bold px-2 py-0 border",
+                                                            group[0].isActive 
+                                                                ? "bg-green-500/10 text-green-600 border-green-500/20" 
+                                                                : "bg-red-500/10 text-red-600 border-red-500/20"
+                                                        )}
+                                                    >
+                                                        {group[0].isActive ? "Active" : "Inactive"}
                                                     </Badge>
                                                 </TableCell>
                                                 <TableCell>
@@ -534,16 +542,18 @@ export default function AdminCompanies() {
                         <Label htmlFor="delete-password" title="Organization deletion requires verification">
                             Super Admin Verification
                         </Label>
+                        <div className="mt-4 w-full text-left">
                         <PasswordInput
-                            id="delete-password"
-                            placeholder="Type your admin password to proceed"
+                            placeholder="Enter your admin password"
                             value={deletePassword}
                             onChange={(e) => setDeletePassword(e.target.value)}
+                            autoComplete="new-password"
                             className="mt-2"
                         />
                         <p className="text-[10px] text-muted-foreground mt-2 italic">
                             DANGER: Deleting an organization removes all associated users and data. This action cannot be undone.
                         </p>
+                    </div>
                     </div>
                 </ConfirmationDialog>
             </Layout.Body >
