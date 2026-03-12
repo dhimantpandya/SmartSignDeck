@@ -6,6 +6,8 @@ import successResponse from "../helpers/responses/successResponse";
 import ApiError from "../utils/ApiError";
 import { getIO } from "../services/socket.service";
 import User from "../models/user.model";
+import { emailService } from "../services";
+import * as emailConstants from "../utils/constants/email.constants";
 
 const createCompany = catchAsync(async (req: Request, res: Response) => {
     const User = (await import("../models/user.model")).default; // Dynamic import to avoid cycles if any
@@ -101,7 +103,7 @@ const deleteCompany = catchAsync(async (req: Request, res: Response) => {
             emailService.sendMail(emailConstants.ORGANIZATION_DELETED_TEMPLATE, {
                 email: emp.email,
                 name: `${emp.first_name} ${emp.last_name}`,
-            }).catch(e => console.error(`[ERROR] Failed to notify ${emp.email} of org deletion:`, e))
+            }).catch((e: any) => console.error(`[ERROR] Failed to notify ${emp.email} of org deletion:`, e))
         )
     );
 

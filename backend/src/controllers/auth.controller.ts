@@ -584,7 +584,7 @@ export const verifyOtp = async (req: Request, res: Response) => {
                   "system_alert",
                   "New Team Member 👋",
                   `${user.first_name} ${user.last_name} has joined your workspace.`
-                ).catch(e => console.error(`[Auth] Notification failed for member ${member._id}:`, e))
+                ).catch((e: any) => console.error(`[Auth] Notification failed for member ${member._id}:`, e))
               )
             );
             console.log(`[Auth] Sent join notifications to ${allCompanyMembers.length} company members.`);

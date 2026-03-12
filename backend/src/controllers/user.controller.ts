@@ -4,6 +4,7 @@ import mongoose from "mongoose";
 import { MongooseQueryParser } from "mongoose-query-parser";
 import successResponse from "../helpers/responses/successResponse";
 import { type IUser } from "../models/user.model";
+import User from "../models/user.model";
 import Company from "../models/company.model";
 import { emailService, userService } from "../services";
 import notificationService from "../services/notification.service";
