@@ -22,6 +22,7 @@ import { UserForm } from './user-form'
 import { UserProfileDialog } from './user-profile-dialog'
 import { LocalErrorBoundary } from '@/components/local-error-boundary'
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
+import { PasswordInput } from '@/components/custom/password-input'
 import { toast } from '@/components/ui/use-toast'
 import { Roles } from '@/validations/user.validation'
 import { Routes } from '@/utilities/routes'
@@ -80,15 +81,24 @@ export const UsersList = () => {
     isOpen: boolean
     user?: User
   }>({ isOpen: false })
+  const [confirmPassword, setConfirmPassword] = useState('')
 
   const { mutate: deleteUser } = useMutation({
-    mutationFn: (userId: string) => userService.deleteUser(userId),
+    mutationFn: ({ userId, password }: { userId: string, password?: string }) => userService.deleteUser(userId, password),
     onSuccess: (response) => {
       toast({
         title: response.message,
       })
       queryClient.invalidateQueries({ queryKey: [QueryKeys.USER_LIST] })
+      setConfirmPassword('')
     },
+    onError: (error: any) => {
+      toast({
+        title: 'Deletion failed',
+        description: error?.message || 'Unauthorized',
+        variant: 'destructive'
+      })
+    }
   })
 
   const {
@@ -287,10 +297,11 @@ export const UsersList = () => {
           type: 'DELETE'
         })
       } else {
-        deleteUser(targetUserId)
+        deleteUser({ userId: targetUserId, password: confirmPassword })
       }
     }
     setConfirmDelete({ isOpen: false })
+    // Note: Don't clear confirmPassword here, wait for onSuccess/onError or handle in onClose
   }
 
   const handleRoleChange = (newSelectedValues: string[]) => {
@@ -462,8 +473,25 @@ export const UsersList = () => {
         onConfirm={confirmDeleteUser}
         confirmBtnText={user?.role === 'admin' ? 'Send Request' : 'Delete'}
         cancelBtnText='No'
-        onClose={() => setConfirmDelete({ isOpen: false })}
-      />
+        onClose={() => {
+          setConfirmDelete({ isOpen: false })
+          setConfirmPassword('')
+        }}
+      >
+        {user?.role === 'super_admin' && (
+          <div className="mt-4 w-full">
+            <PasswordInput
+              placeholder="Enter your password to confirm"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="mt-2"
+            />
+            <p className="text-[10px] text-muted-foreground mt-2 text-left italic">
+              Verification required: Please enter your admin password to proceed.
+            </p>
+          </div>
+        )}
+      </ConfirmationDialog>
     </>
   )
 }

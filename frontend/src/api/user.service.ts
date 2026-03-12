@@ -56,8 +56,8 @@ class UserService {
     return this.api.patch<UserAddOrUpdateResponse>(`${this.controller}/${id}`, user)
   }
 
-  async deleteUser(id: string | number) {
-    return this.api.delete<UserDeletionResponse>(`${this.controller}/${id}`)
+  async deleteUser(id: string | number, password?: string) {
+    return this.api.delete<UserDeletionResponse>(`${this.controller}/${id}`, password ? { password } : undefined)
   }
 
   async updateProfile(body: ProfileUpdateRequest) {

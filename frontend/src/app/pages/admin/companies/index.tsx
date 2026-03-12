@@ -31,6 +31,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
+import { PasswordInput } from '@/components/custom/password-input'
 import { useAuth } from '@/hooks/use-auth'
 import { useNotifications } from '@/components/nav-notification-provider'
 
@@ -265,10 +266,10 @@ export default function AdminCompanies() {
         mutationFn: ({ id, password }: { id: string, password: string }) =>
             companyService.deleteCompany(id, { password }),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['admin-companies'] })
-            toast({ title: 'Company removed' })
             setDeletePassword('')
             setConfirmDelete(null)
+            // Force a hard refresh of the data
+            queryClient.invalidateQueries({ queryKey: ['admin-companies'] })
         },
         onError: (err: any) => {
             if (err?.status === 401 || err?.response?.status === 401) {
@@ -535,48 +536,19 @@ export default function AdminCompanies() {
                         setShowDeletePassword(false)
                     }}
                 >
-                    <div className="mt-4 w-full px-4">
-                        <Label htmlFor="delete-password">Confirm Password</Label>
-                        <div className="relative group">
-                            {/* 
-                                🛡️ ANTI-AUTOFILL HONEYPOT 
-                                Password managers often target the first visible password field.
-                                These hidden inputs divert their attention away from the real one.
-                            */}
-                            <input
-                                type="text"
-                                name="fake_user_name"
-                                style={{ display: 'none' }}
-                                tabIndex={-1}
-                                autoComplete="off"
-                            />
-                            <input
-                                type="password"
-                                name="fake_password"
-                                style={{ display: 'none' }}
-                                tabIndex={-1}
-                                autoComplete="off"
-                            />
-
-                            <Input
-                                id="delete-password"
-                                type={showDeletePassword ? "text" : "password"}
-                                placeholder="Your admin password"
-                                value={deletePassword}
-                                onChange={(e) => setDeletePassword(e.target.value)}
-                                className="mt-1 pr-10 bg-muted/30 border-primary/10 transition-all focus:border-primary/40"
-                                autoComplete="new-password"
-                            />
-                            <button
-                                type="button"
-                                onClick={() => setShowDeletePassword(!showDeletePassword)}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors focus:outline-none"
-                            >
-                                {showDeletePassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                            </button>
-                        </div>
-                        <p className="text-[10px] text-muted-foreground mt-1.5 italic">
-                            Verification: Password must be entered manually for security.
+                    <div className="mt-4 w-full text-left">
+                        <Label htmlFor="delete-password" title="Organization deletion requires verification">
+                            Super Admin Verification
+                        </Label>
+                        <PasswordInput
+                            id="delete-password"
+                            placeholder="Type your admin password to proceed"
+                            value={deletePassword}
+                            onChange={(e) => setDeletePassword(e.target.value)}
+                            className="mt-2"
+                        />
+                        <p className="text-[10px] text-muted-foreground mt-2 italic">
+                            DANGER: Deleting an organization removes all associated users and data. This action cannot be undone.
                         </p>
                     </div>
                 </ConfirmationDialog>

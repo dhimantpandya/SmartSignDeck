@@ -272,7 +272,10 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
             }
         }
 
-        const handleAccountDeleted = () => {
+        const handleAccountDeleted = (data: { id: string }) => {
+            const myId = extractId(user)
+            if (!myId || myId !== data.id) return
+
             console.warn('[SOCKET Provider] 🔞 Account deleted by administrator. Logging out...')
             toast({
                 title: "Account Deleted",
@@ -282,9 +285,27 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
             })
             // Force logout
             setTimeout(() => {
-                localStorage.clear();
-                window.location.href = '/login';
-            }, 3000);
+                tokenStore.clearTokens()
+                window.location.href = '/sign-in'
+            }, 3000)
+        }
+
+        const handleCompanyDeleted = (data: { id: string }) => {
+            const myCompanyId = extractId(user?.companyId)
+            if (!myCompanyId || myCompanyId !== data.id) return
+
+            console.warn('[SOCKET Provider] 🏢 Organization deleted. Logging out...')
+            toast({
+                title: "Organization Removed",
+                description: "Your organization has been removed by an administrator. Your access has been terminated.",
+                variant: "destructive",
+                duration: 10000,
+            })
+            // Force logout
+            setTimeout(() => {
+                tokenStore.clearTokens()
+                window.location.href = '/sign-in'
+            }, 3000)
         }
 
         const handleRoleChanged = (data: { newRole: string }) => {
@@ -326,6 +347,7 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
         socket.on('online_users_update', handlePresence)
         socket.on('user_status_change', handleStatusChange)
         socket.on('user_deleted', handleAccountDeleted)
+        socket.on('company_deleted', handleCompanyDeleted)
         socket.on('role_changed', handleRoleChanged)
         socket.on('message_seen', handleMessageSeen)
         socket.on('message_delivered', handleMessageDelivered)
@@ -338,7 +360,8 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
             socket.off('online_users_update', handlePresence)
             socket.off('user_status_change', handleStatusChange)
             socket.off('user_deleted', handleAccountDeleted)
-            socket.off('role_changed', handleRoleChanged)
+        socket.off('company_deleted', handleCompanyDeleted)
+        socket.off('role_changed', handleRoleChanged)
             socket.off('message_seen', handleMessageSeen)
             socket.off('message_delivered', handleMessageDelivered)
             socket.off('message_deleted', handleMessageDeleted)
