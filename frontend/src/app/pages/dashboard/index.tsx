@@ -7,7 +7,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { cn } from '@/lib/utils'
 import { Search } from '@/components/search'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import ThemeSwitch from '@/components/theme-switch'
@@ -19,7 +18,16 @@ import { useState, useRef, useMemo, ChangeEvent } from 'react'
 import { TemplateSlider } from './components/template-slider'
 import { Separator } from '@/components/ui/separator'
 // Breadcrumb Navigation removed temporarily to resolve build conflict.
-import { IconLayout, IconDeviceTv, IconCircleCheck } from '@tabler/icons-react'
+import { 
+  IconLayout, 
+  IconDeviceTv, 
+  IconCircleCheck, 
+  IconChartBar, 
+  IconFileAnalytics, 
+  IconTemplate, 
+  IconUsers 
+} from '@tabler/icons-react'
+import { Plus } from 'lucide-react'
 import { Analytics } from './components/analytics'
 import { useQuery } from '@tanstack/react-query'
 import { screenService, templateService, apiService } from '@/api'
@@ -38,6 +46,7 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('overview')
   const navigate = useNavigate()
   const { user } = useAuth()
+  const isAdvertiser = user?.role === 'advertiser'
   const { toast } = useToast()
   const dashboardRef = useRef<HTMLDivElement>(null)
   const [searchTerm, setSearchTerm] = useState('')
