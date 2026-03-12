@@ -7,6 +7,7 @@ export interface Company {
     description?: string
     logo?: string
     memberCount?: number
+    isActive?: boolean
     settings?: {
         primaryColor?: string
         allowPublicTemplates?: boolean
