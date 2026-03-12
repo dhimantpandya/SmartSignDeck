@@ -1,4 +1,4 @@
-﻿import { Layout } from '@/components/custom/layout'
+import { Layout } from '@/components/custom/layout'
 import ThemeSwitch from '@/components/theme-switch'
 import { UserNav } from '@/components/user-nav'
 import { NotificationBell } from '@/components/notification-bell'
@@ -411,7 +411,7 @@ export default function Templates() {
 
     const renderTemplateCard = (template: any, isOwner: boolean, inGroupView: boolean = false, isGlobalView: boolean = false) => {
         let lastModifiedBlock = null;
-        if (template.lastModifiedBy) {
+        if (template.lastModifiedBy && !isGlobalView) {
             const modifierDate = template.updated_at ? new Date(template.updated_at) : new Date(template.created_at);
 
             // Format modifier time as e.g. "Sunday 11:48 PM"

@@ -488,11 +488,12 @@ const generatePDFReport = async (
         doc.moveDown();
 
         doc.font("Helvetica");
-        performance.forEach((item, index) => {
+        (performance || []).forEach((item: any, index: number) => {
             const y = doc.y;
             if (y > 700) doc.addPage();
 
-            const url = item.contentUrl.length > 40 ? item.contentUrl.substring(0, 37) + "..." : item.contentUrl;
+            const rawUrl = item.contentUrl || "Unknown Source";
+            const url = rawUrl.length > 40 ? rawUrl.substring(0, 37) + "..." : rawUrl;
             doc.text(url, 50, doc.y);
             doc.text(item.contentType, 300, y);
             doc.text(item.totalPlays.toString(), 400, y);

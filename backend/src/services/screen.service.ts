@@ -87,14 +87,10 @@ const queryScreens = async (filter: any, options: CustomPaginateOptions, user: I
       // 🔒 Strict Isolation: Always restrict to current user
       finalFilter.createdBy = new mongoose.Types.ObjectId(userIdStr);
 
-      // 🌍 Ensure public items are always allowed in general queries
-      if (!finalFilter.$or) {
-        finalFilter.$or = [
-          { isPublic: true },
-          { createdBy: finalFilter.createdBy }
-        ];
-        delete finalFilter.createdBy;
-      }
+      // 🌍 Narrowing: If user specifically asks for ALL company screens, we might allow it,
+      // but by default (dashboard/screens list), we only want THEIR screens if they aren't admin.
+      // However, the user said "total screens 0 to 1" in dashboard, which usually counts createdBy.
+      // So we keep createdBy filter.
     }
   }
 
@@ -107,8 +103,8 @@ const queryScreens = async (filter: any, options: CustomPaginateOptions, user: I
   });
 
   // 🕒 DYNAMIC STATUS CALCULATION
-  // A screen is 'online' ONLY if it has pinged within the last 2 minutes
-  const TWO_MINUTES_AGO = new Date(Date.now() - 2 * 60 * 1000);
+  // A screen is 'online' ONLY if it has pinged within the last 1 minute
+  const ONE_MINUTE_AGO = new Date(Date.now() - 1 * 60 * 1000);
 
   if (screens.results) {
     screens.results = screens.results.map((screen: any) => {
@@ -116,7 +112,7 @@ const queryScreens = async (filter: any, options: CustomPaginateOptions, user: I
       const screenObj = screen.toJSON ? screen.toJSON() : screen;
       const lastPing = screenObj.lastPing ? new Date(screenObj.lastPing) : null;
 
-      if (lastPing && lastPing > TWO_MINUTES_AGO) {
+      if (lastPing && lastPing > ONE_MINUTE_AGO) {
         screenObj.status = "online";
       } else {
         screenObj.status = "offline";
@@ -160,11 +156,11 @@ const getScreenById = async (id: string, user?: IUser, key?: string) => {
 
   if (screen) {
     // 🕒 DYNAMIC STATUS CALCULATION
-    const TWO_MINUTES_AGO = new Date(Date.now() - 2 * 60 * 1000);
+    const ONE_MINUTE_AGO = new Date(Date.now() - 1 * 60 * 1000);
     const screenObj = screen.toObject ? screen.toObject() : screen;
     const lastPing = screenObj.lastPing ? new Date(screenObj.lastPing) : null;
 
-    if (lastPing && lastPing > TWO_MINUTES_AGO) {
+    if (lastPing && lastPing > ONE_MINUTE_AGO) {
       screenObj.status = "online";
     } else {
       screenObj.status = "offline";
@@ -407,8 +403,10 @@ const cloneScreen = async (screenId: string, user: IUser) => {
     defaultContent: originalScreen.defaultContent,
     schedules: originalScreen.schedules,
     companyId: user.companyId,
-    createdBy: user._id,
+    createdBy: user._id || (user as any).id,
     isPublic: false,
+    lastPing: null, // Ensure it starts as offline
+    status: "offline",
   };
 
   return await Screen.create(payload);

@@ -328,7 +328,7 @@ export default function Screens() {
             </CardContent>
             <CardFooter className="flex justify-end gap-2 border-t bg-muted/20 px-4 py-2">
                 {/* Preview is always available */}
-                <Button variant="ghost" size="sm" onClick={() => window.open(`/player/${screen.id}${screen.secretKey ? `?key=${screen.secretKey}` : ''}`, '_blank')}>
+                <Button variant="ghost" size="sm" onClick={() => window.open(`/player/${screen.id}?userId=${user?.id || (user as any)?._id}${screen.secretKey ? `&key=${screen.secretKey}` : ''}`, '_blank')}>
                     <IconPlayerPlay size={16} className="mr-1" /> Preview
                 </Button>
                 {/* Owner controls (non-advertiser) */}

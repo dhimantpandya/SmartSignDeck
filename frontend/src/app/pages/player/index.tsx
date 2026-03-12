@@ -41,6 +41,8 @@ export default function ScreenPlayer() {
         secretKey = secretKey.replace('673f', '')
     }
 
+    const userId = query.get('userId')
+
     const [currentTime, setCurrentTime] = useState(() => {
         const now = new Date()
         return `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`
@@ -121,8 +123,8 @@ export default function ScreenPlayer() {
 
         fetchPlaybackData()
 
-        // 5-minute auto-refresh and ping (backup) - Pass true for background
-        const interval = setInterval(() => fetchPlaybackData(0, true), 1 * 60 * 1000)
+        // 30-second auto-refresh and ping (backup) - Pass true for background
+        const interval = setInterval(() => fetchPlaybackData(0, true), 30 * 1000)
         return () => {
             clearInterval(interval)
             clearTimeout(safetyTimer)
@@ -585,7 +587,8 @@ function ZoneRenderer({ zone, content, screenId, templateId, secretKey }: { zone
                     screenId, templateId, zoneId: zone.id,
                     contentUrl: item.url, contentType: typeToLog,
                     startTime, endTime, duration,
-                    secretKey // Pass key for auth
+                    secretKey, // Pass key for auth
+                    userId // Pass userId for tracking
                 })
             } catch (err) {
                 // Silent catch
