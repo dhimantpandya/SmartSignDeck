@@ -17,7 +17,7 @@ import { Badge } from '@/components/ui/badge'
 import { useAuth } from '@/hooks/use-auth'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Globe, User, Folder, Folders } from 'lucide-react'
+import { User, Folder, Folders } from 'lucide-react'
 import { useSearchParams, useParams } from 'react-router-dom'
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
 import { useNotifications } from '@/components/nav-notification-provider'
@@ -115,9 +115,9 @@ export default function Screens() {
         enabled: !!user?.id,
     })
 
-    // Query for global public screens
+    // Query for shared library screens
     const { data: globalScreensData, isLoading: isLoadingGlobal } = useQuery({
-        queryKey: ['screens', 'global'],
+        queryKey: ['screens', 'shared'],
         queryFn: () => screenService.getScreens({ isPublic: true }),
         enabled: true,
     })
@@ -296,7 +296,7 @@ export default function Screens() {
                     <div className="flex items-center gap-2">
                         {screen.isPublic && (
                             <Badge variant="outline" className="bg-blue-500/10 text-blue-500 border-blue-500/20 gap-1 text-[10px]">
-                                <Globe size={10} /> Global
+                                <IconCopy size={10} /> Shared
                             </Badge>
                         )}
                         <Badge variant="secondary" className="flex items-center gap-1">
@@ -407,8 +407,8 @@ export default function Screens() {
                         {isAdvertiser ? (
                             <TabsList className="grid w-full max-w-xs grid-cols-1">
                                 <TabsTrigger value="global" className="gap-2">
-                                    <Globe size={16} />
-                                    <span>Global Library</span> ({globalScreens.length})
+                                    <IconCopy size={16} />
+                                    <span>Shared Library</span> ({globalScreens.length})
                                 </TabsTrigger>
                             </TabsList>
                         ) : (
@@ -418,8 +418,8 @@ export default function Screens() {
                                     <span className="hidden sm:inline">My Screens</span> ({myScreens.length})
                                 </TabsTrigger>
                                 <TabsTrigger value="global" className="gap-2">
-                                    <Globe size={16} />
-                                    <span className="hidden sm:inline">Global Library</span> ({globalScreens.length})
+                                    <IconCopy size={16} />
+                                    <span className="hidden sm:inline">Shared Library</span> ({globalScreens.length})
                                 </TabsTrigger>
                                 <TabsTrigger value="groups" className="gap-2">
                                     <Folders size={16} />
@@ -477,7 +477,7 @@ export default function Screens() {
                                             onCheckedChange={() => toggleSelectAll(globalScreens)}
                                         />
                                         <label htmlFor="select-all-global-screens" className="text-sm font-medium cursor-pointer flex-1">
-                                            Select All Global Screens ({globalScreens.length})
+                                            Select All Shared Screens ({globalScreens.length})
                                         </label>
                                     </div>
                                     <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
@@ -486,10 +486,10 @@ export default function Screens() {
                                 </>
                             ) : (
                                 <div className='flex flex-col items-center justify-center rounded-lg border border-dashed p-20 text-center'>
-                                    <Globe size={48} className='mb-4 text-muted-foreground' />
-                                    <h2 className='text-xl font-semibold'>No global screens available</h2>
+                                    <IconCopy size={48} className='mb-4 text-muted-foreground' />
+                                    <h2 className='text-xl font-semibold'>No shared screens available</h2>
                                     <p className='text-muted-foreground'>
-                                        Public screens from other users will appear here.
+                                        Shared screens from others will appear here.
                                     </p>
                                 </div>
                             )}

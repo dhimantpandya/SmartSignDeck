@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/select'
 import ScheduleManager from './schedule-manager'
 import { GLOBAL_SCALE } from '@/utilities/fabric-utils'
-import { Globe } from 'lucide-react'
+import { IconCopy } from '@tabler/icons-react'
 
 interface ScreenFormProps {
     initialData?: any
@@ -797,16 +797,16 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
                             </div>
                         </div>
 
-                        {/* Global Screen Setting - Clean dedicated row */}
+                        {/* Shared Screen Setting - Clean dedicated row */}
                         <div className={`flex items-center justify-between rounded-lg border px-4 py-3 mb-6 transition-colors ${isPublic ? 'border-blue-500/40 bg-blue-500/5' : 'border-border bg-muted/20'}`}>
                             <div className='flex items-center gap-3'>
                                 <div className={`rounded-md p-1.5 ${isPublic ? 'bg-blue-500/15 text-blue-500' : 'bg-muted text-muted-foreground'}`}>
-                                    <Globe size={16} />
+                                    <IconCopy size={16} />
                                 </div>
                                 <div>
-                                    <p className='text-sm font-medium leading-none'>Global Screen</p>
+                                    <p className='text-sm font-medium leading-none'>Shared Screen</p>
                                     <p className='text-xs text-muted-foreground mt-0.5'>
-                                        Share this screen in your company's global library
+                                        Share this screen in your company's shared library
                                     </p>
                                 </div>
                             </div>

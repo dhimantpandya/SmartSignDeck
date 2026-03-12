@@ -386,13 +386,14 @@ const cloneScreen = async (screenId: string, user: IUser) => {
     throw new ApiError(httpStatus.NOT_FOUND, "Original screen not found");
   }
 
-  let targetTemplateId = originalScreen.templateId;
+  let targetTemplateId = originalScreen.templateId?._id || originalScreen.templateId;
   const originalTemplate = originalScreen.templateId as any;
 
   // Check if we need to clone the template too
   // If the template belongs to another company, clone it so the user can edit it
+  const originalTemplateIdStr = (originalTemplate._id || originalTemplate).toString();
   if (originalTemplate.companyId?.toString() !== user.companyId?.toString()) {
-    const clonedTemplate = await templateService.cloneTemplate(originalTemplate._id.toString(), user);
+    const clonedTemplate = await templateService.cloneTemplate(originalTemplateIdStr, user);
     targetTemplateId = clonedTemplate._id;
   }
 
@@ -405,6 +406,7 @@ const cloneScreen = async (screenId: string, user: IUser) => {
     companyId: user.companyId,
     createdBy: user._id || (user as any).id,
     isPublic: false,
+    secretKey: crypto.randomBytes(16).toString("hex"), // Generate new unique key
     lastPing: null, // Ensure it starts as offline
     status: "offline",
   };

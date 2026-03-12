@@ -36,7 +36,7 @@ export default function Analytics() {
         startDate: format(subDays(new Date(), 7), 'yyyy-MM-dd'),
         endDate: format(new Date(), 'yyyy-MM-dd'),
     })
-    const [viewMode, setViewMode] = useState<'individual' | 'company'>('individual')
+    const [viewMode] = useState<'individual' | 'company'>('company') // Default to company for advertisers
 
     const { user } = useAuth()
     const queryClient = useQueryClient()
@@ -230,19 +230,6 @@ export default function Analytics() {
                         </p>
                     </div>
                     <div className='flex items-center gap-2'>
-                        {/* VIEW MODE TOGGLE (Advertiser / Admin only) */}
-                        {['admin', 'super_admin', 'advertiser'].includes((user as any)?.role) && (
-                            <Select value={viewMode} onValueChange={(val) => setViewMode(val as any)}>
-                                <SelectTrigger className='w-[160px] bg-primary/5 border-primary/20 font-medium'>
-                                    <IconChartBar size={16} className='mr-2 text-primary' />
-                                    <SelectValue placeholder='View Mode' />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value='individual'>My Content</SelectItem>
-                                    <SelectItem value='company'>All Company</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        )}
 
                         <Select defaultValue='7days' onValueChange={handleDateRangeChange}>
                             <SelectTrigger className='w-[180px]'>

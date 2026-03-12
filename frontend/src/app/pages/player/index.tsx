@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useMemo } from 'react'
 import { useParams } from 'react-router-dom'
 import { apiService } from '@/api'
 import Loader from '@/components/loader'
@@ -219,7 +219,7 @@ export default function ScreenPlayer() {
         )
     }
 
-    const determineActiveContent = () => {
+    const { content } = useMemo(() => {
         const { defaultContent, schedules } = data
         const now = new Date()
         const currentDayOfWeek = now.getDay() // 0-6
@@ -262,14 +262,13 @@ export default function ScreenPlayer() {
                 }
             })
 
-            return { content: mergedContent, source: 'schedule', rule: activeSchedule }
+            return { content: mergedContent }
         }
 
-        return { content: defaultContent, source: 'default', rule: null }
-    }
+        return { content: defaultContent }
+    }, [data, currentTime])
 
     const { templateId: template } = data
-    const { content } = determineActiveContent()
     const resolution = template?.resolution || '1920x1080'
     const [targetWidth, targetHeight] = resolution.split('x').map(Number)
 
@@ -280,7 +279,7 @@ export default function ScreenPlayer() {
     // --- GAP FILLING & RESPONSIVE SNAPPING LOGIC ---
     // Fixes "black lines" by snapping zones to edges and each other
     // NEW: Intelligent Gap Filling - active zones "eat" neighboring empty text zones
-    const optimizedZones = (() => {
+    const optimizedZones = useMemo(() => {
         if (!data?.templateId?.zones) return []
 
         // Deep copy
@@ -394,7 +393,7 @@ export default function ScreenPlayer() {
 
         // 4. Final Pass: Hide both empty text AND empty media zones
         return zones.filter((z: any) => !isEmptyTextZone(z) && !isEmptyMediaZone(z))
-    })()
+    }, [data?.templateId?.zones, content, targetWidth, targetHeight])
 
     return (
         <div className='fixed inset-0 bg-black overflow-hidden'>
@@ -523,32 +522,30 @@ function ZoneRenderer({ zone, content, screenId, templateId, secretKey, userId }
     // Fallback to simpler 'src' if playlist is empty or if we are in error state and playlist was the only content.
 
     // 1. Determine the active playlist based on sourceType priority
-    let playlist = content?.playlist || []
+    const playlist = useMemo(() => {
+        let list = content?.playlist || []
 
-    // NEW: Apply strict type-based filtering for image/video only zones
-    if (zone.type === 'image') {
-        playlist = playlist.filter((item: any) => item.type === 'image')
-    } else if (zone.type === 'video') {
-        playlist = playlist.filter((item: any) => item.type === 'video')
-    }
-
-    // If we have an ERROR and there is a src available, we can try to fallback to it
-    // But usually, we only fallback if the playlist is actually empty.
-    const hasItems = playlist && playlist.length > 0
-    const fallbackSrc = content?.src
-
-    // If no items in playlist, try to use the legacy/default 'src'
-    if (!hasItems && fallbackSrc) {
-        // Respect strict filtering for the default 'src' too
-        const isImage = fallbackSrc.match(/\.(jpg|jpeg|png|webp|gif|svg)$/i)
-        const isVideo = fallbackSrc.match(/\.(mp4|mov|webm)$/i)
-
-        if (zone.type === 'mixed' ||
-            (zone.type === 'image' && isImage) ||
-            (zone.type === 'video' && isVideo)) {
-            playlist = [{ url: fallbackSrc, type: isVideo ? 'video' : 'image', duration: 10 }]
+        // Apply strict type-based filtering for image/video only zones
+        if (zone.type === 'image') {
+            list = list.filter((item: any) => item.type === 'image')
+        } else if (zone.type === 'video') {
+            list = list.filter((item: any) => item.type === 'video')
         }
-    }
+
+        // Fallback to simpler 'src' if playlist is empty
+        if (list.length === 0 && content?.src) {
+            const fallbackSrc = content.src
+            const isImage = fallbackSrc.match(/\.(jpg|jpeg|png|webp|gif|svg)$/i)
+            const isVideo = fallbackSrc.match(/\.(mp4|mov|webm)$/i)
+
+            if (zone.type === 'mixed' ||
+                (zone.type === 'image' && isImage) ||
+                (zone.type === 'video' && isVideo)) {
+                return [{ url: fallbackSrc, type: isVideo ? 'video' : 'image', duration: 10 }]
+            }
+        }
+        return list
+    }, [content, zone.type])
 
     // Reset error when index changes to retry playback
     useEffect(() => {

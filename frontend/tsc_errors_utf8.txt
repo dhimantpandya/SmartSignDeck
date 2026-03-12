@@ -1,0 +1,4 @@
+﻿src/app/pages/analytics/index.tsx(39,22): error TS6133: 'setViewMode' is declared but its value is never read.
+src/app/pages/player/index.tsx(222,22): error TS6133: 'source' is declared but its value is never read.
+src/app/pages/player/index.tsx(222,30): error TS6133: 'rule' is declared but its value is never read.
+src/app/pages/screens/index.tsx(8,31): error TS6133: 'useMemo' is declared but its value is never read.

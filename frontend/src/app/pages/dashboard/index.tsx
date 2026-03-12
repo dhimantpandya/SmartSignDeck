@@ -44,7 +44,6 @@ import { GuideBuddy } from '@/components/GuideBuddy'
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('overview')
-  const [viewMode, setViewMode] = useState<'individual' | 'company'>('individual')
   const navigate = useNavigate()
   const { user } = useAuth()
   const isAdvertiser = user?.role === 'advertiser'
@@ -79,10 +78,10 @@ export default function Dashboard() {
   })
 
   const { data: timelineData } = useQuery({
-    queryKey: ['analytics-timeline-dashboard', user?.companyId, viewMode],
+    queryKey: ['analytics-timeline-dashboard', user?.companyId],
     queryFn: () =>
       apiService.get<any>(
-        `/v1/analytics/timeline?startDate=${format(subDays(new Date(), 7), 'yyyy-MM-dd')}&endDate=${format(new Date(), 'yyyy-MM-dd')}&interval=day&userId=${viewMode === 'individual' ? user?.id : 'company'}`
+        `/v1/analytics/timeline?startDate=${format(subDays(new Date(), 7), 'yyyy-MM-dd')}&endDate=${format(new Date(), 'yyyy-MM-dd')}&interval=day`
       ),
     enabled: !!user?.companyId
   })
@@ -187,23 +186,6 @@ export default function Dashboard() {
               </p>
             </div>
             <div className='flex items-center space-x-2 w-full sm:w-auto'>
-              {['admin', 'super_admin', 'advertiser'].includes((user as any)?.role) && (
-                <div className="flex items-center gap-2 mr-2">
-                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Mode:</span>
-                  <button 
-                    onClick={() => setViewMode('individual')}
-                    className={`px-3 py-1.5 text-[10px] font-bold uppercase rounded-l-md border transition-all ${viewMode === 'individual' ? 'bg-primary text-primary-foreground border-primary' : 'bg-background text-muted-foreground border-input hover:bg-muted'}`}
-                  >
-                    Personal
-                  </button>
-                  <button 
-                    onClick={() => setViewMode('company')}
-                    className={`px-3 py-1.5 text-[10px] font-bold uppercase rounded-r-md border-y border-r transition-all ${viewMode === 'company' ? 'bg-primary text-primary-foreground border-primary' : 'bg-background text-muted-foreground border-input hover:bg-muted'}`}
-                  >
-                    Company
-                  </button>
-                </div>
-              )}
               <Button onClick={handleDownload} variant="outline" className="w-full sm:w-auto border-primary/20 hover:bg-primary/5 text-xs sm:text-sm h-9 sm:h-10">Download Reports</Button>
             </div>
           </div>

@@ -2,6 +2,7 @@ import httpStatus from "http-status";
 import mongoose from "mongoose";
 import PlaybackLog from "../models/playbackLog.model";
 import ApiError from "../utils/ApiError";
+import logger from "../config/logger";
 import { Parser } from "json2csv";
 import PDFDocument from "pdfkit";
 import { format, eachDayOfInterval } from "date-fns";
@@ -427,8 +428,13 @@ const exportLogsToCSV = (logs: any[]): string => {
         { label: "Duration (s)", value: "duration" },
     ];
 
-    const json2csvParser = new Parser({ fields });
-    return json2csvParser.parse(plainLogs);
+    try {
+        const json2csvParser = new Parser({ fields });
+        return json2csvParser.parse(plainLogs);
+    } catch (error: any) {
+        logger.error(`[ANALYTICS] CSV Export failed: ${error.message}`);
+        return "error,failed to generate csv";
+    }
 };
 
 /**
@@ -489,16 +495,20 @@ const generatePDFReport = async (
 
         doc.font("Helvetica");
         (performance || []).forEach((item: any, index: number) => {
-            const y = doc.y;
-            if (y > 700) doc.addPage();
+            try {
+                const y = doc.y;
+                if (y > 700) doc.addPage();
 
-            const rawUrl = item.contentUrl || "Unknown Source";
-            const url = rawUrl.length > 40 ? rawUrl.substring(0, 37) + "..." : rawUrl;
-            doc.text(url, 50, doc.y);
-            doc.text(item.contentType, 300, y);
-            doc.text(item.totalPlays.toString(), 400, y);
-            doc.text(item.totalDuration.toString(), 480, y);
-            doc.moveDown();
+                const rawUrl = item?.contentUrl || "Unknown Source";
+                const url = rawUrl.length > 40 ? rawUrl.substring(0, 37) + "..." : rawUrl;
+                doc.text(url, 50, doc.y);
+                doc.text(item?.contentType || "mixed", 300, y);
+                doc.text((item?.totalPlays || 0).toString(), 400, y);
+                doc.text((item?.totalDuration || 0).toString(), 480, y);
+                doc.moveDown();
+            } catch (err) {
+                console.error("PDF line generation failed:", err);
+            }
         });
 
         // Footer
