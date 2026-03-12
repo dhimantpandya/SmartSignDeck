@@ -1,0 +1,79 @@
+﻿commit 18a85665ab52811b1a9c8a43a4d1e3e2c790d8d9
+Author:     Dhimant Pandya <dhimantpandya@example.com>
+AuthorDate: Thu Mar 12 11:28:40 2026 +0530
+Commit:     Dhimant Pandya <dhimantpandya@example.com>
+CommitDate: Thu Mar 12 11:28:40 2026 +0530
+
+    feat: security and performance enhancements - login error differentiation, instant socket logout, non-blocking emails, and company lifecycle fixes
+
+commit 014698faa8d388ef2675343a5ecfd5f6fbcdde3c
+Author:     Dhimant Pandya <dhimantpandya@example.com>
+AuthorDate: Thu Mar 12 10:59:28 2026 +0530
+Commit:     Dhimant Pandya <dhimantpandya@example.com>
+CommitDate: Thu Mar 12 10:59:28 2026 +0530
+
+    fix: resolve build errors in admin companies list (missing cn import and isActive property)
+
+commit 4eab8a4e6e97b0b26439025aeac8e50955cd1f60
+Author:     Dhimant Pandya <dhimantpandya@example.com>
+AuthorDate: Thu Mar 12 10:55:26 2026 +0530
+Commit:     Dhimant Pandya <dhimantpandya@example.com>
+CommitDate: Thu Mar 12 10:55:26 2026 +0530
+
+    fix: refine deletion flow, login error messages, and company status logic
+
+commit 3efdc7d5cb21999b66e8354b4ebe490ec87f0752
+Author:     Dhimant Pandya <dhimantpandya@example.com>
+AuthorDate: Thu Mar 12 10:37:13 2026 +0530
+Commit:     Dhimant Pandya <dhimantpandya@example.com>
+CommitDate: Thu Mar 12 10:37:13 2026 +0530
+
+    fix: remove unused imports and state variables in admin companies list
+
+commit 810ca0ad3bd8480b6656e13ee6d75d17f49f68f2
+Author:     Dhimant Pandya <dhimantpandya@example.com>
+AuthorDate: Thu Mar 12 10:33:37 2026 +0530
+Commit:     Dhimant Pandya <dhimantpandya@example.com>
+CommitDate: Thu Mar 12 10:33:37 2026 +0530
+
+    feat: complete deletion flow with password verification, safety emails, and security logouts
+
+commit fef0ff81640b6c2e8153b596519c500577cf482e
+Author:     Dhimant Pandya <dhimantpandya@example.com>
+AuthorDate: Thu Mar 12 09:58:07 2026 +0530
+Commit:     Dhimant Pandya <dhimantpandya@example.com>
+CommitDate: Thu Mar 12 09:58:07 2026 +0530
+
+    fix: add missing imports and resolve TypeScript build errors in controllers
+
+commit adc13cac895c53d342e0c865a9d7df0748bad417
+Author:     Dhimant Pandya <dhimantpandya@example.com>
+AuthorDate: Thu Mar 12 09:54:45 2026 +0530
+Commit:     Dhimant Pandya <dhimantpandya@example.com>
+CommitDate: Thu Mar 12 09:54:45 2026 +0530
+
+    feat: enhance security with super_admin deletion protocols, fix OTP bug, and optimize form performance
+
+commit d2174a8f202f30768911ee9cde30463d99850b54
+Author:     Dhimant Pandya <dhimantpandya@example.com>
+AuthorDate: Wed Mar 11 17:02:38 2026 +0530
+Commit:     Dhimant Pandya <dhimantpandya@example.com>
+CommitDate: Wed Mar 11 17:02:38 2026 +0530
+
+    feat(playlist): add bulk selection, image preview, and strict cloudinary closure logic
+
+commit 57a54f1034c09757f32fb556f62fa9e1aeb0dfd3
+Author:     Dhimant Pandya <dhimantpandya@example.com>
+AuthorDate: Wed Mar 11 16:30:15 2026 +0530
+Commit:     Dhimant Pandya <dhimantpandya@example.com>
+CommitDate: Wed Mar 11 16:30:15 2026 +0530
+
+    fix(stability): implement exhaustive defensive checks to prevent 500 crashes during state updates
+
+commit fadfa1838032950082aa4b6d16df46f03c95f8e2
+Author:     Dhimant Pandya <dhimantpandya@example.com>
+AuthorDate: Wed Mar 11 16:19:33 2026 +0530
+Commit:     Dhimant Pandya <dhimantpandya@example.com>
+CommitDate: Wed Mar 11 16:19:33 2026 +0530
+
+    fix(schedules): ensure content persistence in slots via deep copy and restore cloudinary success handler

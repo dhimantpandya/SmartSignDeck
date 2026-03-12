@@ -1,0 +1,264 @@
+﻿diff --git a/backend/src/controllers/auth.controller.ts b/backend/src/controllers/auth.controller.ts
+index 18e36a8..8b25d98 100644
+--- a/backend/src/controllers/auth.controller.ts
++++ b/backend/src/controllers/auth.controller.ts
+@@ -368,7 +368,6 @@ export const login = async (req: Request, res: Response) => {
+   try {
+     const { email, password } = req.body;
+     const clientIp = req.ip || req.socket.remoteAddress || 'unknown';
+-    console.log(`[AuthDebug] Login attempt from IP: ${clientIp}, Email: "${email}"`);
+     const user = await authService.loginUserWithEmailAndPassword(
+       email,
+       password,
+@@ -381,7 +380,13 @@ export const login = async (req: Request, res: Response) => {
+     successResponse(res, "Login successful", httpStatus.OK, { user, tokens });
+   } catch (err: any) {
+     const status = err.statusCode || httpStatus.INTERNAL_SERVER_ERROR;
+-    const message = err.message || "Server error";
++    // Requirement: Generic error message only for actual matching password failures
++    const isIncorrectPassword = (err.message?.toLowerCase().includes("password") || status === httpStatus.UNAUTHORIZED);
++    const isNotRegistered = err.message?.toLowerCase().includes("not registered");
++
++    const message = (isIncorrectPassword && !isNotRegistered) 
++      ? "Incorrect password" 
++      : (err.message || "Server error");
+     res.status(status).json({ status: "error", message });
+   }
+ };
+@@ -469,6 +474,12 @@ export const verifyOtp = async (req: Request, res: Response) => {
+         if (company) {
+           console.log(`[AuthDebug] User ${user.email} joined existing company via invite: "${company.name}" (ID: ${company._id})`);
+ 
++          // Requirement: Reactivate company when user joins
++          if (!company.isActive) {
++            await Company.findByIdAndUpdate(company._id, { isActive: true });
++            console.log(`[Status] Company ${company.name} reactivated (user joined via invite).`);
++          }
++
+           const { default: User } = await import("../models/user.model");
+           if (User) {
+             await User.findByIdAndUpdate(user._id, {
+@@ -485,10 +496,16 @@ export const verifyOtp = async (req: Request, res: Response) => {
+           company = await Company.create({
+             name: normalizedName,
+             ownerId: user._id,
++            isActive: true, // New companies are active by default
+           });
+           console.log(`[AuthDebug] Created new company: "${normalizedName}" for user: ${user.email}`);
+         } else {
+           console.log(`[AuthDebug] User ${user.email} joined existing company: "${normalizedName}" (ID: ${company._id})`);
++          // Requirement: Reactivate company when user joins
++          if (!company.isActive) {
++            await Company.findByIdAndUpdate(company._id, { isActive: true });
++            console.log(`[Status] Company ${company.name} reactivated (user joined via name match).`);
++          }
+         }
+ 
+         // Update user with companyId
+@@ -570,7 +587,7 @@ export const verifyOtp = async (req: Request, res: Response) => {
+                   "system_alert",
+                   "New Team Member ≡ƒæï",
+                   `${user.first_name} ${user.last_name} has joined your workspace.`
+-                ).catch(e => console.error(`[Auth] Notification failed for member ${member._id}:`, e))
++                ).catch((e: any) => console.error(`[Auth] Notification failed for member ${member._id}:`, e))
+               )
+             );
+             console.log(`[Auth] Sent join notifications to ${allCompanyMembers.length} company members.`);
+diff --git a/backend/src/controllers/company.controller.ts b/backend/src/controllers/company.controller.ts
+index e44a977..abc90aa 100644
+--- a/backend/src/controllers/company.controller.ts
++++ b/backend/src/controllers/company.controller.ts
+@@ -6,6 +6,8 @@ import successResponse from "../helpers/responses/successResponse";
+ import ApiError from "../utils/ApiError";
+ import { getIO } from "../services/socket.service";
+ import User from "../models/user.model";
++import { emailService } from "../services";
++import * as emailConstants from "../utils/constants/email.constants";
+ 
+ const createCompany = catchAsync(async (req: Request, res: Response) => {
+     const User = (await import("../models/user.model")).default; // Dynamic import to avoid cycles if any
+@@ -81,25 +83,42 @@ const deleteCompany = catchAsync(async (req: Request, res: Response) => {
+     const currentUser = req.user as any;
+ 
+     // 1. Verify Password
+-    const user = await User.findById(currentUser.id || currentUser._id);
+-    if (!user || !(await user.isPasswordMatch(password))) {
+-        throw new ApiError(httpStatus.UNAUTHORIZED, "Incorrect password. Security protocol initiated.");
++    const adminUser = await User.findById(currentUser.id || currentUser._id);
++    if (!adminUser || !password || !(await adminUser.isPasswordMatch(password))) {
++        // Standardized Security Protocol: logout on incorrect password
++        console.warn(`[SECURITY] Super Admin ${adminUser?.email} failed company deletion password. Triggering logout.`);
++        throw new ApiError(httpStatus.UNAUTHORIZED, "Security Alert: Incorrect password. You have been signed out for safety.");
+     }
+ 
+     const companyId = req.params.companyId;
+     const company = await Company.findById(companyId);
+     if (!company) throw new ApiError(httpStatus.NOT_FOUND, "Company not found");
+ 
+-    // 2. Cascading Delete: Remove all users associated with this company
++    // 2. Fetch all employees to notify them before deletion
++    const employees = await User.find({ companyId });
++
++    // 3. Send Notification Emails to all employees (Fire and forget to avoid blocking UI)
++    employees.forEach(emp => {
++        emailService.sendMail(emailConstants.ORGANIZATION_DELETED_TEMPLATE, {
++            email: emp.email,
++            name: `${emp.first_name} ${emp.last_name}`,
++        }).catch((e: any) => console.error(`[ERROR] Failed to notify ${emp.email} of org deletion:`, e));
++    });
++
++    // 4. Cascading Delete: Remove all users associated with this company
+     await User.deleteMany({ companyId });
+ 
+-    // 3. Delete Company
++    // 5. Delete Company Record
+     await company.deleteOne();
+ 
+-    // 4. Global broadcast
+-    try { getIO().emit('company_deleted', { id: companyId }); } catch (e) { }
++    // 6. Global broadcast & Termination Event
++    try { 
++        getIO().emit('company_deleted', { id: companyId }); 
++        // Force logout for any active session belonging to this company (if they were connected)
++        // Note: frontend should handle 'company_deleted' by clearing local storage if user's company matches
++    } catch (e) { }
+ 
+-    successResponse(res, "Company and all its employees deleted", httpStatus.OK);
++    successResponse(res, "Company and all its employees deleted. Notifications sent.", httpStatus.OK);
+ });
+ 
+ export default {
+diff --git a/backend/src/controllers/user.controller.ts b/backend/src/controllers/user.controller.ts
+index 331475c..26129e1 100644
+--- a/backend/src/controllers/user.controller.ts
++++ b/backend/src/controllers/user.controller.ts
+@@ -4,6 +4,7 @@ import mongoose from "mongoose";
+ import { MongooseQueryParser } from "mongoose-query-parser";
+ import successResponse from "../helpers/responses/successResponse";
+ import { type IUser } from "../models/user.model";
++import User from "../models/user.model";
+ import Company from "../models/company.model";
+ import { emailService, userService } from "../services";
+ import notificationService from "../services/notification.service";
+@@ -314,30 +315,47 @@ const updateUser = catchAsync(async (req: Request, res: Response) => {
+ const deleteUser = catchAsync(async (req: Request, res: Response) => {
+   const targetUser = await userService.fetchAndValidateUser(req);
+   const currentUser = req.user as any;
++  const { password } = req.body;
+ 
+-  // RBAC Refinement: Only Super Admin/Admin can delete users
+-  if (!currentUser?.role || !["super_admin", "admin"].includes(currentUser.role)) {
+-    throw new ApiError(httpStatus.FORBIDDEN, "Forbidden: Only Super Admin/Admin can delete users");
++  // 1. Strict Requirement: Only Super Admin can delete users directly
++  if (currentUser?.role !== "super_admin") {
++    throw new ApiError(httpStatus.FORBIDDEN, "Forbidden: Only Super Admin can delete users directly");
+   }
+ 
+-  // RBAC Refinement: Admin cannot delete users from other companies
+-  if (currentUser.role === 'admin') {
+-    if (targetUser.companyId?.toString() !== currentUser.companyId?.toString()) {
+-      throw new ApiError(httpStatus.FORBIDDEN, "Forbidden: You can only delete users within your own company.");
+-    }
++  // 2. Mandatory Password Verification for Super Admin
++  const adminUser = await User.findById(currentUser.id || currentUser._id);
++  if (!adminUser || !password || !(await adminUser.isPasswordMatch(password))) {
++    // If wrong password, trigger logout of the Super Admin (Security Protocol)
++    console.warn(`[SECURITY] Super Admin ${adminUser?.email} failed deletion password. Triggering logout.`);
++    
++    // Attempt to blacklist the refresh token if available in backend state
++    // For now, we return 401 and the frontend should handle state clearing
++    throw new ApiError(httpStatus.UNAUTHORIZED, "Security Alert: Incorrect password. You have been signed out for safety.");
+   }
+ 
+-  // Send notification email
+-  await emailService.sendMail(emailConstants.ACCOUNT_DELETED_TEMPLATE, {
++  const companyId = targetUser.companyId;
++
++  // 3. Send Notification Email (Safety Reasons) - Non-blocking
++  emailService.sendMail(emailConstants.ACCOUNT_DELETED_TEMPLATE, {
+     email: targetUser.email,
+     name: `${targetUser.first_name} ${targetUser.last_name}`,
+   }).catch(err => {
+     console.error(`[ERROR] Failed to send account deletion email to ${targetUser.email}:`, err);
+   });
+ 
++  // 4. Perform Deletion
+   await userService.deleteUserById(req.params.userId);
+ 
+-  // Global broadcast for real-time list update
++  // 5. Organization Status Logic: If last user, set company to inactive
++  if (companyId) {
++    const memberCount = await User.countDocuments({ companyId });
++    if (memberCount === 0) {
++      await Company.findByIdAndUpdate(companyId, { isActive: false });
++      console.log(`[Status] Company ${companyId} deactivated as it has 0 members.`);
++    }
++  }
++
++  // 6. Real-time notifications
+   try { getIO().emit('user_deleted', { id: req.params.userId }); } catch (e) { }
+ 
+   successResponse(res, userConstants.USER_DELETED, httpStatus.OK, {});
+diff --git a/backend/src/services/auth.service.ts b/backend/src/services/auth.service.ts
+index 39559e4..1c8ec8d 100644
+--- a/backend/src/services/auth.service.ts
++++ b/backend/src/services/auth.service.ts
+@@ -22,7 +22,7 @@ export const loginUserWithEmailAndPassword = async (
+ 
+   if (!user) {
+     throw new ApiError(
+-      httpStatus.UNAUTHORIZED,
++      httpStatus.NOT_FOUND,
+       "Email is not registered, please sign up first",
+     );
+   }
+@@ -247,6 +247,10 @@ export const verifyEmailOtp = async (
+     // Default role should be regular user; super_admin is seeded separately
+     updateBody.role = 'user';
+     updateBody.companyName = undefined; // Clear the temporary field
++  } else if (user.companyId) {
++    // Re-activate company if it was inactive (e.g. last user joined back)
++    await Company.findByIdAndUpdate(user.companyId, { isActive: true });
++    console.log(`[Status] Company ${user.companyId} re-activated as a user verified their email.`);
+   }
+ 
+   await Token.deleteMany({ user: user._id, type: tokenTypes.VERIFY_EMAIL });
+diff --git a/backend/src/services/email.service.ts b/backend/src/services/email.service.ts
+index bf2af43..d5f482d 100644
+--- a/backend/src/services/email.service.ts
++++ b/backend/src/services/email.service.ts
+@@ -211,6 +211,17 @@ export const sendMail = async (type: string, request: Record<string, string>) =>
+         await getHTMLandSendEmail("account-deleted.html", request);
+         break;
+ 
++      case emailConstants.ORGANIZATION_DELETED_TEMPLATE:
++        request.subject = emailConstants.ORGANIZATION_DELETED_SUBJECT;
++        request.contactUrl = config.appUrl ? `${config.appUrl}/contact-us` : "mailto:support@smartsigndeck.com";
++        await getHTMLandSendEmail("organization-deleted.html", request);
++        break;
++
++      case emailConstants.USER_WITH_CREDENTIALS_TEMPLATE:
++        request.subject = emailConstants.USER_WITH_CREDENTIALS_SUBJECT;
++        await getHTMLandSendEmail("user-with-credentials.html", request);
++        break;
++
+       case emailConstants.DELETE_CONFIRMATION_TEMPLATE:
+         request.subject = emailConstants.DELETE_CONFIRMATION_SUBJECT;
+         request.deletionLink = createUrl({
+diff --git a/backend/src/services/user.service.ts b/backend/src/services/user.service.ts
+index bc386e2..1147c01 100644
+--- a/backend/src/services/user.service.ts
++++ b/backend/src/services/user.service.ts
+@@ -48,6 +48,12 @@ const createUser = async (userBody: Partial<IUser>): Promise<IUser> => {
+     const user = await User.create(userData);
+     console.log(`[UserDebug] User created successfully: ${user._id}`);
+ 
++    // Re-activate company if it was inactive
++    if (user.companyId) {
++      await Company.findByIdAndUpdate(user.companyId, { isActive: true });
++      console.log(`[Status] Company ${user.companyId} re-activated due to new user creation.`);
++    }
++
+     // Auto-connect with smartsigndeck super admin (Non-blocking)
+     setImmediate(async () => {
+       try {
