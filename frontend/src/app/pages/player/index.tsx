@@ -440,6 +440,7 @@ export default function ScreenPlayer() {
                                 screenId={data.id}
                                 templateId={data.templateId?.id || data.templateId?._id}
                                 secretKey={secretKey || undefined}
+                                userId={userId || undefined}
                             />
                         </div>
                     )
@@ -450,7 +451,7 @@ export default function ScreenPlayer() {
 }
 
 
-function ZoneRenderer({ zone, content, screenId, templateId, secretKey }: { zone: any, content: any, screenId?: string, templateId?: string, secretKey?: string }) {
+function ZoneRenderer({ zone, content, screenId, templateId, secretKey, userId }: { zone: any, content: any, screenId?: string, templateId?: string, secretKey?: string, userId?: string | null }) {
     const [currentIndex, setCurrentIndex] = useState(0)
     const [hasError, setHasError] = useState(false)
 
