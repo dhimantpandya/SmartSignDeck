@@ -22,8 +22,6 @@ import {
     ChevronDown,
     User as UserIcon,
     CreditCard,
-    Eye,
-    EyeOff
 } from 'lucide-react'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
@@ -193,7 +191,6 @@ export default function AdminCompanies() {
     const [editingCompany, setEditingCompany] = useState<Partial<Company> | null>(null)
     const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
     const [deletePassword, setDeletePassword] = useState('')
-    const [showDeletePassword, setShowDeletePassword] = useState(false)
     const [managingCompany, setManagingCompany] = useState<Company | null>(null)
     const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({})
     const { socket } = useNotifications()
@@ -388,7 +385,6 @@ export default function AdminCompanies() {
                                                                 onClick={() => {
                                                                     setConfirmDelete(group[0].id)
                                                                     setDeletePassword('')
-                                                                    setShowDeletePassword(false)
                                                                 }}
                                                                 title="Delete Organization"
                                                             >
@@ -442,7 +438,6 @@ export default function AdminCompanies() {
                                                                     onClick={() => {
                                                                         setConfirmDelete(company.id)
                                                                         setDeletePassword('')
-                                                                        setShowDeletePassword(false)
                                                                     }}
                                                                     title="Delete Organization"
                                                                 >
@@ -533,7 +528,6 @@ export default function AdminCompanies() {
                     onClose={() => {
                         setConfirmDelete(null)
                         setDeletePassword('')
-                        setShowDeletePassword(false)
                     }}
                 >
                     <div className="mt-4 w-full text-left">
