@@ -143,7 +143,14 @@ class ApiService {
               window.location.pathname.includes('/forgot-password')
 
             if (!isAuthPage) {
-              window.location.href = '/sign-in'
+              // 🧪 EXTRA SAFETY: Never redirect if on the Player page!
+              // The player should handle its own auth errors or show a retry screen, not hijack the browser.
+              const isPlayerPage = window.location.pathname.startsWith('/player')
+              if (!isPlayerPage) {
+                window.location.href = '/sign-in'
+              } else {
+                console.warn('[ApiService] Session expired, but staying on player page to avoid interruption.')
+              }
             }
 
             return Promise.reject(refreshError)

@@ -256,26 +256,28 @@ export default function ScreenPlayer() {
         const THRESHOLD = 5
         const EMPTY_FILLING_THRESHOLD = 10
 
-        const isEmptyTextZone = (z: any) => {
-            if (z.type !== 'text') return false
-            const zoneContent = content[z.id]
-            return !zoneContent?.text || zoneContent.text.trim() === ''
-        }
-
-        const isEmptyMediaZone = (z: any) => {
-            if (z.type === 'text') return false
+        const isActuallyEmpty = (z: any) => {
             const zoneContent = content[z.id]
             if (!zoneContent) return true
-            const hasPlaylist = zoneContent.playlist && zoneContent.playlist.length > 0
-            const hasSrc = !!zoneContent.src
-            return !hasPlaylist && !hasSrc
+            if (z.type === 'text') {
+                return !zoneContent.text || zoneContent.text.trim() === ''
+            } else {
+                // Media zone is empty if it has no list, no src, and no linked playlist
+                const hasPlaylist = zoneContent.playlist && zoneContent.playlist.length > 0
+                const hasSrc = !!zoneContent.src
+                const hasPlaylistId = !!(zoneContent.sourceType === 'playlist' && zoneContent.playlistId)
+                return !hasPlaylist && !hasSrc && !hasPlaylistId
+            }
         }
 
-        // --- NEW: Smart Space Harmony (QR Reservation) ---
+        const isEmptyTextZone = (z: any) => z.type === 'text' && isActuallyEmpty(z)
+        const isEmptyMediaZone = (z: any) => z.type !== 'text' && isActuallyEmpty(z)
+
+
         // Identify the "Best QR Home" if a URL is provided. 
         // We will "protect" this zone from being consumed by content expansion.
         const qrHomeId = data?.qrCodeUrl ? (() => {
-            const freeZones = zones.filter((z: any) => isEmptyTextZone(z) && isEmptyMediaZone(z));
+            const freeZones = zones.filter((z: any) => isActuallyEmpty(z));
             if (freeZones.length === 0) return null;
             
             // Prefer Top-Right or Bottom-Right for QR
@@ -297,12 +299,12 @@ export default function ScreenPlayer() {
         })
 
         zones.forEach((z1: any) => {
-            if (isEmptyTextZone(z1) || isEmptyMediaZone(z1)) return
+            if (isActuallyEmpty(z1)) return
             zones.forEach((z2: any) => {
                 if (z1 === z2) return
                 const yOverlap = Math.min(z1.y + z1.height, z2.y + z2.height) - Math.max(z1.y, z2.y)
                 if (yOverlap > 10) {
-                    const isEmpty = isEmptyTextZone(z2) || isEmptyMediaZone(z2)
+                    const isEmpty = isActuallyEmpty(z2)
                     if (isEmpty && z2.id === qrHomeId) return; // PROTECT QR HOME
                     
                     const limit = isEmpty ? EMPTY_FILLING_THRESHOLD : THRESHOLD
@@ -325,7 +327,7 @@ export default function ScreenPlayer() {
             })
         })
 
-        const zonesWithContent = zones.filter((z: any) => !isEmptyTextZone(z) && !isEmptyMediaZone(z))
+        const zonesWithContent = zones.filter((z: any) => !isActuallyEmpty(z))
         
         // --- NEW: Overlap Auto-Fix ---
         // If zones overlap, we adjust them to sit side-by-side or stacked
