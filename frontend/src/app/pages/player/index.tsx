@@ -758,17 +758,23 @@ function QRCodeOverlay({ url, zones, targetWidth, targetHeight }: { url: string,
         }
 
         const bestCell = freeCells.sort((a,b) => b.score - a.score)[0];
-        if (bestCell) {
+        
+        // Only show if we found a "good" spot (distance score > 150)
+        // If the screen is too crowded, bestCell.score will be low.
+        if (bestCell && bestCell.score > 150) {
             setPosition({ 
                 top: Math.max(padding, Math.min(targetHeight - qrSize - padding, bestCell.y - qrSize/2)), 
                 left: Math.max(padding, Math.min(targetWidth - qrSize - padding, bestCell.x - qrSize/2))
             });
+        } else {
+            // Hide by moving off screen or returning null in render
+            setPosition({ top: -1000, left: -1000 });
         }
     }, [zones, targetWidth, targetHeight])
 
     const qrImageUrl = url ? `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(url)}&color=000&bgcolor=fff&margin=1` : ''
 
-    if (!url) return null;
+    if (!url || position.top === -1000) return null;
 
     return (
         <div 
@@ -804,7 +810,11 @@ function RecorderOverlay({ }: { targetWidth: number, targetHeight: number }) {
         
         try {
             const stream = await (navigator.mediaDevices as any).getDisplayMedia({
-                video: { frameRate: 30, displaySurface: 'browser' },
+                video: { 
+                    frameRate: 30, 
+                    displaySurface: 'browser',
+                    cursor: 'never' // Hide cursor in recording
+                } as any,
                 audio: true,
                 preferCurrentTab: true
             })
