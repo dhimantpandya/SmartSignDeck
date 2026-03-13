@@ -142,16 +142,9 @@ const refreshScreen = catchAsync(async (req: Request, res: Response) => {
   const user: any = req.user;
 
   // Verify screen exists and user has permission
-  const screen = await screenService.getScreenById(screenId);
+  const screen = await screenService.getScreenById(screenId, user);
   if (!screen) {
     throw new ApiError(httpStatus.NOT_FOUND, "Screen not found");
-  }
-
-  const isOwner = screen.createdBy?.toString() === user._id?.toString();
-  const isSameCompany = screen.companyId && screen.companyId.toString() === user.companyId?.toString();
-
-  if (user.role !== "super_admin" && !isOwner && !isSameCompany) {
-    throw new ApiError(httpStatus.FORBIDDEN, "Forbidden: You do not have permission to refresh this screen");
   }
 
   // Emit socket command
