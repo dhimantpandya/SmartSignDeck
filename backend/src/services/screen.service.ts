@@ -381,6 +381,9 @@ import templateService from "./template.service";
  * @returns {Promise<Screen>}
  */
 const cloneScreen = async (screenId: string, user: IUser) => {
+  // 1. Ensure the cloning user has a company workspace ready
+  await templateService.ensureUserCompany(user);
+
   const originalScreen = await getScreenById(screenId, user);
   if (!originalScreen) {
     throw new ApiError(httpStatus.NOT_FOUND, "Original screen not found");
@@ -397,12 +400,20 @@ const cloneScreen = async (screenId: string, user: IUser) => {
     targetTemplateId = clonedTemplate._id;
   }
 
+  // Strip subdocument _id fields from schedules to avoid "Duplicate ID" or BSON errors during create
+  const sanitizedSchedules = originalScreen.schedules?.map((s: any) => {
+    const schedule = s.toObject ? s.toObject() : { ...s };
+    delete schedule._id;
+    if (schedule.id) delete schedule.id;
+    return schedule;
+  });
+
   const payload = {
     name: `Copy of ${originalScreen.name}`,
     location: originalScreen.location,
     templateId: targetTemplateId,
     defaultContent: originalScreen.defaultContent,
-    schedules: originalScreen.schedules,
+    schedules: sanitizedSchedules,
     companyId: user.companyId,
     createdBy: user._id || (user as any).id,
     isPublic: false,

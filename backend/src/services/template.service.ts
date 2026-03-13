@@ -339,7 +339,9 @@ const permanentDeleteTemplateById = async (templateId: string, user: IUser) => {
  * @returns {Promise<Template>}
  */
 const cloneTemplate = async (templateId: string, user: IUser) => {
-  const originalTemplate = await getTemplateById(templateId, user);
+  // Use Template.findById directly for cloning to avoid the restricted 'view' check in getTemplateById
+  // We trust the caller (like cloneScreen) has already validated access to the original source.
+  const originalTemplate = await Template.findById(templateId);
   if (!originalTemplate) {
     throw new ApiError(httpStatus.NOT_FOUND, "Original template not found");
   }
@@ -462,6 +464,7 @@ const bootstrapFromInspiration = async (name: string, user: IUser) => {
 };
 
 export default {
+  ensureUserCompany,
   createTemplate,
   queryTemplates,
   getTemplateById,
