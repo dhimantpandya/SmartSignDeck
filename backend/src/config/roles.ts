@@ -10,10 +10,13 @@ const allRoles: Record<string, string[]> = {
     "getMedia",
     "manageMedia",
     "getAnalytics",
+    "manageAnalytics",
   ],
   advertiser: [
     "getScreens",
+    "createScreens",
     "getAnalytics",
+    "manageAnalytics",
   ],
   admin: [
     "getUsers",

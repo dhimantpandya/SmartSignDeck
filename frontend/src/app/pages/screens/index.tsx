@@ -279,7 +279,7 @@ export default function Screens() {
         }
     }
 
-    const renderScreenCard = (screen: any, isOwner: boolean) => (
+    const renderScreenCard = (screen: any, isOwner: boolean, hideStatus: boolean = false) => (
         <Card key={screen.id} className="overflow-hidden">
             <CardHeader className="bg-muted/50 pb-4">
                 <div className="flex items-center justify-between">
@@ -299,10 +299,12 @@ export default function Screens() {
                                 <IconCopy size={10} /> Shared
                             </Badge>
                         )}
-                        <Badge variant="secondary" className="flex items-center gap-1">
-                            <span className={`h-2 w-2 rounded-full ${getStatusColor(screen.status)}`} />
-                            {screen.status}
-                        </Badge>
+                        {!hideStatus && (
+                            <Badge variant="secondary" className="flex items-center gap-1">
+                                <span className={`h-2 w-2 rounded-full ${getStatusColor(screen.status)}`} />
+                                {screen.status}
+                            </Badge>
+                        )}
                     </div>
                 </div>
             </CardHeader>
@@ -408,7 +410,7 @@ export default function Screens() {
                             <TabsList className="grid w-full max-w-xs grid-cols-1">
                                 <TabsTrigger value="global" className="gap-2">
                                     <IconCopy size={16} />
-                                    <span>Shared Library</span> ({globalScreens.length})
+                                    <span>Global Library</span> ({globalScreens.length})
                                 </TabsTrigger>
                             </TabsList>
                         ) : (
@@ -419,7 +421,7 @@ export default function Screens() {
                                 </TabsTrigger>
                                 <TabsTrigger value="global" className="gap-2">
                                     <IconCopy size={16} />
-                                    <span className="hidden sm:inline">Shared Library</span> ({globalScreens.length})
+                                    <span className="hidden sm:inline">Global Library</span> ({globalScreens.length})
                                 </TabsTrigger>
                                 <TabsTrigger value="groups" className="gap-2">
                                     <Folders size={16} />
@@ -477,11 +479,11 @@ export default function Screens() {
                                             onCheckedChange={() => toggleSelectAll(globalScreens)}
                                         />
                                         <label htmlFor="select-all-global-screens" className="text-sm font-medium cursor-pointer flex-1">
-                                            Select All Shared Screens ({globalScreens.length})
+                                            Select All Global Screens ({globalScreens.length})
                                         </label>
                                     </div>
                                     <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
-                                        {globalScreens.map((screen: any) => renderScreenCard(screen, checkIsOwner(screen)))}
+                                        {globalScreens.map((screen: any) => renderScreenCard(screen, checkIsOwner(screen), true))}
                                     </div>
                                 </>
                             ) : (

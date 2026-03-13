@@ -460,60 +460,9 @@ function ZoneRenderer({ zone, content, screenId, templateId, secretKey, userId }
         setCurrentIndex(0)
     }, [content])
 
-    // --- TEXT ZONE HANDLER ---
     if (zone.type === 'text') {
-        const style = content?.style || {}
-        // ... (existing text logic remains same)
-        const [dynamicColor, setDynamicColor] = useState(style.color || '#fff')
-        const [animIndex, setAnimIndex] = useState(0)
-
-        useEffect(() => {
-            const sequence = content?.colorSequence
-            if (!sequence || sequence.length === 0) {
-                setDynamicColor(style.color || '#fff')
-                return
-            }
-            const currentFrame = sequence[animIndex]
-            if (!currentFrame) {
-                setAnimIndex(0)
-                return
-            }
-            setDynamicColor(currentFrame.color)
-            const timer = setTimeout(() => {
-                setAnimIndex((prev) => (prev + 1) % sequence.length)
-            }, (currentFrame.duration || 5) * 1000)
-            return () => clearTimeout(timer)
-        }, [content, animIndex, style.color])
-
-        const cssStyle: React.CSSProperties = {
-            width: '100%',
-            height: '100%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: style.textAlign === 'left' || style.textAlign === 'start' ? 'flex-start' :
-                style.textAlign === 'right' || style.textAlign === 'end' ? 'flex-end' : 'center',
-            backgroundColor: style.backgroundColor || 'transparent',
-            color: dynamicColor,
-            transition: 'color 1s ease-in-out',
-            fontFamily: style.fontFamily || 'sans-serif',
-            fontSize: `${style.fontSize || 48}px`,
-            fontWeight: style.fontWeight || 'normal',
-            fontStyle: style.fontStyle || 'normal',
-            padding: `${style.padding || 0}px`,
-            textAlign: (style.textAlign as any) || 'center',
-            lineHeight: style.lineHeight || 1.2,
-            whiteSpace: 'pre-wrap',
-            overflow: 'hidden',
-            wordBreak: 'break-word',
-            textShadow: style.shadowColor ? `${style.shadowOffsetX || 0}px ${style.shadowOffsetY || 0}px ${style.shadowBlur || 0}px ${style.shadowColor}` : 'none',
-            WebkitTextStroke: style.strokeWidth ? `${style.strokeWidth}px ${style.strokeColor || 'transparent'}` : 'none',
-            zIndex: 1,
-        }
-
         return (
-            <div style={cssStyle}>
-                {content?.text || ''}
-            </div>
+            <TextZone content={content} style={content?.style || {}} />
         )
     }
 
@@ -688,6 +637,60 @@ function ZoneRenderer({ zone, content, screenId, templateId, secretKey, userId }
                     }}
                 />
             )}
+        </div>
+    )
+}
+
+function TextZone({ content, style }: { content: any, style: any }) {
+    const [dynamicColor, setDynamicColor] = useState(style.color || '#fff')
+    const [animIndex, setAnimIndex] = useState(0)
+
+    useEffect(() => {
+        const sequence = content?.colorSequence
+        if (!sequence || sequence.length === 0) {
+            setDynamicColor(style.color || '#fff')
+            return
+        }
+        const currentFrame = sequence[animIndex]
+        if (!currentFrame) {
+            setAnimIndex(0)
+            return
+        }
+        setDynamicColor(currentFrame.color)
+        const timer = setTimeout(() => {
+            setAnimIndex((prev) => (prev + 1) % sequence.length)
+        }, (currentFrame.duration || 5) * 1000)
+        return () => clearTimeout(timer)
+    }, [content, animIndex, style.color])
+
+    const cssStyle: React.CSSProperties = {
+        width: '100%',
+        height: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: style.textAlign === 'left' || style.textAlign === 'start' ? 'flex-start' :
+            style.textAlign === 'right' || style.textAlign === 'end' ? 'flex-end' : 'center',
+        backgroundColor: style.backgroundColor || 'transparent',
+        color: dynamicColor,
+        transition: 'color 1s ease-in-out',
+        fontFamily: style.fontFamily || 'sans-serif',
+        fontSize: `${style.fontSize || 48}px`,
+        fontWeight: style.fontWeight || 'normal',
+        fontStyle: style.fontStyle || 'normal',
+        padding: `${style.padding || 0}px`,
+        textAlign: (style.textAlign as any) || 'center',
+        lineHeight: style.lineHeight || 1.2,
+        whiteSpace: 'pre-wrap',
+        overflow: 'hidden',
+        wordBreak: 'break-word',
+        textShadow: style.shadowColor ? `${style.shadowOffsetX || 0}px ${style.shadowOffsetY || 0}px ${style.shadowBlur || 0}px ${style.shadowColor}` : 'none',
+        WebkitTextStroke: style.strokeWidth ? `${style.strokeWidth}px ${style.strokeColor || 'transparent'}` : 'none',
+        zIndex: 1,
+    }
+
+    return (
+        <div style={cssStyle}>
+            {content?.text || ''}
         </div>
     )
 }
