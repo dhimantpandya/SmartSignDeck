@@ -451,37 +451,32 @@ export default function ScreenPlayer() {
 
 
 function ZoneRenderer({ zone, content, screenId, templateId, secretKey, userId }: { zone: any, content: any, screenId?: string, templateId?: string, secretKey?: string, userId?: string | null }) {
-    const [currentIndex, setCurrentIndex] = useState(0)
-    const [hasError, setHasError] = useState(false)
-
-    // Reset error when item changes
-    useEffect(() => {
-        setHasError(false)
-        setCurrentIndex(0)
-    }, [content])
-
     if (zone.type === 'text') {
-        return (
-            <TextZone content={content} style={content?.style || {}} />
-        )
+        return <TextZone content={content} style={content?.style || {}} />
     }
 
-    // --- PRIORITY & FALLBACK LOGIC ---
-    // Start with the primary playlist (linked or local)
-    // Fallback to simpler 'src' if playlist is empty or if we are in error state and playlist was the only content.
+    return (
+        <MediaZone 
+            zone={zone}
+            content={content} 
+            screenId={screenId} 
+            templateId={templateId} 
+            secretKey={secretKey} 
+            userId={userId} 
+        />
+    )
+}
 
-    // 1. Determine the active playlist based on sourceType priority
+function MediaZone({ zone, content, screenId, templateId, secretKey, userId }: any) {
     const playlist = useMemo(() => {
         let list = content?.playlist || []
 
-        // Apply strict type-based filtering for image/video only zones
         if (zone.type === 'image') {
             list = list.filter((item: any) => item.type === 'image')
         } else if (zone.type === 'video') {
             list = list.filter((item: any) => item.type === 'video')
         }
 
-        // Fallback to simpler 'src' if playlist is empty
         if (list.length === 0 && content?.src) {
             const fallbackSrc = content.src
             const isImage = fallbackSrc.match(/\.(jpg|jpeg|png|webp|gif|svg)$/i)
@@ -496,7 +491,15 @@ function ZoneRenderer({ zone, content, screenId, templateId, secretKey, userId }
         return list
     }, [content, zone.type])
 
-    // Reset error when index changes to retry playback
+    const [currentIndex, setCurrentIndex] = useState(0)
+    const [hasError, setHasError] = useState(false)
+    const videoRef = useRef<HTMLVideoElement>(null)
+
+    useEffect(() => {
+        setCurrentIndex(0)
+        setHasError(false)
+    }, [content])
+
     useEffect(() => {
         setHasError(false)
     }, [currentIndex])
@@ -505,12 +508,9 @@ function ZoneRenderer({ zone, content, screenId, templateId, secretKey, userId }
         if (!playlist || playlist.length <= 1) return
 
         const currentItem = playlist[currentIndex]
-        // If current item is VIDEO, do NOT use timer. Wait for onEnded.
-        // If current media is video type, we skip this timer logic.
         if (currentItem.type === 'video' || (zone.type === 'video' && !currentItem.type)) return
 
         const duration = (currentItem?.duration || 10) * 1000
-
         const timer = setTimeout(() => {
             setCurrentIndex((prev) => (prev + 1) % playlist.length)
         }, duration)
@@ -518,7 +518,6 @@ function ZoneRenderer({ zone, content, screenId, templateId, secretKey, userId }
         return () => clearTimeout(timer)
     }, [currentIndex, playlist, zone.type])
 
-    // Proof of Play Logging remains same...
     useEffect(() => {
         if (!playlist || playlist.length === 0 || !screenId || !templateId) return
         const item = playlist[currentIndex]
@@ -526,23 +525,35 @@ function ZoneRenderer({ zone, content, screenId, templateId, secretKey, userId }
         const logPlayback = async (endTime: Date) => {
             try {
                 const typeToLog = item?.type || zone.type
-                // Don't log texts
-                if (zone.type === 'text') return
-
                 const duration = (endTime.getTime() - startTime.getTime()) / 1000
                 await apiService.post('/v1/playback-logs', {
                     screenId, templateId, zoneId: zone.id,
                     contentUrl: item.url, contentType: typeToLog,
                     startTime, endTime, duration,
-                    secretKey, // Pass key for auth
-                    userId // Pass userId for tracking
+                    secretKey,
+                    userId
                 })
-            } catch (err) {
-                // Silent catch
-            }
+            } catch (err) { }
         }
         return () => { logPlayback(new Date()) }
-    }, [currentIndex, playlist, screenId, templateId, zone.id, zone.type])
+    }, [currentIndex, playlist, screenId, templateId, zone.id, zone.type, secretKey, userId])
+
+    const mediaType = playlist[currentIndex]?.type || zone.type
+    useEffect(() => {
+        if (mediaType === 'video' && videoRef.current) {
+            const video = videoRef.current
+            video.muted = true
+            video.play().catch(err => {
+                const forcePlay = () => {
+                    video.play()
+                    window.removeEventListener('click', forcePlay)
+                    window.removeEventListener('keydown', forcePlay)
+                }
+                window.addEventListener('click', forcePlay)
+                window.addEventListener('keydown', forcePlay)
+            })
+        }
+    }, [playlist, currentIndex, mediaType])
 
     if (!playlist || playlist.length === 0) {
         return (
@@ -551,39 +562,13 @@ function ZoneRenderer({ zone, content, screenId, templateId, secretKey, userId }
                 <p className='text-xs text-gray-400 font-mono'>No Content</p>
                 <p className='text-[10px] text-gray-600'>{zone.id}</p>
                 <div className="mt-2 text-[8px] opacity-60">
-                    Type: {zone.type || 'unknown'} | {zone.width}x{zone.height}
+                    {zone.width}x{zone.height}
                 </div>
             </div>
         )
     }
 
     const item = playlist[currentIndex]
-
-    // ERROR HANDLER: AUTO-SKIP (REMOVED - Now handled instantly via onError callbacks)
-
-    const mediaType = item.type || zone.type
-    const videoRef = useRef<HTMLVideoElement>(null)
-
-    // Robust Video Playback Trigger
-    useEffect(() => {
-        if (mediaType === 'video' && videoRef.current) {
-            const video = videoRef.current
-            video.muted = true
-            console.log('[Player] 📹 Attempting manual play for:', item.url);
-            video.play().then(() => {
-                console.log('[Player] ✅ Manual play success for:', item.url);
-            }).catch(err => {
-                console.warn('[Player] ⚠️ Autoplay prevented, waiting for interaction:', err)
-                const forcePlay = () => {
-                    video.play().then(() => console.log('[Player] ✅ Interaction play success'))
-                    window.removeEventListener('click', forcePlay)
-                    window.removeEventListener('keydown', forcePlay)
-                }
-                window.addEventListener('click', forcePlay)
-                window.addEventListener('keydown', forcePlay)
-            })
-        }
-    }, [item.url, mediaType])
 
     return (
         <div className='w-full h-full bg-black relative flex items-center justify-center'>
@@ -602,7 +587,6 @@ function ZoneRenderer({ zone, content, screenId, templateId, secretKey, userId }
                     className='h-full w-full object-contain'
                     style={{ backgroundColor: 'black' }}
                     onError={() => {
-                        console.error('[Player] Video element onError triggered for:', item.url);
                         if (playlist.length > 1) {
                             setTimeout(() => {
                                 setHasError(false);
@@ -625,7 +609,6 @@ function ZoneRenderer({ zone, content, screenId, templateId, secretKey, userId }
                     className='h-full w-full object-contain animate-in fade-in duration-500'
                     style={{ backgroundColor: 'black' }}
                     onError={() => {
-                        console.error('[Player] Image element onError triggered for:', item.url);
                         if (playlist.length > 1) {
                             setTimeout(() => {
                                 setHasError(false);
