@@ -418,21 +418,11 @@ export default function ScreenPlayer() {
             {/* Live Clock Overlay (top-left) */}
             {(showClock && !hideClockParam) && <LiveClock />}
 
-            {/* QR Code Overlay (dynamic free space) */}
-            {data?.qrCodeUrl && (
-                <QRCodeOverlay 
-                    url={data.qrCodeUrl} 
-                    zones={optimizedZones} 
-                    targetWidth={targetWidth} 
-                    targetHeight={targetHeight}
-                    qrHomeId={optimizedZones.qrHomeId}
-                />
-            )}
-
             {/* Recorder Overlay (if recording requested) */}
             {searchParams.get('record') === 'true' && (
                 <RecorderOverlay targetWidth={targetWidth} targetHeight={targetHeight} />
             )}
+
 
             {/* Fullscreen Toggle Overlay (visible on hover or when not fullscreen) */}
             {!hideControlsParam && (
@@ -472,6 +462,17 @@ export default function ScreenPlayer() {
                     transformOrigin: 'center center'
                 }}
             >
+                {/* QR Code Overlay (dynamic free space) - INSIDE scaled container for coordinate symmetry */}
+                {data?.qrCodeUrl && (
+                    <QRCodeOverlay 
+                        url={data.qrCodeUrl} 
+                        zones={optimizedZones} 
+                        targetWidth={targetWidth} 
+                        targetHeight={targetHeight}
+                        qrHomeId={optimizedZones.qrHomeId}
+                    />
+                )}
+
                 {optimizedZones.map((zone: any) => {
                     const zoneContent = content[zone.id]
                     return (
@@ -498,6 +499,7 @@ export default function ScreenPlayer() {
                     )
                 })}
             </div>
+
         </div>
     )
 }
@@ -748,7 +750,7 @@ function QRCodeOverlay({ url, zones, targetWidth, targetHeight, qrHomeId }: { ur
 
     useEffect(() => {
         const qrSize = 180;
-        const padding = 30; // Relaxed padding for corner tighter fit
+        const padding = 40; // Increased padding for safer margins
         
         const gridX = 24; // Much higher density grid for better precision
         const gridY = 24;
@@ -794,8 +796,10 @@ function QRCodeOverlay({ url, zones, targetWidth, targetHeight, qrHomeId }: { ur
 
                 if (hasCollision) continue;
 
-                // Score: we want distance from zones to be high
-                // Actually, let's just find the one with most min-distance from zones
+                // --- Premium Scoring System ---
+                // 1. We want to be away from zones (minZoneDist)
+                // 2. We want to be somewhat away from edges (edgeDist)
+                // 3. Balancing these two naturally finds the "center" of an empty area
                 let minZoneDist = 5000;
                 zones.forEach(z => {
                     const zcx = z.x + z.width/2;
@@ -804,8 +808,18 @@ function QRCodeOverlay({ url, zones, targetWidth, targetHeight, qrHomeId }: { ur
                     if (d < minZoneDist) minZoneDist = d;
                 });
 
-                if (minZoneDist > bestPos.maxDist) {
-                    bestPos = { top: qy, left: qx, maxDist: minZoneDist };
+                const distToLeft = cx;
+                const distToRight = targetWidth - cx;
+                const distToTop = cy;
+                const distToBottom = targetHeight - cy;
+                const edgeDist = Math.min(distToLeft, distToRight, distToTop, distToBottom);
+
+                // Combined score: high minZoneDist + reasonable edgeDist = Centered in the free gap
+                const score = minZoneDist + (edgeDist * 0.5);
+
+                if (score > (bestPos as any).maxScore || !bestPos.maxDist) {
+                    (bestPos as any).maxScore = score;
+                    bestPos = { top: qy, left: qx, maxDist: minZoneDist } as any;
                 }
             }
         }
