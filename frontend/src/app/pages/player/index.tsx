@@ -758,9 +758,7 @@ function QRCodeOverlay({ url, zones, targetWidth, targetHeight, qrHomeId }: { ur
         // --- NEW: Direct Target Fallback ---
         // If we have a reserved QR home zone, try placing it there first
         if (qrHomeId) {
-            const originalZones = (zones as any).qrHomeData || []; // We'd need to pass this, but let's try finding the space in the result
-            // Actually, optimizedZones is just the content zones. 
-            // The "empty" space is everywhere else.
+            // Logic for direct placement can be added here if needed
         }
 
         for (let ix = 0; ix < gridX; ix++) {
