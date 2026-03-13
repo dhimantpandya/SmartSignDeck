@@ -4,7 +4,6 @@ import { apiService } from '@/api'
 import Loader from '@/components/loader'
 import { IconAlertTriangle } from '@tabler/icons-react'
 import { Button } from '@/components/custom/button'
-import { toast } from '@/components/ui/use-toast'
 import { io } from 'socket.io-client'
 
 /**
@@ -178,15 +177,16 @@ export default function ScreenPlayer() {
         return () => document.removeEventListener('fullscreenchange', handleFsChange)
     }, [])
 
-    // Keyboard shortcuts
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key.toLowerCase() === 'f') toggleFullscreen()
-            if (e.key === 'Escape' && document.fullscreenElement) document.exitFullscreen()
+    // Handle Fullscreen toggle function
+    const toggleFullscreen = () => {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(() => {
+                // Silently fail if not supported
+            })
+        } else {
+            document.exitFullscreen()
         }
-        window.addEventListener('keydown', handleKeyDown)
-        return () => window.removeEventListener('keydown', handleKeyDown)
-    }, [])
+    }
 
     // Keyboard shortcuts
     useEffect(() => {
