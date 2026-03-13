@@ -387,6 +387,9 @@ export default function ScreenPlayer() {
             {/* Live Clock Overlay (top-left) */}
             {showClock && <LiveClock />}
 
+            {/* QR Code Overlay (dynamic free space) */}
+            {data?.qrCodeUrl && <QRCodeOverlay url={data.qrCodeUrl} zones={optimizedZones} targetWidth={targetWidth} targetHeight={targetHeight} />}
+
             {/* Fullscreen Toggle Overlay (visible on hover or when not fullscreen) */}
             <div className={`absolute top-4 right-4 z-50 transition-opacity duration-300 ${isFullscreen ? 'opacity-0 hover:opacity-100' : 'opacity-100'}`}>
                 <Button
@@ -686,6 +689,60 @@ function LiveClock() {
             <div className="bg-black/40 backdrop-blur-sm rounded-lg px-4 py-2 border border-white/10">
                 <div className="text-white text-2xl font-bold tracking-tight leading-none">{time}</div>
                 <div className="text-white/70 text-xs font-medium tracking-wide mt-0.5">{date}</div>
+            </div>
+        </div>
+    )
+}
+
+// --- QR CODE OVERLAY ---
+function QRCodeOverlay({ url, zones, targetWidth, targetHeight }: { url: string, zones: any[], targetWidth: number, targetHeight: number }) {
+    const [position, setPosition] = useState<{ top?: number, right?: number, bottom?: number, left?: number }>({ top: 16, right: 16 })
+
+    useEffect(() => {
+        // Find "best" corner that doesn't have a zone
+        // Corners to check: Top-Right (TR), Bottom-Left (BL), Bottom-Right (BR)
+        // (Top-Left is reserved for Clock)
+        
+        const size = 180; // Estimated QR container size
+        const margin = 20;
+
+        const corners = [
+            { id: 'TR', top: margin, right: margin, check: (z: any) => z.x + z.width > targetWidth - size - margin && z.y < size + margin },
+            { id: 'BR', bottom: margin, right: margin, check: (z: any) => z.x + z.width > targetWidth - size - margin && z.y + z.height > targetHeight - size - margin },
+            { id: 'BL', bottom: margin, left: margin, check: (z: any) => z.x < size + margin && z.y + z.height > targetHeight - size - margin },
+        ]
+
+        // Find corners with most overlap
+        const cornerScores = corners.map(c => ({
+            ...c,
+            score: zones.filter(z => c.check(z)).length
+        }))
+
+        // Sort by least overlap
+        const bestCorner = cornerScores.sort((a, b) => a.score - b.score)[0]
+
+        if (bestCorner.id === 'TR') setPosition({ top: 20, right: 20 })
+        else if (bestCorner.id === 'BR') setPosition({ bottom: 20, right: 20 })
+        else if (bestCorner.id === 'BL') setPosition({ bottom: 20, left: 20 })
+    }, [zones, targetWidth, targetHeight])
+
+    const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(url)}&color=000&bgcolor=fff&margin=1`
+
+    return (
+        <div 
+            className="absolute z-50 pointer-events-none select-none transition-all duration-700 ease-in-out"
+            style={{ 
+                ...position as any,
+                animation: 'fadeIn 1s ease-out'
+            }}
+        >
+            <div className="bg-white p-2 rounded-xl shadow-2xl border border-black/10 flex flex-col items-center gap-1">
+                <div className="w-[120px] h-[120px] bg-white rounded overflow-hidden">
+                    <img src={qrImageUrl} alt="QR Code" className="w-full h-full object-contain" />
+                </div>
+                <div className="bg-black text-white text-[10px] font-bold px-3 py-0.5 rounded-full uppercase tracking-tighter">
+                    Scan Me
+                </div>
             </div>
         </div>
     )
