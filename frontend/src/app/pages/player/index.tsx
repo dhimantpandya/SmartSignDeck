@@ -761,12 +761,7 @@ function QRCodeOverlay({ url, zones, targetWidth, targetHeight }: { url: string,
 
                 if (hasCollision) continue;
 
-                // Find the most "central" free spot (closer to center of screen is often preferred by users)
-                const screenCX = targetWidth / 2;
-                const screenCY = targetHeight / 2;
-                const distToCenter = Math.sqrt(Math.pow(cx - screenCX, 2) + Math.pow(cy - screenCY, 2));
-                
-                // Score: we want distance from zones to be high, but distance to center can be varied
+                // Score: we want distance from zones to be high
                 // Actually, let's just find the one with most min-distance from zones
                 let minZoneDist = 5000;
                 zones.forEach(z => {
