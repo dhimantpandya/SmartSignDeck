@@ -694,6 +694,32 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
                                             </button>
                                         </div>
 
+                                        {/* Transition Selection */}
+                                        <div className="grid gap-2 p-3 border rounded-lg bg-muted/10">
+                                            <div className="flex items-center justify-between">
+                                                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                                                    Transition Style
+                                                </Label>
+                                                <span className="text-[10px] text-muted-foreground italic">Animation between items</span>
+                                            </div>
+                                            <Select
+                                                value={zoneContent.transition || 'fade'}
+                                                onValueChange={(val) => handleZoneContentChange(selectedZoneId, { transition: val })}
+                                            >
+                                                <SelectTrigger className="h-9 bg-background">
+                                                    <SelectValue placeholder="Select Transition" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="fade">Smooth Fade</SelectItem>
+                                                    <SelectItem value="slide-left">Slide Left</SelectItem>
+                                                    <SelectItem value="slide-up">Slide Up</SelectItem>
+                                                    <SelectItem value="zoom">Zoom In</SelectItem>
+                                                    <SelectItem value="flip">3D Flip</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+
                                         {zoneContent.sourceType === 'playlist' ? (
                                             <div className="space-y-4 p-4 border rounded-lg bg-card">
                                                 <div className="flex items-center gap-2 text-indigo-500 mb-2">

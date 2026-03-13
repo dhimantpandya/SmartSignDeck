@@ -16,6 +16,7 @@ export type IScreenContent = Record<
     type: "video" | "image" | "text" | "mixed";
     sourceType?: "local" | "playlist"; // New field: define source
     playlistId?: string; // New field: if source is playlist
+    transition?: "fade" | "slide-left" | "slide-up" | "zoom" | "flip"; // Animation between items
     playlist: Array<{
       url: string;
       duration: number;

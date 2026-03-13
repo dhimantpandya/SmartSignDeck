@@ -445,6 +445,8 @@ function MediaZone({ zone, content, screenId, templateId, secretKey, userId, isM
     const [currentIndex, setCurrentIndex] = useState(0)
     const [hasError, setHasError] = useState(false)
     const videoRef = useRef<HTMLVideoElement>(null)
+    const [transitionKey, setTransitionKey] = useState(0)
+    const transition = content?.transition || 'fade'
 
     useEffect(() => {
         setCurrentIndex(0)
@@ -453,6 +455,7 @@ function MediaZone({ zone, content, screenId, templateId, secretKey, userId, isM
 
     useEffect(() => {
         setHasError(false)
+        setTransitionKey(prev => prev + 1)
     }, [currentIndex])
 
     useEffect(() => {
@@ -517,11 +520,29 @@ function MediaZone({ zone, content, screenId, templateId, secretKey, userId, isM
 
     const item = playlist[currentIndex]
 
-    return (
-        <div className='w-full h-full bg-black relative flex items-center justify-center'>
-            {hasError ? (
-                <div className="w-full h-full bg-black"></div>
-            ) : mediaType === 'video' ? (
+    // CSS animation class based on transition type
+    const getAnimationStyle = (): React.CSSProperties => {
+        const base: React.CSSProperties = { animationDuration: '600ms', animationFillMode: 'both', animationTimingFunction: 'ease-in-out' }
+        switch (transition) {
+            case 'slide-left':
+                return { ...base, animationName: 'slideInFromRight' }
+            case 'slide-up':
+                return { ...base, animationName: 'slideInFromBottom' }
+            case 'zoom':
+                return { ...base, animationName: 'zoomIn' }
+            case 'flip':
+                return { ...base, animationName: 'flipIn', perspective: '1200px' }
+            case 'fade':
+            default:
+                return { ...base, animationName: 'fadeIn' }
+        }
+    }
+
+    const renderMedia = () => {
+        if (hasError) return <div className="w-full h-full bg-black"></div>
+
+        if (mediaType === 'video') {
+            return (
                 <video
                     ref={videoRef}
                     key={item.url}
@@ -549,24 +570,38 @@ function MediaZone({ zone, content, screenId, templateId, secretKey, userId, isM
                         }
                     }}
                 />
-            ) : (
-                <img
-                    src={item.url}
-                    alt=""
-                    className='h-full w-full object-contain animate-in fade-in duration-500'
-                    style={{ backgroundColor: 'black' }}
-                    onError={() => {
-                        if (playlist.length > 1) {
-                            setTimeout(() => {
-                                setHasError(false);
-                                setCurrentIndex((prev) => (prev + 1) % playlist.length);
-                            }, 50);
-                        } else {
-                            setTimeout(() => setHasError(true), 50);
-                        }
-                    }}
-                />
-            )}
+            )
+        }
+
+        return (
+            <img
+                src={item.url}
+                alt=""
+                className='h-full w-full object-contain'
+                style={{ backgroundColor: 'black' }}
+                onError={() => {
+                    if (playlist.length > 1) {
+                        setTimeout(() => {
+                            setHasError(false);
+                            setCurrentIndex((prev) => (prev + 1) % playlist.length);
+                        }, 50);
+                    } else {
+                        setTimeout(() => setHasError(true), 50);
+                    }
+                }}
+            />
+        )
+    }
+
+    return (
+        <div className='w-full h-full bg-black relative overflow-hidden'>
+            <div
+                key={transitionKey}
+                className='absolute inset-0 flex items-center justify-center'
+                style={playlist.length > 1 ? getAnimationStyle() : {}}
+            >
+                {renderMedia()}
+            </div>
         </div>
     )
 }
