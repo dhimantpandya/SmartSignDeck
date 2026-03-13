@@ -898,11 +898,14 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
                             <Label htmlFor='qrCodeUrl' className='text-xs'>QR Code URL <span className='text-muted-foreground'>(optional)</span></Label>
                             <Input
                                 id='qrCodeUrl'
-                                placeholder='https://your-website.com'
+                                placeholder='https://my-website.com'
                                 value={qrCodeUrl}
                                 onChange={(e) => setQrCodeUrl(e.target.value)}
                             />
                             <p className='text-[10px] text-muted-foreground'>If set, a QR code will appear on the player screen.</p>
+                            <p className='text-[10px] text-muted-foreground italic px-1'>
+                                Note: QR code will appear automatically in free zones which do not contain any media content.
+                            </p>
                         </div>
 
                         {selectedTemplate && (

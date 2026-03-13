@@ -778,7 +778,8 @@ function QRCodeOverlay({ url, zones, targetWidth, targetHeight }: { url: string,
         }
 
         // Only show if the spot is genuinely free (maxDist > some threshold)
-        if (bestPos.maxDist > 200) {
+        // Relaxed threshold from 200 to 100 to ensure visibility on more layouts
+        if (bestPos.maxDist > 100) {
             setPosition({ top: bestPos.top, left: bestPos.left });
         } else {
             setPosition({ top: -1000, left: -1000 });
