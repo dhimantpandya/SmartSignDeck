@@ -749,8 +749,8 @@ function QRCodeOverlay({ url, zones, targetWidth, targetHeight, qrHomeId }: { ur
     const [position, setPosition] = useState<{ top?: number, right?: number, bottom?: number, left?: number }>({ top: -1000, left: -1000 })
 
     useEffect(() => {
-        const qrSize = 350; // Ultra-sized to fill empty space
-        const padding = 20; // Tight margins to allow maximum growth
+        const qrSize = 200; // Standard size for a clean look
+        const padding = 60; // Generous padding for perfect centering
         
         const gridX = 24; // Much higher density grid for better precision
         const gridY = 24;
@@ -826,39 +826,31 @@ function QRCodeOverlay({ url, zones, targetWidth, targetHeight, qrHomeId }: { ur
 
         // PRIORITY: If we have ANY spot that doesn't collide, show it.
         // Even a low maxDist (like 20) is better than no QR code if the user added a URL.
-        if (bestPos.maxDist > 20) {
+        // PRIORITY: Find the best centered spot
+        if ((bestPos as any).maxScore > 0) {
             setPosition({ top: bestPos.top, left: bestPos.left });
         } else {
-            // Total fail: hide it
             setPosition({ top: -1000, left: -1000 });
         }
     }, [url, zones, targetWidth, targetHeight, qrHomeId])
 
-    const qrImageUrl = url ? `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(url)}&color=000&bgcolor=fff&margin=1` : ''
+    const qrImageUrl = url ? `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}&color=000&bgcolor=fff&margin=1` : ''
 
     if (!url || position.top === -1000) return null;
 
     return (
         <div 
-            className="absolute z-50 pointer-events-none select-none transition-all duration-700 ease-in-out"
+            className="absolute z-50 pointer-events-none select-none transition-opacity duration-1000"
             style={{ 
                 ...position as any,
-                animation: 'qrFloat 4s ease-symmetric infinite alternate, fadeIn 1s ease-out'
             }}
         >
-            <style>{`
-                @keyframes qrFloat {
-                    0% { transform: translateY(0px) rotate(0deg); }
-                    100% { transform: translateY(-12px) rotate(1deg); }
-                }
-            `}</style>
-            <div className="bg-white/90 backdrop-blur-xl p-8 rounded-[3rem] shadow-[0_30px_70px_rgba(0,0,0,0.4)] border border-white/20 flex flex-col items-center gap-6 scale-110">
-                <div className="w-[280px] h-[280px] bg-white rounded-3xl p-4 shadow-inner overflow-hidden">
-                    <img src={qrImageUrl} alt="QR Code" className="w-full h-full object-contain" />
+            <div className="flex flex-col items-center gap-2">
+                <div className="bg-white p-2 shadow-lg border border-black/5">
+                    <img src={qrImageUrl} alt="QR Code" className="w-[180px] h-[180px] object-contain" />
                 </div>
-                <div className="bg-gradient-to-r from-primary to-blue-600 text-white text-[16px] font-black px-10 py-3 rounded-full shadow-lg uppercase tracking-[0.2em] flex items-center gap-3">
-                    <div className="w-2.5 h-2.5 bg-white rounded-full animate-pulse" />
-                    Scan to Connect
+                <div className="bg-black/80 text-white text-[10px] font-bold px-4 py-1 rounded uppercase tracking-[0.2em]">
+                    Scan Me
                 </div>
             </div>
         </div>
