@@ -752,12 +752,12 @@ function QRCodeOverlay({ url, zones, targetWidth, targetHeight, qrHomeId }: { ur
         const qrSize = 200; // Standard size for a clean look
         const padding = 60; // Generous padding for perfect centering
         
-        const gridX = 24; // Much higher density grid for better precision
-        const gridY = 24;
+        const gridX = 40; // Higher density for gap finding
+        const gridY = 40;
         const cellW = targetWidth / gridX;
         const cellH = targetHeight / gridY;
 
-        let bestPos = { top: -1000, left: -1000, maxDist: 0 };
+        let bestPos = { top: -1000, left: -1000, maxScore: -999999, cx: 0, cy: 0, ls: 0, rs: 0, ts: 0, bs: 0 };
 
         // --- NEW: Direct Target Fallback ---
         // If we have a reserved QR home zone, find its center to use as a primary target
@@ -796,39 +796,50 @@ function QRCodeOverlay({ url, zones, targetWidth, targetHeight, qrHomeId }: { ur
 
                 if (hasCollision) continue;
 
-                // --- Premium Scoring System ---
-                // 1. We want to be away from zones (minZoneDist)
-                // 2. We want to be somewhat away from edges (edgeDist)
-                // 3. Balancing these two naturally finds the "center" of an empty area
-                let minZoneDist = 5000;
+                // --- Geometric Void Centering ---
+                // Calculate exactly how much free space is available in all 4 directions from this point
+                let leftSpace = cx;
+                let rightSpace = targetWidth - cx;
+                let topSpace = cy;
+                let bottomSpace = targetHeight - cy;
+
                 zones.forEach(z => {
-                    const zcx = z.x + z.width/2;
-                    const zcy = z.y + z.height/2;
-                    const d = Math.sqrt(Math.pow(cx - zcx, 2) + Math.pow(cy - zcy, 2));
-                    if (d < minZoneDist) minZoneDist = d;
+                    // Check horizontal blockers (zones at the same Y level)
+                    if (cy > z.y - buffer && cy < z.y + z.height + buffer) {
+                        if (z.x + z.width <= cx) leftSpace = Math.min(leftSpace, cx - (z.x + z.width));
+                        if (z.x >= cx) rightSpace = Math.min(rightSpace, z.x - cx);
+                    }
+                    // Check vertical blockers (zones at the same X level)
+                    if (cx > z.x - buffer && cx < z.x + z.width + buffer) {
+                        if (z.y + z.height <= cy) topSpace = Math.min(topSpace, cy - (z.y + z.height));
+                        if (z.y >= cy) bottomSpace = Math.min(bottomSpace, z.y - cy);
+                    }
                 });
 
-                const distToLeft = cx;
-                const distToRight = targetWidth - cx;
-                const distToTop = cy;
-                const distToBottom = targetHeight - cy;
-                const edgeDist = Math.min(distToLeft, distToRight, distToTop, distToBottom);
+                const minX = Math.min(leftSpace, rightSpace);
+                const minY = Math.min(topSpace, bottomSpace);
+                const gapX = Math.abs(leftSpace - rightSpace);
+                const gapY = Math.abs(topSpace - bottomSpace);
 
-                // Combined score: high minZoneDist + reasonable edgeDist = Centered in the free gap
-                const score = minZoneDist + (edgeDist * 0.5);
+                // Score: prioritize large spaces, strongly penalize asymmetry (off-center)
+                const score = (minX + minY) * 10 - (gapX + gapY);
 
-                if (score > (bestPos as any).maxScore || !bestPos.maxDist) {
-                    (bestPos as any).maxScore = score;
-                    bestPos = { top: qy, left: qx, maxDist: minZoneDist } as any;
+                if (score > bestPos.maxScore) {
+                    bestPos = { top: qy, left: qx, maxScore: score, cx, cy, ls: leftSpace, rs: rightSpace, ts: topSpace, bs: bottomSpace };
                 }
             }
         }
 
-        // PRIORITY: If we have ANY spot that doesn't collide, show it.
-        // Even a low maxDist (like 20) is better than no QR code if the user added a URL.
-        // PRIORITY: Find the best centered spot
-        if ((bestPos as any).maxScore > 0) {
-            setPosition({ top: bestPos.top, left: bestPos.left });
+        // PRIORITY: Find the best centered spot and snap precisely to the mathematical middle
+        if (bestPos.maxScore > -999999) {
+            // Calculate the exact mathematical center of the found gap
+            const exactCx = bestPos.cx - bestPos.ls + (bestPos.ls + bestPos.rs) / 2;
+            const exactCy = bestPos.cy - bestPos.ts + (bestPos.ts + bestPos.bs) / 2;
+            
+            setPosition({ 
+                top: exactCy - qrSize/2, 
+                left: exactCx - qrSize/2 
+            });
         } else {
             setPosition({ top: -1000, left: -1000 });
         }
