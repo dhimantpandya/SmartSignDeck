@@ -787,13 +787,11 @@ function QRCodeOverlay({ url, zones, targetWidth, targetHeight }: { url: string,
 function RecorderOverlay({ }: { targetWidth: number, targetHeight: number }) {
     const [duration, setDuration] = useState(30)
     const [isRecording, setIsRecording] = useState(false)
-    const [progress, setProgress] = useState(0)
     const [status, setStatus] = useState<'idle' | 'recording' | 'finalizing' | 'done'>('idle')
 
     const startRecording = async () => {
         setIsRecording(true)
         setStatus('recording')
-        setProgress(0)
 
         // Actually, capturing the window is easier if we are in a tab.
         
@@ -836,7 +834,6 @@ function RecorderOverlay({ }: { targetWidth: number, targetHeight: number }) {
             const interval = setInterval(() => {
                 const elapsed = (Date.now() - startTime) / 1000
                 const p = Math.min(100, (elapsed / duration) * 100)
-                setProgress(p)
                 document.title = `Recording: ${Math.round(p)}% - SmartSignDeck`
 
                 if (elapsed >= duration) {
