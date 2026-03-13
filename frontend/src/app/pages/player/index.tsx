@@ -282,9 +282,9 @@ export default function ScreenPlayer() {
             if (freeZones.length === 0) return null;
             
             // Prefer Top-Right or Bottom-Right for QR
-            const trZone = freeZones.find(z => z.x + z.width >= targetWidth - 10 && z.y <= 10);
+            const trZone = freeZones.find((z: any) => z.x + z.width >= targetWidth - 10 && z.y <= 10);
             if (trZone) return trZone.id;
-            const brZone = freeZones.find(z => z.x + z.width >= targetWidth - 10 && z.y + z.height >= targetHeight - 10);
+            const brZone = freeZones.find((z: any) => z.x + z.width >= targetWidth - 10 && z.y + z.height >= targetHeight - 10);
             if (brZone) return brZone.id;
             
             // Fallback: Largest free zone
