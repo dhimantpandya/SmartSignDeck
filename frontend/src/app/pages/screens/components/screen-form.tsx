@@ -9,8 +9,7 @@ import { templateService, Template } from '@/api/template.service'
 import { apiService } from '@/api'
 import { toast } from '@/components/ui/use-toast'
 import { playlistService, Playlist } from '@/api/playlist.service'
-import { IconDeviceFloppy, IconArrowLeft, IconPlayerPlay, IconPlaylist } from '@tabler/icons-react'
-import { useAuth } from '@/hooks/use-auth'
+import { IconDeviceFloppy, IconArrowLeft, IconPlayerPlay, IconPlaylist, IconAlertTriangle } from '@tabler/icons-react'
 import TextZoneEditor from './text-zone-editor'
 import PlaylistEditor from './playlist-editor'
 import {
@@ -30,7 +29,6 @@ interface ScreenFormProps {
 }
 
 export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
-    const { user } = useAuth()
     // State
     // Safe ID extraction
     const getInitialTemplateId = () => {
@@ -72,10 +70,10 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
 
     const queryClient = useQueryClient()
 
+    // Fetches
     const { data: templatesData } = useQuery({
-        queryKey: ['templates', user?.id],
-        queryFn: () => templateService.getTemplates({ limit: 100, createdBy: user?.id }),
-        enabled: !!user?.id
+        queryKey: ['templates'],
+        queryFn: () => templateService.getTemplates({ limit: 100 }),
     })
 
     const { data: playlistsData } = useQuery({
@@ -95,6 +93,21 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
         if (specificTemplateData) return specificTemplateData
         return templatesData?.results?.find((t: Template) => t.id === selectedTemplateId || t._id === selectedTemplateId)
     }, [specificTemplateData, templatesData, selectedTemplateId])
+
+    // Overlap Detection Logic
+    const hasOverlaps = useMemo(() => {
+        const zones = selectedTemplate?.zones || []
+        for (let i = 0; i < zones.length; i++) {
+            for (let j = i + 1; j < zones.length; j++) {
+                const z1 = zones[i]
+                const z2 = zones[j]
+                const isOverlapping = z1.x < (z2.x + z2.width) && (z1.x + z1.width) > z2.x &&
+                    z1.y < (z2.y + z2.height) && (z1.y + z1.height) > z2.y
+                if (isOverlapping) return true
+            }
+        }
+        return false
+    }, [selectedTemplate])
 
     const latestTemplateId = useMemo(() => {
         if (!templatesData?.results?.length) return null
@@ -618,8 +631,19 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
                             <Button size="sm" variant="ghost" className="h-6 w-6 p-0 hover:bg-primary/20 rounded-full flex-shrink-0" onClick={() => setSelectedZoneId(null)}>×</Button>
                         </div>
                         <div className='p-4'>
+                            {hasOverlaps && (
+                                <div className='mb-4 flex items-center gap-2 rounded-lg border border-yellow-500/50 bg-yellow-500/10 p-3 text-yellow-600 dark:text-yellow-500'>
+                                    <IconAlertTriangle size={18} />
+                                    <div className='flex flex-col'>
+                                        <p className='text-xs font-bold leading-none uppercase tracking-wider'>Zone Overlap Detected</p>
+                                        <p className='text-[10px] mt-0.5 opacity-90 font-medium'>Zones are overlapping. The player will automatically adjust them to sit side-by-side or stacked for a balanced look.</p>
+                                    </div>
+                                </div>
+                            )}
+
                             {(() => {
-                                const zone = selectedTemplate?.zones.find((z: any) => z.id === selectedZoneId || z.id.toLowerCase() === selectedZoneId.toLowerCase());
+                                const zones = selectedTemplate?.zones || []
+                                const zone = zones.find((z: any) => z.id === selectedZoneId || z.id.toLowerCase() === selectedZoneId.toLowerCase());
 
                                 if (!zone && selectedZoneId) {
                                     return <div className="p-4 text-xs italic text-muted-foreground bg-muted/20 rounded-lg">Zone no longer available in this template. Please select another.</div>;

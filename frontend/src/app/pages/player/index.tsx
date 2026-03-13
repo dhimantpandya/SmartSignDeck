@@ -299,12 +299,64 @@ export default function ScreenPlayer() {
         })
 
         const zonesWithContent = zones.filter((z: any) => !isEmptyTextZone(z) && !isEmptyMediaZone(z))
+        
+        // --- NEW: Overlap Auto-Fix ---
+        // If zones overlap, we adjust them to sit side-by-side or stacked
+        for (let i = 0; i < zonesWithContent.length; i++) {
+            for (let j = i + 1; j < zonesWithContent.length; j++) {
+                const z1 = zonesWithContent[i]
+                const z2 = zonesWithContent[j]
+
+                // Check overlap
+                const x1_max = z1.x + z1.width;
+                const x2_max = z2.x + z2.width;
+                const y1_max = z1.y + z1.height;
+                const y2_max = z2.y + z2.height;
+
+                const isOverlapping = z1.x < x2_max && x1_max > z2.x && z1.y < y2_max && y1_max > z2.y;
+
+                if (isOverlapping) {
+                    // Calculate intersection area
+                    const interX = Math.min(x1_max, x2_max) - Math.max(z1.x, z2.x);
+                    const interY = Math.min(y1_max, y2_max) - Math.max(z1.y, z2.y);
+
+                    // If it's a major overlap, try to resolve it
+                    if (interX > 2 && interY > 2) {
+                        // Resolve horizontally if overlap is taller than wide, otherwise vertically
+                        if (interX < interY) {
+                            // Resolve horizontally: move z2 to the right of z1 or z1 to the left of z2
+                            if (z1.x < z2.x) {
+                                const diff = x1_max - z2.x;
+                                z2.x += diff;
+                                z2.width = Math.max(20, z2.width - diff);
+                            } else {
+                                const diff = x2_max - z1.x;
+                                z1.x += diff;
+                                z1.width = Math.max(20, z1.width - diff);
+                            }
+                        } else {
+                            // Resolve vertically: move z2 below z1 or z1 above z2
+                            if (z1.y < z2.y) {
+                                const diff = y1_max - z2.y;
+                                z2.y += diff;
+                                z2.height = Math.max(20, z2.height - diff);
+                            } else {
+                                const diff = y2_max - z1.y;
+                                z1.y += diff;
+                                z1.height = Math.max(20, z1.height - diff);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         if (zonesWithContent.length === 1) {
             const soloZone = zonesWithContent[0]
             soloZone.x = 0; soloZone.y = 0; soloZone.width = targetWidth; soloZone.height = targetHeight;
         }
 
-        return zones.filter((z: any) => !isEmptyTextZone(z) && !isEmptyMediaZone(z))
+        return zonesWithContent
     }, [data, content, targetWidth, targetHeight])
 
     if (isLoading) {
