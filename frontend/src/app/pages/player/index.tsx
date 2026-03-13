@@ -721,53 +721,71 @@ function QRCodeOverlay({ url, zones, targetWidth, targetHeight }: { url: string,
         // Corners to check: Top-Right (TR), Bottom-Left (BL), Bottom-Right (BR)
         // (Top-Left is reserved for Clock)
         
-        // Find the "center" of free space by checking a grid
-        const gridX = 5;
-        const gridY = 5;
+        const qrSize = 180;
+        const padding = 60; // Increased padding for a more "central" look
+        
+        // Stricter grid search
+        const gridX = 8;
+        const gridY = 8;
         const cellW = targetWidth / gridX;
         const cellH = targetHeight / gridY;
-        
-        const qrSize = 180;
-        const padding = 40;
-        
-        let freeCells: {x: number, y: number, score: number}[] = [];
+
+        let bestPos = { top: -1000, left: -1000, maxDist: 0 };
 
         for (let ix = 0; ix < gridX; ix++) {
             for (let iy = 0; iy < gridY; iy++) {
                 const cx = ix * cellW + cellW/2;
                 const cy = iy * cellH + cellH/2;
                 
-                // Avoid Top-Left (Clock)
-                if (ix === 0 && iy === 0) continue;
+                // Avoid Top-Left (Clock area)
+                if (cx < 300 && cy < 150) continue;
 
-                // Ensure it stays within bounds with padding
-                if (cx < qrSize/2 + padding || cx > targetWidth - qrSize/2 - padding) continue;
-                if (cy < qrSize/2 + padding || cy > targetHeight - qrSize/2 - padding) continue;
+                const qx = cx - qrSize/2;
+                const qy = cy - qrSize/2;
 
-                // Score based on distance from zones (higher is better)
-                let minSubDist = 2000;
+                // Stay in bounds
+                if (qx < padding || qx + qrSize > targetWidth - padding) continue;
+                if (qy < padding || qy + qrSize > targetHeight - padding) continue;
+
+                // STRICT COLLISION CHECK
+                // Does this 180x180 square overlap ANY zone?
+                const buffer = 20; // Extra space around zones
+                const hasCollision = zones.some(z => {
+                    return (
+                        qx < z.x + z.width + buffer &&
+                        qx + qrSize > z.x - buffer &&
+                        qy < z.y + z.height + buffer &&
+                        qy + qrSize > z.y - buffer
+                    );
+                });
+
+                if (hasCollision) continue;
+
+                // Find the most "central" free spot (closer to center of screen is often preferred by users)
+                const screenCX = targetWidth / 2;
+                const screenCY = targetHeight / 2;
+                const distToCenter = Math.sqrt(Math.pow(cx - screenCX, 2) + Math.pow(cy - screenCY, 2));
+                
+                // Score: we want distance from zones to be high, but distance to center can be varied
+                // Actually, let's just find the one with most min-distance from zones
+                let minZoneDist = 5000;
                 zones.forEach(z => {
                     const zcx = z.x + z.width/2;
                     const zcy = z.y + z.height/2;
                     const d = Math.sqrt(Math.pow(cx - zcx, 2) + Math.pow(cy - zcy, 2));
-                    if (d < minSubDist) minSubDist = d;
+                    if (d < minZoneDist) minZoneDist = d;
                 });
-                
-                freeCells.push({ x: cx, y: cy, score: minSubDist });
+
+                if (minZoneDist > bestPos.maxDist) {
+                    bestPos = { top: qy, left: qx, maxDist: minZoneDist };
+                }
             }
         }
 
-        const bestCell = freeCells.sort((a,b) => b.score - a.score)[0];
-        
-        // Only show if we found a "good" spot (distance score > 150)
-        // If the screen is too crowded, bestCell.score will be low.
-        if (bestCell && bestCell.score > 150) {
-            setPosition({ 
-                top: Math.max(padding, Math.min(targetHeight - qrSize - padding, bestCell.y - qrSize/2)), 
-                left: Math.max(padding, Math.min(targetWidth - qrSize - padding, bestCell.x - qrSize/2))
-            });
+        // Only show if the spot is genuinely free (maxDist > some threshold)
+        if (bestPos.maxDist > 200) {
+            setPosition({ top: bestPos.top, left: bestPos.left });
         } else {
-            // Hide by moving off screen or returning null in render
             setPosition({ top: -1000, left: -1000 });
         }
     }, [zones, targetWidth, targetHeight])
@@ -806,6 +824,12 @@ function RecorderOverlay({ }: { targetWidth: number, targetHeight: number }) {
         setIsRecording(true)
         setStatus('recording')
 
+        // Reliable Cursor Hiding: Inject CSS to hide mouse while recording
+        const style = document.createElement('style')
+        style.id = 'hide-cursor-recording'
+        style.innerHTML = '* { cursor: none !important; }'
+        document.head.appendChild(style)
+
         // Actually, capturing the window is easier if we are in a tab.
         
         try {
@@ -843,6 +867,10 @@ function RecorderOverlay({ }: { targetWidth: number, targetHeight: number }) {
                 
                 // Stop all tracks
                 stream.getTracks().forEach((t: any) => t.stop())
+
+                // Restore Cursor: Remove the CSS rule
+                const style = document.getElementById('hide-cursor-recording')
+                if (style) style.remove()
             }
 
             recorder.start()
