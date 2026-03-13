@@ -744,7 +744,9 @@ function QRCodeOverlay({ url, zones, targetWidth, targetHeight }: { url: string,
         else if (bestCorner.id === 'BL') setPosition({ bottom: 20, left: 20 })
     }, [zones, targetWidth, targetHeight])
 
-    const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(url)}&color=000&bgcolor=fff&margin=1`
+    const qrImageUrl = url ? `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(url)}&color=000&bgcolor=fff&margin=1` : ''
+
+    if (!url) return null;
 
     return (
         <div 
@@ -842,16 +844,19 @@ function RecorderOverlay({ }: { targetWidth: number, targetHeight: number }) {
                         <IconDeviceTv size={32} />
                     </div>
                     <h2 className="text-xl font-bold text-gray-900">Download Ready!</h2>
-                    <p className="text-sm text-gray-500">Your MP4 video has been exported successfully.</p>
-                    <Button onClick={() => window.close()} className="mt-2">Close This Tab</Button>
+                    <p className="text-sm text-gray-500">Your video has been exported successfully.</p>
+                    <div className="flex gap-2">
+                        <Button onClick={() => window.location.reload()} variant="outline">Record Again</Button>
+                        <Button onClick={() => window.close()}>Close Tab</Button>
+                    </div>
                 </div>
             </div>
         )
     }
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm pointer-events-auto">
-            <div className="bg-white rounded-2xl p-6 w-[400px] shadow-2xl flex flex-col gap-6 animate-in zoom-in-95 duration-300">
+        <div className={`fixed inset-0 z-[100] flex items-center justify-center transition-all duration-500 ${isRecording ? 'bg-transparent pointer-events-none' : 'bg-black/60 backdrop-blur-sm'}`}>
+            <div className={`bg-white rounded-2xl p-6 w-[400px] shadow-2xl flex flex-col gap-6 transition-all duration-500 ${isRecording ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}>
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <div className="w-8 h-8 bg-primary/10 text-primary rounded-lg flex items-center justify-center">
@@ -865,7 +870,7 @@ function RecorderOverlay({ }: { targetWidth: number, targetHeight: number }) {
                 {!isRecording ? (
                     <div className="space-y-4">
                         <p className="text-sm text-gray-500">
-                            You are about to export this screen as an MP4 video. Select a duration below and click start.
+                            Select a duration. Note: The screen will be recorded. Please <b>do not</b> move your mouse or switch tabs during recording.
                         </p>
                         <div className="grid grid-cols-3 gap-3">
                             {[15, 30, 60].map(d => (
@@ -887,36 +892,16 @@ function RecorderOverlay({ }: { targetWidth: number, targetHeight: number }) {
                             Start Recording
                         </Button>
                     </div>
-                ) : (
-                    <div className="space-y-6 py-4 flex flex-col items-center">
-                        <div className="relative w-24 h-24">
-                            <div className="absolute inset-0 rounded-full border-4 border-primary/20" />
-                            <div 
-                                className="absolute inset-0 rounded-full border-4 border-primary border-t-transparent animate-spin"
-                                style={{ animationDuration: '2s' }}
-                            />
-                            <div className="absolute inset-0 flex items-center justify-center">
-                                <span className="text-xl font-black text-primary">{Math.round(progress)}%</span>
-                            </div>
-                        </div>
-                        
-                        <div className="text-center">
-                            <div className="flex items-center justify-center gap-2 text-primary animate-pulse mb-1">
-                                <div className="w-2 h-2 rounded-full bg-primary" />
-                                <span className="text-sm font-bold uppercase tracking-widest">Recording...</span>
-                            </div>
-                            <p className="text-xs text-gray-400">Please keep this tab focused for best quality</p>
-                        </div>
-
-                        <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
-                            <div 
-                                className="h-full bg-primary transition-all duration-300 ease-linear"
-                                style={{ width: `${progress}%` }}
-                            />
-                        </div>
-                    </div>
-                )}
+                ) : null}
             </div>
+            
+            {/* Minimal recording indicator that stays visible but unobtrusive */}
+            {isRecording && (
+                <div className="fixed top-4 right-4 bg-red-600 text-white px-4 py-2 rounded-full flex items-center gap-2 shadow-lg animate-pulse z-[101]">
+                    <div className="w-2 h-2 rounded-full bg-white" />
+                    <span className="text-[10px] font-bold uppercase tracking-widest">Recording ({Math.round(progress)}%)</span>
+                </div>
+            )}
         </div>
     )
 }

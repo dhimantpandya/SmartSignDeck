@@ -9,6 +9,7 @@ const contentSchema = Joi.object().pattern(
     playlistId: Joi.string().allow('').optional(),
     text: Joi.string().allow('').optional(),
     style: Joi.object().unknown(true).optional(),
+    transition: Joi.string().allow('', null).optional(),
     colorSequence: Joi.array().items(
       Joi.object().keys({
         color: Joi.string().required(),
@@ -85,6 +86,8 @@ const createScreen = {
       .default([]),
     status: Joi.string().valid("online", "offline", "maintenance"),
     isPublic: Joi.boolean().optional(),
+    showClock: Joi.boolean().optional(),
+    qrCodeUrl: Joi.string().allow('', null).optional(),
   }),
 };
 
@@ -160,6 +163,8 @@ const updateScreen = {
       ),
       status: Joi.string().valid("online", "offline", "maintenance"),
       isPublic: Joi.boolean().optional(),
+      showClock: Joi.boolean().optional(),
+      qrCodeUrl: Joi.string().allow('', null).optional(),
     })
     .min(1),
 };

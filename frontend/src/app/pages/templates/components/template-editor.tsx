@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, useCallback } from 'react'
+import { useRef, useState, useEffect, useCallback, useMemo } from 'react'
 import * as fabric from 'fabric'
 import { Button } from '@/components/custom/button'
 import { Input } from '@/components/ui/input'
@@ -12,7 +12,8 @@ import {
     IconTrash,
     IconDeviceFloppy,
     IconMenu2,
-    IconX
+    IconX,
+    IconAlertTriangle
 } from '@tabler/icons-react'
 import { toast } from '@/components/ui/use-toast'
 import { templateService } from '@/api/template.service'
@@ -556,6 +557,23 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
     const GRID_SIZE = 20 * SCALE // Increased for better alignment
 
     const selectedZone = zones.find(z => z.id === selectedZoneId)
+
+    const hasOverlaps = useMemo(() => {
+        if (!zones || zones.length < 2) return false
+        for (let i = 0; i < zones.length; i++) {
+            for (let j = i + 1; j < zones.length; j++) {
+                const z1 = zones[i]
+                const z2 = zones[j]
+                if (
+                    z1.x < z2.x + z2.width &&
+                    z1.x + z1.width > z2.x &&
+                    z1.y < z2.y + z2.height &&
+                    z1.y + z1.height > z2.y
+                ) return true
+            }
+        }
+        return false
+    }, [zones])
 
 
     const getZoneColor = (type: string, alpha: string = '40') => {
@@ -1464,6 +1482,18 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                         </div>
                     </div>
                 </div>
+
+                {hasOverlaps && (
+                    <div className="mb-4 flex items-center gap-3 bg-yellow-500/10 border-y lg:border border-yellow-500/30 p-3 lg:rounded-xl text-yellow-600 animate-in fade-in slide-in-from-top-2">
+                        <div className="bg-yellow-500 text-white p-1.5 rounded-lg">
+                            <IconAlertTriangle size={18} />
+                        </div>
+                        <div className="flex flex-col">
+                            <span className="text-xs font-bold uppercase tracking-tight text-yellow-700">Zones Overlapping</span>
+                            <span className="text-[10px] opacity-80 leading-tight">Some zones are placed on top of each other. The player will try to auto-fix this.</span>
+                        </div>
+                    </div>
+                )}
 
                 <CollaborateDialog
                     isOpen={isCollaborateOpen}
