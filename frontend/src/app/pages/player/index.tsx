@@ -746,11 +746,13 @@ function LiveClock() {
 
 // --- QR CODE OVERLAY ---
 function QRCodeOverlay({ url, zones, targetWidth, targetHeight, qrHomeId }: { url: string, zones: any[], targetWidth: number, targetHeight: number, qrHomeId?: string | null }) {
-    const [position, setPosition] = useState<{ top?: number, right?: number, bottom?: number, left?: number }>({ top: -1000, left: -1000 })
+    const [position, setPosition] = useState<{ top?: number, left?: number, size?: number, fontSize?: number }>({ top: -1000, left: -1000, size: 200, fontSize: 10 })
 
     useEffect(() => {
-        const qrSize = 200; // Standard size for a clean look
-        const padding = 60; // Generous padding for perfect centering
+        const MIN_QR_SIZE = 120;
+        const MAX_QR_SIZE = 500;
+        const padding = 10; // Base edge padding
+        const collisionSize = MIN_QR_SIZE; // Use minimum size to find ANY valid gap
         
         const gridX = 40; // Higher density for gap finding
         const gridY = 40;
@@ -775,12 +777,12 @@ function QRCodeOverlay({ url, zones, targetWidth, targetHeight, qrHomeId }: { ur
                 // Avoid Top-Left (Clock area)
                 if (cx < 300 && cy < 150) continue;
 
-                const qx = cx - qrSize/2;
-                const qy = cy - qrSize/2;
+                const qx = cx - collisionSize/2;
+                const qy = cy - collisionSize/2;
 
                 // Stay in bounds
-                if (qx < padding || qx + qrSize > targetWidth - padding) continue;
-                if (qy < padding || qy + qrSize > targetHeight - padding) continue;
+                if (qx < padding || qx + collisionSize > targetWidth - padding) continue;
+                if (qy < padding || qy + collisionSize > targetHeight - padding) continue;
 
                 // STRICT COLLISION CHECK
                 // Does this 180x180 square overlap ANY zone?
@@ -788,9 +790,9 @@ function QRCodeOverlay({ url, zones, targetWidth, targetHeight, qrHomeId }: { ur
                 const hasCollision = zones.some(z => {
                     return (
                         qx < z.x + z.width + buffer &&
-                        qx + qrSize > z.x - buffer &&
+                        qx + collisionSize > z.x - buffer &&
                         qy < z.y + z.height + buffer &&
-                        qy + qrSize > z.y - buffer
+                        qy + collisionSize > z.y - buffer
                     );
                 });
 
@@ -836,16 +838,37 @@ function QRCodeOverlay({ url, zones, targetWidth, targetHeight, qrHomeId }: { ur
             const exactCx = bestPos.cx - bestPos.ls + (bestPos.ls + bestPos.rs) / 2;
             const exactCy = bestPos.cy - bestPos.ts + (bestPos.ts + bestPos.bs) / 2;
             
+            // --- NEW: Dynamic Sizing ---
+            // Find the maximum square that can fit in this specific void
+            const totalWidth = bestPos.ls + bestPos.rs;
+            const totalHeight = bestPos.ts + bestPos.bs;
+            const maxSquare = Math.min(totalWidth, totalHeight);
+            
+            // Apply generous padding (e.g. 50px per side) to let it breathe naturally
+            const dynamicPadding = 100; 
+            let dynamicSize = maxSquare - dynamicPadding;
+            
+            // Clamp securely
+            if (dynamicSize < MIN_QR_SIZE) dynamicSize = MIN_QR_SIZE;
+            if (dynamicSize > MAX_QR_SIZE) dynamicSize = MAX_QR_SIZE;
+
+            // Proportional font sizing
+            const dynamicFontSize = Math.max(8, Math.round(dynamicSize * 0.055));
+
             setPosition({ 
-                top: exactCy - qrSize/2, 
-                left: exactCx - qrSize/2 
+                top: exactCy - dynamicSize/2, 
+                left: exactCx - dynamicSize/2,
+                size: dynamicSize,
+                fontSize: dynamicFontSize
             });
         } else {
             setPosition({ top: -1000, left: -1000 });
         }
     }, [url, zones, targetWidth, targetHeight, qrHomeId])
 
-    const qrImageUrl = url ? `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}&color=000&bgcolor=fff&margin=1` : ''
+    const currentSize = position.size || 200;
+    const currentFontSize = position.fontSize || 10;
+    const qrImageUrl = url ? `https://api.qrserver.com/v1/create-qr-code/?size=${Math.round(currentSize)}x${Math.round(currentSize)}&data=${encodeURIComponent(url)}&color=000&bgcolor=fff&margin=1` : ''
 
     if (!url || position.top === -1000) return null;
 
@@ -853,19 +876,24 @@ function QRCodeOverlay({ url, zones, targetWidth, targetHeight, qrHomeId }: { ur
         <div 
             className="absolute z-50 pointer-events-none select-none transition-opacity duration-1000"
             style={{ 
-                ...position as any,
+                top: position.top,
+                left: position.left
             }}
         >
-            <div className="flex flex-col items-center gap-2">
-                <div className="bg-white p-2 shadow-lg border border-black/5">
-                    <img src={qrImageUrl} alt="QR Code" className="w-[180px] h-[180px] object-contain" />
+            <div className="flex flex-col items-center gap-3">
+                <div className="bg-white p-2.5 shadow-xl border border-black/5 rounded-md">
+                    <img src={qrImageUrl} alt="QR Code" style={{ width: currentSize * 0.85, height: currentSize * 0.85 }} className="block object-contain" />
                 </div>
-                <div className="bg-black/80 text-white text-[10px] font-bold px-4 py-1 rounded uppercase tracking-[0.2em]">
+                <div 
+                    className="bg-black/85 text-white font-bold px-5 py-2 rounded-sm uppercase tracking-[0.25em]"
+                    style={{ fontSize: `${currentFontSize}px` }}
+                >
                     Scan Me
                 </div>
             </div>
         </div>
     )
+
 }
 
 // --- RECORDER OVERLAY ---
