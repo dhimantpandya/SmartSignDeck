@@ -274,6 +274,23 @@ export default function ScreenPlayer() {
             return !hasPlaylist && !hasSrc
         }
 
+        // --- NEW: Smart Space Harmony (QR Reservation) ---
+        // Identify the "Best QR Home" if a URL is provided. 
+        // We will "protect" this zone from being consumed by content expansion.
+        const qrHomeId = data?.qrCodeUrl ? (() => {
+            const freeZones = zones.filter((z: any) => isEmptyTextZone(z) && isEmptyMediaZone(z));
+            if (freeZones.length === 0) return null;
+            
+            // Prefer Top-Right or Bottom-Right for QR
+            const trZone = freeZones.find(z => z.x + z.width >= targetWidth - 10 && z.y <= 10);
+            if (trZone) return trZone.id;
+            const brZone = freeZones.find(z => z.x + z.width >= targetWidth - 10 && z.y + z.height >= targetHeight - 10);
+            if (brZone) return brZone.id;
+            
+            // Fallback: Largest free zone
+            return freeZones.sort((a: any, b: any) => (b.width * b.height) - (a.width * a.height))[0].id;
+        })() : null;
+
         zones.forEach((z: any) => {
             if (isEmptyTextZone(z)) return
             if (z.x < THRESHOLD) { z.width += z.x; z.x = 0; }
@@ -288,7 +305,9 @@ export default function ScreenPlayer() {
                 if (z1 === z2) return
                 const yOverlap = Math.min(z1.y + z1.height, z2.y + z2.height) - Math.max(z1.y, z2.y)
                 if (yOverlap > 10) {
-                    const isEmpty = isEmptyTextZone(z2)
+                    const isEmpty = isEmptyTextZone(z2) || isEmptyMediaZone(z2)
+                    if (isEmpty && z2.id === qrHomeId) return; // PROTECT QR HOME
+                    
                     const limit = isEmpty ? EMPTY_FILLING_THRESHOLD : THRESHOLD
                     const gapRight = z2.x - (z1.x + z1.width)
                     if (gapRight >= 0 && gapRight < limit) z1.width += gapRight + (isEmpty ? z2.width : 0)
@@ -297,7 +316,9 @@ export default function ScreenPlayer() {
                 }
                 const xOverlap = Math.min(z1.x + z1.width, z2.x + z2.width) - Math.max(z1.x, z2.x)
                 if (xOverlap > 10) {
-                    const isEmpty = isEmptyTextZone(z2)
+                    const isEmpty = isEmptyTextZone(z2) || isEmptyMediaZone(z2)
+                    if (isEmpty && z2.id === qrHomeId) return; // PROTECT QR HOME
+
                     const limit = isEmpty ? EMPTY_FILLING_THRESHOLD : THRESHOLD
                     const gapBelow = z2.y - (z1.y + z1.height)
                     if (gapBelow >= 0 && gapBelow < limit) z1.height += gapBelow + (isEmpty ? z2.height : 0)
@@ -360,7 +381,7 @@ export default function ScreenPlayer() {
             }
         }
 
-        if (zonesWithContent.length === 1) {
+        if (zonesWithContent.length === 1 && !qrHomeId) {
             const soloZone = zonesWithContent[0]
             soloZone.x = 0; soloZone.y = 0; soloZone.width = targetWidth; soloZone.height = targetHeight;
         }
