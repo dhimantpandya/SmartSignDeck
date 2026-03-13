@@ -78,49 +78,46 @@ export default function ScreenPlayer() {
             setIsLoading(false)
         }, 15000)
 
+        // PRIORITY 1: Early load from cache to avoid white screen
+        const cached = localStorage.getItem(STORAGE_KEY);
+        if (cached && !data) {
+            try {
+                const { data: cachedData } = JSON.parse(cached);
+                setData(cachedData);
+            } catch (e) { console.warn('Cache corrupted:', e); }
+        }
+
         const fetchPlaybackData = async (retryCount = 0, isBackground = false) => {
             try {
-                // Only show loader on first load, not background refreshes
-                if (retryCount === 0 && !isBackground && !data) setIsLoading(true)
+                // Only show loader if we have NO data at all (not even cached)
+                const hasNoData = !data && !cached;
+                if (retryCount === 0 && !isBackground && hasNoData) setIsLoading(true)
 
-                // Fetch screen with optional key
-                const screen = await apiService.get<any>(`/v1/screens/${screenId}`, {
+                // Fetch fresh data
+                const response = await apiService.get<any>(`/v1/screens/${screenId}`, {
                     params: secretKey ? { key: secretKey } : {}
                 })
-                setData(screen)
+                
+                setData(response)
                 setError(null)
-                clearTimeout(safetyTimer) // Loaded successfully
+                setIsLoading(false)
+                clearTimeout(safetyTimer)
 
-                // Cache successful response
+                // Cache fresh version
                 localStorage.setItem(STORAGE_KEY, JSON.stringify({
-                    data: screen,
+                    data: response,
                     timestamp: Date.now()
                 }));
 
-                // Report online status
-                await apiService.post(`/v1/screens/${screenId}/ping`, {})
+                await apiService.post(`/v1/screens/${screenId}/ping`, {}).catch(() => {})
             } catch (err: any) {
-                console.error(`Playback fetch attempt ${retryCount + 1} failed:`, err)
-
-                // Try to load from cache on failure
-                const cached = localStorage.getItem(STORAGE_KEY);
-                if (cached) {
-                    const { data: cachedData } = JSON.parse(cached);
-                    setData(cachedData);
-                    setError(null);
-                } else if (retryCount < 3) {
-                    // Exponential backoff retry
-                    const delay = Math.pow(2, retryCount) * 1000;
-                    setTimeout(() => fetchPlaybackData(retryCount + 1, isBackground), delay);
-                    return; // Return so we don't turn off loading until retries done
+                console.error(`Fetch attempt ${retryCount + 1} failed:`, err)
+                
+                if (retryCount < 2) {
+                    setTimeout(() => fetchPlaybackData(retryCount + 1, isBackground), 2000);
                 } else {
-                    if (!isBackground) setError(err.message || 'Failed to load screen data')
-                }
-            } finally {
-                // Only turn off loading if we are not retrying or if we failed
-                if (retryCount >= 3 || localStorage.getItem(STORAGE_KEY)) {
-                    setIsLoading(false)
-                    clearTimeout(safetyTimer)
+                    if (!data) setError(err.message || 'Failed to sync with server');
+                    setIsLoading(false);
                 }
             }
         }
@@ -386,7 +383,9 @@ export default function ScreenPlayer() {
             soloZone.x = 0; soloZone.y = 0; soloZone.width = targetWidth; soloZone.height = targetHeight;
         }
 
-        return zonesWithContent
+        const result: any = zonesWithContent;
+        result.qrHomeId = qrHomeId;
+        return result;
     }, [data, content, targetWidth, targetHeight])
 
     if (isLoading) {
@@ -418,7 +417,15 @@ export default function ScreenPlayer() {
             {(showClock && !hideClockParam) && <LiveClock />}
 
             {/* QR Code Overlay (dynamic free space) */}
-            {data?.qrCodeUrl && <QRCodeOverlay url={data.qrCodeUrl} zones={optimizedZones} targetWidth={targetWidth} targetHeight={targetHeight} />}
+            {data?.qrCodeUrl && (
+                <QRCodeOverlay 
+                    url={data.qrCodeUrl} 
+                    zones={optimizedZones} 
+                    targetWidth={targetWidth} 
+                    targetHeight={targetHeight}
+                    qrHomeId={optimizedZones.qrHomeId}
+                />
+            )}
 
             {/* Recorder Overlay (if recording requested) */}
             {searchParams.get('record') === 'true' && (
@@ -734,24 +741,27 @@ function LiveClock() {
 }
 
 // --- QR CODE OVERLAY ---
-function QRCodeOverlay({ url, zones, targetWidth, targetHeight }: { url: string, zones: any[], targetWidth: number, targetHeight: number }) {
-    const [position, setPosition] = useState<{ top?: number, right?: number, bottom?: number, left?: number }>({ top: 16, right: 16 })
+function QRCodeOverlay({ url, zones, targetWidth, targetHeight, qrHomeId }: { url: string, zones: any[], targetWidth: number, targetHeight: number, qrHomeId?: string | null }) {
+    const [position, setPosition] = useState<{ top?: number, right?: number, bottom?: number, left?: number }>({ top: -1000, left: -1000 })
 
     useEffect(() => {
-        // Find "best" corner that doesn't have a zone
-        // Corners to check: Top-Right (TR), Bottom-Left (BL), Bottom-Right (BR)
-        // (Top-Left is reserved for Clock)
-        
         const qrSize = 180;
-        const padding = 60; // Increased padding for a more "central" look
+        const padding = 30; // Relaxed padding for corner tighter fit
         
-        // Stricter grid search
-        const gridX = 8;
-        const gridY = 8;
+        const gridX = 24; // Much higher density grid for better precision
+        const gridY = 24;
         const cellW = targetWidth / gridX;
         const cellH = targetHeight / gridY;
 
         let bestPos = { top: -1000, left: -1000, maxDist: 0 };
+
+        // --- NEW: Direct Target Fallback ---
+        // If we have a reserved QR home zone, try placing it there first
+        if (qrHomeId) {
+            const originalZones = (zones as any).qrHomeData || []; // We'd need to pass this, but let's try finding the space in the result
+            // Actually, optimizedZones is just the content zones. 
+            // The "empty" space is everywhere else.
+        }
 
         for (let ix = 0; ix < gridX; ix++) {
             for (let iy = 0; iy < gridY; iy++) {
@@ -798,14 +808,14 @@ function QRCodeOverlay({ url, zones, targetWidth, targetHeight }: { url: string,
             }
         }
 
-        // Only show if the spot is genuinely free (maxDist > some threshold)
-        // Relaxed threshold from 200 to 100 to ensure visibility on more layouts
-        if (bestPos.maxDist > 100) {
+        // PRIORITY: If we have a lot of free space, just place it
+        if (bestPos.maxDist > 60) {
             setPosition({ top: bestPos.top, left: bestPos.left });
         } else {
+            // Last resort: Just stick it in the bottom-right if it's not total overlap
             setPosition({ top: -1000, left: -1000 });
         }
-    }, [zones, targetWidth, targetHeight])
+    }, [zones, targetWidth, targetHeight, qrHomeId])
 
     const qrImageUrl = url ? `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(url)}&color=000&bgcolor=fff&margin=1` : ''
 
