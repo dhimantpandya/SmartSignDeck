@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useMemo } from 'react'
 import { useParams } from 'react-router-dom'
 import { apiService } from '@/api'
 import Loader from '@/components/loader'
-import { IconAlertTriangle } from '@tabler/icons-react'
+import { IconAlertTriangle, IconVolume, IconVolumeOff } from '@tabler/icons-react'
 import { Button } from '@/components/custom/button'
 import { io } from 'socket.io-client'
 
@@ -28,6 +28,7 @@ export default function ScreenPlayer() {
     const [isLoading, setIsLoading] = useState(true)
     const [windowSize, setWindowSize] = useState({ width: window.innerWidth, height: window.innerHeight })
     const [isFullscreen, setIsFullscreen] = useState(false)
+    const [isMuted, setIsMuted] = useState(true)
 
     // Get Secret Key from URL (?key=...)
     // Get Secret Key from URL (?key=...)
@@ -192,6 +193,7 @@ export default function ScreenPlayer() {
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key.toLowerCase() === 'f') toggleFullscreen()
+            if (e.key.toLowerCase() === 'm') { setIsMuted(prev => !prev) }
             if (e.key === 'Escape' && document.fullscreenElement) document.exitFullscreen()
         }
         window.addEventListener('keydown', handleKeyDown)
@@ -325,9 +327,13 @@ export default function ScreenPlayer() {
         )
     }
 
+    const showClock = data?.showClock !== false // Default true
+
     return (
         <div className='fixed inset-0 bg-black overflow-hidden'>
 
+            {/* Live Clock Overlay (top-left) */}
+            {showClock && <LiveClock />}
 
             {/* Fullscreen Toggle Overlay (visible on hover or when not fullscreen) */}
             <div className={`absolute top-4 right-4 z-50 transition-opacity duration-300 ${isFullscreen ? 'opacity-0 hover:opacity-100' : 'opacity-100'}`}>
@@ -338,6 +344,19 @@ export default function ScreenPlayer() {
                     onClick={toggleFullscreen}
                 >
                     {isFullscreen ? 'Exit Fullscreen (F)' : 'Enter Fullscreen (F)'}
+                </Button>
+            </div>
+
+            {/* Sound Toggle (bottom-right) */}
+            <div className={`absolute bottom-4 right-4 z-50 transition-opacity duration-300 ${isFullscreen ? 'opacity-0 hover:opacity-100' : 'opacity-100'}`}>
+                <Button
+                    variant="outline"
+                    size="icon"
+                    className="bg-black/50 border-white/20 text-white hover:bg-white/20 h-9 w-9"
+                    onClick={() => { setIsMuted(prev => !prev) }}
+                    title={isMuted ? 'Unmute (M)' : 'Mute (M)'}
+                >
+                    {isMuted ? <IconVolumeOff size={18} /> : <IconVolume size={18} />}
                 </Button>
             </div>
 
@@ -370,6 +389,7 @@ export default function ScreenPlayer() {
                                 templateId={data.templateId?.id || data.templateId?._id}
                                 secretKey={secretKey || undefined}
                                 userId={userId || undefined}
+                                isMuted={isMuted}
                             />
                         </div>
                     )
@@ -380,7 +400,7 @@ export default function ScreenPlayer() {
 }
 
 
-function ZoneRenderer({ zone, content, screenId, templateId, secretKey, userId }: { zone: any, content: any, screenId?: string, templateId?: string, secretKey?: string, userId?: string | null }) {
+function ZoneRenderer({ zone, content, screenId, templateId, secretKey, userId, isMuted }: { zone: any, content: any, screenId?: string, templateId?: string, secretKey?: string, userId?: string | null, isMuted?: boolean }) {
     if (zone.type === 'text') {
         return <TextZone content={content} style={content?.style || {}} />
     }
@@ -392,12 +412,13 @@ function ZoneRenderer({ zone, content, screenId, templateId, secretKey, userId }
             screenId={screenId} 
             templateId={templateId} 
             secretKey={secretKey} 
-            userId={userId} 
+            userId={userId}
+            isMuted={isMuted}
         />
     )
 }
 
-function MediaZone({ zone, content, screenId, templateId, secretKey, userId }: any) {
+function MediaZone({ zone, content, screenId, templateId, secretKey, userId, isMuted = true }: any) {
     const playlist = useMemo(() => {
         let list = content?.playlist || []
 
@@ -472,18 +493,14 @@ function MediaZone({ zone, content, screenId, templateId, secretKey, userId }: a
     useEffect(() => {
         if (mediaType === 'video' && videoRef.current) {
             const video = videoRef.current
-            video.muted = true
+            video.muted = isMuted
             video.play().catch(() => {
-                const forcePlay = () => {
-                    video.play()
-                    window.removeEventListener('click', forcePlay)
-                    window.removeEventListener('keydown', forcePlay)
-                }
-                window.addEventListener('click', forcePlay)
-                window.addEventListener('keydown', forcePlay)
+                // If unmuted autoplay fails, fall back to muted
+                video.muted = true
+                video.play().catch(() => {})
             })
         }
-    }, [playlist, currentIndex, mediaType])
+    }, [playlist, currentIndex, mediaType, isMuted])
 
     if (!playlist || playlist.length === 0) {
         return (
@@ -510,7 +527,7 @@ function MediaZone({ zone, content, screenId, templateId, secretKey, userId }: a
                     key={item.url}
                     src={normalizeVideoUrl(item.url)}
                     autoPlay
-                    muted
+                    muted={isMuted}
                     playsInline
                     preload="auto"
                     loop={playlist.length === 1}
@@ -550,6 +567,39 @@ function MediaZone({ zone, content, screenId, templateId, secretKey, userId }: a
                     }}
                 />
             )}
+        </div>
+    )
+}
+
+// --- LIVE CLOCK OVERLAY ---
+function LiveClock() {
+    const [time, setTime] = useState('')
+    const [date, setDate] = useState('')
+
+    useEffect(() => {
+        const update = () => {
+            const now = new Date()
+            const hours = now.getHours()
+            const mins = now.getMinutes().toString().padStart(2, '0')
+            const ampm = hours >= 12 ? 'PM' : 'AM'
+            const h12 = hours % 12 || 12
+            setTime(`${h12}:${mins} ${ampm}`)
+
+            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+            setDate(`${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}`)
+        }
+        update()
+        const timer = setInterval(update, 1000)
+        return () => clearInterval(timer)
+    }, [])
+
+    return (
+        <div className="absolute top-4 left-4 z-50 pointer-events-none select-none">
+            <div className="bg-black/40 backdrop-blur-sm rounded-lg px-4 py-2 border border-white/10">
+                <div className="text-white text-2xl font-bold tracking-tight leading-none">{time}</div>
+                <div className="text-white/70 text-xs font-medium tracking-wide mt-0.5">{date}</div>
+            </div>
         </div>
     )
 }

@@ -47,6 +47,8 @@ export interface IScreen extends Document {
   createdBy: mongoose.Schema.Types.ObjectId;
   isPublic: boolean;
   secretKey?: string;
+  showClock: boolean;
+  qrCodeUrl?: string;
   status: "online" | "offline" | "syncing";
   lastPing: Date;
   created_at: Date;
@@ -110,6 +112,15 @@ const screenSchema = new Schema<IScreen, IScreenModel>(
       type: Boolean,
       default: false,
       index: true,
+    },
+    showClock: {
+      type: Boolean,
+      default: true,
+    },
+    qrCodeUrl: {
+      type: String,
+      default: '',
+      trim: true,
     },
     secretKey: {
       type: String,

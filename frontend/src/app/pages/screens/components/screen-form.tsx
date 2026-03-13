@@ -43,6 +43,8 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
     const [selectedTemplateId, setSelectedTemplateId] = useState(getInitialTemplateId())
     const [defaultContent, setDefaultContent] = useState<any>(initialData?.defaultContent || {})
     const [isPublic, setIsPublic] = useState(initialData?.isPublic || false)
+    const [showClock, setShowClock] = useState(initialData?.showClock !== false)
+    const [qrCodeUrl, setQrCodeUrl] = useState(initialData?.qrCodeUrl || '')
 
     // Debug
     useEffect(() => {
@@ -467,6 +469,8 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
                 defaultContent,
                 schedules,
                 isPublic,
+                showClock,
+                qrCodeUrl: qrCodeUrl || '',
             }
 
             if (initialData?.id || initialData?._id) {
@@ -818,6 +822,37 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
                             >
                                 <span className={`inline-block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${isPublic ? 'translate-x-5' : 'translate-x-0.5'}`} />
                             </button>
+                        </div>
+
+                        {/* Show Clock Toggle */}
+                        <div className={`flex items-center justify-between rounded-lg border px-4 py-3 mb-3 transition-colors ${showClock ? 'border-emerald-500/40 bg-emerald-500/5' : 'border-border bg-muted/20'}`}>
+                            <div className='flex items-center gap-3'>
+                                <div className={`rounded-md p-1.5 text-xs font-bold ${showClock ? 'bg-emerald-500/15 text-emerald-500' : 'bg-muted text-muted-foreground'}`}>🕐</div>
+                                <div>
+                                    <p className='text-sm font-medium leading-none'>Show Clock</p>
+                                    <p className='text-xs text-muted-foreground mt-0.5'>Display live time & date on the player</p>
+                                </div>
+                            </div>
+                            <button
+                                role="switch"
+                                aria-checked={showClock}
+                                onClick={() => setShowClock(!showClock)}
+                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${showClock ? 'bg-emerald-500' : 'bg-input'}`}
+                            >
+                                <span className={`inline-block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${showClock ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                            </button>
+                        </div>
+
+                        {/* QR Code URL (Optional) */}
+                        <div className='grid gap-2 mb-6'>
+                            <Label htmlFor='qrCodeUrl' className='text-xs'>QR Code URL <span className='text-muted-foreground'>(optional)</span></Label>
+                            <Input
+                                id='qrCodeUrl'
+                                placeholder='https://your-website.com'
+                                value={qrCodeUrl}
+                                onChange={(e) => setQrCodeUrl(e.target.value)}
+                            />
+                            <p className='text-[10px] text-muted-foreground'>If set, a QR code will appear on the player screen.</p>
                         </div>
 
                         {selectedTemplate && (
