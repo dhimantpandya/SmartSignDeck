@@ -757,7 +757,6 @@ function QRCodeOverlay({ url, zones, targetWidth, targetHeight, qrHomeId }: { ur
 
         // --- NEW: Direct Target Fallback ---
         // If we have a reserved QR home zone, find its center to use as a primary target
-        let targetCenter: { x: number, y: number } | null = null;
         if (qrHomeId) {
             // we need to find the zone with this ID in the player's context or pass its data.
             // Since optimizedZones in the parent only includes content zones, 
