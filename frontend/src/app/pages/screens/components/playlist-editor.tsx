@@ -320,11 +320,14 @@ export default function PlaylistEditor({ zone, items, onChange, scrollRef }: Pla
                                 onClick={() => setPreviewUrl(item.url)}
                                 title="Click to view full size"
                             >
-                                {item.type === 'video' ? (
-                                    <video src={item.url} className="w-full h-full object-cover opacity-90" muted />
-                                ) : (
-                                    <img src={item.url} className="w-full h-full object-cover opacity-90" alt="" />
-                                )}
+                                <img 
+                                    src={item.type === 'video' && item.url.includes('res.cloudinary.com') 
+                                        ? item.url.replace(/\.[^/.]+$/, ".jpg").replace('/upload/', '/upload/w_300,q_auto/')
+                                        : item.url} 
+                                    className="w-full h-full object-cover opacity-90" 
+                                    alt="" 
+                                    crossOrigin="anonymous"
+                                />
                                 <div className='absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-transparent transition-colors'>
                                     {item.type === 'video' ?
                                         <IconMovie size={16} className="text-white drop-shadow-lg" /> :

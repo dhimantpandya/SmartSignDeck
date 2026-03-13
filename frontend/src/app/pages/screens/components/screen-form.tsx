@@ -9,7 +9,7 @@ import { templateService, Template } from '@/api/template.service'
 import { apiService } from '@/api'
 import { toast } from '@/components/ui/use-toast'
 import { playlistService, Playlist } from '@/api/playlist.service'
-import { IconDeviceFloppy, IconArrowLeft, IconPlayerPlay, IconPlaylist, IconAlertTriangle } from '@tabler/icons-react'
+import { IconDeviceFloppy, IconArrowLeft, IconPlayerPlay, IconPlaylist, IconAlertTriangle, IconTrash } from '@tabler/icons-react'
 import TextZoneEditor from './text-zone-editor'
 import PlaylistEditor from './playlist-editor'
 import {
@@ -67,6 +67,7 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
 
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const mediaCache = useRef<Record<string, HTMLImageElement | HTMLVideoElement>>({})
+    const transitionRef = useRef<Record<string, { prevIndex: number, startTime: number, type: string }>>({})
 
     const queryClient = useQueryClient()
 
@@ -188,23 +189,37 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
                 selectedTemplate.zones.forEach((zone: any) => {
                     if (zone?.type === 'text') return
                     const content = activeContent?.[zone.id]
-                    if (content?.playlist?.length > 1) {
+                    
+                    let playlist = content?.playlist || []
+                    if (content?.sourceType === 'playlist' && content?.playlistId) {
+                        const linkedPlaylist = playlistsData?.results?.find((p: any) => (p.id || p._id) === content.playlistId)
+                        if (linkedPlaylist && linkedPlaylist.items) {
+                            playlist = linkedPlaylist.items
+                        }
+                    }
+
+                    if (zone?.type === 'image') playlist = playlist.filter((i:any) => i.type === 'image')
+                    else if (zone?.type === 'video') playlist = playlist.filter((i:any) => i.type === 'video')
+
+                    if (playlist?.length > 1) {
                         const currentIndex = prev[zone.id] || 0
-                        // Simple logic: assume 5s preview or use item duration
-                        // Real player uses detailed timing, here we just cycle every 3s for preview?
-                        // Or we can rely on checks. 
-                        // Let's just increment every 3 seconds for now to make it alive.
-                        const nextIndex = (currentIndex + 1) % content.playlist.length
+                        const nextIndex = (currentIndex + 1) % playlist.length
                         next[zone.id] = nextIndex
+                        
+                        transitionRef.current[zone.id] = {
+                            prevIndex: currentIndex,
+                            startTime: Date.now(),
+                            type: content.transition || 'fade'
+                        }
+                        
                         changed = true
                     }
                 })
                 return changed ? next : prev
             })
-        }, 3000)
+        }, 4000)
         return () => clearInterval(interval)
-    }, [selectedTemplate, activeContent])
-
+    }, [selectedTemplate, activeContent, playlistsData])
     // Draw Visual Map
     useEffect(() => {
         if (!selectedTemplate || !canvasRef.current) return
@@ -330,53 +345,96 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
                     const currentIndex = playbackIndices[zone.id] || 0
                     const currentItem = playlist[currentIndex]
 
-                    let drawPlaceholder = true
-
-                    if (currentItem && currentItem.url) {
-                        const cachedMedia = mediaCache.current[currentItem.url]
-
-                        // Check type and drawImage
-                        if (currentItem.type === 'video') {
-                            let video = cachedMedia as HTMLVideoElement
-                            if (!video || video.tagName !== 'VIDEO') {
-                                video = document.createElement('video')
-                                video.src = currentItem.url
-                                video.muted = true
-                                video.loop = true
-                                video.play().catch(() => { })
-                                mediaCache.current[currentItem.url] = video
-                            }
-                            if (video.readyState >= 2) {
-                                // Draw Contain
-                                const hRatio = scaledW / video.videoWidth;
-                                const vRatio = scaledH / video.videoHeight;
-                                const ratio = Math.min(hRatio, vRatio);
-                                const centerShift_x = (scaledW - video.videoWidth * ratio) / 2;
-                                const centerShift_y = (scaledH - video.videoHeight * ratio) / 2;
-                                ctx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight,
-                                    scaledX + centerShift_x, scaledY + centerShift_y, video.videoWidth * ratio, video.videoHeight * ratio);
-                                drawPlaceholder = false
-                            }
-                        } else if (currentItem.type === 'image') {
-                            let img = cachedMedia as HTMLImageElement
+                    const drawMediaItem = (item: any, alpha: number, tX: number, tY: number, scaleMod: number) => {
+                        let drawPlaceholder = true
+                        if (item && item.url) {
+                            let img = mediaCache.current[item.url] as HTMLImageElement
                             if (!img || img.tagName !== 'IMG') {
                                 img = new Image()
                                 img.crossOrigin = "anonymous"
-                                img.src = currentItem.url
-                                mediaCache.current[currentItem.url] = img
+                                // Cloudinary instant thumbnail trick
+                                const thumbUrl = item.type === 'video' && item.url.includes('res.cloudinary.com') 
+                                    ? item.url.replace(/\.[^/.]+$/, ".jpg").replace('/upload/', '/upload/w_500,q_auto/')
+                                    : item.url
+                                img.src = thumbUrl
+                                mediaCache.current[item.url] = img
                             }
                             if (img.complete) {
-                                // Draw Contain
+                                ctx.save()
+                                // Apply zone clipping for animations!
+                                ctx.beginPath()
+                                ctx.rect(scaledX, scaledY, scaledW, scaledH)
+                                ctx.clip()
+
+                                ctx.globalAlpha = alpha
+                                ctx.translate(scaledX + scaledW/2, scaledY + scaledH/2)
+                                ctx.scale(scaleMod, scaleMod)
+                                ctx.translate(-(scaledX + scaledW/2) + tX, -(scaledY + scaledH/2) + tY)
+
                                 const hRatio = scaledW / img.width;
                                 const vRatio = scaledH / img.height;
                                 const ratio = Math.min(hRatio, vRatio);
                                 const centerShift_x = (scaledW - img.width * ratio) / 2;
                                 const centerShift_y = (scaledH - img.height * ratio) / 2;
+                                
                                 ctx.drawImage(img, 0, 0, img.width, img.height,
                                     scaledX + centerShift_x, scaledY + centerShift_y, img.width * ratio, img.height * ratio);
+                                
+                                if (item.type === 'video') {
+                                    // Play icon
+                                    ctx.fillStyle = 'rgba(0,0,0,0.5)'
+                                    ctx.beginPath()
+                                    ctx.arc(scaledX + scaledW/2, scaledY + scaledH/2, 16 * SCALE, 0, Math.PI * 2)
+                                    ctx.fill()
+                                    ctx.fillStyle = 'white'
+                                    ctx.beginPath()
+                                    ctx.moveTo(scaledX + scaledW/2 - 4 * SCALE, scaledY + scaledH/2 - 6 * SCALE)
+                                    ctx.lineTo(scaledX + scaledW/2 + 6 * SCALE, scaledY + scaledH/2)
+                                    ctx.lineTo(scaledX + scaledW/2 - 4 * SCALE, scaledY + scaledH/2 + 6 * SCALE)
+                                    ctx.fill()
+                                }
+                                ctx.restore()
                                 drawPlaceholder = false
                             }
                         }
+                        return drawPlaceholder
+                    }
+
+                    let drawPlaceholder = true
+                    const tState = transitionRef.current[zone.id]
+                    
+                    if (tState) {
+                        const elapsed = Date.now() - tState.startTime
+                        if (elapsed < 800) { // 800ms animation
+                            const progress = elapsed / 800
+                            const ease = progress < 0.5 ? 2 * progress * progress : -1 + (4 - 2 * progress) * progress
+                            const prevItem = playlist[tState.prevIndex]
+                            
+                            // Calculate styles based on transition type
+                            const type = tState.type
+                            if (type === 'fade' || type === '') {
+                                drawMediaItem(prevItem, 1 - ease, 0, 0, 1)
+                                drawPlaceholder = drawMediaItem(currentItem, Math.min(1, ease), 0, 0, 1) && drawPlaceholder
+                            } else if (type === 'slide-left') {
+                                drawMediaItem(prevItem, 1, -(scaledW * ease), 0, 1)
+                                drawPlaceholder = drawMediaItem(currentItem, 1, scaledW * (1 - ease), 0, 1) && drawPlaceholder
+                            } else if (type === 'slide-up') {
+                                drawMediaItem(prevItem, 1, 0, -(scaledH * ease), 1)
+                                drawPlaceholder = drawMediaItem(currentItem, 1, 0, scaledH * (1 - ease), 1) && drawPlaceholder
+                            } else if (type === 'zoom') {
+                                drawMediaItem(prevItem, 1 - ease, 0, 0, 1 + (ease * 0.5))
+                                drawPlaceholder = drawMediaItem(currentItem, ease, 0, 0, 0.5 + (ease * 0.5)) && drawPlaceholder
+                            } else if (type === 'flip') {
+                                // Fallback linear
+                                drawMediaItem(prevItem, 1 - ease, 0, 0, 1)
+                                drawPlaceholder = drawMediaItem(currentItem, ease, 0, 0, 1) && drawPlaceholder
+                            }
+                        } else {
+                            delete transitionRef.current[zone.id]
+                            drawPlaceholder = drawMediaItem(currentItem, 1, 0, 0, 1)
+                        }
+                    } else {
+                        drawPlaceholder = drawMediaItem(currentItem, 1, 0, 0, 1)
                     }
 
                     if (drawPlaceholder) {
@@ -697,25 +755,41 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
                                         })()}
 
                                         {/* Source Toggle */}
-                                        <div className="flex items-center gap-2 p-1 bg-muted rounded-lg w-fit">
-                                            <button
-                                                className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${zoneContent.sourceType !== 'playlist'
-                                                    ? 'bg-background shadow text-foreground'
-                                                    : 'text-muted-foreground hover:text-foreground'
-                                                    }`}
-                                                onClick={() => handleZoneContentChange(selectedZoneId, { sourceType: 'local' })}
-                                            >
-                                                Custom Content
-                                            </button>
-                                            <button
-                                                className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${zoneContent.sourceType === 'playlist'
-                                                    ? 'bg-background shadow text-foreground'
-                                                    : 'text-muted-foreground hover:text-foreground'
-                                                    }`}
-                                                onClick={() => handleZoneContentChange(selectedZoneId, { sourceType: 'playlist' })}
-                                            >
-                                                Shared Playlist
-                                            </button>
+                                        <div className="flex items-center justify-between w-full">
+                                            <div className="flex items-center gap-2 p-1 bg-muted rounded-lg w-fit">
+                                                <button
+                                                    className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${zoneContent.sourceType !== 'playlist'
+                                                        ? 'bg-background shadow text-foreground'
+                                                        : 'text-muted-foreground hover:text-foreground'
+                                                        }`}
+                                                    onClick={() => handleZoneContentChange(selectedZoneId, { sourceType: 'local' })}
+                                                >
+                                                    Custom Content
+                                                </button>
+                                                <button
+                                                    className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${zoneContent.sourceType === 'playlist'
+                                                        ? 'bg-background shadow text-foreground'
+                                                        : 'text-muted-foreground hover:text-foreground'
+                                                        }`}
+                                                    onClick={() => handleZoneContentChange(selectedZoneId, { sourceType: 'playlist' })}
+                                                >
+                                                    Shared Playlist
+                                                </button>
+                                            </div>
+                                            {(zoneContent.playlist?.length > 0 || zoneContent.playlistId) && (
+                                                <Button 
+                                                    variant="ghost" 
+                                                    size="sm" 
+                                                    className="text-xs text-destructive hover:bg-destructive/10"
+                                                    onClick={() => {
+                                                        if (confirm('Are you sure you want to clear this zone? This will remove the assigned playlist and all items.')) {
+                                                            handleZoneContentChange(selectedZoneId, { playlist: [], playlistId: '', sourceType: 'local' })
+                                                        }
+                                                    }}
+                                                >
+                                                    <IconTrash size={14} className="mr-1" /> Clear Zone
+                                                </Button>
+                                            )}
                                         </div>
 
                                         {/* Transition Selection */}
@@ -769,7 +843,7 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
                                             </div>
                                         ) : (
                                             <PlaylistEditor
-                                                key={selectedZoneId}
+                                                key={`${selectedZoneId}-${Date.now()}`} // Ensure fresh key to prevent weird caching issues
                                                 zone={zone}
                                                 items={zoneContent.playlist || []}
                                                 onChange={(items) => handleZoneContentChange(selectedZoneId, { playlist: items })}
