@@ -21,7 +21,7 @@ const getFullUrl = (url: string | null | undefined) => {
     return `${base}${url.startsWith('/') ? '' : '/'}${url}`;
 };
 
-const getOptimizedUrl = (url: string | null | undefined, isVideo: boolean = false) => {
+const getOptimizedUrl = (url: string | null | undefined) => {
     let fullUrl = getFullUrl(url);
     if (!fullUrl) return '';
     
@@ -52,7 +52,7 @@ const SmartPreview = ({ url, type, name }: { url: string; type?: 'image' | 'vide
         return (
             <video
                 key={url} // Force re-mount if URL changes
-                src={getOptimizedUrl(url, true)}
+                src={getOptimizedUrl(url)}
                 className="absolute inset-0 w-full h-full object-cover"
                 autoPlay
                 muted
@@ -79,7 +79,7 @@ const SmartPreview = ({ url, type, name }: { url: string; type?: 'image' | 'vide
 
     return (
         <img
-            src={getOptimizedUrl(url, false)}
+            src={getOptimizedUrl(url)}
             alt={name}
             className="absolute inset-0 w-full h-full object-cover transition-transform duration-[4000ms] group-hover/card:scale-110"
             onError={() => setHasError(true)}
