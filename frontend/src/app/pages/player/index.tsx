@@ -749,8 +749,8 @@ function QRCodeOverlay({ url, zones, targetWidth, targetHeight, qrHomeId }: { ur
     const [position, setPosition] = useState<{ top?: number, right?: number, bottom?: number, left?: number }>({ top: -1000, left: -1000 })
 
     useEffect(() => {
-        const qrSize = 180;
-        const padding = 40; // Increased padding for safer margins
+        const qrSize = 240; // Increased for better visibility
+        const padding = 50; // Adjusted for larger size
         
         const gridX = 24; // Much higher density grid for better precision
         const gridY = 24;
@@ -843,15 +843,22 @@ function QRCodeOverlay({ url, zones, targetWidth, targetHeight, qrHomeId }: { ur
             className="absolute z-50 pointer-events-none select-none transition-all duration-700 ease-in-out"
             style={{ 
                 ...position as any,
-                animation: 'fadeIn 1s ease-out'
+                animation: 'qrFloat 4s ease-symmetric infinite alternate, fadeIn 1s ease-out'
             }}
         >
-            <div className="bg-white p-2 rounded-xl shadow-2xl border border-black/10 flex flex-col items-center gap-1">
-                <div className="w-[120px] h-[120px] bg-white rounded overflow-hidden">
+            <style>{`
+                @keyframes qrFloat {
+                    0% { transform: translateY(0px) rotate(0deg); }
+                    100% { transform: translateY(-12px) rotate(1deg); }
+                }
+            `}</style>
+            <div className="bg-white/90 backdrop-blur-xl p-4 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.3)] border border-white/20 flex flex-col items-center gap-3 scale-110">
+                <div className="w-[180px] h-[180px] bg-white rounded-2xl p-2 shadow-inner overflow-hidden">
                     <img src={qrImageUrl} alt="QR Code" className="w-full h-full object-contain" />
                 </div>
-                <div className="bg-black text-white text-[10px] font-bold px-3 py-0.5 rounded-full uppercase tracking-tighter">
-                    Scan Me
+                <div className="bg-gradient-to-r from-primary to-blue-600 text-white text-[12px] font-black px-6 py-1.5 rounded-full shadow-lg uppercase tracking-[0.1em] flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
+                    Scan to Connect
                 </div>
             </div>
         </div>
