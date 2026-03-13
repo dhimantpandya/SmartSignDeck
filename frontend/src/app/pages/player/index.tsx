@@ -188,16 +188,122 @@ export default function ScreenPlayer() {
         return () => window.removeEventListener('keydown', handleKeyDown)
     }, [])
 
-    // Handle Fullscreen toggle function (not a hook, but used by them)
-    const toggleFullscreen = () => {
-        if (!document.fullscreenElement) {
-            document.documentElement.requestFullscreen().catch((err) => {
-                toast({ title: "Error entering fullscreen", description: err.message, variant: "destructive" })
-            })
-        } else {
-            document.exitFullscreen()
+    // Keyboard shortcuts
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key.toLowerCase() === 'f') toggleFullscreen()
+            if (e.key === 'Escape' && document.fullscreenElement) document.exitFullscreen()
         }
-    }
+        window.addEventListener('keydown', handleKeyDown)
+        return () => window.removeEventListener('keydown', handleKeyDown)
+    }, [])
+
+    // --- HOOKS MUST BE CALLED BEFORE CONDITIONAL RETURNS ---
+    
+    // Resolve Content based on Data and Time
+    const activeData = useMemo(() => {
+        if (!data) return { content: null }
+        
+        const { defaultContent, schedules } = data
+        const now = new Date()
+        const currentDayOfWeek = now.getDay()
+        const currentDate = now.toISOString().split('T')[0]
+
+        const validSchedules = (schedules || []).filter((s: any) => {
+            if (currentTime < s.startTime || currentTime > s.endTime) return false
+            if (s.startDate && currentDate < new Date(s.startDate).toISOString().split('T')[0]) return false
+            if (s.endDate && currentDate > new Date(s.endDate).toISOString().split('T')[0]) return false
+            if (s.daysOfWeek && s.daysOfWeek.length > 0 && !s.daysOfWeek.includes(currentDayOfWeek)) return false
+            return true
+        })
+
+        validSchedules.sort((a: any, b: any) => (b.priority || 0) - (a.priority || 0))
+        const activeSchedule = validSchedules[0]
+
+        if (activeSchedule) {
+            const mergedContent = { ...defaultContent }
+            Object.keys(activeSchedule.content || {}).forEach(zoneId => {
+                const scheduleZoneContent = activeSchedule.content[zoneId]
+                const hasPlaylist = (scheduleZoneContent?.playlist && scheduleZoneContent.playlist.length > 0) ||
+                    (scheduleZoneContent?.sourceType === 'playlist' && scheduleZoneContent?.playlistId)
+                if (hasPlaylist) mergedContent[zoneId] = scheduleZoneContent
+            })
+            return { content: mergedContent }
+        }
+        return { content: defaultContent }
+    }, [data, currentTime])
+
+    const content = activeData.content
+
+    const template = data?.templateId
+    const resolution = template?.resolution || '1920x1080'
+    const [targetWidth, targetHeight] = resolution.split('x').map(Number)
+    const scale = Math.min(windowSize.width / targetWidth, windowSize.height / targetHeight)
+
+    // Calculate Optimized Zones for Rendering
+    const optimizedZones = useMemo(() => {
+        if (!data?.templateId?.zones || !content) return []
+
+        let zones = data.templateId.zones.map((z: any) => ({ ...z }))
+        const THRESHOLD = 5
+        const EMPTY_FILLING_THRESHOLD = 10
+
+        const isEmptyTextZone = (z: any) => {
+            if (z.type !== 'text') return false
+            const zoneContent = content[z.id]
+            return !zoneContent?.text || zoneContent.text.trim() === ''
+        }
+
+        const isEmptyMediaZone = (z: any) => {
+            if (z.type === 'text') return false
+            const zoneContent = content[z.id]
+            if (!zoneContent) return true
+            const hasPlaylist = zoneContent.playlist && zoneContent.playlist.length > 0
+            const hasSrc = !!zoneContent.src
+            return !hasPlaylist && !hasSrc
+        }
+
+        zones.forEach((z: any) => {
+            if (isEmptyTextZone(z)) return
+            if (z.x < THRESHOLD) { z.width += z.x; z.x = 0; }
+            if (z.y < THRESHOLD) { z.height += z.y; z.y = 0; }
+            if (Math.abs(targetWidth - (z.x + z.width)) < THRESHOLD) z.width = targetWidth - z.x
+            if (Math.abs(targetHeight - (z.y + z.height)) < THRESHOLD) z.height = targetHeight - z.y
+        })
+
+        zones.forEach((z1: any) => {
+            if (isEmptyTextZone(z1) || isEmptyMediaZone(z1)) return
+            zones.forEach((z2: any) => {
+                if (z1 === z2) return
+                const yOverlap = Math.min(z1.y + z1.height, z2.y + z2.height) - Math.max(z1.y, z2.y)
+                if (yOverlap > 10) {
+                    const isEmpty = isEmptyTextZone(z2)
+                    const limit = isEmpty ? EMPTY_FILLING_THRESHOLD : THRESHOLD
+                    const gapRight = z2.x - (z1.x + z1.width)
+                    if (gapRight >= 0 && gapRight < limit) z1.width += gapRight + (isEmpty ? z2.width : 0)
+                    const gapLeft = z1.x - (z2.x + z2.width)
+                    if (gapLeft >= 0 && gapLeft < limit) { z1.x -= (gapLeft + (isEmpty ? z2.width : 0)); z1.width += (gapLeft + (isEmpty ? z2.width : 0)); }
+                }
+                const xOverlap = Math.min(z1.x + z1.width, z2.x + z2.width) - Math.max(z1.x, z2.x)
+                if (xOverlap > 10) {
+                    const isEmpty = isEmptyTextZone(z2)
+                    const limit = isEmpty ? EMPTY_FILLING_THRESHOLD : THRESHOLD
+                    const gapBelow = z2.y - (z1.y + z1.height)
+                    if (gapBelow >= 0 && gapBelow < limit) z1.height += gapBelow + (isEmpty ? z2.height : 0)
+                    const gapAbove = z1.y - (z2.y + z2.height)
+                    if (gapAbove >= 0 && gapAbove < limit) { z1.y -= (gapAbove + (isEmpty ? z2.height : 0)); z1.height += (gapAbove + (isEmpty ? z2.height : 0)); }
+                }
+            })
+        })
+
+        const zonesWithContent = zones.filter((z: any) => !isEmptyTextZone(z) && !isEmptyMediaZone(z))
+        if (zonesWithContent.length === 1) {
+            const soloZone = zonesWithContent[0]
+            soloZone.x = 0; soloZone.y = 0; soloZone.width = targetWidth; soloZone.height = targetHeight;
+        }
+
+        return zones.filter((z: any) => !isEmptyTextZone(z) && !isEmptyMediaZone(z))
+    }, [data, content, targetWidth, targetHeight])
 
     if (isLoading) {
         return (
@@ -218,182 +324,6 @@ export default function ScreenPlayer() {
             </div>
         )
     }
-
-    const { content } = useMemo(() => {
-        const { defaultContent, schedules } = data
-        const now = new Date()
-        const currentDayOfWeek = now.getDay() // 0-6
-        const currentDate = now.toISOString().split('T')[0] // YYYY-MM-DD for simple comparison
-
-        // 1. Filter valid schedules based on Time, Day, and Date
-        const validSchedules = (schedules || []).filter((s: any) => {
-            // Time Check
-            if (currentTime < s.startTime || currentTime > s.endTime) return false
-
-            // Date Range Check
-            if (s.startDate && currentDate < new Date(s.startDate).toISOString().split('T')[0]) return false
-            if (s.endDate && currentDate > new Date(s.endDate).toISOString().split('T')[0]) return false
-
-            // Day of Week Check
-            if (s.daysOfWeek && s.daysOfWeek.length > 0 && !s.daysOfWeek.includes(currentDayOfWeek)) return false
-
-            return true
-        })
-
-        // 2. Sort by Priority (Descending)
-        // If priority is missing, treat as 0
-        validSchedules.sort((a: any, b: any) => (b.priority || 0) - (a.priority || 0))
-
-        const activeSchedule = validSchedules[0]
-
-        if (activeSchedule) {
-            // MERGE LOGIC: Start with default content, then overlay schedule content
-            // but ONLY for zones that actually have items in their playlist.
-            const mergedContent = { ...defaultContent }
-
-            Object.keys(activeSchedule.content || {}).forEach(zoneId => {
-                const scheduleZoneContent = activeSchedule.content[zoneId]
-                // Check local playlist OR linked playlist
-                const hasPlaylist = (scheduleZoneContent?.playlist && scheduleZoneContent.playlist.length > 0) ||
-                    (scheduleZoneContent?.sourceType === 'playlist' && scheduleZoneContent?.playlistId)
-
-                if (hasPlaylist) {
-                    mergedContent[zoneId] = scheduleZoneContent
-                }
-            })
-
-            return { content: mergedContent }
-        }
-
-        return { content: defaultContent }
-    }, [data, currentTime])
-
-    const { templateId: template } = data
-    const resolution = template?.resolution || '1920x1080'
-    const [targetWidth, targetHeight] = resolution.split('x').map(Number)
-
-    // Calculate scale to fit within viewport while maintaining aspect ratio
-    const scale = Math.min(windowSize.width / targetWidth, windowSize.height / targetHeight)
-
-
-    // --- GAP FILLING & RESPONSIVE SNAPPING LOGIC ---
-    // Fixes "black lines" by snapping zones to edges and each other
-    // NEW: Intelligent Gap Filling - active zones "eat" neighboring empty text zones
-    const optimizedZones = useMemo(() => {
-        if (!data?.templateId?.zones) return []
-
-        // Deep copy
-        let zones = data.templateId.zones.map((z: any) => ({ ...z }))
-        const THRESHOLD = 5 // Reduced from 25 to respect intentional gaps
-        const EMPTY_FILLING_THRESHOLD = 10 // Reduced from 500 to prevent aggressive expansion
-
-        // Helper to check if a zone is an "empty text zone"
-        const isEmptyTextZone = (z: any) => {
-            if (z.type !== 'text') return false
-            const zoneContent = content[z.id]
-            return !zoneContent?.text || zoneContent.text.trim() === ''
-        }
-
-        // Helper to check if a zone is an "empty media zone" (no content assigned)
-        const isEmptyMediaZone = (z: any) => {
-            if (z.type === 'text') return false
-            const zoneContent = content[z.id]
-            if (!zoneContent) return true
-            const hasPlaylist = zoneContent.playlist && zoneContent.playlist.length > 0
-            const hasSrc = !!zoneContent.src
-            return !hasPlaylist && !hasSrc
-        }
-
-        // 1. Snap to Canvas Borders
-        zones.forEach((z: any) => {
-            if (isEmptyTextZone(z)) return // Skip stretching the empty zone itself
-
-            // Left Snap
-            if (z.x < THRESHOLD) {
-                z.width += z.x
-                z.x = 0
-            }
-            // Top Snap
-            if (z.y < THRESHOLD) {
-                z.height += z.y
-                z.y = 0
-            }
-            // Right Snap
-            if (Math.abs(targetWidth - (z.x + z.width)) < THRESHOLD) {
-                z.width = targetWidth - z.x
-            }
-            // Bottom Snap
-            if (Math.abs(targetHeight - (z.y + z.height)) < THRESHOLD) {
-                z.height = targetHeight - z.y
-            }
-        })
-
-        // 2. Intra-Zone Gap Filling (Snap to neighbors)
-        zones.forEach((z1: any) => {
-            if (isEmptyTextZone(z1)) return // Active zones grow INTO empty zones
-            if (isEmptyMediaZone(z1)) return // Don't expand empty media zones
-
-            zones.forEach((z2: any) => {
-                if (z1 === z2) return
-
-                // Check Horizontal Gap (z1 and z2 overlap vertically)
-                const yOverlap = Math.min(z1.y + z1.height, z2.y + z2.height) - Math.max(z1.y, z2.y)
-                if (yOverlap > 10) {
-                    const isEmpty = isEmptyTextZone(z2)
-                    const limit = isEmpty ? EMPTY_FILLING_THRESHOLD : THRESHOLD
-
-                    // z1 is to the left of z2
-                    const gapRight = z2.x - (z1.x + z1.width)
-                    if (gapRight >= 0 && gapRight < limit) {
-                        z1.width += gapRight + (isEmpty ? z2.width : 0)
-                    }
-                    // z1 is to the right of z2
-                    const gapLeft = z1.x - (z2.x + z2.width)
-                    if (gapLeft >= 0 && gapLeft < limit) {
-                        z1.x -= (gapLeft + (isEmpty ? z2.width : 0))
-                        z1.width += (gapLeft + (isEmpty ? z2.width : 0))
-                    }
-                }
-
-                // Check Vertical Gap (z1 and z2 overlap horizontally)
-                const xOverlap = Math.min(z1.x + z1.width, z2.x + z2.width) - Math.max(z1.x, z2.x)
-                if (xOverlap > 10) {
-                    const isEmpty = isEmptyTextZone(z2)
-                    const limit = isEmpty ? EMPTY_FILLING_THRESHOLD : THRESHOLD
-
-                    // z1 is above z2
-                    const gapBelow = z2.y - (z1.y + z1.height)
-                    if (gapBelow >= 0 && gapBelow < limit) {
-                        z1.height += gapBelow + (isEmpty ? z2.height : 0)
-                    }
-                    // z1 is below z2
-                    const gapAbove = z1.y - (z2.y + z2.height)
-                    if (gapAbove >= 0 && gapAbove < limit) {
-                        z1.y -= (gapAbove + (isEmpty ? z2.height : 0))
-                        z1.height += (gapAbove + (isEmpty ? z2.height : 0))
-                    }
-                }
-            })
-        })
-
-        // 3. NEW: If only ONE zone has content, make it fill the FULL screen
-        const zonesWithContent = zones.filter((z: any) => {
-            if (isEmptyTextZone(z)) return false
-            if (isEmptyMediaZone(z)) return false
-            return true
-        })
-
-        if (zonesWithContent.length === 1) {
-            const soloZone = zonesWithContent[0]
-            soloZone.x = 0
-            soloZone.y = 0
-            soloZone.width = targetWidth
-            soloZone.height = targetHeight
-        }
-
-        // 4. Final Pass: Hide both empty text AND empty media zones
-        return zones.filter((z: any) => !isEmptyTextZone(z) && !isEmptyMediaZone(z))
-    }, [data?.templateId?.zones, content, targetWidth, targetHeight])
 
     return (
         <div className='fixed inset-0 bg-black overflow-hidden'>
@@ -533,7 +463,7 @@ function MediaZone({ zone, content, screenId, templateId, secretKey, userId }: a
                     secretKey,
                     userId
                 })
-            } catch (err) { }
+            } catch { }
         }
         return () => { logPlayback(new Date()) }
     }, [currentIndex, playlist, screenId, templateId, zone.id, zone.type, secretKey, userId])
@@ -543,7 +473,7 @@ function MediaZone({ zone, content, screenId, templateId, secretKey, userId }: a
         if (mediaType === 'video' && videoRef.current) {
             const video = videoRef.current
             video.muted = true
-            video.play().catch(err => {
+            video.play().catch(() => {
                 const forcePlay = () => {
                     video.play()
                     window.removeEventListener('click', forcePlay)
