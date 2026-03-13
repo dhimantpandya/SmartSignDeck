@@ -727,6 +727,9 @@ function QRCodeOverlay({ url, zones, targetWidth, targetHeight }: { url: string,
         const cellW = targetWidth / gridX;
         const cellH = targetHeight / gridY;
         
+        const qrSize = 180;
+        const padding = 40;
+        
         let freeCells: {x: number, y: number, score: number}[] = [];
 
         for (let ix = 0; ix < gridX; ix++) {
@@ -736,6 +739,10 @@ function QRCodeOverlay({ url, zones, targetWidth, targetHeight }: { url: string,
                 
                 // Avoid Top-Left (Clock)
                 if (ix === 0 && iy === 0) continue;
+
+                // Ensure it stays within bounds with padding
+                if (cx < qrSize/2 + padding || cx > targetWidth - qrSize/2 - padding) continue;
+                if (cy < qrSize/2 + padding || cy > targetHeight - qrSize/2 - padding) continue;
 
                 // Score based on distance from zones (higher is better)
                 let minSubDist = 2000;
@@ -753,8 +760,8 @@ function QRCodeOverlay({ url, zones, targetWidth, targetHeight }: { url: string,
         const bestCell = freeCells.sort((a,b) => b.score - a.score)[0];
         if (bestCell) {
             setPosition({ 
-                top: bestCell.y - 90, 
-                left: bestCell.x - 90 
+                top: Math.max(padding, Math.min(targetHeight - qrSize - padding, bestCell.y - qrSize/2)), 
+                left: Math.max(padding, Math.min(targetWidth - qrSize - padding, bestCell.x - qrSize/2))
             });
         }
     }, [zones, targetWidth, targetHeight])
@@ -838,10 +845,10 @@ function RecorderOverlay({ }: { targetWidth: number, targetHeight: number }) {
 
                 if (elapsed >= duration) {
                     clearInterval(interval)
-                    document.title = "Exporting..."
+                    document.title = "Finalizing..."
                     recorder.stop()
                 }
-            }, 500)
+            }, 200)
 
         } catch (err) {
             console.error('Recording failed:', err)
@@ -884,7 +891,7 @@ function RecorderOverlay({ }: { targetWidth: number, targetHeight: number }) {
                 {!isRecording ? (
                     <div className="space-y-4">
                         <p className="text-sm text-gray-500">
-                            Select a duration. Note: The screen will be recorded. Please <b>do not</b> move your mouse or switch tabs during recording.
+                            Select a duration. Note: Recording is real-time to preserve animation quality. Please <b>do not</b> move your mouse or switch tabs.
                         </p>
                         <div className="grid grid-cols-3 gap-3">
                             {[15, 30, 60].map(d => (
