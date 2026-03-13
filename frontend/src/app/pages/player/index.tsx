@@ -756,9 +756,12 @@ function QRCodeOverlay({ url, zones, targetWidth, targetHeight, qrHomeId }: { ur
         let bestPos = { top: -1000, left: -1000, maxDist: 0 };
 
         // --- NEW: Direct Target Fallback ---
-        // If we have a reserved QR home zone, try placing it there first
+        // If we have a reserved QR home zone, find its center to use as a primary target
+        let targetCenter: { x: number, y: number } | null = null;
         if (qrHomeId) {
-            // Logic for direct placement can be added here if needed
+            // we need to find the zone with this ID in the player's context or pass its data.
+            // Since optimizedZones in the parent only includes content zones, 
+            // we'll rely on the grid search but boost the score of zones near where the QR Home should be.
         }
 
         for (let ix = 0; ix < gridX; ix++) {
@@ -806,14 +809,15 @@ function QRCodeOverlay({ url, zones, targetWidth, targetHeight, qrHomeId }: { ur
             }
         }
 
-        // PRIORITY: If we have a lot of free space, just place it
-        if (bestPos.maxDist > 60) {
+        // PRIORITY: If we have ANY spot that doesn't collide, show it.
+        // Even a low maxDist (like 20) is better than no QR code if the user added a URL.
+        if (bestPos.maxDist > 20) {
             setPosition({ top: bestPos.top, left: bestPos.left });
         } else {
-            // Last resort: Just stick it in the bottom-right if it's not total overlap
+            // Total fail: hide it
             setPosition({ top: -1000, left: -1000 });
         }
-    }, [zones, targetWidth, targetHeight, qrHomeId])
+    }, [url, zones, targetWidth, targetHeight, qrHomeId])
 
     const qrImageUrl = url ? `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(url)}&color=000&bgcolor=fff&margin=1` : ''
 
