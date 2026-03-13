@@ -328,13 +328,30 @@ export default function Screens() {
                     )}
                 </div>
             </CardContent>
-            <CardFooter className="flex justify-end gap-2 border-t bg-muted/20 px-4 py-2">
+            <CardFooter className="flex flex-wrap justify-end gap-2 border-t bg-muted/20 px-4 py-2">
                 {/* Preview is always available */}
-                <Button variant="ghost" size="sm" onClick={() => window.open(`/player/${screen.id}?userId=${user?.id || (user as any)?._id}${screen.secretKey ? `&key=${screen.secretKey}` : ''}`, '_blank')}>
+                <Button variant="ghost" size="sm" onClick={() => {
+                    const baseUrl = `/player/${screen.id}`;
+                    const params = new URLSearchParams({
+                        userId: user?.id || (user as any)?._id || '',
+                    });
+                    if (screen.secretKey) params.append('key', screen.secretKey);
+                    window.open(`${baseUrl}?${params.toString()}`, '_blank');
+                }}>
                     <IconPlayerPlay size={16} className="mr-1" /> Preview
                 </Button>
                 {/* Download (recorded export) */}
-                <Button variant="ghost" size="sm" onClick={() => window.open(`/player/${screen.id}?userId=${user?.id || (user as any)?._id}${screen.secretKey ? `&key=${screen.secretKey}` : ''}&record=true&hideClock=true&hideControls=true`, '_blank')}>
+                <Button variant="ghost" size="sm" onClick={() => {
+                    const baseUrl = `/player/${screen.id}`;
+                    const params = new URLSearchParams({
+                        userId: user?.id || (user as any)?._id || '',
+                        record: 'true',
+                        hideClock: 'true',
+                        hideControls: 'true'
+                    });
+                    if (screen.secretKey) params.append('key', screen.secretKey);
+                    window.open(`${baseUrl}?${params.toString()}`, '_blank');
+                }}>
                     <IconDownload size={16} className="mr-1" /> Download
                 </Button>
                 {/* Owner controls (non-advertiser) */}

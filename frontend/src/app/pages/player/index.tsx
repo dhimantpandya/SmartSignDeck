@@ -721,27 +721,42 @@ function QRCodeOverlay({ url, zones, targetWidth, targetHeight }: { url: string,
         // Corners to check: Top-Right (TR), Bottom-Left (BL), Bottom-Right (BR)
         // (Top-Left is reserved for Clock)
         
-        const size = 180; // Estimated QR container size
-        const margin = 20;
+        // Find the "center" of free space by checking a grid
+        const gridX = 5;
+        const gridY = 5;
+        const cellW = targetWidth / gridX;
+        const cellH = targetHeight / gridY;
+        
+        let freeCells: {x: number, y: number, score: number}[] = [];
 
-        const corners = [
-            { id: 'TR', top: margin, right: margin, check: (z: any) => z.x + z.width > targetWidth - size - margin && z.y < size + margin },
-            { id: 'BR', bottom: margin, right: margin, check: (z: any) => z.x + z.width > targetWidth - size - margin && z.y + z.height > targetHeight - size - margin },
-            { id: 'BL', bottom: margin, left: margin, check: (z: any) => z.x < size + margin && z.y + z.height > targetHeight - size - margin },
-        ]
+        for (let ix = 0; ix < gridX; ix++) {
+            for (let iy = 0; iy < gridY; iy++) {
+                const cx = ix * cellW + cellW/2;
+                const cy = iy * cellH + cellH/2;
+                
+                // Avoid Top-Left (Clock)
+                if (ix === 0 && iy === 0) continue;
 
-        // Find corners with most overlap
-        const cornerScores = corners.map(c => ({
-            ...c,
-            score: zones.filter(z => c.check(z)).length
-        }))
+                // Score based on distance from zones (higher is better)
+                let minSubDist = 2000;
+                zones.forEach(z => {
+                    const zcx = z.x + z.width/2;
+                    const zcy = z.y + z.height/2;
+                    const d = Math.sqrt(Math.pow(cx - zcx, 2) + Math.pow(cy - zcy, 2));
+                    if (d < minSubDist) minSubDist = d;
+                });
+                
+                freeCells.push({ x: cx, y: cy, score: minSubDist });
+            }
+        }
 
-        // Sort by least overlap
-        const bestCorner = cornerScores.sort((a, b) => a.score - b.score)[0]
-
-        if (bestCorner.id === 'TR') setPosition({ top: 20, right: 20 })
-        else if (bestCorner.id === 'BR') setPosition({ bottom: 20, right: 20 })
-        else if (bestCorner.id === 'BL') setPosition({ bottom: 20, left: 20 })
+        const bestCell = freeCells.sort((a,b) => b.score - a.score)[0];
+        if (bestCell) {
+            setPosition({ 
+                top: bestCell.y - 90, 
+                left: bestCell.x - 90 
+            });
+        }
     }, [zones, targetWidth, targetHeight])
 
     const qrImageUrl = url ? `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(url)}&color=000&bgcolor=fff&margin=1` : ''
@@ -822,12 +837,14 @@ function RecorderOverlay({ }: { targetWidth: number, targetHeight: number }) {
                 const elapsed = (Date.now() - startTime) / 1000
                 const p = Math.min(100, (elapsed / duration) * 100)
                 setProgress(p)
+                document.title = `Recording: ${Math.round(p)}% - SmartSignDeck`
 
                 if (elapsed >= duration) {
                     clearInterval(interval)
+                    document.title = "Exporting..."
                     recorder.stop()
                 }
-            }, 100)
+            }, 500)
 
         } catch (err) {
             console.error('Recording failed:', err)
@@ -895,13 +912,8 @@ function RecorderOverlay({ }: { targetWidth: number, targetHeight: number }) {
                 ) : null}
             </div>
             
-            {/* Minimal recording indicator that stays visible but unobtrusive */}
-            {isRecording && (
-                <div className="fixed top-4 right-4 bg-red-600 text-white px-4 py-2 rounded-full flex items-center gap-2 shadow-lg animate-pulse z-[101]">
-                    <div className="w-2 h-2 rounded-full bg-white" />
-                    <span className="text-[10px] font-bold uppercase tracking-widest">Recording ({Math.round(progress)}%)</span>
-                </div>
-            )}
+            {/* Minimal recording indicator - REMOVED for clean video export per user request */}
+            {/* We now use document.title to show progress instead */}
         </div>
     )
 }
