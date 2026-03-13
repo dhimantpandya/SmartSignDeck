@@ -14,7 +14,7 @@ export const INSPIRATION_ITEMS: InspirationItem[] = [
         name: 'Executive Boardroom',
         resolution: '1920x1080',
         zones: 4,
-        previewUrl: 'https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&q=95&w=1600',
+        previewUrl: 'https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&q=95&w=600',
         previewType: 'image',
         category: 'Corporate'
     },
@@ -23,7 +23,7 @@ export const INSPIRATION_ITEMS: InspirationItem[] = [
         name: 'High-Street Fashion',
         resolution: '1080x1920',
         zones: 4,
-        previewUrl: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&q=95&w=1600',
+        previewUrl: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&q=95&w=600',
         previewType: 'image',
         category: 'Retail'
     },
@@ -32,7 +32,7 @@ export const INSPIRATION_ITEMS: InspirationItem[] = [
         name: 'Modern Italian Bistro',
         resolution: '1920x1080',
         zones: 4,
-        previewUrl: 'https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&q=95&w=1600',
+        previewUrl: 'https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&q=95&w=600',
         previewType: 'image',
         category: 'Hospitality'
     },
@@ -41,7 +41,7 @@ export const INSPIRATION_ITEMS: InspirationItem[] = [
         name: 'Global Arrival Gates',
         resolution: '1920x1080',
         zones: 4,
-        previewUrl: 'https://images.unsplash.com/photo-1495791185843-c73f2269f669?auto=format&fit=crop&q=95&w=1600',
+        previewUrl: 'https://images.unsplash.com/photo-1495791185843-c73f2269f669?auto=format&fit=crop&q=95&w=600',
         previewType: 'image',
         category: 'Travel'
     },
@@ -50,7 +50,7 @@ export const INSPIRATION_ITEMS: InspirationItem[] = [
         name: 'Elite Training Hub',
         resolution: '1080x1920',
         zones: 4,
-        previewUrl: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&q=95&w=1600',
+        previewUrl: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&q=95&w=600',
         previewType: 'image',
         category: 'Health'
     },
@@ -59,7 +59,7 @@ export const INSPIRATION_ITEMS: InspirationItem[] = [
         name: 'Grand Resort Lobby',
         resolution: '1920x1080',
         zones: 4,
-        previewUrl: 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&q=95&w=1600',
+        previewUrl: 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&q=95&w=600',
         previewType: 'image',
         category: 'Hotel'
     },
@@ -68,7 +68,7 @@ export const INSPIRATION_ITEMS: InspirationItem[] = [
         name: 'Innovation Tech Park',
         resolution: '1920x1080',
         zones: 4,
-        previewUrl: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&q=95&w=1600',
+        previewUrl: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&q=95&w=600',
         previewType: 'image',
         category: 'Education'
     },
@@ -77,7 +77,7 @@ export const INSPIRATION_ITEMS: InspirationItem[] = [
         name: 'Skyline Penthouse',
         resolution: '1920x1080',
         zones: 4,
-        previewUrl: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&q=95&w=1600',
+        previewUrl: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&q=95&w=600',
         previewType: 'image',
         category: 'Real Estate'
     },
@@ -86,7 +86,7 @@ export const INSPIRATION_ITEMS: InspirationItem[] = [
         name: 'Luxury Fragrance Ad',
         resolution: '1080x1920',
         zones: 4,
-        previewUrl: 'https://images.unsplash.com/photo-1547887538-e3a2f32cb1cc?auto=format&fit=crop&q=95&w=1600',
+        previewUrl: 'https://images.unsplash.com/photo-1547887538-e3a2f32cb1cc?auto=format&fit=crop&q=95&w=600',
         previewType: 'image',
         category: 'Fashion'
     },
@@ -96,7 +96,7 @@ export const INSPIRATION_ITEMS: InspirationItem[] = [
         category: 'Corporate',
         resolution: '1920x1080',
         zones: 3,
-        previewUrl: 'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&q=95&w=1600',
+        previewUrl: 'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&q=95&w=600',
         previewType: 'image'
     }
 ];

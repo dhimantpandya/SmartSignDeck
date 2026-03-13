@@ -21,6 +21,20 @@ const getFullUrl = (url: string | null | undefined) => {
     return `${base}${url.startsWith('/') ? '' : '/'}${url}`;
 };
 
+const getOptimizedUrl = (url: string | null | undefined, isVideo: boolean = false) => {
+    let fullUrl = getFullUrl(url);
+    if (!fullUrl) return '';
+    
+    // Optimize Cloudinary assets for preview thumbnails (w_600)
+    if (fullUrl.includes('res.cloudinary.com') && fullUrl.includes('/upload/')) {
+        if (fullUrl.includes('w_') || fullUrl.includes('q_')) return fullUrl; // Already optimized
+        // Apply compression and resizing
+        return fullUrl.replace('/upload/', `/upload/w_600,c_limit,q_auto,f_auto/`);
+    }
+    
+    return fullUrl;
+};
+
 interface TemplateSliderProps {
     templates?: any[]
     isLoading: boolean
@@ -38,13 +52,13 @@ const SmartPreview = ({ url, type, name }: { url: string; type?: 'image' | 'vide
         return (
             <video
                 key={url} // Force re-mount if URL changes
-                src={getFullUrl(url)}
+                src={getOptimizedUrl(url, true)}
                 className="absolute inset-0 w-full h-full object-cover"
                 autoPlay
                 muted
                 loop
                 playsInline
-                preload="auto"
+                preload="metadata" // Don't preload entire video just for preview
                 onError={() => {
                     console.error("Video preview failed to load:", url);
                     setHasError(true);
@@ -65,7 +79,7 @@ const SmartPreview = ({ url, type, name }: { url: string; type?: 'image' | 'vide
 
     return (
         <img
-            src={getFullUrl(url)}
+            src={getOptimizedUrl(url, false)}
             alt={name}
             className="absolute inset-0 w-full h-full object-cover transition-transform duration-[4000ms] group-hover/card:scale-110"
             onError={() => setHasError(true)}

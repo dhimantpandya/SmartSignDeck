@@ -54,7 +54,7 @@ router
   );
 
 router.post("/:screenId/ping", screenController.pingScreen);
-router.route("/:screenId/refresh").post(auth("manageScreens"), screenController.refreshScreen);
+router.route("/:screenId/refresh").post(auth("getScreens"), screenController.refreshScreen);
 
 router
   .route("/:screenId/restore")
