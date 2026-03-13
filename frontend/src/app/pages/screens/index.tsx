@@ -3,7 +3,7 @@ import ThemeSwitch from '@/components/theme-switch'
 import { UserNav } from '@/components/user-nav'
 import { NotificationBell } from '@/components/notification-bell'
 import { BreadcrumbNavigation } from '@/components/ui/breadcrumb-navigation'
-import { IconHome, IconDeviceTv, IconPlus, IconTrash, IconEdit, IconPlayerPlay, IconRefresh, IconCopy } from '@tabler/icons-react'
+import { IconHome, IconDeviceTv, IconPlus, IconTrash, IconEdit, IconPlayerPlay, IconRefresh, IconCopy, IconDownload } from '@tabler/icons-react'
 import { Button } from '@/components/custom/button'
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -332,6 +332,10 @@ export default function Screens() {
                 {/* Preview is always available */}
                 <Button variant="ghost" size="sm" onClick={() => window.open(`/player/${screen.id}?userId=${user?.id || (user as any)?._id}${screen.secretKey ? `&key=${screen.secretKey}` : ''}`, '_blank')}>
                     <IconPlayerPlay size={16} className="mr-1" /> Preview
+                </Button>
+                {/* Download (recorded export) */}
+                <Button variant="ghost" size="sm" onClick={() => window.open(`/player/${screen.id}?userId=${user?.id || (user as any)?._id}${screen.secretKey ? `&key=${screen.secretKey}` : ''}&record=true&hideClock=true&hideControls=true`, '_blank')}>
+                    <IconDownload size={16} className="mr-1" /> Download
                 </Button>
                 {/* Owner controls (non-advertiser) */}
                 {isOwner && !isAdvertiser && (

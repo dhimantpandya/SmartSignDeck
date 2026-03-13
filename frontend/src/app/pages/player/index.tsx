@@ -1,8 +1,8 @@
 import { useEffect, useState, useRef, useMemo } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useSearchParams } from 'react-router-dom'
 import { apiService } from '@/api'
 import Loader from '@/components/loader'
-import { IconAlertTriangle, IconVolume, IconVolumeOff } from '@tabler/icons-react'
+import { IconAlertTriangle, IconVolume, IconVolumeOff, IconMinimize, IconMaximize, IconDownload, IconDeviceTv } from '@tabler/icons-react'
 import { Button } from '@/components/custom/button'
 import { io } from 'socket.io-client'
 
@@ -23,6 +23,10 @@ function normalizeVideoUrl(url: string): string {
 
 export default function ScreenPlayer() {
     const { screenId } = useParams()
+    const [searchParams] = useSearchParams()
+    const hideClockParam = searchParams.get('hideClock') === 'true'
+    const hideControlsParam = searchParams.get('hideControls') === 'true'
+
     const [data, setData] = useState<any>(null)
     const [error, setError] = useState<string | null>(null)
     const [isLoading, setIsLoading] = useState(true)
@@ -189,11 +193,16 @@ export default function ScreenPlayer() {
         }
     }
 
+    // Handle Mute toggle function
+    const toggleMute = () => {
+        setIsMuted(prev => !prev)
+    }
+
     // Keyboard shortcuts
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key.toLowerCase() === 'f') toggleFullscreen()
-            if (e.key.toLowerCase() === 'm') { setIsMuted(prev => !prev) }
+            if (e.key.toLowerCase() === 'm') { toggleMute() }
             if (e.key === 'Escape' && document.fullscreenElement) document.exitFullscreen()
         }
         window.addEventListener('keydown', handleKeyDown)
@@ -385,35 +394,44 @@ export default function ScreenPlayer() {
         <div className='fixed inset-0 bg-black overflow-hidden'>
 
             {/* Live Clock Overlay (top-left) */}
-            {showClock && <LiveClock />}
+            {(showClock && !hideClockParam) && <LiveClock />}
 
             {/* QR Code Overlay (dynamic free space) */}
             {data?.qrCodeUrl && <QRCodeOverlay url={data.qrCodeUrl} zones={optimizedZones} targetWidth={targetWidth} targetHeight={targetHeight} />}
 
-            {/* Fullscreen Toggle Overlay (visible on hover or when not fullscreen) */}
-            <div className={`absolute top-4 right-4 z-50 transition-opacity duration-300 ${isFullscreen ? 'opacity-0 hover:opacity-100' : 'opacity-100'}`}>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    className="bg-black/50 border-white/20 text-white hover:bg-white/20"
-                    onClick={toggleFullscreen}
-                >
-                    {isFullscreen ? 'Exit Fullscreen (F)' : 'Enter Fullscreen (F)'}
-                </Button>
-            </div>
+            {/* Recorder Overlay (if recording requested) */}
+            {searchParams.get('record') === 'true' && (
+                <RecorderOverlay targetWidth={targetWidth} targetHeight={targetHeight} />
+            )}
 
-            {/* Sound Toggle (bottom-right) */}
-            <div className={`absolute bottom-4 right-4 z-50 transition-opacity duration-300 ${isFullscreen ? 'opacity-0 hover:opacity-100' : 'opacity-100'}`}>
-                <Button
-                    variant="outline"
-                    size="icon"
-                    className="bg-black/50 border-white/20 text-white hover:bg-white/20 h-9 w-9"
-                    onClick={() => { setIsMuted(prev => !prev) }}
-                    title={isMuted ? 'Unmute (M)' : 'Mute (M)'}
-                >
-                    {isMuted ? <IconVolumeOff size={18} /> : <IconVolume size={18} />}
-                </Button>
-            </div>
+            {/* Fullscreen Toggle Overlay (visible on hover or when not fullscreen) */}
+            {!hideControlsParam && (
+                <div className={`absolute top-4 right-4 z-50 transition-opacity duration-300 ${isFullscreen ? 'opacity-0 hover:opacity-100' : 'opacity-100'}`}>
+                    <Button
+                        variant='ghost'
+                        size='icon'
+                        onClick={toggleFullscreen}
+                        className='h-10 w-10 rounded-full bg-black/40 text-white backdrop-blur-md hover:bg-black/60'
+                    >
+                        {isFullscreen ? <IconMinimize size={20} /> : <IconMaximize size={20} />}
+                    </Button>
+                </div>
+            )}
+
+            {/* Sound Toggle Overlay (bottom-right) */}
+            {!hideControlsParam && (
+                <div className={`absolute bottom-4 right-4 z-50 transition-opacity duration-300 ${isFullscreen ? 'opacity-0 hover:opacity-100' : 'opacity-100'}`}>
+                    <Button
+                        variant='ghost'
+                        size='icon'
+                        onClick={toggleMute}
+                        className='h-10 w-10 rounded-full bg-black/40 text-white backdrop-blur-md hover:bg-black/60'
+                        title={isMuted ? 'Unmute (M)' : 'Mute (M)'}
+                    >
+                        {isMuted ? <IconVolumeOff size={20} /> : <IconVolume size={20} />}
+                    </Button>
+                </div>
+            )}
 
             <div
                 className='absolute top-1/2 left-1/2 bg-black'
@@ -743,6 +761,161 @@ function QRCodeOverlay({ url, zones, targetWidth, targetHeight }: { url: string,
                 <div className="bg-black text-white text-[10px] font-bold px-3 py-0.5 rounded-full uppercase tracking-tighter">
                     Scan Me
                 </div>
+            </div>
+        </div>
+    )
+}
+
+// --- RECORDER OVERLAY ---
+function RecorderOverlay({ }: { targetWidth: number, targetHeight: number }) {
+    const [duration, setDuration] = useState(30)
+    const [isRecording, setIsRecording] = useState(false)
+    const [progress, setProgress] = useState(0)
+    const [status, setStatus] = useState<'idle' | 'recording' | 'finalizing' | 'done'>('idle')
+
+    const startRecording = async () => {
+        setIsRecording(true)
+        setStatus('recording')
+        setProgress(0)
+
+        // Actually, capturing the window is easier if we are in a tab.
+        
+        try {
+            const stream = await (navigator.mediaDevices as any).getDisplayMedia({
+                video: { frameRate: 30, displaySurface: 'browser' },
+                audio: true,
+                preferCurrentTab: true
+            })
+
+            const mimeType = MediaRecorder.isTypeSupported('video/mp4; codecs=avc1.42E01E,mp4a.40.2') 
+                ? 'video/mp4' 
+                : 'video/webm;codecs=h264'
+            
+            const recorder = new MediaRecorder(stream, { mimeType })
+            const chunks: BlobPart[] = []
+
+            recorder.ondataavailable = (e) => {
+                if (e.data.size > 0) chunks.push(e.data)
+            }
+
+            recorder.onstop = () => {
+                setStatus('finalizing')
+                const blob = new Blob(chunks, { type: mimeType })
+                const url = URL.createObjectURL(blob)
+                const a = document.createElement('a')
+                a.href = url
+                a.download = `smart-sign-deck-export.mp4`
+                a.click()
+                setStatus('done')
+                setIsRecording(false)
+                
+                // Stop all tracks
+                stream.getTracks().forEach((t: any) => t.stop())
+            }
+
+            recorder.start()
+
+            const startTime = Date.now()
+            const interval = setInterval(() => {
+                const elapsed = (Date.now() - startTime) / 1000
+                const p = Math.min(100, (elapsed / duration) * 100)
+                setProgress(p)
+
+                if (elapsed >= duration) {
+                    clearInterval(interval)
+                    recorder.stop()
+                }
+            }, 100)
+
+        } catch (err) {
+            console.error('Recording failed:', err)
+            setIsRecording(false)
+            setStatus('idle')
+        }
+    }
+
+    if (status === 'done') {
+        return (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-500">
+                <div className="bg-white rounded-2xl p-8 flex flex-col items-center gap-4 text-center shadow-2xl scale-110">
+                    <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center">
+                        <IconDeviceTv size={32} />
+                    </div>
+                    <h2 className="text-xl font-bold text-gray-900">Download Ready!</h2>
+                    <p className="text-sm text-gray-500">Your MP4 video has been exported successfully.</p>
+                    <Button onClick={() => window.close()} className="mt-2">Close This Tab</Button>
+                </div>
+            </div>
+        )
+    }
+
+    return (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm pointer-events-auto">
+            <div className="bg-white rounded-2xl p-6 w-[400px] shadow-2xl flex flex-col gap-6 animate-in zoom-in-95 duration-300">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 bg-primary/10 text-primary rounded-lg flex items-center justify-center">
+                            <IconDownload size={20} />
+                        </div>
+                        <h3 className="font-bold text-lg">Export to Video</h3>
+                    </div>
+                    <Button variant="ghost" size="icon" onClick={() => window.close()}>×</Button>
+                </div>
+
+                {!isRecording ? (
+                    <div className="space-y-4">
+                        <p className="text-sm text-gray-500">
+                            You are about to export this screen as an MP4 video. Select a duration below and click start.
+                        </p>
+                        <div className="grid grid-cols-3 gap-3">
+                            {[15, 30, 60].map(d => (
+                                <button
+                                    key={d}
+                                    onClick={() => setDuration(d)}
+                                    className={`py-3 rounded-xl border-2 transition-all ${duration === d 
+                                        ? 'border-primary bg-primary/5 text-primary font-bold shadow-md' 
+                                        : 'border-gray-100 hover:border-gray-200 text-gray-600'}`}
+                                >
+                                    {d}s
+                                </button>
+                            ))}
+                        </div>
+                        <Button 
+                            className="w-full h-12 text-md font-bold rounded-xl shadow-lg shadow-primary/20" 
+                            onClick={startRecording}
+                        >
+                            Start Recording
+                        </Button>
+                    </div>
+                ) : (
+                    <div className="space-y-6 py-4 flex flex-col items-center">
+                        <div className="relative w-24 h-24">
+                            <div className="absolute inset-0 rounded-full border-4 border-primary/20" />
+                            <div 
+                                className="absolute inset-0 rounded-full border-4 border-primary border-t-transparent animate-spin"
+                                style={{ animationDuration: '2s' }}
+                            />
+                            <div className="absolute inset-0 flex items-center justify-center">
+                                <span className="text-xl font-black text-primary">{Math.round(progress)}%</span>
+                            </div>
+                        </div>
+                        
+                        <div className="text-center">
+                            <div className="flex items-center justify-center gap-2 text-primary animate-pulse mb-1">
+                                <div className="w-2 h-2 rounded-full bg-primary" />
+                                <span className="text-sm font-bold uppercase tracking-widest">Recording...</span>
+                            </div>
+                            <p className="text-xs text-gray-400">Please keep this tab focused for best quality</p>
+                        </div>
+
+                        <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
+                            <div 
+                                className="h-full bg-primary transition-all duration-300 ease-linear"
+                                style={{ width: `${progress}%` }}
+                            />
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     )
