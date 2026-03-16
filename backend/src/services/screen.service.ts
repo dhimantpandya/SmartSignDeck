@@ -82,15 +82,30 @@ const queryScreens = async (filter: any, options: CustomPaginateOptions, user: I
       // 🗑️ Recycle Bin: Strictly same user ONLY (No admin override)
       finalFilter.createdBy = new mongoose.Types.ObjectId(userIdStr);
     } else if (isQueryingPublic) {
-      // 🌍 Global View: Advertisers see only same company; others see all companies
-      finalFilter.isPublic = true;
-      if (user.role === 'advertiser') {
-        if (companyIdStr) {
-          finalFilter.companyId = new mongoose.Types.ObjectId(companyIdStr);
-        } else {
-          finalFilter.companyId = new mongoose.Types.ObjectId(); // Empty match
+      // 🌍 Global Library: Choice between "My Company" and "Global"
+      const visibilityFilter = parsedQuery.filter.visibility;
+
+      if (visibilityFilter === 'company') {
+        finalFilter.$or = [
+          { visibility: 'company', companyId: new mongoose.Types.ObjectId(companyIdStr) },
+          { visibility: 'public', companyId: new mongoose.Types.ObjectId(companyIdStr) },
+          { isPublic: true, companyId: new mongoose.Types.ObjectId(companyIdStr) }
+        ];
+      } else {
+        finalFilter.$or = [
+          { visibility: 'public' },
+          { isPublic: true }
+        ];
+
+        if (user.role === 'advertiser') {
+          if (companyIdStr) {
+            finalFilter.companyId = new mongoose.Types.ObjectId(companyIdStr);
+          } else {
+            finalFilter.companyId = new mongoose.Types.ObjectId();
+          }
         }
       }
+      delete finalFilter.visibility;
     } else {
       // 🔒 Default Isolation: Allow own content or public content (restricted for advertisers)
       const securityConditions: any[] = [
@@ -99,10 +114,18 @@ const queryScreens = async (filter: any, options: CustomPaginateOptions, user: I
 
       if (user.role === 'advertiser') {
         if (companyIdStr) {
-          securityConditions.push({ isPublic: true, companyId: new mongoose.Types.ObjectId(companyIdStr) });
+          securityConditions.push({ 
+            $or: [{ visibility: 'public' }, { isPublic: true }], 
+            companyId: new mongoose.Types.ObjectId(companyIdStr) 
+          });
         }
       } else {
-        securityConditions.push({ isPublic: true });
+        securityConditions.push({ $or: [{ visibility: 'public' }, { isPublic: true }] });
+      }
+
+      // 🤝 Company Shared Screens
+      if (companyIdStr) {
+        securityConditions.push({ visibility: 'company', companyId: new mongoose.Types.ObjectId(companyIdStr) });
       }
 
       finalFilter.$or = securityConditions;

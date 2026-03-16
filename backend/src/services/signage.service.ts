@@ -4,19 +4,22 @@ import mongoose from 'mongoose';
 
 /**
  * Get signage analytics for the dashboard
- * @returns {Promise<Object>}
+ * @param companyId Company ID to filter by
+ * @param userId User ID for personal scope
+ * @param scope "personal" or "company" (default: "personal")
  */
-const getSignageStats = async (companyId: string, userId?: string) => {
+const getSignageStats = async (companyId: string, userId: string, scope: "personal" | "company" = "personal") => {
   const filter: any = {
     deletedAt: null
   };
 
-  if (userId && mongoose.Types.ObjectId.isValid(userId)) {
+  // If personal scope, we restrict to the user's own content.
+  // If company scope, we show everything in the company.
+  if (scope === "personal" && mongoose.Types.ObjectId.isValid(userId)) {
     filter.createdBy = new mongoose.Types.ObjectId(userId);
   }
 
-  // 🔒 Strict Personal Isolation: Primary filter is createdBy.
-  // We still include companyId for indexed performance if user has one.
+  // Always include companyId for security and performance if provided
   if (companyId && mongoose.Types.ObjectId.isValid(companyId)) {
     filter.companyId = new mongoose.Types.ObjectId(companyId);
   }

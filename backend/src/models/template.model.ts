@@ -30,6 +30,7 @@ export interface ITemplate extends Document {
   companyId: mongoose.Schema.Types.ObjectId;
   createdBy: mongoose.Schema.Types.ObjectId;
   isPublic: boolean;
+  visibility: "private" | "company" | "public";
   isActive: boolean;
   collaborators: mongoose.Schema.Types.ObjectId[];
   lastModifiedBy?: mongoose.Schema.Types.ObjectId;
@@ -98,6 +99,12 @@ const templateSchema = new Schema<ITemplate, ITemplateModel>(
     isPublic: {
       type: Boolean,
       default: false,
+      index: true,
+    },
+    visibility: {
+      type: String,
+      enum: ["private", "company", "public"],
+      default: "private",
       index: true,
     },
     isActive: {

@@ -23,7 +23,7 @@ const createScreen = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getScreens = catchAsync(async (req: Request, res: Response) => {
-  const filter: any = pick(req.query, ["name", "templateId", "status", "createdBy", "isPublic", "trashed"]);
+  const filter: any = pick(req.query, ["name", "templateId", "status", "createdBy", "isPublic", "visibility", "trashed"]);
 
   // Handle boolean strings
   if (filter.isPublic === 'true') filter.isPublic = true;

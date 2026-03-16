@@ -47,6 +47,7 @@ export interface IScreen extends Document {
   companyId: mongoose.Schema.Types.ObjectId;
   createdBy: mongoose.Schema.Types.ObjectId;
   isPublic: boolean;
+  visibility: "private" | "company" | "public";
   secretKey?: string;
   showClock: boolean;
   qrCodeUrl?: string;
@@ -112,6 +113,12 @@ const screenSchema = new Schema<IScreen, IScreenModel>(
     isPublic: {
       type: Boolean,
       default: false,
+      index: true,
+    },
+    visibility: {
+      type: String,
+      enum: ["private", "company", "public"],
+      default: "private",
       index: true,
     },
     showClock: {

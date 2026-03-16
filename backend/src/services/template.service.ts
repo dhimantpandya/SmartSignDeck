@@ -102,15 +102,33 @@ const queryTemplates = async (filter: any, options: CustomPaginateOptions, user:
         finalFilter.createdBy = userId;
         delete finalFilter.$or; // No shared/public access in trash
       } else if (isQueryingPublic) {
-        // 🌍 Global View: Advertisers see only same company; others see all companies
-        finalFilter.isPublic = true;
-        if (user.role === 'advertiser') {
-          if (companyIdStr) {
-            finalFilter.companyId = new mongoose.Types.ObjectId(companyIdStr);
-          } else {
-            finalFilter.companyId = new mongoose.Types.ObjectId(); // Empty match
+        // 🌍 Global Library: Choice between "My Company" and "Global"
+        // The frontend will pass { visibility: 'company' } or { visibility: 'public' }
+        const visibilityFilter = parsedQuery.filter.visibility;
+
+        if (visibilityFilter === 'company') {
+          // Show items shared with the company OR made public, but ONLY within this company
+          finalFilter.$or = [
+            { visibility: 'company', companyId: new mongoose.Types.ObjectId(companyIdStr) },
+            { visibility: 'public', companyId: new mongoose.Types.ObjectId(companyIdStr) },
+            { isPublic: true, companyId: new mongoose.Types.ObjectId(companyIdStr) } // Backward compat
+          ];
+        } else {
+          // Show ALL public items (Advertisers still restricted to their own company)
+          finalFilter.$or = [
+            { visibility: 'public' },
+            { isPublic: true }
+          ];
+
+          if (user.role === 'advertiser') {
+            if (companyIdStr) {
+              finalFilter.companyId = new mongoose.Types.ObjectId(companyIdStr);
+            } else {
+              finalFilter.companyId = new mongoose.Types.ObjectId(); // Empty match
+            }
           }
         }
+        delete finalFilter.visibility; // Handled in $or
       } else if (isQueryingShared && userId) {
         // 🤝 Explicit Shared Query
         finalFilter.collaborators = userId;
@@ -120,12 +138,21 @@ const queryTemplates = async (filter: any, options: CustomPaginateOptions, user:
         if (userId) securityConditions.push({ createdBy: userId });
         if (userId) securityConditions.push({ collaborators: userId });
         
+        // Items shared with the whole company
+        if (companyIdStr) {
+          securityConditions.push({ visibility: 'company', companyId: new mongoose.Types.ObjectId(companyIdStr) });
+        }
+
+        // Public items
         if (user.role === 'advertiser') {
           if (companyIdStr) {
-            securityConditions.push({ isPublic: true, companyId: new mongoose.Types.ObjectId(companyIdStr) });
+            securityConditions.push({ 
+              $or: [{ visibility: 'public' }, { isPublic: true }], 
+              companyId: new mongoose.Types.ObjectId(companyIdStr) 
+            });
           }
         } else {
-          securityConditions.push({ isPublic: true });
+          securityConditions.push({ $or: [{ visibility: 'public' }, { isPublic: true }] });
         }
 
         finalFilter.$or = securityConditions;
