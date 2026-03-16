@@ -161,6 +161,13 @@ export const getHTMLandSendEmail = async (
     }
 
     // 2. Fallback to Standard SMTP
+    // 🌍 PRODUCTION SAFETY: Do not attempt SMTP fallback on production if Gmail API failed
+    // This prevents the "Connection Timeout" hang caused by Railway blocking SMTP ports.
+    if (config.env === 'production' && config.email.gmailClientId) {
+      console.error("[EMAIL FATAL] Gmail API failed on production. Skipping SMTP fallback to avoid port hang.");
+      throw new Error("Email delivery failed via API and SMTP is restricted.");
+    }
+
     console.log(`[EMAIL] Attempting via SMTP to ${request.email}...`);
     const info = await sendViaSMTP(request.email, request.subject, htmlToSend);
     console.log("[EMAIL SUCCESS] Sent via SMTP. ID:", info.messageId);

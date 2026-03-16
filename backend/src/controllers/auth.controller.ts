@@ -84,7 +84,12 @@ export const register = async (req: Request, res: Response) => {
       );
 
       await Promise.race([emailPromise, timeoutPromise]);
-      console.log(`[AuthDebug] Verification email successfully handed off to SMTP for: ${email}`);
+      console.log(`[AuthDebug] Verification email successfully handed off for: ${email}`);
+      if (config.env === 'development') {
+        console.log(`\n-----------------------------------------`);
+        console.log(`[DEV ONLY] OTP for ${email}: ${otp}`);
+        console.log(`-----------------------------------------\n`);
+      }
     } catch (emailErr: any) {
       console.error("[AuthError] FAILED to send verification email:", emailErr.message);
 
