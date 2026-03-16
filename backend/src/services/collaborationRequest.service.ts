@@ -21,6 +21,16 @@ const sendRequest = async (senderId: string, recipientId: string, templateId: st
         throw new ApiError(httpStatus.BAD_REQUEST, "You cannot invite yourself");
     }
 
+    // Role-based restriction: Advertisers cannot send or receive template invites
+    const [sender, recipient] = await Promise.all([
+        User.findById(senderId),
+        User.findById(recipientId)
+    ]);
+
+    if (sender?.role === 'advertiser' || recipient?.role === 'advertiser') {
+        throw new ApiError(httpStatus.FORBIDDEN, "Advertisers cannot participate in template collaboration");
+    }
+
     // Check if already collaborating
     if (template.collaborators?.some((id) => id.toString() === recipientId)) {
         throw new ApiError(httpStatus.BAD_REQUEST, "User is already a collaborator");

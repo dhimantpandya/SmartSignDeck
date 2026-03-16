@@ -17,6 +17,8 @@ const allRoles: Record<string, string[]> = {
     "createScreens",
     "getAnalytics",
     "manageAnalytics",
+    "getMedia",
+    "manageMedia",
   ],
   admin: [
     "getUsers",

@@ -81,8 +81,11 @@ const queryScreens = async (filter: any, options: CustomPaginateOptions, user: I
       // 🗑️ Recycle Bin: Strictly same user ONLY (No admin override)
       finalFilter.createdBy = new mongoose.Types.ObjectId(userIdStr);
     } else if (isQueryingPublic) {
-      // 🌍 Global View: Allow seeing public screens
+      // 🌍 Global View: Allow seeing public screens, but restricted to SAME COMPANY for non-super-admins
       finalFilter.isPublic = true;
+      if (companyIdStr) {
+        finalFilter.companyId = new mongoose.Types.ObjectId(companyIdStr);
+      }
     } else {
       // 🔒 Strict Isolation: Always restrict to current user
       finalFilter.createdBy = new mongoose.Types.ObjectId(userIdStr);

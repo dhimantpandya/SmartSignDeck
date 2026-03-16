@@ -381,15 +381,17 @@ export default function Collaboration() {
                                         </Badge>
                                     )}
                                 </TabsTrigger>
-                                <TabsTrigger value="template-requests" className="justify-center md:justify-start gap-3 px-4 py-3 h-auto data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-xl transition-all hover:bg-primary/10 relative flex-shrink-0 whitespace-nowrap">
-                                    <FileText size={18} />
-                                    <span className="font-medium">Template Invites</span>
-                                    {incomingRequestsNum > 0 && (
-                                        <Badge variant="destructive" className="ml-auto px-1.5 py-0.5 min-w-[1.25rem] h-5 justify-center text-[10px] animate-pulse">
-                                            {incomingRequestsNum}
-                                        </Badge>
-                                    )}
-                                </TabsTrigger>
+                                {user?.role !== 'advertiser' && (
+                                    <TabsTrigger value="template-requests" className="justify-center md:justify-start gap-3 px-4 py-3 h-auto data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-xl transition-all hover:bg-primary/10 relative flex-shrink-0 whitespace-nowrap">
+                                        <FileText size={18} />
+                                        <span className="font-medium">Template Invites</span>
+                                        {incomingRequestsNum > 0 && (
+                                            <Badge variant="destructive" className="ml-auto px-1.5 py-0.5 min-w-[1.25rem] h-5 justify-center text-[10px] animate-pulse">
+                                                {incomingRequestsNum}
+                                            </Badge>
+                                        )}
+                                    </TabsTrigger>
+                                )}
 
                             </TabsList>
                         </div>
@@ -573,79 +575,81 @@ export default function Collaboration() {
                                 </Card>
                             </TabsContent>
 
-                            <TabsContent value="template-requests" className="mt-0">
-                                <div className="space-y-6">
-                                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-background/50 backdrop-blur-md p-4 rounded-2xl border border-primary/10 shadow-sm">
-                                        <div>
-                                            <h2 className="text-lg font-bold">Template Invitations</h2>
-                                            <p className="text-xs text-muted-foreground">Manage collaboration requests for templates.</p>
+                            {user?.role !== 'advertiser' && (
+                                <TabsContent value="template-requests" className="mt-0">
+                                    <div className="space-y-6">
+                                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-background/50 backdrop-blur-md p-4 rounded-2xl border border-primary/10 shadow-sm">
+                                            <div>
+                                                <h2 className="text-lg font-bold">Template Invitations</h2>
+                                                <p className="text-xs text-muted-foreground">Manage collaboration requests for templates.</p>
+                                            </div>
                                         </div>
+
+                                        <Tabs defaultValue="incoming-tm" className="w-full">
+                                            <TabsList className="bg-muted/30 p-1 rounded-xl">
+                                                <TabsTrigger value="incoming-tm" className="rounded-lg px-6">
+                                                    Incoming ({incomingRequestsNum})
+                                                </TabsTrigger>
+                                                <TabsTrigger value="outgoing-tm" className="rounded-lg px-6">
+                                                    Outgoing ({(outgoingTemplatesData as any)?.results?.filter((r: any) => r.status === 'pending').length || 0})
+                                                </TabsTrigger>
+                                            </TabsList>
+
+                                            <TabsContent value="incoming-tm" className="mt-6">
+                                                {isLoadingIncomingTemplates ? (
+                                                    <div className="flex h-40 items-center justify-center">
+                                                        <Loader />
+                                                    </div>
+                                                ) : incomingRequestsNum > 0 ? (
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                                        {(incomingTemplatesData as any).results
+                                                            .filter((r: any) => r.status === 'pending')
+                                                            .map((request: any) =>
+                                                                renderTemplateInviteCard(request, true)
+                                                            )}
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex flex-col items-center justify-center py-20 px-4 rounded-2xl border border-dashed border-primary/20 bg-primary/5 text-center">
+                                                        <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                                                            <FileText size={32} className="text-primary/40" />
+                                                        </div>
+                                                        <h3 className="text-lg font-semibold text-foreground">No incoming invites</h3>
+                                                        <p className="text-sm text-muted-foreground max-w-xs mt-1">
+                                                            When someone invites you to collaborate on a template, it will appear here.
+                                                        </p>
+                                                    </div>
+                                                )}
+                                            </TabsContent>
+
+                                            <TabsContent value="outgoing-tm" className="mt-6">
+                                                {isLoadingOutgoingTemplates ? (
+                                                    <div className="flex h-40 items-center justify-center">
+                                                        <Loader />
+                                                    </div>
+                                                ) : (outgoingTemplatesData as any)?.results?.filter((r: any) => r.status === 'pending').length > 0 ? (
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                                        {(outgoingTemplatesData as any).results
+                                                            .filter((r: any) => r.status === 'pending')
+                                                            .map((request: any) =>
+                                                                renderTemplateInviteCard(request, false)
+                                                            )}
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex flex-col items-center justify-center py-20 px-4 rounded-2xl border border-dashed border-primary/20 bg-primary/5 text-center">
+                                                        <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                                                            <Send size={32} className="text-primary/40" />
+                                                        </div>
+                                                        <h3 className="text-lg font-semibold text-foreground">No outgoing requests</h3>
+                                                        <p className="text-sm text-muted-foreground max-w-xs mt-1">
+                                                            Templates you've invited others to collaborate on will show up here.
+                                                        </p>
+                                                    </div>
+                                                )}
+                                            </TabsContent>
+                                        </Tabs>
                                     </div>
-
-                                    <Tabs defaultValue="incoming-tm" className="w-full">
-                                        <TabsList className="bg-muted/30 p-1 rounded-xl">
-                                            <TabsTrigger value="incoming-tm" className="rounded-lg px-6">
-                                                Incoming ({incomingRequestsNum})
-                                            </TabsTrigger>
-                                            <TabsTrigger value="outgoing-tm" className="rounded-lg px-6">
-                                                Outgoing ({(outgoingTemplatesData as any)?.results?.filter((r: any) => r.status === 'pending').length || 0})
-                                            </TabsTrigger>
-                                        </TabsList>
-
-                                        <TabsContent value="incoming-tm" className="mt-6">
-                                            {isLoadingIncomingTemplates ? (
-                                                <div className="flex h-40 items-center justify-center">
-                                                    <Loader />
-                                                </div>
-                                            ) : incomingRequestsNum > 0 ? (
-                                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                                    {(incomingTemplatesData as any).results
-                                                        .filter((r: any) => r.status === 'pending')
-                                                        .map((request: any) =>
-                                                            renderTemplateInviteCard(request, true)
-                                                        )}
-                                                </div>
-                                            ) : (
-                                                <div className="flex flex-col items-center justify-center py-20 px-4 rounded-2xl border border-dashed border-primary/20 bg-primary/5 text-center">
-                                                    <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-                                                        <FileText size={32} className="text-primary/40" />
-                                                    </div>
-                                                    <h3 className="text-lg font-semibold text-foreground">No incoming invites</h3>
-                                                    <p className="text-sm text-muted-foreground max-w-xs mt-1">
-                                                        When someone invites you to collaborate on a template, it will appear here.
-                                                    </p>
-                                                </div>
-                                            )}
-                                        </TabsContent>
-
-                                        <TabsContent value="outgoing-tm" className="mt-6">
-                                            {isLoadingOutgoingTemplates ? (
-                                                <div className="flex h-40 items-center justify-center">
-                                                    <Loader />
-                                                </div>
-                                            ) : (outgoingTemplatesData as any)?.results?.filter((r: any) => r.status === 'pending').length > 0 ? (
-                                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                                    {(outgoingTemplatesData as any).results
-                                                        .filter((r: any) => r.status === 'pending')
-                                                        .map((request: any) =>
-                                                            renderTemplateInviteCard(request, false)
-                                                        )}
-                                                </div>
-                                            ) : (
-                                                <div className="flex flex-col items-center justify-center py-20 px-4 rounded-2xl border border-dashed border-primary/20 bg-primary/5 text-center">
-                                                    <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-                                                        <Send size={32} className="text-primary/40" />
-                                                    </div>
-                                                    <h3 className="text-lg font-semibold text-foreground">No outgoing requests</h3>
-                                                    <p className="text-sm text-muted-foreground max-w-xs mt-1">
-                                                        Templates you've invited others to collaborate on will show up here.
-                                                    </p>
-                                                </div>
-                                            )}
-                                        </TabsContent>
-                                    </Tabs>
-                                </div>
-                            </TabsContent>
+                                </TabsContent>
+                            )}
 
 
                         </div>
