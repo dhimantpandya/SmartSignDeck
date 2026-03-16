@@ -5,7 +5,7 @@ export function AnimatedAuthBg() {
     if (typeof window !== 'undefined' && window.innerWidth <= 768) return null;
 
     return (
-        <div className='fixed inset-0 z-[-1] overflow-hidden bg-[#020817]'>
+        <div className='fixed inset-0 z-[-1] overflow-hidden bg-background'>
             {/* Mesh Gradients blobs */}
             <motion.div
                 animate={{

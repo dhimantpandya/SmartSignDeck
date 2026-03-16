@@ -29,7 +29,7 @@ export default function AboutUsPage() {
     )
 
     return (
-        <div className='min-h-screen bg-background text-foreground selection:bg-[#020817] selection:text-white font-sans overflow-x-hidden'>
+        <div className='min-h-screen bg-background text-foreground selection:bg-primary selection:text-primary-foreground font-sans overflow-x-hidden'>
             {/* Simple Nav */}
             <nav className='fixed top-0 w-full z-[100] bg-background/80 backdrop-blur-xl py-4 border-b border-white/5'>
                 <div className='container mx-auto px-6 flex items-center justify-between'>
@@ -37,11 +37,11 @@ export default function AboutUsPage() {
                         className='flex items-center gap-2 group cursor-pointer'
                         onClick={() => navigate(Routes.LANDING)}
                     >
-                        <div className='bg-[#020817]/20 p-2 rounded-xl group-hover:scale-110 transition-transform'>
-                            <BrandLogo className='text-[#020817] h-6 w-6' />
+                        <div className='bg-primary/10 p-2 rounded-xl group-hover:scale-110 transition-transform'>
+                            <BrandLogo className='text-primary h-6 w-6' />
                         </div>
                         <span className='text-xl font-black tracking-tighter uppercase italic'>
-                            SmartSign<span className='text-[#020817]'>Deck</span>
+                            SmartSign<span className='text-primary'>Deck</span>
                         </span>
                     </div>
 
@@ -54,8 +54,8 @@ export default function AboutUsPage() {
                             <motion.button
                                 key={item.name}
                                 onClick={() => navigate(Routes.LANDING + item.hash)}
-                                whileHover={{ scale: 1.1, color: '#020817' }}
-                                className='text-sm font-black uppercase tracking-widest text-primary hover:text-[#020817] transition-all duration-300'
+                                whileHover={{ scale: 1.1, color: 'hsl(var(--primary))' }}
+                                className='text-sm font-black uppercase tracking-widest text-primary hover:text-primary transition-all duration-300'
                             >
                                 {item.name}
                             </motion.button>
@@ -81,7 +81,7 @@ export default function AboutUsPage() {
                 >
                     <div className='space-y-6'>
                         <h1 className='text-4xl md:text-7xl font-black tracking-tighter uppercase italic perspective-1000'>
-                            About <span className='text-[#020817]'>SmartSignDeck.</span>
+                            About <span className='text-primary'>SmartSignDeck.</span>
                         </h1>
                         <p className='text-lg md:text-xl text-muted-foreground/80 leading-relaxed font-bold'>
                             Bridging the Gap Between Complex Scheduling and Intuitive Design.
@@ -91,7 +91,7 @@ export default function AboutUsPage() {
                     <div className='grid md:grid-cols-2 gap-12 pt-10'>
                         <div className='space-y-6'>
                             <h2 className='text-2xl font-black uppercase tracking-tight flex items-center gap-3'>
-                                <IconSparkles className='text-[#020817]' /> The Vision
+                                <IconSparkles className='text-primary' /> The Vision
                             </h2>
                             <p className='text-muted-foreground leading-relaxed'>
                                 SmartSignDeck began as a vision to simplify the digital signage landscape. Developed as a professional internship project, it focuses on high-performance ad scheduling and real-time synchronization across global screen networks.
@@ -99,7 +99,7 @@ export default function AboutUsPage() {
                         </div>
                         <div className='space-y-6'>
                             <h2 className='text-2xl font-black uppercase tracking-tight flex items-center gap-3'>
-                                <IconUsers className='text-[#020817]' /> Driven by Growth
+                                <IconUsers className='text-primary' /> Driven by Growth
                             </h2>
                             <p className='text-muted-foreground leading-relaxed'>
                                 Our mission is to empower businesses with "Unified Broadcast Command"—a system that scales effortlessly from a single display to thousands, all while maintaining absolute brand integrity.
@@ -112,15 +112,15 @@ export default function AboutUsPage() {
                         <p className='text-base md:text-lg leading-relaxed text-muted-foreground'>
                             Utilizing state-of-the-art technologies including React, Fabric.js for template orchestration, and a robust Node.js backend, SmartSignDeck ensures millisecond-level sync and enterprise-grade reliability.
                         </p>
-                        <div className='flex items-center gap-4 text-[#020817] font-black uppercase tracking-widest text-sm'>
-                            <IconWorld /> GLOBAL SCALABILITY <span className='text-white/20'>|</span> REAL-TIME SYNC
+                        <div className='flex items-center gap-4 text-primary font-black uppercase tracking-widest text-sm'>
+                            <IconWorld /> GLOBAL SCALABILITY <span className='opacity-20'>|</span> REAL-TIME SYNC
                         </div>
                     </div>
 
                     <Button
                         variant='ghost'
                         onClick={() => navigate(Routes.LANDING)}
-                        className='gap-2 font-black uppercase tracking-widest hover:text-[#020817]'
+                        className='gap-2 font-black uppercase tracking-widest hover:text-primary'
                     >
                         <IconArrowLeft size={20} /> Back to Home
                     </Button>

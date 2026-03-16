@@ -29,7 +29,7 @@ export default function PrivacyPolicyPage() {
     )
 
     return (
-        <div className='min-h-screen bg-background text-foreground selection:bg-[#020817] selection:text-white font-sans overflow-x-hidden'>
+        <div className='min-h-screen bg-background text-foreground selection:bg-primary selection:text-primary-foreground font-sans overflow-x-hidden'>
             {/* Simple Nav */}
             <nav className='fixed top-0 w-full z-[100] bg-background/80 backdrop-blur-xl py-4 border-b border-white/5'>
                 <div className='container mx-auto px-6 flex items-center justify-between'>
@@ -37,11 +37,11 @@ export default function PrivacyPolicyPage() {
                         className='flex items-center gap-2 group cursor-pointer'
                         onClick={() => navigate(Routes.LANDING)}
                     >
-                        <div className='bg-[#020817]/20 p-2 rounded-xl group-hover:scale-110 transition-transform'>
-                            <BrandLogo className='text-[#020817] h-6 w-6' />
+                        <div className='bg-primary/10 p-2 rounded-xl group-hover:scale-110 transition-transform'>
+                            <BrandLogo className='text-primary h-6 w-6' />
                         </div>
                         <span className='text-xl font-black tracking-tighter uppercase italic'>
-                            SmartSign<span className='text-[#020817]'>Deck</span>
+                            SmartSign<span className='text-primary'>Deck</span>
                         </span>
                     </div>
                 </div>
@@ -55,7 +55,7 @@ export default function PrivacyPolicyPage() {
                 >
                     <div className='space-y-6'>
                         <h1 className='text-5xl md:text-7xl font-black tracking-tighter uppercase italic'>
-                            Privacy <span className='text-[#020817]'>Policy.</span>
+                            Privacy <span className='text-primary'>Policy.</span>
                         </h1>
                         <p className='text-muted-foreground/80 font-bold'>Last Updated: February 24, 2026</p>
                     </div>
@@ -100,7 +100,7 @@ export default function PrivacyPolicyPage() {
                     <Button
                         variant='ghost'
                         onClick={() => navigate(Routes.LANDING)}
-                        className='gap-2 font-black uppercase tracking-widest hover:text-[#020817]'
+                        className='gap-2 font-black uppercase tracking-widest hover:text-primary'
                     >
                         <IconArrowLeft size={20} /> Back to Home
                     </Button>

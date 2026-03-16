@@ -107,18 +107,18 @@ export default function IndustriesPage() {
     ]
 
     return (
-        <div className='min-h-screen bg-background text-foreground selection:bg-[#020817] selection:text-white font-sans overflow-x-hidden'>
+        <div className='min-h-screen bg-background text-foreground selection:bg-primary selection:text-primary-foreground font-sans overflow-x-hidden'>
             <nav className='fixed top-0 w-full z-[100] bg-background/80 backdrop-blur-xl py-4 border-b border-white/5'>
                 <div className='container mx-auto px-6 flex items-center justify-between'>
                     <div
                         className='flex items-center gap-2 group cursor-pointer'
                         onClick={() => navigate(Routes.LANDING)}
                     >
-                        <div className='bg-[#020817]/20 p-2 rounded-xl group-hover:scale-110 transition-transform'>
-                            <BrandLogo className='text-[#020817] h-6 w-6' />
+                        <div className='bg-primary/10 p-2 rounded-xl group-hover:scale-110 transition-transform'>
+                            <BrandLogo className='text-primary h-6 w-6' />
                         </div>
                         <span className='text-xl font-black tracking-tighter uppercase italic'>
-                            SmartSign<span className='text-[#020817]'>Deck</span>
+                            SmartSign<span className='text-primary'>Deck</span>
                         </span>
                     </div>
 
@@ -131,8 +131,8 @@ export default function IndustriesPage() {
                             <motion.button
                                 key={item.name}
                                 onClick={() => navigate(Routes.LANDING + item.hash)}
-                                whileHover={{ scale: 1.1, color: '#020817' }}
-                                className='text-sm font-black uppercase tracking-widest text-primary hover:text-[#020817] transition-all duration-300'
+                                whileHover={{ scale: 1.1, color: 'hsl(var(--primary))' }}
+                                className='text-sm font-black uppercase tracking-widest text-primary hover:text-primary transition-all duration-300'
                             >
                                 {item.name}
                             </motion.button>
@@ -159,7 +159,7 @@ export default function IndustriesPage() {
                     >
                         <div className='space-y-6'>
                             <h1 className='text-5xl md:text-8xl font-black tracking-tighter uppercase italic perspective-1000'>
-                                Tailored <span className='text-[#020817]'>Industries.</span>
+                                Tailored <span className='text-primary'>Industries.</span>
                             </h1>
                             <p className='text-xl text-muted-foreground/80 max-w-3xl mx-auto font-bold leading-relaxed'>
                                 Discover how SmartSignDeck empowers diverse sectors with intelligent digital orchestration and stunning visual communication.
@@ -175,7 +175,7 @@ export default function IndustriesPage() {
                                 whileInView={{ opacity: 1, scale: 1 }}
                                 transition={{ duration: 0.5, delay: (i % 3) * 0.1 }}
                                 viewport={{ once: true }}
-                                className='group relative overflow-hidden rounded-[3rem] bg-primary/5 border border-white/5 hover:border-[#020817]/30 transition-all duration-700'
+                                className='group relative overflow-hidden rounded-[3rem] bg-primary/5 border border-white/5 hover:border-primary/30 transition-all duration-700'
                             >
                                 <div className='aspect-video overflow-hidden'>
                                     <motion.img
@@ -200,7 +200,7 @@ export default function IndustriesPage() {
                         <Button
                             variant='ghost'
                             onClick={() => navigate(Routes.LANDING)}
-                            className='gap-2 font-black uppercase tracking-widest hover:text-[#020817]'
+                            className='gap-2 font-black uppercase tracking-widest hover:text-primary'
                         >
                             <IconArrowLeft size={20} /> Back to Home
                         </Button>

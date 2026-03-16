@@ -52,18 +52,18 @@ export default function DirectManagementPage() {
     ]
 
     return (
-        <div className='min-h-screen bg-background text-foreground selection:bg-[#020817] selection:text-white font-sans overflow-x-hidden'>
+        <div className='min-h-screen bg-background text-foreground selection:bg-primary selection:text-primary-foreground font-sans overflow-x-hidden'>
             <nav className='fixed top-0 w-full z-[100] bg-background/80 backdrop-blur-xl py-4 border-b border-white/5'>
                 <div className='container mx-auto px-6 flex items-center justify-between'>
                     <div
                         className='flex items-center gap-2 group cursor-pointer'
                         onClick={() => navigate(Routes.LANDING)}
                     >
-                        <div className='bg-[#020817]/20 p-2 rounded-xl group-hover:scale-110 transition-transform'>
-                            <BrandLogo className='text-[#020817] h-6 w-6' />
+                        <div className='bg-primary/10 p-2 rounded-xl group-hover:scale-110 transition-transform'>
+                            <BrandLogo className='text-primary h-6 w-6' />
                         </div>
                         <span className='text-xl font-black tracking-tighter uppercase italic'>
-                            SmartSign<span className='text-[#020817]'>Deck</span>
+                            SmartSign<span className='text-primary'>Deck</span>
                         </span>
                     </div>
 
@@ -76,8 +76,8 @@ export default function DirectManagementPage() {
                             <motion.button
                                 key={item.name}
                                 onClick={() => navigate(Routes.LANDING + item.hash)}
-                                whileHover={{ scale: 1.1, color: '#020817' }}
-                                className='text-sm font-black uppercase tracking-widest text-primary hover:text-[#020817] transition-all duration-300'
+                                whileHover={{ scale: 1.1, color: 'hsl(var(--primary))' }}
+                                className='text-sm font-black uppercase tracking-widest text-primary hover:text-primary transition-all duration-300'
                             >
                                 {item.name}
                             </motion.button>
@@ -104,7 +104,7 @@ export default function DirectManagementPage() {
                     >
                         <div className='space-y-6'>
                             <h1 className='text-5xl md:text-8xl font-black tracking-tighter uppercase italic perspective-1000'>
-                                Direct <span className='text-[#020817]'>Management.</span>
+                                Direct <span className='text-primary'>Management.</span>
                             </h1>
                             <p className='text-xl text-muted-foreground/80 max-w-3xl mx-auto font-bold leading-relaxed'>
                                 Experience the power of absolute control. Our Direct Management suite allows you to orchestrate your entire digital ecosystem from a single, unified command center.
@@ -122,7 +122,7 @@ export default function DirectManagementPage() {
                                 viewport={{ once: true }}
                                 className='p-12 rounded-[3.5rem] bg-primary/5 border border-white/5 space-y-6 hover:bg-primary/10 transition-colors'
                             >
-                                <div className='bg-[#020817]/20 w-20 h-20 rounded-2xl flex items-center justify-center text-[#020817]'>
+                                <div className='bg-primary/20 w-20 h-20 rounded-2xl flex items-center justify-center text-primary'>
                                     {f.icon}
                                 </div>
                                 <h3 className='text-3xl font-black uppercase italic'>{f.title}</h3>
@@ -139,9 +139,9 @@ export default function DirectManagementPage() {
                             className='w-full h-full object-cover grayscale brightness-50'
                             alt='Control Center'
                         />
-                        <div className='absolute inset-0 flex items-center justify-center bg-[#020817]/20 backdrop-blur-sm'>
+                        <div className='absolute inset-0 flex items-center justify-center bg-background/20 backdrop-blur-sm'>
                             <div className='text-center space-y-6 p-8'>
-                                <h2 className='text-4xl md:text-6xl font-black uppercase italic text-white'>Unmatched Performance</h2>
+                                <h2 className='text-4xl md:text-6xl font-black uppercase italic text-primary'>Unmatched Performance</h2>
                                 <p className='text-white/80 max-w-xl mx-auto font-bold'>
                                     Built on a cloud-native architecture that scales infinitely while maintaining sub-millisecond responsiveness.
                                 </p>
@@ -153,7 +153,7 @@ export default function DirectManagementPage() {
                         <Button
                             variant='ghost'
                             onClick={() => navigate(Routes.LANDING)}
-                            className='gap-2 font-black uppercase tracking-widest hover:text-[#020817]'
+                            className='gap-2 font-black uppercase tracking-widest hover:text-primary'
                         >
                             <IconArrowLeft size={20} /> Back to Home
                         </Button>
