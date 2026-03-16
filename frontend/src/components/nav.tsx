@@ -113,10 +113,10 @@ function NavLink({
           size: 'sm',
         }),
         'h-12 justify-start text-wrap rounded-none px-6',
-        'text-sm',
-        subLink && 'h-10 w-full border-l border-l-slate-500 px-2',
-        checkActiveNav(href) && 'border-l-4 border-l-foreground ',
-        'border-l-foreground hover:border-l-4'
+        'text-sm font-medium',
+        subLink && 'h-10 w-full border-l border-border px-2',
+        checkActiveNav(href) && 'border-l-4 border-primary bg-primary/5',
+        'hover:border-l-4 hover:border-primary hover:bg-primary/5 transition-all'
       )}
       aria-current={checkActiveNav(href) ? 'page' : undefined}
     >

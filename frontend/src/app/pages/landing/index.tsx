@@ -128,15 +128,15 @@ export default function LandingPage() {
     const heroY = useTransform(scrollYProgress, [0, 0.2], [0, -100])
 
     return (
-        <div className='min-h-screen bg-background text-foreground selection:bg-[#020817] selection:text-white font-sans overflow-x-hidden'>
+        <div className='min-h-screen bg-background text-foreground selection:bg-primary selection:text-primary-foreground font-sans overflow-x-hidden'>
             <style dangerouslySetInnerHTML={{
                 __html: `
-                .selection-navy::selection { background-color: #020817; color: white; }
-                .selection-navy *::selection { background-color: #020817; color: white; }
+                .selection-theme::selection { background-color: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
+                .selection-theme *::selection { background-color: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
             ` }} />
             {/* Scroll Progress Bar */}
             <motion.div
-                className="fixed top-0 left-0 right-0 h-1 bg-[#020817] z-[200] origin-left shadow-[0_0_10px_rgba(2,8,23,0.3)]"
+                className="fixed top-0 left-0 right-0 h-1 bg-primary z-[200] origin-left shadow-[0_0_10px_hsla(var(--primary),0.3)]"
                 style={{ scaleX }}
             />
 
@@ -152,11 +152,11 @@ export default function LandingPage() {
                         className='flex items-center gap-2 group cursor-pointer'
                         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
                     >
-                        <div className='bg-[#020817]/20 p-3 rounded-xl group-hover:scale-110 transition-transform'>
-                            <BrandLogo className='text-[#020817] h-6 w-6' />
+                        <div className='bg-primary/10 p-3 rounded-xl group-hover:scale-110 transition-transform'>
+                            <BrandLogo className='text-primary h-6 w-6' />
                         </div>
                         <span className='text-xl font-black tracking-tighter uppercase italic'>
-                            SmartSign<span className='text-[#020817]'>Deck</span>
+                            SmartSign<span className='text-primary'>Deck</span>
                         </span>
                     </motion.div>
 
@@ -165,8 +165,8 @@ export default function LandingPage() {
                             <motion.a
                                 key={item}
                                 href={item === 'Solutions' ? '#features' : `#${item.toLowerCase()}`}
-                                whileHover={{ scale: 1.1, color: '#020817' }}
-                                className='text-sm font-black uppercase tracking-widest text-primary hover:text-[#020817] transition-all duration-300'
+                                whileHover={{ scale: 1.1, color: 'hsl(var(--primary))' }}
+                                className='text-sm font-black uppercase tracking-widest text-primary/80 hover:text-primary transition-all duration-300'
                             >
                                 {item}
                             </motion.a>
@@ -240,13 +240,13 @@ export default function LandingPage() {
                         animate={{ opacity: 1, y: 0, rotateX: 0 }}
                         exit={{ opacity: 0, y: -50, rotateX: -45 }}
                         transition={{ duration: 0.8, ease: "circOut" }}
-                        className='text-4xl md:text-7xl font-black tracking-tighter leading-[0.9] uppercase italic perspective-1000 selection-navy'
+                        className='text-4xl md:text-7xl font-black tracking-tighter leading-[0.9] uppercase italic perspective-1000 selection-theme'
                     >
-                        <span className='text-[#020817]'>
+                        <span className='text-primary'>
                             {dynamicMessages[activeMessage].line1}
                         </span>
                         <br />
-                        <span className='text-[#020817] drop-shadow-[0_0_20px_rgba(2,8,23,0.2)]'>
+                        <span className='text-primary drop-shadow-[0_0_20px_hsla(var(--primary),0.2)]'>
                             {dynamicMessages[activeMessage].line2}
                         </span>
                     </motion.h1>
@@ -266,13 +266,13 @@ export default function LandingPage() {
                         transition={{ delay: 0.8 }}
                         className='flex flex-col sm:flex-row items-center justify-center gap-4 pt-10'
                     >
-                        <Button size='lg' onClick={() => navigate(Routes.SIGN_UP)} className='h-16 px-10 rounded-2xl text-md font-black uppercase tracking-widest gap-3 w-full sm:w-auto shadow-2xl hover:bg-primary/90 transition-all'>
+                        <Button size='lg' onClick={() => navigate(Routes.SIGN_UP)} className='h-16 px-10 rounded-2xl text-md font-black uppercase tracking-widest gap-3 w-full sm:w-auto shadow-2xl hover:scale-105 active:scale-95 transition-all'>
                             Try for Free <IconArrowRight size={20} />
                         </Button>
                         <Button
                             variant='outline'
                             size='lg'
-                            className='h-16 px-10 rounded-2xl text-md font-black uppercase tracking-widest w-full sm:w-auto bg-background/50 backdrop-blur-xl border-white/10 hover:border-primary/50 transition-all'
+                            className='h-16 px-10 rounded-2xl text-md font-black uppercase tracking-widest w-full sm:w-auto bg-background/50 backdrop-blur-xl border-primary/20 hover:border-primary transition-all'
                             onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
                         >
                             Explore Solutions
@@ -303,7 +303,7 @@ export default function LandingPage() {
                             className='text-center space-y-4 mb-20'
                         >
                             <h2 className='text-4xl md:text-7xl font-black tracking-tighter uppercase italic'>Powerful Features</h2>
-                            <div className='h-2 w-32 bg-[#020817] mx-auto rounded-full shadow-[0_0_20px_rgba(2,8,23,0.3)]' />
+                            <div className='h-2 w-32 bg-primary mx-auto rounded-full shadow-[0_0_20px_hsla(var(--primary),0.3)]' />
                             <p className='text-muted-foreground/80 max-w-xl mx-auto text-xl'>Experience the next generation of content management.</p>
                         </motion.div>
 
@@ -315,7 +315,7 @@ export default function LandingPage() {
                                     whileInView={{ opacity: 1, y: 0 }}
                                     transition={{ duration: 0.5, delay: i * 0.1 }}
                                     viewport={{ once: false, amount: 0.2 }}
-                                    className='p-8 rounded-[2rem] bg-background/40 backdrop-blur-xl border border-white/10 hover:bg-primary/5 hover:border-primary/20 transition-all duration-500 group shadow-2xl relative'
+                                    className='p-8 rounded-[2rem] bg-card/40 backdrop-blur-xl border border-primary/10 hover:bg-primary/5 hover:border-primary/20 transition-all duration-500 group shadow-2xl relative'
                                 >
                                     <div className='bg-primary/20 w-16 h-16 rounded-2xl flex items-center justify-center mb-6 border border-primary/30 group-hover:scale-125 group-hover:rotate-6 transition-transform'>
                                         {f.icon}
@@ -331,7 +331,7 @@ export default function LandingPage() {
 
 
             {/* Solutions Section - Interactive Scroll */}
-            <section id="solutions" className='relative py-32 overflow-hidden border-y border-white/5'>
+            <section id="solutions" className='relative py-32 overflow-hidden border-y border-primary/10'>
                 <div className='container mx-auto px-6 relative z-20'>
                     <div className='flex flex-col lg:flex-row items-center gap-20'>
                         <motion.div
@@ -353,7 +353,7 @@ export default function LandingPage() {
                                     <motion.div
                                         key={i}
                                         whileHover={{ scale: 1.05, border: '1px solid hsla(var(--primary), 0.5)' }}
-                                        className='flex items-center gap-2 sm:gap-3 p-3 sm:p-5 bg-background/60 backdrop-blur-md rounded-2xl border border-white/10 shadow-xl transition-all group cursor-pointer'
+                                        className='flex items-center gap-2 sm:gap-3 p-3 sm:p-5 bg-card/60 backdrop-blur-md rounded-2xl border border-primary/10 shadow-xl transition-all group cursor-pointer'
                                     >
                                         <div className='text-primary group-hover:scale-125 transition-transform shrink-0'>{ind.icon}</div>
                                         <span className='font-bold text-[10px] sm:text-sm uppercase tracking-wider truncate'>{ind.name}</span>
@@ -378,7 +378,7 @@ export default function LandingPage() {
                             className='lg:w-1/2 relative'
                         >
                             <div className='absolute -inset-20 bg-primary/20 blur-[150px] rounded-full animate-pulse' />
-                            <div className='relative rounded-[4rem] overflow-hidden border-[12px] border-white/10 shadow-[0_0_100px_rgba(0,0,0,0.5)] group cursor-pointer'>
+                            <div className='relative rounded-[4rem] overflow-hidden border-[12px] border-primary/10 shadow-[0_0_100px_hsla(var(--primary),0.3)] group cursor-pointer'>
                                 <motion.img
                                     initial={{ filter: 'grayscale(100%) brightness(75%)' }}
                                     whileInView={{ filter: 'grayscale(0%) brightness(100%)' }}
@@ -398,7 +398,7 @@ export default function LandingPage() {
 
 
             {/* News Section - What's Happening */}
-            <section id="news" className='relative py-32 bg-[#020817]/5'>
+            <section id="news" className='relative py-32 bg-primary/5'>
                 <div className='container mx-auto px-6'>
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
@@ -406,7 +406,7 @@ export default function LandingPage() {
                         className='text-center mb-20 space-y-4'
                     >
                         <h2 className='text-4xl md:text-7xl font-black tracking-tighter uppercase italic'>What's Happening</h2>
-                        <div className='h-2 w-32 bg-[#020817] mx-auto rounded-full' />
+                        <div className='h-2 w-32 bg-primary mx-auto rounded-full' />
                         <p className='text-muted-foreground/80 max-w-xl mx-auto text-xl'>Stay updated with the latest from SmartSignDeck.</p>
                     </motion.div>
 
@@ -456,8 +456,8 @@ export default function LandingPage() {
                                     />
                                 </div>
                                 <div className='space-y-2 px-2'>
-                                    <p className='text-[10px] font-black uppercase tracking-widest text-[#020817]'>{item.date}</p>
-                                    <h3 className='text-xl font-black uppercase italic leading-tight group-hover:text-[#020817] transition-colors'>{item.title}</h3>
+                                    <p className='text-[10px] font-black uppercase tracking-widest text-primary/60'>{item.date}</p>
+                                    <h3 className='text-xl font-black uppercase italic leading-tight group-hover:text-primary transition-colors'>{item.title}</h3>
                                     <p className='text-sm text-muted-foreground font-medium'>{item.desc}</p>
                                 </div>
                             </motion.div>
@@ -488,10 +488,10 @@ export default function LandingPage() {
                             Join the elite businesses using SmartSignDeck. Start your 14-day premium trial today and see the difference.
                         </p>
                         <div className='flex flex-col sm:flex-row items-center justify-center gap-6'>
-                            <Button size='lg' onClick={() => navigate(Routes.SIGN_UP)} className='bg-white text-black hover:bg-white/90 h-16 md:h-20 px-10 md:px-16 rounded-3xl font-black uppercase tracking-widest text-md md:text-lg w-full sm:w-auto shadow-2xl'>
+                            <Button size='lg' onClick={() => navigate(Routes.SIGN_UP)} className='bg-primary-foreground text-primary hover:bg-primary-foreground/90 h-16 md:h-20 px-10 md:px-16 rounded-3xl font-black uppercase tracking-widest text-md md:text-lg w-full sm:w-auto shadow-2xl'>
                                 Start Free Trial
                             </Button>
-                            <Button size='lg' variant='outline' onClick={() => navigate(Routes.CONTACT_US)} className='h-16 md:h-20 px-10 md:px-16 rounded-3xl font-black uppercase tracking-widest text-md md:text-lg bg-transparent border-white/40 hover:bg-white/10 w-full sm:w-auto mt-4 sm:mt-0'>
+                            <Button size='lg' variant='outline' onClick={() => navigate(Routes.CONTACT_US)} className='h-16 md:h-20 px-10 md:px-16 rounded-3xl font-black uppercase tracking-widest text-md md:text-lg bg-transparent border-primary-foreground/40 text-primary-foreground hover:bg-primary-foreground/10 w-full sm:w-auto mt-4 sm:mt-0'>
                                 Contact Sales
                             </Button>
                         </div>

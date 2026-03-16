@@ -40,7 +40,7 @@ export const Analytics = ({ stats, isLoading }: AnalyticsProps) => {
           value={String(stats?.totalTemplates ?? 0)}
           percentageChange='100%'
           icon={
-            <IconLayout className='h-4 w-4 text-muted-foreground' />
+            <IconLayout className='h-4 w-4 text-primary' />
           }
         />
       )}
@@ -48,7 +48,7 @@ export const Analytics = ({ stats, isLoading }: AnalyticsProps) => {
         title='Total Screens'
         value={String(stats?.totalScreens ?? 0)}
         percentageChange='100%'
-        icon={<IconDeviceTv className='h-4 w-4 text-muted-foreground' />}
+        icon={<IconDeviceTv className='h-4 w-4 text-primary' />}
       />
       <AnalyticsCard
         title='Online Screens'

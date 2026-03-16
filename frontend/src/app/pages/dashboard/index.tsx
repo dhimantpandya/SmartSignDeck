@@ -180,8 +180,8 @@ export default function Dashboard() {
 
           <div className='mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4'>
             <div className="space-y-1">
-              <h1 className='text-2xl sm:text-3xl font-bold tracking-tight text-primary leading-tight'>{greeting.title}</h1>
-              <p className='text-muted-foreground text-sm sm:text-lg max-w-[90%]'>
+              <h1 className='text-2xl sm:text-3xl font-black tracking-tight text-primary leading-tight uppercase italic'>{greeting.title}</h1>
+              <p className='text-muted-foreground text-sm sm:text-lg max-w-[90%] font-medium'>
                 {greeting.subtitle}
               </p>
             </div>
@@ -232,7 +232,7 @@ export default function Dashboard() {
               <Separator className="opacity-50" />
 
               <div className='grid grid-cols-1 gap-4 lg:grid-cols-7 pt-4'>
-                <Card className='col-span-1 lg:col-span-4 hover:shadow-xl transition-shadow duration-500 border-primary/5'>
+                <Card className='col-span-1 lg:col-span-4 hover:shadow-2xl transition-all duration-500 border-primary/10 shadow-sm'>
                   <CardHeader>
                     <CardTitle>Weekly Impressions</CardTitle>
                     <CardDescription>
@@ -244,7 +244,7 @@ export default function Dashboard() {
                   </CardContent>
                 </Card>
                 <div className='col-span-1 lg:col-span-3 space-y-4'>
-                  <Card className='hover:shadow-lg transition-shadow duration-500 border-primary/5'>
+                  <Card className='hover:shadow-2xl transition-all duration-500 border-primary/10 shadow-sm'>
                     <CardHeader>
                       <CardTitle>Quick Actions</CardTitle>
                       <CardDescription>
@@ -301,7 +301,7 @@ export default function Dashboard() {
                         )}
                     </CardContent>
                   </Card>
-                  <Card className='hover:shadow-lg transition-shadow duration-500 border-primary/5'>
+                  <Card className='hover:shadow-2xl transition-all duration-500 border-primary/10 shadow-sm'>
                     <CardHeader>
                       <CardTitle>Recent Activity</CardTitle>
                       <CardDescription>

@@ -30,6 +30,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select'
+import { useTheme } from '@/components/theme-provider'
 
 export default function Analytics() {
     const [dateRange, setDateRange] = useState({
@@ -39,9 +40,19 @@ export default function Analytics() {
     const [viewMode] = useState<'individual' | 'company'>('company') // Default to company for advertisers
 
     const { user } = useAuth()
+    const { theme } = useTheme()
     const queryClient = useQueryClient()
     const socketRef = useRef<any>(null)
     const dashboardRef = useRef<HTMLDivElement>(null)
+
+    const isDark = theme === 'dark'
+    const chartColors = {
+        stroke: isDark ? 'hsl(var(--primary))' : '#8884d8',
+        grid: isDark ? 'hsla(var(--foreground), 0.1)' : '#e5e7eb',
+        text: isDark ? 'hsl(var(--muted-foreground))' : '#6b7280',
+        tooltip: isDark ? 'hsl(var(--card))' : '#fff',
+        tooltipText: isDark ? 'hsl(var(--foreground))' : '#000'
+    }
 
     // Socket Integration for Real-time Analytics
     useEffect(() => {
@@ -345,15 +356,38 @@ export default function Analytics() {
                                 ) : (
                                     <ResponsiveContainer width='100%' height={300}>
                                         <LineChart data={timeline || []}>
-                                            <CartesianGrid strokeDasharray='3 3' />
-                                            <XAxis dataKey='period' />
-                                            <YAxis />
-                                            <Tooltip />
-                                            <Legend />
+                                            <CartesianGrid strokeDasharray='3 3' stroke={chartColors.grid} />
+                                            <XAxis 
+                                                dataKey='period' 
+                                                stroke={chartColors.text}
+                                                fontSize={12}
+                                                tickLine={false}
+                                                axisLine={false}
+                                            />
+                                            <YAxis 
+                                                stroke={chartColors.text}
+                                                fontSize={12}
+                                                tickLine={false}
+                                                axisLine={false}
+                                                tickFormatter={(value) => `${value}`}
+                                            />
+                                            <Tooltip 
+                                                contentStyle={{ 
+                                                    backgroundColor: chartColors.tooltip,
+                                                    border: `1px solid hsl(var(--border))`,
+                                                    color: chartColors.tooltipText,
+                                                    borderRadius: '8px'
+                                                }}
+                                                itemStyle={{ color: chartColors.tooltipText }}
+                                            />
+                                            <Legend verticalAlign="top" height={36} />
                                             <Line
                                                 type='monotone'
                                                 dataKey='plays'
-                                                stroke='#8884d8'
+                                                stroke={chartColors.stroke}
+                                                strokeWidth={3}
+                                                dot={{ fill: chartColors.stroke, strokeWidth: 2, r: 4 }}
+                                                activeDot={{ r: 6, strokeWidth: 0 }}
                                                 name='Plays'
                                             />
                                         </LineChart>
@@ -375,29 +409,35 @@ export default function Analytics() {
                                 ) : (
                                     <div className='overflow-x-auto'>
                                         <table className='w-full'>
-                                            <thead>
-                                                <tr className='border-b'>
-                                                    <th className='pb-2 text-left'>Content URL</th>
-                                                    <th className='pb-2 text-left'>Type</th>
-                                                    <th className='pb-2 text-right'>Plays</th>
-                                                    <th className='pb-2 text-right'>Duration</th>
-                                                    <th className='pb-2 text-right'>Screens</th>
+                                            <thead className='bg-primary/5'>
+                                                <tr className='border-b border-border'>
+                                                    <th className='p-3 text-left text-xs font-bold uppercase tracking-wider'>Content URL</th>
+                                                    <th className='p-3 text-left text-xs font-bold uppercase tracking-wider'>Type</th>
+                                                    <th className='p-3 text-right text-xs font-bold uppercase tracking-wider'>Plays</th>
+                                                    <th className='p-3 text-right text-xs font-bold uppercase tracking-wider'>Duration</th>
+                                                    <th className='p-3 text-right text-xs font-bold uppercase tracking-wider'>Screens</th>
                                                 </tr>
                                             </thead>
-                                            <tbody>
+                                            <tbody className='divide-y divide-border'>
                                                 {contentPerformance?.map((item: any, index: number) => (
-                                                    <tr key={index} className='border-b'>
-                                                        <td className='py-2 text-sm'>
-                                                            {item.contentUrl?.substring(0, 50)}...
+                                                    <tr key={index} className='hover:bg-primary/5 transition-colors'>
+                                                        <td className='p-3 text-sm'>
+                                                            <div className='max-w-[300px] truncate font-medium'>
+                                                                {item.contentUrl}
+                                                            </div>
                                                         </td>
-                                                        <td className='py-2 text-sm'>{item.contentType}</td>
-                                                        <td className='py-2 text-right text-sm'>
-                                                            {item.totalPlays}
+                                                        <td className='p-3 text-sm'>
+                                                            <span className='inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-secondary text-secondary-foreground'>
+                                                                {item.contentType}
+                                                            </span>
                                                         </td>
-                                                        <td className='py-2 text-right text-sm'>
+                                                        <td className='p-3 text-right text-sm font-bold'>
+                                                            {item.totalPlays?.toLocaleString()}
+                                                        </td>
+                                                        <td className='p-3 text-right text-sm'>
                                                             {formatDuration(item.totalDuration)}
                                                         </td>
-                                                        <td className='py-2 text-right text-sm'>
+                                                        <td className='p-3 text-right text-sm'>
                                                             {item.screenCount}
                                                         </td>
                                                     </tr>
