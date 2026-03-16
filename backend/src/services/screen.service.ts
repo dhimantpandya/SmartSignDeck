@@ -4,6 +4,7 @@ import logger from "../config/logger";
 import Screen from "../models/screen.model";
 import Template from "../models/template.model";
 import Playlist from "../models/playlist.model";
+import User from "../models/user.model";
 import ApiError from "../utils/ApiError";
 import crypto from "crypto";
 import { type CustomPaginateOptions } from "../models/plugins/paginate.plugin";
@@ -81,16 +82,20 @@ const queryScreens = async (filter: any, options: CustomPaginateOptions, user: I
       // 🗑️ Recycle Bin: Strictly same user ONLY (No admin override)
       finalFilter.createdBy = new mongoose.Types.ObjectId(userIdStr);
     } else if (isQueryingPublic) {
-      // 🌍 Global View: Restricted to SAME COMPANY for non-super-admins
+      // 🌍 Global View: Restricted to SAME COMPANY, excluding super_admin screens
       finalFilter.isPublic = true;
       if (companyIdStr) {
         finalFilter.companyId = new mongoose.Types.ObjectId(companyIdStr);
       } else {
         finalFilter.companyId = new mongoose.Types.ObjectId(); // Empty match
       }
+      // 🔒 Exclude screens created by super_admin users
+      const superAdmins = await User.find({ role: 'super_admin' }).select('_id').lean();
+      if (superAdmins.length > 0) {
+        finalFilter.createdBy = { $nin: superAdmins.map((sa: any) => sa._id) };
+      }
     } else {
-      // 🔒 Default Isolation: Allow own content, shared content(?), or same-company public content
-      // For screens, we currently only have "own" or "public within company"
+      // 🔒 Default Isolation: Allow own content or same-company public content
       const securityConditions: any[] = [
         { createdBy: new mongoose.Types.ObjectId(userIdStr) }
       ];

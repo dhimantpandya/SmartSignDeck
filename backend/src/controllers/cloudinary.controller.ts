@@ -60,9 +60,13 @@ const uploadFile = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getSignature = catchAsync(async (req: Request, res: Response) => {
-  const timestamp = Math.round(new Date().getTime() / 1000);
-  // Sign EVERYTHING provided in query + timestamp
-  const paramsToSign: any = { ...req.query, timestamp };
+  // Build params to sign from query
+  const paramsToSign: any = { ...req.query };
+
+  // Only add our own timestamp if the widget didn't provide one
+  if (!paramsToSign.timestamp) {
+    paramsToSign.timestamp = Math.round(new Date().getTime() / 1000);
+  }
 
   // Clean up paramsToSign (remove undefined/null if any)
   Object.keys(paramsToSign).forEach((key) => {
