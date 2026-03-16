@@ -104,7 +104,7 @@ const queryTemplates = async (filter: any, options: CustomPaginateOptions, user:
       } else if (isQueryingPublic) {
         // 🌍 Global Library: Choice between "My Company" and "Global"
         // The frontend will pass { visibility: 'company' } or { visibility: 'public' }
-        const visibilityFilter = parsedQuery.filter.visibility;
+        const visibilityFilter = (filter as any).visibility;
 
         if (visibilityFilter === 'company') {
           // Show items shared with the company OR made public, but ONLY within this company

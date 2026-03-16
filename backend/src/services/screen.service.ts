@@ -83,7 +83,7 @@ const queryScreens = async (filter: any, options: CustomPaginateOptions, user: I
       finalFilter.createdBy = new mongoose.Types.ObjectId(userIdStr);
     } else if (isQueryingPublic) {
       // 🌍 Global Library: Choice between "My Company" and "Global"
-      const visibilityFilter = parsedQuery.filter.visibility;
+      const visibilityFilter = (filter as any).visibility;
 
       if (visibilityFilter === 'company') {
         finalFilter.$or = [
