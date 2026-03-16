@@ -82,17 +82,12 @@ const queryScreens = async (filter: any, options: CustomPaginateOptions, user: I
       // 🗑️ Recycle Bin: Strictly same user ONLY (No admin override)
       finalFilter.createdBy = new mongoose.Types.ObjectId(userIdStr);
     } else if (isQueryingPublic) {
-      // 🌍 Global View: Restricted to SAME COMPANY, excluding super_admin screens
+      // 🌍 Global View: Show all global screens from SAME COMPANY only
       finalFilter.isPublic = true;
       if (companyIdStr) {
         finalFilter.companyId = new mongoose.Types.ObjectId(companyIdStr);
       } else {
         finalFilter.companyId = new mongoose.Types.ObjectId(); // Empty match
-      }
-      // 🔒 Exclude screens created by super_admin users
-      const superAdmins = await User.find({ role: 'super_admin' }).select('_id').lean();
-      if (superAdmins.length > 0) {
-        finalFilter.createdBy = { $nin: superAdmins.map((sa: any) => sa._id) };
       }
     } else {
       // 🔒 Default Isolation: Allow own content or same-company public content

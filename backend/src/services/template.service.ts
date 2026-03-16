@@ -102,18 +102,12 @@ const queryTemplates = async (filter: any, options: CustomPaginateOptions, user:
         finalFilter.createdBy = userId;
         delete finalFilter.$or; // No shared/public access in trash
       } else if (isQueryingPublic) {
-        // 🌍 Global View: Restricted to SAME COMPANY, excluding super_admin templates
+        // 🌍 Global View: Show all global templates from SAME COMPANY only
         finalFilter.isPublic = true;
         if (companyIdStr) {
           finalFilter.companyId = new mongoose.Types.ObjectId(companyIdStr);
         } else {
-          // If user has no company, they shouldn't see any public templates
           finalFilter.companyId = new mongoose.Types.ObjectId(); // Empty match
-        }
-        // 🔒 Exclude templates created by super_admin users
-        const superAdmins = await User.find({ role: 'super_admin' }).select('_id').lean();
-        if (superAdmins.length > 0) {
-          finalFilter.createdBy = { $nin: superAdmins.map((sa: any) => sa._id) };
         }
       } else if (isQueryingShared && userId) {
         // 🤝 Explicit Shared Query
