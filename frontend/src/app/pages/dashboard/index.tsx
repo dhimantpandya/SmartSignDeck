@@ -316,6 +316,23 @@ export default function Dashboard() {
               </div>
             </TabsContent>
 
+            <TabsContent value='analytics' className='space-y-4'>
+               <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-4'>
+                 <Analytics stats={stats} isLoading={isStatsLoading} />
+               </div>
+               <Card className='hover:shadow-2xl transition-all duration-500 border-primary/10 shadow-sm'>
+                  <CardHeader>
+                    <CardTitle>Daily Playback Detailed Insights</CardTitle>
+                    <CardDescription>
+                      Performance trends across your display network.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className='pl-2'>
+                    <Overview data={timelineData} />
+                  </CardContent>
+                </Card>
+            </TabsContent>
+
             <TabsContent value='templates' className='space-y-4'>
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between">

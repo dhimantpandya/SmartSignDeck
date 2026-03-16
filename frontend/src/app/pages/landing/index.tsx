@@ -479,12 +479,12 @@ export default function LandingPage() {
                         initial={{ opacity: 0, y: 50 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.8 }}
-                        className='bg-primary/95 text-white rounded-[4rem] p-16 md:p-32 text-center space-y-12 shadow-[0_50px_150px_-30px_hsla(var(--primary),0.6)] border border-white/10 backdrop-blur-3xl'
+                        className='bg-primary/95 text-primary-foreground rounded-[4rem] p-16 md:p-32 text-center space-y-12 shadow-[0_50px_150px_-30px_hsla(var(--primary),0.6)] border border-white/10 backdrop-blur-3xl'
                     >
                         <h2 className='text-4xl md:text-8xl font-black tracking-tighter uppercase italic leading-none'>
-                            Ready to <br /> <span className='text-white/40'>transform?</span>
+                            Ready to <br /> <span className='opacity-40'>transform?</span>
                         </h2>
-                        <p className='text-xl md:text-2xl text-white/70 max-w-3xl mx-auto font-medium'>
+                        <p className='text-xl md:text-2xl opacity-70 max-w-3xl mx-auto font-medium'>
                             Join the elite businesses using SmartSignDeck. Start your 14-day premium trial today and see the difference.
                         </p>
                         <div className='flex flex-col sm:flex-row items-center justify-center gap-6'>
