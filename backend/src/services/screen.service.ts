@@ -82,21 +82,27 @@ const queryScreens = async (filter: any, options: CustomPaginateOptions, user: I
       // 🗑️ Recycle Bin: Strictly same user ONLY (No admin override)
       finalFilter.createdBy = new mongoose.Types.ObjectId(userIdStr);
     } else if (isQueryingPublic) {
-      // 🌍 Global View: Show all global screens from SAME COMPANY only
+      // 🌍 Global View: Advertisers see only same company; others see all companies
       finalFilter.isPublic = true;
-      if (companyIdStr) {
-        finalFilter.companyId = new mongoose.Types.ObjectId(companyIdStr);
-      } else {
-        finalFilter.companyId = new mongoose.Types.ObjectId(); // Empty match
+      if (user.role === 'advertiser') {
+        if (companyIdStr) {
+          finalFilter.companyId = new mongoose.Types.ObjectId(companyIdStr);
+        } else {
+          finalFilter.companyId = new mongoose.Types.ObjectId(); // Empty match
+        }
       }
     } else {
-      // 🔒 Default Isolation: Allow own content or same-company public content
+      // 🔒 Default Isolation: Allow own content or public content (restricted for advertisers)
       const securityConditions: any[] = [
         { createdBy: new mongoose.Types.ObjectId(userIdStr) }
       ];
 
-      if (companyIdStr) {
-        securityConditions.push({ isPublic: true, companyId: new mongoose.Types.ObjectId(companyIdStr) });
+      if (user.role === 'advertiser') {
+        if (companyIdStr) {
+          securityConditions.push({ isPublic: true, companyId: new mongoose.Types.ObjectId(companyIdStr) });
+        }
+      } else {
+        securityConditions.push({ isPublic: true });
       }
 
       finalFilter.$or = securityConditions;

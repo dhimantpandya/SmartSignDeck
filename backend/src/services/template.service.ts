@@ -102,22 +102,31 @@ const queryTemplates = async (filter: any, options: CustomPaginateOptions, user:
         finalFilter.createdBy = userId;
         delete finalFilter.$or; // No shared/public access in trash
       } else if (isQueryingPublic) {
-        // 🌍 Global View: Show all global templates from SAME COMPANY only
+        // 🌍 Global View: Advertisers see only same company; others see all companies
         finalFilter.isPublic = true;
-        if (companyIdStr) {
-          finalFilter.companyId = new mongoose.Types.ObjectId(companyIdStr);
-        } else {
-          finalFilter.companyId = new mongoose.Types.ObjectId(); // Empty match
+        if (user.role === 'advertiser') {
+          if (companyIdStr) {
+            finalFilter.companyId = new mongoose.Types.ObjectId(companyIdStr);
+          } else {
+            finalFilter.companyId = new mongoose.Types.ObjectId(); // Empty match
+          }
         }
       } else if (isQueryingShared && userId) {
         // 🤝 Explicit Shared Query
         finalFilter.collaborators = userId;
       } else {
-        // 🔒 Default Isolation: Allow own content, shared content, or same-company public content
+        // 🔒 Default Isolation: Allow own content, shared content, or public content (restricted for advertisers)
         const securityConditions: any[] = [];
         if (userId) securityConditions.push({ createdBy: userId });
         if (userId) securityConditions.push({ collaborators: userId });
-        if (companyIdStr) securityConditions.push({ isPublic: true, companyId: new mongoose.Types.ObjectId(companyIdStr) });
+        
+        if (user.role === 'advertiser') {
+          if (companyIdStr) {
+            securityConditions.push({ isPublic: true, companyId: new mongoose.Types.ObjectId(companyIdStr) });
+          }
+        } else {
+          securityConditions.push({ isPublic: true });
+        }
 
         finalFilter.$or = securityConditions;
       }
