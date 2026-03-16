@@ -57,7 +57,6 @@ const sendRequest = async (senderId: string, recipientId: string, templateId: st
     });
 
     // Create notification for recipient
-    const sender = await User.findById(senderId);
     await notificationService.createNotification(
         recipientId,
         "collaboration_request",
