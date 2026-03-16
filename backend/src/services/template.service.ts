@@ -131,6 +131,12 @@ const queryTemplates = async (filter: any, options: CustomPaginateOptions, user:
         delete finalFilter.$or;
         finalFilter.createdBy = userId;
       }
+    } else {
+      // 🔒 Default Isolation: Allow company content OR public global content
+      finalFilter.$or = [
+        { companyId: new mongoose.Types.ObjectId(companyIdStr) },
+        { isPublic: true }
+      ];
     }
   }
 

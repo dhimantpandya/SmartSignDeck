@@ -116,7 +116,11 @@ export default function ScreenPlayer() {
                 if (retryCount < 2) {
                     setTimeout(() => fetchPlaybackData(retryCount + 1, isBackground), 2000);
                 } else {
-                    if (!data) setError(err.message || 'Failed to sync with server');
+                    if (!data) {
+                        const errorMsg = err.response?.data?.message || err.message || 'Failed to sync with server';
+                        const status = err.response?.status ? ` [${err.response.status}]` : '';
+                        setError(`${errorMsg}${status}`);
+                    }
                     setIsLoading(false);
                 }
             }

@@ -279,7 +279,7 @@ export default function Screens() {
         }
     }
 
-    const renderScreenCard = (screen: any, isOwner: boolean, hideStatus: boolean = false) => (
+    const renderScreenCard = (screen: any, isOwner: boolean, hideStatus: boolean = false, hideDownload: boolean = false) => (
         <Card key={screen.id} className="overflow-hidden">
             <CardHeader className="bg-muted/50 pb-4">
                 <div className="flex items-center justify-between">
@@ -321,7 +321,7 @@ export default function Screens() {
                                     {(screen.createdBy.first_name || '')[0]}{(screen.createdBy.last_name || '')[0]}
                                 </AvatarFallback>
                             </Avatar>
-                            <span className="text-xs font-medium">
+                            <span className="text-xs font-medium text-blue-500">
                                 Created by : {screen.createdBy.first_name} {screen.createdBy.last_name} {checkIsOwner(screen) ? '(You)' : ''}
                             </span>
                         </div>
@@ -341,19 +341,21 @@ export default function Screens() {
                     <IconPlayerPlay size={16} className="mr-1" /> Preview
                 </Button>
                 {/* Download (recorded export) */}
-                <Button variant="ghost" size="sm" onClick={() => {
-                    const baseUrl = `/player/${screen.id}`;
-                    const params = new URLSearchParams({
-                        userId: user?.id || (user as any)?._id || '',
-                        record: 'true',
-                        hideClock: 'true',
-                        hideControls: 'true'
-                    });
-                    if (screen.secretKey) params.append('key', screen.secretKey);
-                    window.open(`${baseUrl}?${params.toString()}`, '_blank');
-                }}>
-                    <IconDownload size={16} className="mr-1" /> Download
-                </Button>
+                {!hideDownload && (
+                    <Button variant="ghost" size="sm" onClick={() => {
+                        const baseUrl = `/player/${screen.id}`;
+                        const params = new URLSearchParams({
+                            userId: user?.id || (user as any)?._id || '',
+                            record: 'true',
+                            hideClock: 'true',
+                            hideControls: 'true'
+                        });
+                        if (screen.secretKey) params.append('key', screen.secretKey);
+                        window.open(`${baseUrl}?${params.toString()}`, '_blank');
+                    }}>
+                        <IconDownload size={16} className="mr-1" /> Download
+                    </Button>
+                )}
                 {/* Owner controls (non-advertiser) */}
                 {isOwner && !isAdvertiser && (
                     <>
@@ -504,7 +506,7 @@ export default function Screens() {
                                         </label>
                                     </div>
                                     <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
-                                        {globalScreens.map((screen: any) => renderScreenCard(screen, checkIsOwner(screen), true))}
+                                        {globalScreens.map((screen: any) => renderScreenCard(screen, checkIsOwner(screen), true, true))}
                                     </div>
                                 </>
                             ) : (
