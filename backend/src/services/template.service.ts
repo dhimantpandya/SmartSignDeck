@@ -132,11 +132,10 @@ const queryTemplates = async (filter: any, options: CustomPaginateOptions, user:
         finalFilter.createdBy = userId;
       }
     } else {
-      // 🔒 Default Isolation: Allow own content, shared content, or public global content
+      // 🔒 Default Isolation: Allow own content or shared content only
       finalFilter.$or = [
         { createdBy: userId },
-        { collaborators: userId },
-        { isPublic: true }
+        { collaborators: userId }
       ];
     }
   }
