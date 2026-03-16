@@ -81,19 +81,25 @@ const queryScreens = async (filter: any, options: CustomPaginateOptions, user: I
       // 🗑️ Recycle Bin: Strictly same user ONLY (No admin override)
       finalFilter.createdBy = new mongoose.Types.ObjectId(userIdStr);
     } else if (isQueryingPublic) {
-      // 🌍 Global View: Allow seeing public screens, but restricted to SAME COMPANY for non-super-admins
+      // 🌍 Global View: Restricted to SAME COMPANY for non-super-admins
       finalFilter.isPublic = true;
       if (companyIdStr) {
         finalFilter.companyId = new mongoose.Types.ObjectId(companyIdStr);
+      } else {
+        finalFilter.companyId = new mongoose.Types.ObjectId(); // Empty match
       }
     } else {
-      // 🔒 Strict Isolation: Always restrict to current user
-      finalFilter.createdBy = new mongoose.Types.ObjectId(userIdStr);
+      // 🔒 Default Isolation: Allow own content, shared content(?), or same-company public content
+      // For screens, we currently only have "own" or "public within company"
+      const securityConditions: any[] = [
+        { createdBy: new mongoose.Types.ObjectId(userIdStr) }
+      ];
 
-      // 🌍 Narrowing: If user specifically asks for ALL company screens, we might allow it,
-      // but by default (dashboard/screens list), we only want THEIR screens if they aren't admin.
-      // However, the user said "total screens 0 to 1" in dashboard, which usually counts createdBy.
-      // So we keep createdBy filter.
+      if (companyIdStr) {
+        securityConditions.push({ isPublic: true, companyId: new mongoose.Types.ObjectId(companyIdStr) });
+      }
+
+      finalFilter.$or = securityConditions;
     }
   }
 

@@ -29,10 +29,10 @@ const queryPlaylists = async (filter: FilterQuery<IPlaylist>, options: CustomPag
         const companyIdStr = (user.companyId || "").toString();
         const userIdStr = (user.id || user._id || "").toString();
 
-        if (user.role === 'admin') {
-            if (companyIdStr) finalFilter.companyId = companyIdStr;
-        } else {
-            // Regular user: Only own content
+        if (companyIdStr) {
+            finalFilter.companyId = companyIdStr;
+        } else if (user.role !== 'admin') {
+            // No company and not admin? Fallback to own content only
             if (userIdStr) finalFilter.createdBy = userIdStr;
         }
     }

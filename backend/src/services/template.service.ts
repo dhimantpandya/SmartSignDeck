@@ -83,62 +83,46 @@ const queryTemplates = async (filter: any, options: CustomPaginateOptions, user:
   });
 
   // 2. Apply security/tenant filtering
-  if (user.role !== "super_admin") {
-    // 🔒 Robust ID Check
-    const userIdStr = (user._id || (user as any).id || "").toString();
-    const companyIdStr = (user.companyId || "").toString();
-    const userId = mongoose.Types.ObjectId.isValid(userIdStr) ? new mongoose.Types.ObjectId(userIdStr) : null;
+    if (user.role !== "super_admin") {
+      // 🔒 Robust ID Check
+      const userIdStr = (user._id || (user as any).id || "").toString();
+      const companyIdStr = (user.companyId || "").toString();
+      const userId = mongoose.Types.ObjectId.isValid(userIdStr) ? new mongoose.Types.ObjectId(userIdStr) : null;
 
-    const requestedCreatedBy = (filter.createdBy || "").toString();
-    const requestedCollaborators = (filter.collaborators || "").toString();
+      const requestedCreatedBy = (filter.createdBy || "").toString();
+      const requestedCollaborators = (filter.collaborators || "").toString();
 
-    const isQueryingOwn = requestedCreatedBy && userIdStr && requestedCreatedBy === userIdStr;
-    const isQueryingShared = requestedCollaborators && userIdStr && requestedCollaborators === userIdStr;
-    const isRecycleBinQuery = finalFilter.deletedAt !== null;
-    const isQueryingPublic = finalFilter.isPublic === true;
-    const isQueryingByCreator = !!finalFilter.createdBy;
+      const isQueryingOwn = requestedCreatedBy && userIdStr && requestedCreatedBy === userIdStr;
+      const isQueryingShared = requestedCollaborators && userIdStr && requestedCollaborators === userIdStr;
+      const isRecycleBinQuery = finalFilter.deletedAt !== null;
+      const isQueryingPublic = finalFilter.isPublic === true;
 
-    if (isRecycleBinQuery) {
-      // 🗑️ Recycle Bin Isolation: Strictly same user ONLY
-      if (userId) {
+      if (isRecycleBinQuery) {
+        // 🗑️ Recycle Bin Isolation: Strictly same user ONLY
         finalFilter.createdBy = userId;
+        delete finalFilter.$or; // No shared/public access in trash
+      } else if (isQueryingPublic) {
+        // 🌍 Global View: Restricted to SAME COMPANY for non-super-admins
+        finalFilter.isPublic = true;
+        if (companyIdStr) {
+          finalFilter.companyId = new mongoose.Types.ObjectId(companyIdStr);
+        } else {
+          // If user has no company, they shouldn't see any public templates
+          finalFilter.companyId = new mongoose.Types.ObjectId(); // Empty match
+        }
+      } else if (isQueryingShared && userId) {
+        // 🤝 Explicit Shared Query
+        finalFilter.collaborators = userId;
+      } else {
+        // 🔒 Default Isolation: Allow own content, shared content, or same-company public content
+        const securityConditions: any[] = [];
+        if (userId) securityConditions.push({ createdBy: userId });
+        if (userId) securityConditions.push({ collaborators: userId });
+        if (companyIdStr) securityConditions.push({ isPublic: true, companyId: new mongoose.Types.ObjectId(companyIdStr) });
+
+        finalFilter.$or = securityConditions;
       }
-    } else if (isQueryingPublic) {
-      // 🌍 Global View: If specifically querying public items, just ensure we stick to isPublic: true
-      finalFilter.isPublic = true;
-    } else if (isQueryingShared && userId) {
-      // 🤝 Explicit Shared Query: Just stick to the collaborators filter
-      finalFilter.collaborators = userId;
-      // 🔒 Strict Isolation: Always restrict to current user
-      const securityConditions: any[] = [];
-
-      if (userId) {
-        securityConditions.push({ createdBy: userId });
-      }
-
-      // 🤝 Add Shared access
-      if (userId) {
-        securityConditions.push({ collaborators: userId });
-      }
-
-      // 🌍 ALWAYS Add Public access
-      securityConditions.push({ isPublic: true });
-
-      finalFilter.$or = securityConditions;
-
-      // 👤 Strict User Isolation: Honor the 'createdBy' filter if provided by the frontend.
-      if (isQueryingOwn && userId) {
-        delete finalFilter.$or;
-        finalFilter.createdBy = userId;
-      }
-    } else {
-      // 🔒 Default Isolation: Allow own content or shared content only
-      finalFilter.$or = [
-        { createdBy: userId },
-        { collaborators: userId }
-      ];
     }
-  }
 
   console.log(`[TEMPLATE_QUERY] Final Filter for user ${user._id || (user as any).id}:`, JSON.stringify(finalFilter, null, 2));
 
