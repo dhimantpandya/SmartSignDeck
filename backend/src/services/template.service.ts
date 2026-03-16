@@ -132,9 +132,10 @@ const queryTemplates = async (filter: any, options: CustomPaginateOptions, user:
         finalFilter.createdBy = userId;
       }
     } else {
-      // 🔒 Default Isolation: Allow company content OR public global content
+      // 🔒 Default Isolation: Allow own content, shared content, or public global content
       finalFilter.$or = [
-        { companyId: new mongoose.Types.ObjectId(companyIdStr) },
+        { createdBy: userId },
+        { collaborators: userId },
         { isPublic: true }
       ];
     }
