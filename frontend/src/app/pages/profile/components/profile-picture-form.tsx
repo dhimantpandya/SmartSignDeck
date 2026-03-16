@@ -29,11 +29,11 @@ export function ProfilePictureForm() {
   const handleOpenCloudinaryWidget = async () => {
     setIsProcessing(true)
     try {
-      // Get signature from backend
-      const { signature, timestamp, cloud_name, api_key } = await apiService.get<any>('/v1/cloudinary/signature', {
+      // Get basic config from backend
+      const { cloud_name, api_key } = await apiService.get<any>('/v1/cloudinary/signature', {
         params: {
           timestamp: Math.round(new Date().getTime() / 1000),
-          source: 'uw' // 🔑 Required for Upload Widget signature
+          source: 'uw' // Required for initial check
         }
       })
 
