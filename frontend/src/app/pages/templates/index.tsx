@@ -632,7 +632,6 @@ export default function Templates() {
     const globalTemplates = globalTemplatesData?.results || []
     const sharedWithMe = sharedWithMeData?.results || []
     const sharedByMe = sharedByMeData?.results || []
-    const companyTemplates = companyTemplatesData?.results || []
 
     return (
         <Layout>

@@ -18,7 +18,7 @@ export interface Template {
     zones: Zone[]
     visibility: 'private' | 'company' | 'public'
     companyId: string
-    createdBy: string
+    createdBy: any // Can be ID string or populated user object
     isActive: boolean
     collaborators: any[] // User objects or IDs
     created_at: string

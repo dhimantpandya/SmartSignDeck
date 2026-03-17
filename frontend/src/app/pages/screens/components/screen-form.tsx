@@ -101,7 +101,12 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
     const myTemplatesOnly = useMemo(() => {
         if (!templatesData?.results || !user?.id) return []
         // Restricted to owned templates only (as requested)
-        return templatesData.results.filter((t: Template) => (t.createdBy?.id || t.createdBy?._id || t.createdBy) === user.id)
+        return templatesData.results.filter((t: Template) => {
+            const createdById = typeof t.createdBy === 'object' 
+                ? (t.createdBy?.id || t.createdBy?._id) 
+                : t.createdBy;
+            return createdById === user.id;
+        })
     }, [templatesData, user?.id])
 
     // Overlap Detection Logic
