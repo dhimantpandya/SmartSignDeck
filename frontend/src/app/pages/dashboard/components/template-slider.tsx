@@ -70,10 +70,43 @@ const SmartPreview = ({ url, type, name }: { url: string; type?: 'image' | 'vide
 
     // Fallback placeholder if broken or missing
     if (!url || hasError) {
+        // Generate a deterministic hue from the screen name so each screen has a unique color
+        const hue = name.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0) % 360;
+        const initials = name
+            .split(/\s+/)
+            .slice(0, 2)
+            .map(w => w[0]?.toUpperCase() || '')
+            .join('') || '?';
+
         return (
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-muted/40">
-                <IconDeviceTv size={40} className="text-primary/10 mb-2" />
-                <span className="text-[10px] font-bold uppercase text-white/20 tracking-wider">Preview Available Soon</span>
+            <div
+                className="absolute inset-0 flex flex-col items-center justify-center overflow-hidden"
+                style={{ background: `linear-gradient(135deg, hsl(${hue},60%,18%) 0%, hsl(${hue},50%,10%) 100%)` }}
+            >
+                {/* subtle grid texture */}
+                <div
+                    className="absolute inset-0 opacity-[0.07]"
+                    style={{
+                        backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 20px, white 20px, white 21px), repeating-linear-gradient(90deg, transparent, transparent 20px, white 20px, white 21px)',
+                    }}
+                />
+                {/* glowing circle */}
+                <div
+                    className="w-16 h-16 rounded-full flex items-center justify-center mb-3 relative z-10 shadow-2xl"
+                    style={{ background: `hsl(${hue},60%,30%)`, boxShadow: `0 0 30px hsl(${hue},60%,30%)` }}
+                >
+                    <span className="text-white font-black text-xl select-none tracking-tight">{initials}</span>
+                </div>
+                <span
+                    className="text-[11px] font-black uppercase tracking-widest z-10 max-w-[80%] text-center truncate"
+                    style={{ color: `hsl(${hue},60%,70%)` }}
+                >
+                    {name}
+                </span>
+                <div className="flex items-center gap-1.5 mt-2 z-10 opacity-60">
+                    <IconDeviceTv size={11} className="text-white/50" />
+                    <span className="text-[9px] font-bold uppercase tracking-wider text-white/40">No Media Yet</span>
+                </div>
             </div>
         );
     }
@@ -88,6 +121,7 @@ const SmartPreview = ({ url, type, name }: { url: string; type?: 'image' | 'vide
         />
     );
 };
+
 
 import { templateService } from '@/api/template.service'
 import { useMutation, useQueryClient } from '@tanstack/react-query'

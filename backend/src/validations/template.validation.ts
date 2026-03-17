@@ -19,8 +19,13 @@ const getTemplates = {
     limit: Joi.number().integer(),
     page: Joi.number().integer(),
     createdBy: Joi.string().custom(objectId),
+    visibility: Joi.string().valid('private', 'company', 'public'),
+    collaborators: Joi.string().custom(objectId),
+    companyId: Joi.string().custom(objectId),
+    trashed: Joi.boolean(),
   }),
 };
+
 
 const getTemplate = {
   params: Joi.object().keys({

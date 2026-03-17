@@ -417,13 +417,20 @@ export default function Dashboard() {
                   <CardDescription>Screens that are currently broadcasting content.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <RecentActivity
-                    items={(recentScreens?.results || []).filter(s => s.status === 'online').map(s => ({ ...s, type: 'screen' }))}
-                    isLoading={isScreensLoading}
-                  />
-                  {(recentScreens?.results || []).filter(s => s.status === 'online').length === 0 && (
-                    <p className="text-center py-10 text-muted-foreground">No screens are currently online.</p>
-                  )}
+                  {(() => {
+                    const onlineOnes = (recentScreens?.results || []).filter(s => s.status === 'online' || (s.lastPing && new Date(s.lastPing).getTime() > Date.now() - 120000));
+                    return (
+                      <>
+                        <RecentActivity
+                          items={onlineOnes.map(s => ({ ...s, type: 'screen' }))}
+                          isLoading={isScreensLoading}
+                        />
+                        {onlineOnes.length === 0 && (
+                          <p className="text-center py-10 text-muted-foreground">No screens are currently online.</p>
+                        )}
+                      </>
+                    )
+                  })()}
                 </CardContent>
               </Card>
             </TabsContent>

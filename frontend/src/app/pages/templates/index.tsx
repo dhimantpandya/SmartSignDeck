@@ -474,7 +474,11 @@ export default function Templates() {
                         {template.createdBy && (
                             <div className="flex items-center gap-2 mt-2 pt-2 border-t">
                                 <span className="text-xs font-medium text-foreground">
-                                    Created by : {template.createdBy.first_name} {template.createdBy.last_name} {checkIsOwner(template) ? '(You)' : ''}
+                                    Created by: {
+                                        typeof template.createdBy === 'object' 
+                                            ? `${template.createdBy.first_name || ''} ${template.createdBy.last_name || ''}`.trim() || template.createdBy.name || 'Unknown'
+                                            : 'Unknown'
+                                    } {checkIsOwner(template) ? '(You)' : ''}
                                 </span>
                             </div>
                         )}
@@ -625,7 +629,10 @@ export default function Templates() {
     }
 
     const myTemplates = myTemplatesData?.results || []
-    const globalTemplates = (globalTemplatesData?.results || []).filter((t: any) => t.createdBy)
+    const globalTemplates = globalTemplatesData?.results || []
+    const sharedWithMe = sharedWithMeData?.results || []
+    const sharedByMe = sharedByMeData?.results || []
+    const companyTemplates = companyTemplatesData?.results || []
 
     return (
         <Layout>
@@ -714,7 +721,7 @@ export default function Templates() {
                             </TabsTrigger>
                             <TabsTrigger value="shared" className="gap-2">
                                 <Users size={16} />
-                                Shared ({(sharedWithMeData?.results?.length || 0) + (sharedByMeData?.results?.length || 0)})
+                                Shared ({sharedWithMe.length + sharedByMe.length})
                             </TabsTrigger>
                             <TabsTrigger value="groups" className="gap-2">
                                 <Folder size={16} />

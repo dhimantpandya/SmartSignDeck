@@ -34,15 +34,37 @@ const createTemplate = async (templateBody: any, user: any) => {
  * Query for templates
  */
 const queryTemplates = async (filter: any, options: any, user?: any) => {
-  const finalFilter = { ...filter };
-  if (user && !user.roles?.includes('super_admin')) {
-    finalFilter.$or = [
-      { companyId: user.companyId },
-      { visibility: 'public' },
-      { visibility: 'global' }
-    ];
+  const finalFilter: any = { ...filter };
+  
+  // Standardize deletedAt check
+  if (finalFilter.trashed === true) {
+    finalFilter.deletedAt = { $ne: null };
+  } else {
+    finalFilter.$or = [{ deletedAt: null }, { deletedAt: { $exists: false } }];
   }
-  const templates = await (Template as any).paginate(finalFilter, options);
+  delete finalFilter.trashed;
+
+  // Security & Visibility Logic
+  if (user && user.role !== 'super_admin') {
+    const visibilityFilter = {
+      $or: [
+        { companyId: user.companyId },
+        { visibility: { $in: ['public', 'global'] } }
+      ]
+    };
+    
+    // Use $and to combine user filters (e.g. createdBy) with visibility rules
+    const combinedFilter = { $and: [finalFilter, visibilityFilter] };
+    return (Template as any).paginate(combinedFilter, {
+      ...options,
+      populate: 'createdBy'
+    });
+  }
+
+  const templates = await (Template as any).paginate(finalFilter, {
+    ...options,
+    populate: 'createdBy'
+  });
   return templates;
 };
 
@@ -50,8 +72,8 @@ const queryTemplates = async (filter: any, options: any, user?: any) => {
  * Get template by id
  */
 const getTemplateById = async (id: string, user?: any) => {
-  const template = await Template.findById(id);
-  if (template && user && !user.roles?.includes('super_admin')) {
+  const template = await Template.findById(id).populate('createdBy');
+  if (template && user && user.role !== 'super_admin') {
      if (template.visibility !== 'public' && template.visibility !== 'global' && template.companyId?.toString() !== user.companyId?.toString()) {
        return null;
      }
@@ -68,7 +90,7 @@ const updateTemplateById = async (templateId: string, updateBody: any, user?: an
     throw new ApiError(httpStatus.NOT_FOUND, 'Template not found');
   }
 
-  if (user && !user.roles?.includes('super_admin') && template.companyId?.toString() !== user.companyId?.toString()) {
+  if (user && user.role !== 'super_admin' && template.companyId?.toString() !== user.companyId?.toString()) {
     throw new ApiError(httpStatus.FORBIDDEN, 'Forbidden');
   }
 
@@ -87,7 +109,7 @@ const deleteTemplateById = async (templateId: string, user?: any) => {
     throw new ApiError(httpStatus.NOT_FOUND, 'Template not found');
   }
 
-  if (user && !user.roles?.includes('super_admin') && template.companyId?.toString() !== user.companyId?.toString()) {
+  if (user && user.role !== 'super_admin' && template.companyId?.toString() !== user.companyId?.toString()) {
     throw new ApiError(httpStatus.FORBIDDEN, 'Forbidden');
   }
 
@@ -105,7 +127,7 @@ const restoreTemplateById = async (templateId: string, user?: any) => {
     throw new ApiError(httpStatus.NOT_FOUND, 'Template not found');
   }
 
-  if (user && !user.roles?.includes('super_admin') && template.companyId?.toString() !== user.companyId?.toString()) {
+  if (user && user.role !== 'super_admin' && template.companyId?.toString() !== user.companyId?.toString()) {
     throw new ApiError(httpStatus.FORBIDDEN, 'Forbidden');
   }
 
@@ -123,7 +145,7 @@ const permanentDeleteTemplateById = async (templateId: string, user?: any) => {
     throw new ApiError(httpStatus.NOT_FOUND, 'Template not found');
   }
 
-  if (user && !user.roles?.includes('super_admin') && template.companyId?.toString() !== user.companyId?.toString()) {
+  if (user && user.role !== 'super_admin' && template.companyId?.toString() !== user.companyId?.toString()) {
     throw new ApiError(httpStatus.FORBIDDEN, 'Forbidden');
   }
 
@@ -136,7 +158,7 @@ const permanentDeleteTemplateById = async (templateId: string, user?: any) => {
  */
 const deleteTemplatesByIds = async (ids: string[], user: any) => {
   const filter: any = { _id: { $in: ids } };
-  if (!user.roles?.includes('super_admin')) {
+  if (user.role !== 'super_admin') {
     filter.companyId = user.companyId;
   }
   return Template.updateMany(filter, { deletedAt: new Date() });

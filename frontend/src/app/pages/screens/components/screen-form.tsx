@@ -23,6 +23,7 @@ import ScheduleManager from './schedule-manager'
 import { GLOBAL_SCALE } from '@/utilities/fabric-utils'
 import { Folders, User } from 'lucide-react'
 import { IconCopy } from '@tabler/icons-react'
+import { useAuth } from '@/hooks/use-auth'
 
 interface ScreenFormProps {
     initialData?: any
@@ -30,6 +31,7 @@ interface ScreenFormProps {
 }
 
 export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
+    const { user } = useAuth()
     // State
     // Safe ID extraction
     const getInitialTemplateId = () => {
@@ -93,8 +95,14 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
     const selectedTemplate = useMemo(() => {
         // Prioritize specific fetch, fallback to list search
         if (specificTemplateData) return specificTemplateData
-        return templatesData?.results?.find((t: Template) => t.id === selectedTemplateId || t._id === selectedTemplateId)
+        return templatesData?.results?.find((t: Template) => (t.id || t._id) === selectedTemplateId)
     }, [specificTemplateData, templatesData, selectedTemplateId])
+
+    const myTemplatesOnly = useMemo(() => {
+        if (!templatesData?.results || !user?.id) return []
+        // Restricted to owned templates only (as requested)
+        return templatesData.results.filter((t: Template) => (t.createdBy?.id || t.createdBy?._id || t.createdBy) === user.id)
+    }, [templatesData, user?.id])
 
     // Overlap Detection Logic
     const hasOverlaps = useMemo(() => {
@@ -909,8 +917,8 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
                                         <SelectValue placeholder="Select a template" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {templatesData?.results?.filter((t: Template) => t.id).map((t: Template) => (
-                                            <SelectItem key={t.id} value={t.id}>
+                                        {myTemplatesOnly.map((t: Template) => (
+                                            <SelectItem key={t.id || t._id} value={t.id || t._id || ''}>
                                                 <div className="flex items-center justify-between w-full gap-4">
                                                     <span>{t.name} ({t.resolution})</span>
                                                     {t.id === latestTemplateId && (

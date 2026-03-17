@@ -19,11 +19,37 @@ const createScreen = async (screenBody: any, user: any) => {
  * Query for screens
  */
 const queryScreens = async (filter: any, options: any, user?: any) => {
-  const finalFilter = { ...filter };
-  if (user && !user.roles?.includes('super_admin')) {
-    finalFilter.companyId = user.companyId;
+  const finalFilter: any = { ...filter };
+  
+  // Standardize deletedAt check (robust to missing fields)
+  if (finalFilter.trashed === true) {
+    finalFilter.deletedAt = { $ne: null };
+  } else {
+    finalFilter.$or = [{ deletedAt: null }, { deletedAt: { $exists: false } }];
   }
-  const screens = await (Screen as any).paginate(finalFilter, options);
+  delete finalFilter.trashed;
+
+  // Security: If not super_admin, restrict to company OR public content
+  if (user && user.role !== 'super_admin') {
+    const securityFilter = {
+      $or: [
+        { companyId: user.companyId },
+        { visibility: { $in: ['public', 'global'] } }
+      ]
+    };
+    
+    // Combine existing filters with security filter
+    const combinedFilter = { $and: [finalFilter, securityFilter] };
+    return (Screen as any).paginate(combinedFilter, {
+      ...options,
+      populate: 'createdBy'
+    });
+  }
+
+  const screens = await (Screen as any).paginate(finalFilter, {
+    ...options,
+    populate: 'createdBy'
+  });
   return screens;
 };
 
@@ -37,7 +63,7 @@ const getScreenById = async (id: string, user?: any, secretKey?: string) => {
   }
   const screen = await Screen.findOne(filter).populate('templateId');
   
-  if (screen && user && !user.roles?.includes('super_admin') && screen.companyId?.toString() !== user.companyId?.toString()) {
+  if (screen && user && user.role !== 'super_admin' && screen.companyId?.toString() !== user.companyId?.toString()) {
      // If not public and not same company, return null or throw?
      // For now, if we have a secretKey, we allow it (player mode)
      if (!secretKey && screen.visibility !== 'public') return null;
@@ -55,7 +81,7 @@ const updateScreenById = async (screenId: string, updateBody: any, user?: any) =
     throw new ApiError(httpStatus.NOT_FOUND, 'Screen not found');
   }
   
-  if (user && !user.roles?.includes('super_admin') && screen.companyId?.toString() !== user.companyId?.toString()) {
+  if (user && user.role !== 'super_admin' && screen.companyId?.toString() !== user.companyId?.toString()) {
     throw new ApiError(httpStatus.FORBIDDEN, 'Forbidden');
   }
 
@@ -73,7 +99,7 @@ const deleteScreenById = async (screenId: string, user?: any) => {
     throw new ApiError(httpStatus.NOT_FOUND, 'Screen not found');
   }
 
-  if (user && !user.roles?.includes('super_admin') && screen.companyId?.toString() !== user.companyId?.toString()) {
+  if (user && user.role !== 'super_admin' && screen.companyId?.toString() !== user.companyId?.toString()) {
     throw new ApiError(httpStatus.FORBIDDEN, 'Forbidden');
   }
 
@@ -91,11 +117,11 @@ const restoreScreenById = async (screenId: string, user?: any) => {
     throw new ApiError(httpStatus.NOT_FOUND, 'Screen not found');
   }
 
-  if (user && !user.roles?.includes('super_admin') && screen.companyId?.toString() !== user.companyId?.toString()) {
+  if (user && user.role !== 'super_admin' && screen.companyId?.toString() !== user.companyId?.toString()) {
     throw new ApiError(httpStatus.FORBIDDEN, 'Forbidden');
   }
 
-  screen.deletedAt = undefined as any;
+  screen.deletedAt = null;
   await screen.save();
   return screen;
 };
@@ -109,7 +135,7 @@ const permanentDeleteScreenById = async (screenId: string, user?: any) => {
     throw new ApiError(httpStatus.NOT_FOUND, 'Screen not found');
   }
 
-  if (user && !user.roles?.includes('super_admin') && screen.companyId?.toString() !== user.companyId?.toString()) {
+  if (user && user.role !== 'super_admin' && screen.companyId?.toString() !== user.companyId?.toString()) {
     throw new ApiError(httpStatus.FORBIDDEN, 'Forbidden');
   }
 
@@ -122,7 +148,7 @@ const permanentDeleteScreenById = async (screenId: string, user?: any) => {
  */
 const deleteScreensByIds = async (ids: string[], user: any) => {
   const filter: any = { _id: { $in: ids } };
-  if (!user.roles?.includes('super_admin')) {
+  if (user.role !== 'super_admin') {
     filter.companyId = user.companyId;
   }
   return Screen.updateMany(filter, { deletedAt: new Date() });

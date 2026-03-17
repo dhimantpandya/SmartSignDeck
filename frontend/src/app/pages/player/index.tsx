@@ -15,6 +15,8 @@ function normalizeVideoUrl(url: string): string {
     if (!url) return url
     // Only transform Cloudinary video URLs
     if (!url.includes('res.cloudinary.com') || !url.includes('/video/upload/')) return url
+    // If it's already a .jpg/.png/etc (thumbnail), don't inject vc_auto
+    if (url.match(/\.(jpg|jpeg|png|webp|gif|svg)$/i)) return url
     // Already has a transformation (e.g. vc_auto) - skip
     if (url.includes('/vc_auto/') || url.includes('vc_auto,')) return url
     // Inject vc_auto transformation after /upload/
@@ -539,8 +541,8 @@ function MediaZone({ zone, content, screenId, templateId, secretKey, userId, isM
 
         if (list.length === 0 && content?.src) {
             const fallbackSrc = content.src
-            const isImage = fallbackSrc.match(/\.(jpg|jpeg|png|webp|gif|svg)$/i)
-            const isVideo = fallbackSrc.match(/\.(mp4|mov|webm)$/i)
+            const isVideo = fallbackSrc.match(/\.(mp4|mov|webm|m4v|ogv)$/i) || fallbackSrc.includes('/video/upload/')
+            const isImage = !isVideo && (fallbackSrc.match(/\.(jpg|jpeg|png|webp|gif|svg)$/i) || fallbackSrc.includes('/image/upload/'))
 
             if (zone.type === 'mixed' ||
                 (zone.type === 'image' && isImage) ||
@@ -601,7 +603,17 @@ function MediaZone({ zone, content, screenId, templateId, secretKey, userId, isM
         return () => { logPlayback(new Date()) }
     }, [currentIndex, playlist, screenId, templateId, zone.id, zone.type, secretKey, userId])
 
-    const mediaType = playlist[currentIndex]?.type || zone.type
+    let mediaType = playlist[currentIndex]?.type || zone.type
+    // Robust Correction: If type is 'mixed' or 'image' but URL looks like a video, or vice versa
+    const currentUrl = playlist[currentIndex]?.url || ''
+    if (currentUrl) {
+        const urlIsVideo = currentUrl.match(/\.(mp4|mov|webm|m4v|ogv)$/i) || currentUrl.includes('/video/upload/')
+        if (urlIsVideo && mediaType !== 'video') {
+            mediaType = 'video'
+        } else if (!urlIsVideo && mediaType === 'video' && (currentUrl.match(/\.(jpg|jpeg|png|webp|gif|svg)$/i) || currentUrl.includes('/image/upload/'))) {
+            mediaType = 'image'
+        }
+    }
     useEffect(() => {
         if (mediaType === 'video' && videoRef.current) {
             const video = videoRef.current

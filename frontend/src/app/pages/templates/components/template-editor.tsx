@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from 'react'
+import { useRef, useState, useEffect, useCallback } from 'react'
 import * as fabric from 'fabric'
 import { Button } from '@/components/custom/button'
 import { Input } from '@/components/ui/input'
@@ -273,12 +273,49 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
         { label: '4K Portrait', value: '2160x3840', icon: '🌟' },
         { label: 'Standard HD', value: '1280x720', icon: '📺' },
         { label: 'Square', value: '1080x1080', icon: '📐' },
+        { label: 'Custom...', value: 'custom', icon: '✏️' },
     ]
 
-    const [screenWidth, screenHeight] = resolution.split('x').map(Number)
+    // Custom resolution state
+    const [isCustomResolution, setIsCustomResolution] = useState(false)
+    const [customWidth, setCustomWidth] = useState(1920)
+    const [customHeight, setCustomHeight] = useState(1080)
+
+    const [screenWidth, screenHeight] = (isCustomResolution ? `${customWidth}x${customHeight}` : resolution).split('x').map(Number)
     const CANVAS_WIDTH = screenWidth * GLOBAL_SCALE
     const CANVAS_HEIGHT = screenHeight * GLOBAL_SCALE
     const GRID_SIZE = 20 * GLOBAL_SCALE
+
+    // --- OVERLAP DETECTION ---
+    const checkOverlap = useCallback((activeObj: fabric.Object) => {
+        const canvas = canvasRef.current
+        if (!canvas) return false
+        const activeBr = activeObj.getBoundingRect()
+        let hasOverlap = false
+
+        canvas.forEachObject((obj) => {
+            if (obj === activeObj || (obj as any)._isRemoteTag || !(obj as any).id) return
+            const otherBr = obj.getBoundingRect()
+            if (
+                activeBr.left < otherBr.left + otherBr.width &&
+                activeBr.left + activeBr.width > otherBr.left &&
+                activeBr.top < otherBr.top + otherBr.height &&
+                activeBr.top + activeBr.height > otherBr.top
+            ) {
+                hasOverlap = true
+            }
+        })
+
+        // Apply yellow warning if overlapping
+        if (hasOverlap) {
+            activeObj.set({ stroke: '#facc15', strokeWidth: 3 })
+        } else {
+            const zone = zonesRef.current.find(z => z.id === (activeObj as any).id)
+            const defaultBorder = getZoneColor(zone?.type || 'mixed', '80').replace('0.8', '1')
+            activeObj.set({ stroke: defaultBorder, strokeWidth: 2 })
+        }
+        return hasOverlap
+    }, [])
 
 
     const getZoneColor = (type: string, alpha: string = '40') => {
@@ -313,8 +350,23 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
             originX: 'left', originY: 'top', lockRotation: true,
             transparentCorners: false, cornerColor: '#ffffff',
             cornerStrokeColor: borderColor, cornerSize: 10, cornerStyle: 'circle',
-            borderColor, objectCaching: false
+            borderColor, objectCaching: false,
+            subTargetCheck: true, // Allow interaction with sub-elements if needed
         })
+        
+        // Ensure text doesn't scale when group scales
+        // Note: Fabric groups scale children. We can also use "lockScalingX/Y" on children 
+        // but better to set individual objects and not groups if absolute text size is needed.
+        // For now, we'll listen to scaling and reset text scale.
+        group.on('scaling', () => {
+            const sX = group.scaleX || 1
+            const sY = group.scaleY || 1
+            text.set({
+                scaleX: 1 / sX,
+                scaleY: 1 / sY
+            })
+        })
+
         // @ts-ignore
         group.id = zone.id
 
@@ -358,6 +410,7 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
             } : z)
             broadcastUpdate({ zones: updatedZones })
         }
+        checkOverlap(obj)
     }
 
     const handleObjectModified = (obj: any) => {
@@ -373,6 +426,7 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                 ...z, x: Math.round(obj.left / GLOBAL_SCALE), y: Math.round(obj.top / GLOBAL_SCALE),
                 width: Math.round(obj.getScaledWidth() / GLOBAL_SCALE), height: Math.round(obj.getScaledHeight() / GLOBAL_SCALE)
             } : z)
+            pushHistory(next)
             broadcastUpdate({ zones: next })
             return next
         })
@@ -387,6 +441,7 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
         }
         const next = [...zones, newZone]
         setZones(next)
+        pushHistory(next)
         broadcastUpdate({ zones: next })
         if (canvasRef.current) {
             const rect = addZoneToCanvas(canvasRef.current, newZone)
@@ -403,7 +458,8 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
         setIsSaving(true)
         try {
             const thumb = canvasRef.current?.toDataURL({ format: 'jpeg', quality: 0.4, multiplier: 0.15 })
-            const payload = { name: templateName, resolution, zones, visibility, previewUrl: thumb, previewType: 'image' }
+            const effectiveResolution = isCustomResolution ? `${customWidth}x${customHeight}` : resolution
+            const payload = { name: templateName, resolution: effectiveResolution, zones, visibility, previewUrl: thumb, previewType: 'image' }
             if (currentTemplateId) {
                 await templateService.updateTemplate(currentTemplateId, payload)
             } else {
@@ -448,16 +504,223 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
 
     const [zoom, setZoom] = useState(1)
 
+    // --- HISTORY (UNDO/REDO) ---
+    const historyRef = useRef<Zone[][]>([])
+    const historyIndexRef = useRef(-1)
+    const clipboardRef = useRef<Zone | null>(null)
+
+    const pushHistory = useCallback((zoneSnapshot: Zone[]) => {
+        // Truncate forward history on new action
+        historyRef.current = historyRef.current.slice(0, historyIndexRef.current + 1)
+        historyRef.current.push(JSON.parse(JSON.stringify(zoneSnapshot)))
+        // Keep max 50 entries
+        if (historyRef.current.length > 50) {
+            historyRef.current.shift()
+            historyIndexRef.current--
+        }
+        historyIndexRef.current = historyRef.current.length - 1
+    }, [])
+
+    // Initialize history with starting state
+    useEffect(() => {
+        if (zones.length > 0 && historyRef.current.length === 0) {
+            historyRef.current = [JSON.parse(JSON.stringify(zones))]
+            historyIndexRef.current = 0
+        }
+    }, [])
+
+    const undo = useCallback(() => {
+        if (historyIndexRef.current <= 0) return
+        historyIndexRef.current--
+        const prev = historyRef.current[historyIndexRef.current]
+        setZones(prev)
+        broadcastUpdate({ zones: prev })
+        // Sync canvas
+        const canvas = canvasRef.current
+        if (canvas) {
+            // Remove objects not in current state
+            const ids = new Set(prev.map(z => z.id))
+            canvas.getObjects().forEach((o: any) => { if (o.id && !ids.has(o.id) && !o._isRemoteTag) canvas.remove(o) })
+            
+            prev.forEach(z => {
+                const obj = canvas.getObjects().find((o: any) => o.id === z.id) as any
+                if (obj) {
+                    obj.set({ 
+                        left: z.x * GLOBAL_SCALE, 
+                        top: z.y * GLOBAL_SCALE, 
+                        scaleX: (z.width * GLOBAL_SCALE) / obj.width, 
+                        scaleY: (z.height * GLOBAL_SCALE) / obj.height 
+                    })
+                    obj.setCoords()
+                } else {
+                    addZoneToCanvas(canvas, z)
+                }
+            })
+            canvas.requestRenderAll()
+            toast({ title: 'Undo', description: 'Reverted last change.' })
+        }
+    }, [])
+
+    const redo = useCallback(() => {
+        if (historyIndexRef.current >= historyRef.current.length - 1) return
+        historyIndexRef.current++
+        const next = historyRef.current[historyIndexRef.current]
+        setZones(next)
+        broadcastUpdate({ zones: next })
+        const canvas = canvasRef.current
+        if (canvas) {
+            const ids = new Set(next.map(z => z.id))
+            canvas.getObjects().forEach((o: any) => { if (o.id && !ids.has(o.id) && !o._isRemoteTag) canvas.remove(o) })
+            next.forEach(z => {
+                const obj = canvas.getObjects().find((o: any) => o.id === z.id) as any
+                if (obj) {
+                    obj.set({ left: z.x * GLOBAL_SCALE, top: z.y * GLOBAL_SCALE, scaleX: (z.width * GLOBAL_SCALE) / obj.width, scaleY: (z.height * GLOBAL_SCALE) / obj.height })
+                    obj.setCoords()
+                } else {
+                    addZoneToCanvas(canvas, z)
+                }
+            })
+            canvas.requestRenderAll()
+            toast({ title: 'Redo', description: 'Restored undone change.' })
+        }
+    }, [])
+
+    // --- KEYBOARD SHORTCUTS ---
+    useEffect(() => {
+        const onKey = (e: KeyboardEvent) => {
+            // Don't intercept when user is typing in an input
+            const tag = (e.target as HTMLElement).tagName
+            if (tag === 'INPUT' || tag === 'TEXTAREA') return
+
+            const canvas = canvasRef.current
+            if (!canvas) return
+
+            const ctrl = e.ctrlKey || e.metaKey
+
+            // DELETE / BACKSPACE → remove selected zone
+            if ((e.key === 'Delete' || e.key === 'Backspace') && !ctrl) {
+                const active = canvas.getActiveObject() as any
+                if (!active?.id) return
+                e.preventDefault()
+                canvas.remove(active)
+                canvas.requestRenderAll()
+                setZones(prev => {
+                    const next = prev.filter(z => z.id !== active.id)
+                    pushHistory(next)
+                    broadcastUpdate({ zones: next })
+                    return next
+                })
+                return
+            }
+
+            // CTRL+C → copy selected zone
+            if (ctrl && e.key === 'c') {
+                const active = canvas.getActiveObject() as any
+                if (!active?.id) return
+                e.preventDefault()
+                const zone = zonesRef.current.find(z => z.id === active.id)
+                if (zone) {
+                    clipboardRef.current = JSON.parse(JSON.stringify(zone))
+                    toast({ title: 'Zone Copied', description: `Region "${zone.name}" copied to clipboard.` })
+                }
+                return
+            }
+
+            // CTRL+V → paste copied zone
+            if (ctrl && e.key === 'v') {
+                const copied = clipboardRef.current
+                if (!copied) return
+                e.preventDefault()
+                const pastedZone: Zone = {
+                    ...copied,
+                    id: `zone-${Date.now()}`,
+                    name: `${copied.name} copy`,
+                    x: copied.x + 20,
+                    y: copied.y + 20,
+                }
+                const next = [...zonesRef.current, pastedZone]
+                setZones(next)
+                pushHistory(next)
+                broadcastUpdate({ zones: next })
+                addZoneToCanvas(canvas, pastedZone)
+                canvas.requestRenderAll()
+                toast({ title: 'Zone Pasted', description: 'New region added to canvas.' })
+                return
+            }
+
+            // CTRL+Z → undo
+            if (ctrl && e.key === 'z' && !e.shiftKey) {
+                e.preventDefault()
+                undo()
+                return
+            }
+
+            // CTRL+Y or CTRL+SHIFT+Z → redo
+            if (ctrl && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+                e.preventDefault()
+                redo()
+                return
+            }
+        }
+
+        window.addEventListener('keydown', onKey)
+        return () => window.removeEventListener('keydown', onKey)
+    }, [undo, redo, pushHistory])
+
     return (
         <div className='flex flex-col lg:flex-row h-[calc(100vh-40px)] gap-4 overflow-hidden bg-background'>
             <Card className='w-full lg:w-72 p-4 flex flex-col gap-4 border-none shadow-none bg-muted/30'>
                 <div className="space-y-4">
                     <Label className="text-xs font-black uppercase">Settings</Label>
                     <Input value={templateName} onChange={(e) => { setTemplateName(e.target.value); broadcastUpdate({ name: e.target.value }) }} placeholder="Name" />
-                    <Select value={resolution} onValueChange={setResolution}>
+                    <Select
+                        value={isCustomResolution ? 'custom' : resolution}
+                        onValueChange={(v) => {
+                            if (v === 'custom') {
+                                setIsCustomResolution(true)
+                            } else {
+                                setIsCustomResolution(false)
+                                setResolution(v)
+                            }
+                        }}
+                    >
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>{RESOLUTIONS.map(r => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}</SelectContent>
                     </Select>
+                    {isCustomResolution && (
+                        <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                                <div className="relative flex-1">
+                                    <Input
+                                        type="number"
+                                        min={100}
+                                        max={7680}
+                                        value={customWidth}
+                                        onChange={e => setCustomWidth(Math.max(100, parseInt(e.target.value) || 1920))}
+                                        placeholder="Width"
+                                        className="h-8 text-xs pr-6"
+                                    />
+                                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground font-bold">px</span>
+                                </div>
+                                <span className="text-muted-foreground text-xs font-bold">×</span>
+                                <div className="relative flex-1">
+                                    <Input
+                                        type="number"
+                                        min={100}
+                                        max={7680}
+                                        value={customHeight}
+                                        onChange={e => setCustomHeight(Math.max(100, parseInt(e.target.value) || 1080))}
+                                        placeholder="Height"
+                                        className="h-8 text-xs pr-6"
+                                    />
+                                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground font-bold">px</span>
+                                </div>
+                            </div>
+                            <p className="text-[10px] text-muted-foreground italic">
+                                * Resolution in Pixels (px). CMS automatically scales for 16:9 displays.
+                            </p>
+                        </div>
+                    )}
                 </div>
                 <div className="space-y-2">
                     <Label className="text-xs font-black uppercase">Add Zones</Label>

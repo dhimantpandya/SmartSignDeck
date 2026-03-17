@@ -21,6 +21,8 @@ const createScreen = {
     ),
     isPublic: Joi.boolean(),
     visibility: Joi.string().valid("private", "company", "public"),
+    showClock: Joi.boolean(),
+    qrCodeUrl: Joi.string().allow('', null),
     previewUrl: Joi.string().allow('', null),
     previewType: Joi.string().valid('image', 'video').allow('', null),
   }),
@@ -34,6 +36,12 @@ const getScreens = {
     limit: Joi.number().integer(),
     page: Joi.number().integer(),
     createdBy: Joi.string().custom(objectId),
+    companyId: Joi.string().custom(objectId),
+    visibility: Joi.string().valid("private", "company", "public"),
+    trashed: Joi.boolean(),
+    isPublic: Joi.boolean(),
+    status: Joi.string().valid("online", "offline", "syncing"),
+    templateId: Joi.string().custom(objectId),
   }),
 };
 
@@ -67,6 +75,8 @@ const updateScreen = {
       ),
       isPublic: Joi.boolean(),
       visibility: Joi.string().valid("private", "company", "public"),
+      showClock: Joi.boolean(),
+      qrCodeUrl: Joi.string().allow('', null),
       previewUrl: Joi.string().allow('', null),
       previewType: Joi.string().valid('image', 'video').allow('', null),
     })

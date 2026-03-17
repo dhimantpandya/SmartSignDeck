@@ -129,7 +129,7 @@ export default function Screens() {
     // Query for Company screens
     const { data: companyScreensData, isLoading: isLoadingCompany } = useQuery({
         queryKey: ['screens', 'company', user?.companyId],
-        queryFn: () => screenService.getScreens({ visibility: 'company' }),
+        queryFn: () => screenService.getScreens({ companyId: user?.companyId, visibility: 'company' }),
         enabled: !!user?.companyId,
     })
 
@@ -420,7 +420,8 @@ export default function Screens() {
     )
 
     const myScreens = myScreensData?.results || []
-    const globalScreens = (globalScreensData?.results || []).filter((s: any) => s.createdBy)
+    const globalScreens = globalScreensData?.results || []
+    const companyScreens = companyScreensData?.results || []
 
     return (
         <Layout>
@@ -552,20 +553,20 @@ export default function Screens() {
                                 <div className="flex h-64 items-center justify-center">
                                     <Loader />
                                 </div>
-                            ) : (libraryFilter === 'company' ? (companyScreensData?.results || []) : globalScreens).length > 0 ? (
+                            ) : (libraryFilter === 'company' ? companyScreens : globalScreens).length > 0 ? (
                                 <>
                                     <div className="flex items-center gap-2 mb-4 px-2 py-2 bg-muted/30 rounded-lg border">
                                         <Checkbox
                                             id="select-all-library-screens"
-                                            checked={isAllSelected(libraryFilter === 'company' ? (companyScreensData?.results || []) : globalScreens)}
-                                            onCheckedChange={() => toggleSelectAll(libraryFilter === 'company' ? (companyScreensData?.results || []) : globalScreens)}
+                                            checked={isAllSelected(libraryFilter === 'company' ? companyScreens : globalScreens)}
+                                            onCheckedChange={() => toggleSelectAll(libraryFilter === 'company' ? companyScreens : globalScreens)}
                                         />
                                         <label htmlFor="select-all-library-screens" className="text-sm font-medium cursor-pointer flex-1">
-                                            Select All Screens ({(libraryFilter === 'company' ? (companyScreensData?.results || []) : globalScreens).length})
-                                        </label>
+                                            Select All Screens ({(libraryFilter === 'company' ? companyScreens : globalScreens).length})
+                                         </label>
                                     </div>
                                     <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
-                                        {(libraryFilter === 'company' ? (companyScreensData?.results || []) : globalScreens).map((screen: any) => 
+                                        {(libraryFilter === 'company' ? companyScreens : globalScreens).map((screen: any) => 
                                             renderScreenCard(screen, checkIsOwner(screen), true, true)
                                         )}
                                     </div>

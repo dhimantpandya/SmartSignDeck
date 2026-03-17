@@ -25,7 +25,7 @@ const createTemplate = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getTemplates = catchAsync(async (req: Request, res: Response) => {
-    const filter: any = pick(req.query, ["name", "createdBy", "isPublic", "visibility", "trashed", "collaborators"]);
+    const filter: any = pick(req.query, ["name", "createdBy", "isPublic", "visibility", "trashed", "collaborators", "companyId"]);
 
     // Handle boolean strings
     if (filter.isPublic === 'true') filter.isPublic = true;
@@ -33,14 +33,16 @@ const getTemplates = catchAsync(async (req: Request, res: Response) => {
     if (filter.trashed === 'true') filter.trashed = true;
     if (filter.trashed === 'false') filter.trashed = false;
 
-    // Explicit ObjectId casting for filters
-    if (filter.createdBy && mongoose.Types.ObjectId.isValid(filter.createdBy)) {
-        filter.createdBy = new mongoose.Types.ObjectId(filter.createdBy);
+    // Explicit ObjectId casting for filters to ensure MongoDB matches
+    if (filter.createdBy && mongoose.Types.ObjectId.isValid(filter.createdBy as string)) {
+        filter.createdBy = new mongoose.Types.ObjectId(filter.createdBy as string);
     }
-    if (filter.collaborators && mongoose.Types.ObjectId.isValid(filter.collaborators)) {
-        filter.collaborators = new mongoose.Types.ObjectId(filter.collaborators);
+    if (filter.collaborators && mongoose.Types.ObjectId.isValid(filter.collaborators as string)) {
+        filter.collaborators = new mongoose.Types.ObjectId(filter.collaborators as string);
     }
-    console.log('[TEMPLATE_CONTROLLER] Filter:', JSON.stringify(filter, null, 2));
+    if (filter.companyId && mongoose.Types.ObjectId.isValid(filter.companyId as string)) {
+        filter.companyId = new mongoose.Types.ObjectId(filter.companyId as string);
+    }
 
     const options = pick(req.query, ["sortBy", "limit", "page"]);
     const result = await templateService.queryTemplates(filter, options, req.user as any);

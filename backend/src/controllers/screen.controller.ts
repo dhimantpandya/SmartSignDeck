@@ -23,7 +23,7 @@ const createScreen = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getScreens = catchAsync(async (req: Request, res: Response) => {
-  const filter: any = pick(req.query, ["name", "templateId", "status", "createdBy", "isPublic", "visibility", "trashed"]);
+  const filter: any = pick(req.query, ["name", "templateId", "status", "createdBy", "isPublic", "visibility", "trashed", "companyId"]);
 
   // Handle boolean strings
   if (filter.isPublic === 'true') filter.isPublic = true;
@@ -34,6 +34,9 @@ const getScreens = catchAsync(async (req: Request, res: Response) => {
   // Explicit ObjectId casting for filters
   if (filter.createdBy && mongoose.Types.ObjectId.isValid(filter.createdBy)) {
     filter.createdBy = new mongoose.Types.ObjectId(filter.createdBy);
+  }
+  if (filter.companyId && mongoose.Types.ObjectId.isValid(filter.companyId)) {
+    filter.companyId = new mongoose.Types.ObjectId(filter.companyId);
   }
 
   const options = pick(req.query, ["sortBy", "limit", "page"]);
