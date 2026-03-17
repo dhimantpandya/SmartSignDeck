@@ -372,6 +372,7 @@ export const firebaseLogin = async (req: Request, res: Response) => {
 export const login = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
+    console.log(`[DEBUG] Login attempt received for email: ${email}`);
     const clientIp = req.ip || req.socket.remoteAddress || 'unknown';
     const user = await authService.loginUserWithEmailAndPassword(
       email,
@@ -764,6 +765,8 @@ export const forgotPassword = async (req: Request, res: Response) => {
       .json({ status: "error", message: err.message || "Failed to process request" });
   }
 };
+
+
 
 // ===== VERIFY RESET OTP =====
 export const verifyResetPasswordOtp = async (req: Request, res: Response) => {

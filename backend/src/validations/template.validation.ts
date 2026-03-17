@@ -1,111 +1,52 @@
 import Joi from "joi";
+import { objectId } from "./custom.validation";
 
 const createTemplate = {
   body: Joi.object().keys({
     name: Joi.string().required(),
-    resolution: Joi.string().default("1920x1080"),
-    zones: Joi.array()
-      .items(
-        Joi.object().keys({
-          _id: Joi.string().optional(), // MongoDB auto-generated ID
-          id: Joi.string().required(),
-          name: Joi.string().optional().allow(""),
-          type: Joi.string()
-            .required()
-            .valid("video", "image", "text", "mixed"),
-          x: Joi.number().required(),
-          y: Joi.number().required(),
-          width: Joi.number().required(),
-          height: Joi.number().required(),
-          media: Joi.array().optional(),
-          mediaType: Joi.string().optional().valid('image', 'video', 'both'),
-          lockedMediaType: Joi.string().optional().allow(null).valid('image', 'video', 'both'),
-        }),
-      )
-      .required(),
-    isPublic: Joi.boolean(),
+    resolution: Joi.string().required(),
+    zones: Joi.array().required(),
+    visibility: Joi.string().valid('private', 'company', 'public'),
+    previewUrl: Joi.string().allow('', null),
+    previewType: Joi.string().valid('image', 'video').allow('', null),
   }),
 };
 
 const getTemplates = {
   query: Joi.object().keys({
     name: Joi.string(),
-    createdBy: Joi.string(),
-    isPublic: Joi.boolean(),
     sortBy: Joi.string(),
     limit: Joi.number().integer(),
     page: Joi.number().integer(),
-    trashed: Joi.boolean(),
-    collaborators: Joi.string(),
+    createdBy: Joi.string().custom(objectId),
   }),
 };
 
 const getTemplate = {
   params: Joi.object().keys({
-    templateId: Joi.string()
-      .required()
-      .custom((value, helpers) => {
-        if (!value.match(/^[0-9a-fA-F]{24}$/)) {
-          return helpers.message({
-            custom: '"templateId" must be a valid mongo id',
-          });
-        }
-        return value;
-      }),
+    templateId: Joi.string().custom(objectId),
   }),
 };
 
 const updateTemplate = {
   params: Joi.object().keys({
-    templateId: Joi.required().custom((value, helpers) => {
-      if (!value.match(/^[0-9a-fA-F]{24}$/)) {
-        return helpers.message({
-          custom: '"templateId" must be a valid mongo id',
-        });
-      }
-      return value;
-    }),
+    templateId: Joi.required().custom(objectId),
   }),
   body: Joi.object()
     .keys({
       name: Joi.string(),
       resolution: Joi.string(),
-      zones: Joi.array().items(
-        Joi.object().keys({
-          _id: Joi.string().optional(), // MongoDB auto-generated ID
-          id: Joi.string().required(),
-          name: Joi.string().optional().allow(""),
-          type: Joi.string()
-            .required()
-            .valid("video", "image", "text", "mixed"),
-          x: Joi.number().required(),
-          y: Joi.number().required(),
-          width: Joi.number().required(),
-          height: Joi.number().required(),
-          media: Joi.array().optional(),
-          mediaType: Joi.string().optional().valid('image', 'video', 'both'),
-          lockedMediaType: Joi.string().optional().allow(null).valid('image', 'video', 'both'),
-        }),
-      ),
-      isActive: Joi.boolean(),
-      isPublic: Joi.boolean(),
-      collaborators: Joi.array().items(Joi.string()),
+      zones: Joi.array(),
+      visibility: Joi.string().valid("private", "company", "public"),
+      previewUrl: Joi.string().allow('', null),
+      previewType: Joi.string().valid('image', 'video').allow('', null),
     })
     .min(1),
 };
 
 const deleteTemplate = {
   params: Joi.object().keys({
-    templateId: Joi.string()
-      .required()
-      .custom((value, helpers) => {
-        if (!value.match(/^[0-9a-fA-F]{24}$/)) {
-          return helpers.message({
-            custom: '"templateId" must be a valid mongo id',
-          });
-        }
-        return value;
-      }),
+    templateId: Joi.string().custom(objectId),
   }),
 };
 

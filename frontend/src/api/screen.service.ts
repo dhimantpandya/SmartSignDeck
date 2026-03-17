@@ -5,7 +5,7 @@ export interface Screen {
     name: string
     companyId: string
     createdBy: string
-    isPublic: boolean
+    visibility: 'private' | 'company' | 'public'
     status: 'online' | 'offline' | 'syncing'
     lastPing: string
     created_at: string

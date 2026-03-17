@@ -110,7 +110,7 @@ const respondToRequest = async (requestId: string, userId: string, status: "acce
             if (!template.collaborators) template.collaborators = [];
             if (!template.collaborators.some(id => id.toString() === request.recipient.toString())) {
                 console.log(`[COLLAB] Adding User ${request.recipient} to Template ${template._id}. Current collaborators:`, template.collaborators);
-                template.collaborators.push(request.recipient);
+                template.collaborators.push(request.recipient as any);
                 await template.save();
                 // Refetch to confirm
                 const updatedTemplate = await Template.findById(template._id);

@@ -40,7 +40,7 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
     const [name, setName] = useState(initialData?.name || '')
     const [selectedTemplateId, setSelectedTemplateId] = useState(getInitialTemplateId())
     const [defaultContent, setDefaultContent] = useState<any>(initialData?.defaultContent || {})
-    const [isPublic, setIsPublic] = useState(initialData?.isPublic || false)
+    const [visibility, setVisibility] = useState<'private' | 'company' | 'public'>(initialData?.visibility || 'private')
     const [showClock, setShowClock] = useState(initialData?.showClock !== false)
     const [qrCodeUrl, setQrCodeUrl] = useState(initialData?.qrCodeUrl || '')
 
@@ -539,7 +539,7 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
                 templateId: selectedTemplateId,
                 defaultContent,
                 schedules,
-                isPublic,
+                visibility,
                 showClock,
                 qrCodeUrl: qrCodeUrl || '',
             }
@@ -926,26 +926,30 @@ export default function ScreenForm({ initialData, onCancel }: ScreenFormProps) {
                         </div>
 
                         {/* Shared Screen Setting - Clean dedicated row */}
-                        <div className={`flex items-center justify-between rounded-lg border px-4 py-3 mb-6 transition-colors ${isPublic ? 'border-blue-500/40 bg-blue-500/5' : 'border-border bg-muted/20'}`}>
-                            <div className='flex items-center gap-3'>
-                                <div className={`rounded-md p-1.5 ${isPublic ? 'bg-blue-500/15 text-blue-500' : 'bg-muted text-muted-foreground'}`}>
-                                    <IconCopy size={16} />
+                        <div className={`grid gap-2 rounded-lg border px-4 py-3 mb-6 transition-colors ${visibility !== 'private' ? 'border-blue-500/40 bg-blue-500/5' : 'border-border bg-muted/20'}`}>
+                            <div className="flex items-center justify-between">
+                                <div className='flex items-center gap-3'>
+                                    <div className={`rounded-md p-1.5 ${visibility === 'public' ? 'bg-blue-500/15 text-blue-500' : visibility === 'company' ? 'bg-amber-500/15 text-amber-500' : 'bg-muted text-muted-foreground'}`}>
+                                        {visibility === 'public' ? <IconCopy size={16} /> : visibility === 'company' ? <Folders size={16} /> : <User size={16} />}
+                                    </div>
+                                    <div>
+                                        <p className='text-sm font-medium leading-none'>Screen Visibility</p>
+                                        <p className='text-xs text-muted-foreground mt-0.5'>
+                                            Control who can see and use this screen configuration
+                                        </p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <p className='text-sm font-medium leading-none'>Shared Screen</p>
-                                    <p className='text-xs text-muted-foreground mt-0.5'>
-                                        Share this screen in your company's shared library
-                                    </p>
-                                </div>
+                                <Select value={visibility} onValueChange={(val: any) => setVisibility(val)}>
+                                    <SelectTrigger className="w-[140px] h-9 bg-background">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="private">Private</SelectItem>
+                                        <SelectItem value="company">My Company</SelectItem>
+                                        <SelectItem value="public">Global Library</SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </div>
-                            <button
-                                role="switch"
-                                aria-checked={isPublic}
-                                onClick={() => setIsPublic(!isPublic)}
-                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${isPublic ? 'bg-blue-500' : 'bg-input'}`}
-                            >
-                                <span className={`inline-block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${isPublic ? 'translate-x-5' : 'translate-x-0.5'}`} />
-                            </button>
                         </div>
 
                         {/* Show Clock Toggle */}

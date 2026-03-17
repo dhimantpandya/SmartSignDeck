@@ -1,0 +1,27 @@
+﻿src/controllers/playbackLog.controller.ts(15,64): error TS2554: Expected 1 arguments, but got 3.
+src/controllers/screen.controller.ts(12,61): error TS2554: Expected 1 arguments, but got 2.
+src/controllers/screen.controller.ts(40,68): error TS2554: Expected 2 arguments, but got 3.
+src/controllers/screen.controller.ts(47,73): error TS2554: Expected 1 arguments, but got 3.
+src/controllers/screen.controller.ts(58,5): error TS2554: Expected 2 arguments, but got 3.
+src/controllers/screen.controller.ts(77,61): error TS2554: Expected 1 arguments, but got 2.
+src/controllers/screen.controller.ts(84,38): error TS2551: Property 'restoreScreenById' does not exist on type '{ createScreen: (screenBody: any) => Promise<Document<unknown, {}, IScreen> & IScreen & { _id: ObjectId; }>; queryScreens: (filter: any, options: any) => Promise<...>; ... 4 more ...; updateScreenPing: (secretKey: string) => Promise<...>; }'. Did you mean 'getScreenById'?
+src/controllers/screen.controller.ts(94,23): error TS2339: Property 'permanentDeleteScreenById' does not exist on type '{ createScreen: (screenBody: any) => Promise<Document<unknown, {}, IScreen> & IScreen & { _id: ObjectId; }>; queryScreens: (filter: any, options: any) => Promise<...>; ... 4 more ...; updateScreenPing: (secretKey: string) => Promise<...>; }'.
+src/controllers/screen.controller.ts(101,38): error TS2551: Property 'deleteScreensByIds' does not exist on type '{ createScreen: (screenBody: any) => Promise<Document<unknown, {}, IScreen> & IScreen & { _id: ObjectId; }>; queryScreens: (filter: any, options: any) => Promise<...>; ... 4 more ...; updateScreenPing: (secretKey: string) => Promise<...>; }'. Did you mean 'deleteScreenById'?
+src/controllers/screen.controller.ts(115,38): error TS2554: Expected 3 arguments, but got 2.
+src/controllers/screen.controller.ts(145,62): error TS2554: Expected 1 arguments, but got 2.
+src/controllers/template.controller.ts(14,69): error TS2554: Expected 1 arguments, but got 2.
+src/controllers/template.controller.ts(46,74): error TS2554: Expected 2 arguments, but got 3.
+src/controllers/template.controller.ts(57,83): error TS2554: Expected 1 arguments, but got 2.
+src/controllers/template.controller.ts(74,9): error TS2554: Expected 2 arguments, but got 3.
+src/controllers/template.controller.ts(84,41): error TS2339: Property 'getScreensByTemplateId' does not exist on type '{ createScreen: (screenBody: any) => Promise<Document<unknown, {}, IScreen> & IScreen & { _id: ObjectId; }>; queryScreens: (filter: any, options: any) => Promise<...>; ... 4 more ...; updateScreenPing: (secretKey: string) => Promise<...>; }'.
+src/controllers/template.controller.ts(97,38): error TS2339: Property 'lastModifiedBy' does not exist on type 'Document<unknown, {}, ITemplate> & ITemplate & { _id: ObjectId; }'.
+src/controllers/template.controller.ts(103,69): error TS2554: Expected 1 arguments, but got 2.
+src/controllers/template.controller.ts(110,44): error TS2551: Property 'restoreTemplateById' does not exist on type '{ createTemplate: (templateBody: any) => Promise<Document<unknown, {}, ITemplate> & ITemplate & { _id: ObjectId; }>; queryTemplates: (filter: any, options: any) => Promise<...>; ... 5 more ...; bootstrapFromInspiration: (name: string, userId: string, companyId: string) => Promise<...>; }'. Did you mean 'getTemplateById'?
+src/controllers/template.controller.ts(125,27): error TS2551: Property 'permanentDeleteTemplateById' does not exist on type '{ createTemplate: (templateBody: any) => Promise<Document<unknown, {}, ITemplate> & ITemplate & { _id: ObjectId; }>; queryTemplates: (filter: any, options: any) => Promise<...>; ... 5 more ...; bootstrapFromInspiration: (name: string, userId: string, companyId: string) => Promise<...>; }'. Did you mean 'permanentDeleteTemplate'?
+src/controllers/template.controller.ts(132,42): error TS2551: Property 'deleteTemplatesByIds' does not exist on type '{ createTemplate: (templateBody: any) => Promise<Document<unknown, {}, ITemplate> & ITemplate & { _id: ObjectId; }>; queryTemplates: (filter: any, options: any) => Promise<...>; ... 5 more ...; bootstrapFromInspiration: (name: string, userId: string, companyId: string) => Promise<...>; }'. Did you mean 'deleteTemplateById'?
+src/controllers/template.controller.ts(146,44): error TS2554: Expected 3 arguments, but got 2.
+src/controllers/template.controller.ts(156,41): error TS2554: Expected 3 arguments, but got 2.
+src/services/collaborationRequest.service.ts(113,45): error TS2345: Argument of type 'import("mongoose").Schema.Types.ObjectId' is not assignable to parameter of type 'import("mongoose").Types.ObjectId'.
+  Type 'ObjectId' is missing the following properties from type 'ObjectId': _bsontype, id, toHexString, toJSON, and 4 more.
+src/services/template.service.ts(125,5): error TS2740: Type 'ObjectId' is missing the following properties from type 'ObjectId': auto, defaultOptions, OptionsConstructor, cast, and 18 more.
+src/services/template.service.ts(126,5): error TS2322: Type 'import("mongoose").Types.ObjectId' is not assignable to type 'import("mongoose").Schema.Types.ObjectId'.

@@ -68,24 +68,39 @@ const getActiveContent = async (companyId: string, userId?: string) => {
     .populate('templateId')
     .sort({ updated_at: -1 });
 
-  // Filter for screens that actually have content (defaultContent not empty)
-  // and have a valid template attached
-  const activeDisplays = screens.filter(screen => {
-    const hasTemplate = !!screen.templateId;
-    const hasContent = screen.defaultContent && Object.keys(screen.defaultContent).length > 0;
+  const activeDisplays = [];
 
-    // Deep check for actual media in the content
-    let hasMedia = false;
-    if (hasContent) {
-      Object.values(screen.defaultContent).forEach((zone: any) => {
-        if (zone.type === 'image' || zone.type === 'video' || (zone.playlist && zone.playlist.length > 0)) {
-          hasMedia = true;
+  for (const screen of screens) {
+    let previewUrl = (screen as any).previewUrl;
+    let previewType = (screen as any).previewType || 'image';
+
+    // If no explicit preview, try to find one in content
+    if (!previewUrl && screen.defaultContent) {
+      for (const zone of Object.values(screen.defaultContent) as any[]) {
+        if (zone.playlist && zone.playlist.length > 0 && zone.playlist[0].url) {
+          previewUrl = zone.playlist[0].url;
+          previewType = zone.playlist[0].type || 'image';
+          break;
         }
-      });
+        if (zone.src) {
+            previewUrl = zone.src;
+            previewType = 'image';
+            break;
+        }
+      }
     }
 
-    return hasTemplate && hasMedia;
-  });
+    // Fallback to template preview if still missing
+    if (!previewUrl && (screen.templateId as any)?.previewUrl) {
+        previewUrl = (screen.templateId as any).previewUrl;
+        previewType = (screen.templateId as any).previewType || 'image';
+    }
+
+    const screenObj = screen.toObject ? screen.toObject() : screen;
+    screenObj.previewUrl = previewUrl;
+    screenObj.previewType = previewType;
+    activeDisplays.push(screenObj);
+  }
 
   return activeDisplays;
 }

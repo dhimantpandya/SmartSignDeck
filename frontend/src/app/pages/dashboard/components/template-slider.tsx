@@ -39,6 +39,7 @@ interface TemplateSliderProps {
     templates?: any[]
     isLoading: boolean
     isNewUser: boolean
+    totalScreens?: number
 }
 
 // --- ROBUST PREVIEW COMPONENT ---
@@ -79,6 +80,7 @@ const SmartPreview = ({ url, type, name }: { url: string; type?: 'image' | 'vide
 
     return (
         <img
+            key={url} // Force fresh render if URL changes
             src={getOptimizedUrl(url)}
             alt={name}
             className="absolute inset-0 w-full h-full object-cover transition-transform duration-[4000ms] group-hover/card:scale-110"
@@ -90,7 +92,7 @@ const SmartPreview = ({ url, type, name }: { url: string; type?: 'image' | 'vide
 import { templateService } from '@/api/template.service'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 
-export const TemplateSlider = ({ templates, isLoading }: TemplateSliderProps) => {
+export const TemplateSlider = ({ templates, isLoading, totalScreens }: TemplateSliderProps) => {
     const navigate = useNavigate()
     const { user } = useAuth()
     const queryClient = useQueryClient()
@@ -136,22 +138,19 @@ export const TemplateSlider = ({ templates, isLoading }: TemplateSliderProps) =>
 
     // Default to 'showcase' only if user has 3+ screens, otherwise 'inspiration'
     const [sliderMode, setSliderMode] = useState<'inspiration' | 'showcase'>(
-        templates && templates.length >= 3 ? 'showcase' : 'inspiration'
+        (totalScreens ?? templates?.length ?? 0) >= 3 ? 'showcase' : 'inspiration'
     );
 
     // Sync initial state if data loads later
     useEffect(() => {
-        if (templates && templates.length >= 3) {
+        const count = totalScreens ?? templates?.length ?? 0;
+        if (count >= 3) {
             // Auto-switch to showcase once data loads IF they have enough screens
-            // but only if they haven't manually switched to inspiration already.
-            // For now, let's keep it simple: if sliderMode is inspiration and they have 3+ screens, 
-            // maybe we want to show their work. But the user complained about it jumping, 
-            // so let's ONLY set it on the very first load or if they were empty before.
-        } else if (templates && templates.length < 3) {
+        } else {
             // Force inspiration if they drop below 3 (e.g. deletion)
             setSliderMode('inspiration');
         }
-    }, [templates]);
+    }, [templates, totalScreens]);
 
 
     // Determine items based on mode
@@ -285,19 +284,20 @@ export const TemplateSlider = ({ templates, isLoading }: TemplateSliderProps) =>
                                 <Switch
                                     checked={sliderMode === 'showcase'}
                                     onCheckedChange={(checked) => {
-                                        if (checked && (!templates || templates.length < 3)) {
+                                        const count = totalScreens ?? templates?.length ?? 0;
+                                        if (checked && count < 3) {
                                             toast({
                                                 title: "Section Locked",
-                                                description: `You need at least 3 screens to unlock 'My Work'. You currently have ${templates?.length || 0}.`,
+                                                description: `You need at least 3 screens to unlock 'My Work'. You currently have ${count}.`,
                                             });
                                             return;
                                         }
                                         setSliderMode(checked ? 'showcase' : 'inspiration');
                                     }}
                                     className="data-[state=checked]:bg-primary"
-                                    disabled={!templates || templates.length < 3}
+                                    disabled={(totalScreens ?? templates?.length ?? 0) < 3}
                                 />
-                                {(!templates || templates.length < 3) && (
+                                {(totalScreens ?? templates?.length ?? 0) < 3 && (
                                     <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-black/90 text-white text-[10px] px-3 py-1.5 rounded-md opacity-0 group-hover/lock:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none uppercase font-bold tracking-wider border border-white/10 shadow-xl translate-y-2 group-hover/lock:translate-y-0 z-[100]">
                                         <div className="relative">
                                             Create 3 screens to access My Work
@@ -309,16 +309,16 @@ export const TemplateSlider = ({ templates, isLoading }: TemplateSliderProps) =>
 
                             <span
                                 className={cn("text-xs font-bold uppercase tracking-wider transition-colors",
-                                    (!templates || templates.length < 3) ? "text-muted-foreground/40 cursor-not-allowed" :
+                                    ((totalScreens ?? templates?.length ?? 0) < 3) ? "text-muted-foreground/40 cursor-not-allowed" :
                                         (sliderMode === 'inspiration' ? "text-muted-foreground cursor-pointer" : "text-primary")
                                 )}
                                 onClick={() => {
-                                    if (templates && templates.length >= 3) {
+                                    if ((totalScreens ?? templates?.length ?? 0) >= 3) {
                                         setSliderMode('showcase');
                                     }
                                 }}
                             >
-                                My Work {(!templates || templates.length < 3) && "🔒"}
+                                My Work {((totalScreens ?? templates?.length ?? 0) < 3) && "🔒"}
                             </span>
                         </div>
 
@@ -383,8 +383,8 @@ export const TemplateSlider = ({ templates, isLoading }: TemplateSliderProps) =>
                     >
                         {infiniteItems.map((item: any, idx) => {
                             const isFocused = idx === activeIndex;
-                            const isVisible = Math.abs(idx - activeIndex) <= 2;
-                            const id = item.id || item._id || `item-${idx}`;
+                            // Only virtualize if we have a significant number of items
+                            const isVisible = infiniteItems.length < 15 || Math.abs(idx - activeIndex) <= 3;
 
                             if (!isVisible) return <div key={`spacer-${idx}`} style={{ width: CARD_WIDTH }} className="flex-shrink-0" />;
 
@@ -393,7 +393,7 @@ export const TemplateSlider = ({ templates, isLoading }: TemplateSliderProps) =>
                             let previewType = item.previewType || 'image';
 
                             // If it's a screen, try to get template preview or search ALL zones for media
-                            if (!isShowingInspiration) {
+                            if (!isShowingInspiration && !previewUrl) {
                                 previewUrl = item.templateId?.previewUrl;
 
                                 // Fallback: Search ALL zones for any available media
@@ -422,7 +422,7 @@ export const TemplateSlider = ({ templates, isLoading }: TemplateSliderProps) =>
 
                             return (
                                 <Card
-                                    key={`${id}-${idx}`}
+                                    key={`${item.id || item._id || 'item'}-${idx}`}
                                     className={cn(
                                         "flex-shrink-0 transition-all duration-700 cursor-pointer overflow-hidden border-none relative group/card rounded-[1.5rem] bg-muted shadow-lg hover:shadow-2xl",
                                         isFocused
@@ -464,10 +464,17 @@ export const TemplateSlider = ({ templates, isLoading }: TemplateSliderProps) =>
                                                 "transition-all duration-500 transform",
                                                 isHoveringCenter ? "-translate-y-24" : "translate-y-0"
                                             )}>
-                                                <div className="inline-block bg-primary px-2 py-0.5 rounded-[4px] text-[8px] font-black text-white uppercase tracking-widest mb-2 shadow-lg">
-                                                    {category}
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <div className="inline-block bg-primary px-2 py-0.5 rounded-[4px] text-[8px] font-black text-white uppercase tracking-widest shadow-lg">
+                                                        {category}
+                                                    </div>
+                                                    {!isShowingInspiration && (
+                                                        <div className="inline-block bg-white/20 backdrop-blur-md px-2 py-0.5 rounded-[4px] text-[8px] font-black text-white uppercase tracking-widest shadow-lg">
+                                                            #{ (idx % baseItems.length) + 1 }
+                                                        </div>
+                                                    )}
                                                 </div>
-                                                <h3 className="text-white font-black text-xl leading-tight drop-shadow-2xl tracking-tight max-w-[80%]">{name}</h3>
+                                                <h3 className="text-white font-black text-xl leading-tight drop-shadow-2xl tracking-tight max-w-[80%] line-clamp-2">{name}</h3>
                                             </div>
                                         </div>
 

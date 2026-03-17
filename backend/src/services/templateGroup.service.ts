@@ -2,7 +2,7 @@ import httpStatus from "http-status";
 import { TemplateGroup, Template } from "../models";
 import ApiError from "../utils/ApiError";
 import type { ITemplateGroup } from "../models/templateGroup.model";
-import type { FilterQuery } from "mongoose";
+import mongoose, { FilterQuery } from "mongoose";
 import type { CustomPaginateOptions, CustomPaginateResult } from "../models/plugins/paginate.plugin";
 
 /**
@@ -156,7 +156,7 @@ const addTemplatesToGroup = async (groupId: string, templateIds: string[]): Prom
     const newTemplates = templateIds.filter(id => !existingTemplates.includes(id));
 
     if (newTemplates.length > 0) {
-        group.templates.push(...(newTemplates.map(id => new (require('mongoose')).Types.ObjectId(id))));
+        group.templates.push(...(newTemplates.map(id => new mongoose.Types.ObjectId(id))));
         await group.save();
     }
 
@@ -175,7 +175,7 @@ const removeTemplatesFromGroup = async (groupId: string, templateIds: string[]):
         throw new ApiError(httpStatus.NOT_FOUND, "Template group not found");
     }
 
-    const idsToRemove = templateIds.map(id => new (require('mongoose')).Types.ObjectId(id));
+    const idsToRemove = templateIds.map(id => new mongoose.Types.ObjectId(id));
     // @ts-ignore
     group.templates = group.templates.filter(t => !templateIds.includes(t.toString()) && !templateIds.includes(t._id?.toString()));
 

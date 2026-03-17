@@ -16,7 +16,7 @@ export interface Template {
     name: string
     resolution: string
     zones: Zone[]
-    isPublic: boolean
+    visibility: 'private' | 'company' | 'public'
     companyId: string
     createdBy: string
     isActive: boolean

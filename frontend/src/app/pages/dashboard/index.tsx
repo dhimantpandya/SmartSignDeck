@@ -12,6 +12,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import ThemeSwitch from '@/components/theme-switch'
 import { UserNav } from '@/components/user-nav'
 import { NotificationBell } from '@/components/notification-bell'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { RecentActivity } from './components/recent-sales'
 import { Overview } from './components/overview'
 import { useState, useRef, useMemo, ChangeEvent } from 'react'
@@ -53,9 +60,11 @@ export default function Dashboard() {
   const handleSearch = (event: ChangeEvent<HTMLInputElement>) =>
     setSearchTerm(event.target.value)
 
+  const [statsScope, setStatsScope] = useState<'personal' | 'company'>('personal')
+
   const { data: stats, isLoading: isStatsLoading } = useQuery({
-    queryKey: ['signage-stats', user?.id],
-    queryFn: () => signageService.getStats(),
+    queryKey: ['signage-stats', user?.id, statsScope],
+    queryFn: () => signageService.getStats(statsScope),
     enabled: !!user?.id,
   })
 
@@ -163,7 +172,7 @@ export default function Dashboard() {
   return (
     <Layout>
       {/* ===== Top Heading ===== */}
-      <Layout.Header>
+      <Layout.Header sticky>
         {/* <TopNav links={topNav} /> */}
         <div className='ml-auto flex items-center space-x-4'>
           <Search searchTerm={searchTerm} onChange={handleSearch} />
@@ -186,12 +195,27 @@ export default function Dashboard() {
               </p>
             </div>
             <div className='flex items-center space-x-2 w-full sm:w-auto'>
+              {(user?.role === 'admin' || user?.role === 'super_admin') && (
+                <div className="flex items-center gap-2 bg-secondary/50 p-1 rounded-lg border border-primary/10">
+                  <Select 
+                    value={statsScope} 
+                    onValueChange={(value: any) => setStatsScope(value)}
+                  >
+                    <SelectTrigger className="h-8 w-[140px] text-xs border-none bg-transparent shadow-none hover:bg-primary/5">
+                      <SelectValue placeholder="Stats Scope" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="personal">Personal Stats</SelectItem>
+                      <SelectItem value="company">Company Stats</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               <Button onClick={handleDownload} variant="outline" className="w-full sm:w-auto border-primary/20 hover:bg-primary/5 text-xs sm:text-sm h-9 sm:h-10">Download Reports</Button>
             </div>
           </div>
 
           <Tabs
-            orientation='vertical'
             value={activeTab}
             onValueChange={setActiveTab}
             className='space-y-4'
@@ -226,6 +250,7 @@ export default function Dashboard() {
                   templates={activeContent || []}
                   isLoading={isActiveContentLoading}
                   isNewUser={(stats?.totalTemplates ?? 0) === 0}
+                  totalScreens={stats?.totalScreens}
                 />
               </div>
 

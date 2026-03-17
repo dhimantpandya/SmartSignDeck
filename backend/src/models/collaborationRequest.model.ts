@@ -3,9 +3,9 @@ import { toJSON, paginate } from "./plugins";
 import { type CustomPaginateOptions, type CustomPaginateResult } from "./plugins/paginate.plugin";
 
 export interface ICollaborationRequest extends Document {
-    sender: mongoose.Schema.Types.ObjectId;
-    recipient: mongoose.Schema.Types.ObjectId;
-    templateId: mongoose.Schema.Types.ObjectId;
+    sender: mongoose.Types.ObjectId;
+    recipient: mongoose.Types.ObjectId;
+    templateId: mongoose.Types.ObjectId;
     status: "pending" | "accepted" | "declined" | "cancelled";
     message?: string;
     createdAt: Date;

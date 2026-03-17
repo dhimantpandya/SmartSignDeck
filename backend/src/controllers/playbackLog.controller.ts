@@ -12,7 +12,7 @@ const createPlaybackLog = catchAsync(async (req: Request, res: Response) => {
     const { screenId, secretKey } = req.body;
 
     // Pass secretKey to service for validation
-    const screen = await screenService.getScreenById(screenId, undefined, secretKey);
+    const screen = await screenService.getScreenById(screenId, undefined, secretKey as string);
 
     if (!screen) {
         throw new Error("Screen not found or invalid key");

@@ -10,30 +10,31 @@ import {
   type CustomPaginateResult,
 } from "./plugins/paginate.plugin";
 
-export interface IZone {
+export interface Zone {
   id: string;
+  name: string;
   type: "video" | "image" | "text" | "mixed";
   x: number;
   y: number;
   width: number;
   height: number;
-  name?: string;
-  media?: any[];
-  mediaType?: "image" | "video" | "both";
-  lockedMediaType?: "image" | "video" | "both" | null;
+  media: any[];
+  mediaType?: 'image' | 'video' | 'both';
+  lockedMediaType?: 'image' | 'video' | 'both' | null;
 }
 
 export interface ITemplate extends Document {
   name: string;
   resolution: string;
-  zones: IZone[];
-  companyId: mongoose.Schema.Types.ObjectId;
-  createdBy: mongoose.Schema.Types.ObjectId;
+  zones: Zone[];
+  companyId: mongoose.Types.ObjectId;
+  createdBy: mongoose.Types.ObjectId;
+  collaborators: mongoose.Types.ObjectId[];
   isPublic: boolean;
-  visibility: "private" | "company" | "public";
-  isActive: boolean;
-  collaborators: mongoose.Schema.Types.ObjectId[];
-  lastModifiedBy?: mongoose.Schema.Types.ObjectId;
+  visibility: "private" | "company" | "public" | "global";
+  lastModifiedBy?: mongoose.Types.ObjectId;
+  previewUrl?: string;
+  previewType?: "image" | "video";
   created_at: Date;
   updated_at: Date;
   deletedAt?: Date | null;
@@ -46,45 +47,22 @@ export interface ITemplateModel extends Model<ITemplate> {
   ) => Promise<CustomPaginateResult<ITemplate>>;
 }
 
-const zoneSchema = new Schema<IZone>({
-  id: { type: String, required: true },
-  type: {
-    type: String,
-    enum: ["video", "image", "text", "mixed"],
-    required: true,
-  },
-  x: { type: Number, required: true },
-  y: { type: Number, required: true },
-  width: { type: Number, required: true },
-  height: { type: Number, required: true },
-  name: { type: String },
-  media: { type: Array, default: [] },
-  mediaType: {
-    type: String,
-    enum: ["image", "video", "both"],
-    default: "both",
-  },
-  lockedMediaType: {
-    type: String,
-    enum: ["image", "video", "both", null],
-    default: null,
-  },
-});
-
 const templateSchema = new Schema<ITemplate, ITemplateModel>(
   {
     name: {
       type: String,
       required: true,
       trim: true,
-      index: true,
     },
     resolution: {
       type: String,
       required: true,
-      default: "1920x1080",
+      trim: true,
     },
-    zones: [zoneSchema],
+    zones: {
+      type: Schema.Types.Mixed,
+      required: true,
+    },
     companyId: {
       type: Schema.Types.ObjectId,
       ref: "Company",
@@ -96,6 +74,12 @@ const templateSchema = new Schema<ITemplate, ITemplateModel>(
       ref: "User",
       required: true,
     },
+    collaborators: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
     isPublic: {
       type: Boolean,
       default: false,
@@ -103,24 +87,18 @@ const templateSchema = new Schema<ITemplate, ITemplateModel>(
     },
     visibility: {
       type: String,
-      enum: ["private", "company", "public"],
+      enum: ["private", "company", "public", "global"],
       default: "private",
       index: true,
     },
-    isActive: {
-      type: Boolean,
-      default: true,
-      index: true,
+    previewUrl: {
+      type: String,
+      trim: true,
     },
-    collaborators: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: "User",
-      },
-    ],
-    lastModifiedBy: {
-      type: Schema.Types.ObjectId,
-      ref: "User",
+    previewType: {
+      type: String,
+      enum: ["image", "video"],
+      default: "image",
     },
     deletedAt: {
       type: Date,
@@ -139,4 +117,5 @@ const Template = mongoose.model<ITemplate, ITemplateModel>(
   "Template",
   templateSchema,
 );
+
 export default Template;

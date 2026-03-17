@@ -36,18 +36,18 @@ export interface ISchedule {
   content: IScreenContent;
 }
 
-
-
 export interface IScreen extends Document {
   name: string;
   location?: string;
-  templateId: mongoose.Schema.Types.ObjectId;
+  templateId: mongoose.Types.ObjectId;
   defaultContent: IScreenContent;
   schedules: ISchedule[];
-  companyId: mongoose.Schema.Types.ObjectId;
-  createdBy: mongoose.Schema.Types.ObjectId;
+  companyId: mongoose.Types.ObjectId;
+  createdBy: mongoose.Types.ObjectId;
   isPublic: boolean;
   visibility: "private" | "company" | "public";
+  previewUrl?: string;
+  previewType?: "image" | "video";
   secretKey?: string;
   showClock: boolean;
   qrCodeUrl?: string;
@@ -120,6 +120,15 @@ const screenSchema = new Schema<IScreen, IScreenModel>(
       enum: ["private", "company", "public"],
       default: "private",
       index: true,
+    },
+    previewUrl: {
+      type: String,
+      trim: true,
+    },
+    previewType: {
+      type: String,
+      enum: ["image", "video"],
+      default: "image",
     },
     showClock: {
       type: Boolean,

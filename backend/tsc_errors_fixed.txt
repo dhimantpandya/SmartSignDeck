@@ -1,0 +1,3 @@
+﻿src/controllers/template.controller.ts(97,38): error TS2339: Property 'lastModifiedBy' does not exist on type 'Document<unknown, {}, ITemplate> & ITemplate & { _id: ObjectId; }'.
+src/services/templateGroup.service.ts(159,30): error TS2345: Argument of type 'import("mongoose").Types.ObjectId' is not assignable to parameter of type 'import("mongoose").Schema.Types.ObjectId'.
+  Type 'ObjectId' is missing the following properties from type 'ObjectId': auto, defaultOptions, OptionsConstructor, cast, and 18 more.

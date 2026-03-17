@@ -21,6 +21,8 @@ import { User, Folder, Folders } from 'lucide-react'
 import { useSearchParams, useParams } from 'react-router-dom'
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
 import { useNotifications } from '@/components/nav-notification-provider'
+import { ShareDialog } from '@/components/custom/share-dialog'
+import { Share2 } from 'lucide-react'
 
 export default function Screens() {
     const { user } = useAuth()
@@ -35,6 +37,8 @@ export default function Screens() {
     const [selectedScreens, setSelectedScreens] = useState<string[]>([])
     const queryClient = useQueryClient()
     const { socket } = useNotifications()
+    const [isShareDialogOpen, setIsShareDialogOpen] = useState(false)
+    const [sharingScreen, setSharingScreen] = useState<any>(null)
 
     const toggleScreenSelection = (id: string) => {
         setSelectedScreens(prev =>
@@ -117,10 +121,19 @@ export default function Screens() {
 
     // Query for shared library screens
     const { data: globalScreensData, isLoading: isLoadingGlobal } = useQuery({
-        queryKey: ['screens', 'shared'],
-        queryFn: () => screenService.getScreens({ isPublic: true }),
+        queryKey: ['screens', 'global'],
+        queryFn: () => screenService.getScreens({ visibility: 'public' }),
         enabled: true,
     })
+
+    // Query for Company screens
+    const { data: companyScreensData, isLoading: isLoadingCompany } = useQuery({
+        queryKey: ['screens', 'company', user?.companyId],
+        queryFn: () => screenService.getScreens({ visibility: 'company' }),
+        enabled: !!user?.companyId,
+    })
+
+    const [libraryFilter, setLibraryFilter] = useState<'company' | 'public'>('company')
 
     // Query for template groups
     const { data: groupsData, isLoading: isLoadingGroups } = useQuery({
@@ -294,9 +307,17 @@ export default function Screens() {
                         <CardTitle className="text-lg">{screen.name}</CardTitle>
                     </div>
                     <div className="flex items-center gap-2">
-                        {screen.isPublic && (
-                            <Badge variant="outline" className="bg-blue-500/10 text-blue-500 border-blue-500/20 gap-1 text-[10px]">
-                                <IconCopy size={10} /> Shared
+                        {screen.visibility === 'public' ? (
+                            <Badge variant="secondary" className="gap-1 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-blue-200 text-[10px]">
+                                <IconCopy size={10} /> Global
+                            </Badge>
+                        ) : screen.visibility === 'company' ? (
+                            <Badge variant="secondary" className="gap-1 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-amber-200 text-[10px]">
+                                <Folders size={10} /> Company
+                            </Badge>
+                        ) : (
+                            <Badge variant="outline" className="gap-1 text-[10px]">
+                                <User size={10} /> Private
                             </Badge>
                         )}
                         {!hideStatus && (
@@ -364,6 +385,17 @@ export default function Screens() {
                         </Button>
                         <Button variant="ghost" size="sm" onClick={() => handleEdit(screen)}>
                             <IconEdit size={16} className="mr-1" /> Edit
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-primary hover:bg-primary/10"
+                            onClick={() => {
+                                setSharingScreen(screen)
+                                setIsShareDialogOpen(true)
+                            }}
+                        >
+                            <Share2 size={16} className="mr-1" /> Share
                         </Button>
                         <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => {
                             setConfirmDelete(screen.id)
@@ -489,33 +521,74 @@ export default function Screens() {
                         </TabsContent>
 
                         <TabsContent value="global" className="mt-6">
-                            {isLoadingGlobal ? (
+                            <div className="flex items-center justify-between mb-6">
+                                <div className="space-y-1">
+                                    <h2 className="text-xl font-bold tracking-tight">Content Library</h2>
+                                    <p className="text-sm text-muted-foreground">
+                                        Browse screens shared within your company or the global community.
+                                    </p>
+                                </div>
+                                <div className="flex items-center gap-1 bg-secondary/30 p-1 rounded-lg border border-primary/5">
+                                    <Button 
+                                        variant={libraryFilter === 'company' ? 'default' : 'ghost'} 
+                                        size="sm" 
+                                        className="h-8 text-xs font-bold"
+                                        onClick={() => setLibraryFilter('company')}
+                                    >
+                                        <Folders size={14} className="mr-1.5" /> My Company
+                                    </Button>
+                                    <Button 
+                                        variant={libraryFilter === 'public' ? 'default' : 'ghost'} 
+                                        size="sm" 
+                                        className="h-8 text-xs font-bold"
+                                        onClick={() => setLibraryFilter('public')}
+                                    >
+                                        <IconCopy size={14} className="mr-1.5" /> Global
+                                    </Button>
+                                </div>
+                            </div>
+
+                            {(libraryFilter === 'company' ? isLoadingCompany : isLoadingGlobal) ? (
                                 <div className="flex h-64 items-center justify-center">
                                     <Loader />
                                 </div>
-                            ) : globalScreens.length > 0 ? (
+                            ) : (libraryFilter === 'company' ? (companyScreensData?.results || []) : globalScreens).length > 0 ? (
                                 <>
                                     <div className="flex items-center gap-2 mb-4 px-2 py-2 bg-muted/30 rounded-lg border">
                                         <Checkbox
-                                            id="select-all-global-screens"
-                                            checked={isAllSelected(globalScreens)}
-                                            onCheckedChange={() => toggleSelectAll(globalScreens)}
+                                            id="select-all-library-screens"
+                                            checked={isAllSelected(libraryFilter === 'company' ? (companyScreensData?.results || []) : globalScreens)}
+                                            onCheckedChange={() => toggleSelectAll(libraryFilter === 'company' ? (companyScreensData?.results || []) : globalScreens)}
                                         />
-                                        <label htmlFor="select-all-global-screens" className="text-sm font-medium cursor-pointer flex-1">
-                                            Select All Global Screens ({globalScreens.length})
+                                        <label htmlFor="select-all-library-screens" className="text-sm font-medium cursor-pointer flex-1">
+                                            Select All Screens ({(libraryFilter === 'company' ? (companyScreensData?.results || []) : globalScreens).length})
                                         </label>
                                     </div>
                                     <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
-                                        {globalScreens.map((screen: any) => renderScreenCard(screen, checkIsOwner(screen), true, true))}
+                                        {(libraryFilter === 'company' ? (companyScreensData?.results || []) : globalScreens).map((screen: any) => 
+                                            renderScreenCard(screen, checkIsOwner(screen), true, true)
+                                        )}
                                     </div>
                                 </>
                             ) : (
                                 <div className='flex flex-col items-center justify-center rounded-lg border border-dashed p-20 text-center'>
-                                    <IconCopy size={48} className='mb-4 text-muted-foreground' />
-                                    <h2 className='text-xl font-semibold'>No shared screens available</h2>
-                                    <p className='text-muted-foreground'>
-                                        Shared screens from others will appear here.
-                                    </p>
+                                    {libraryFilter === 'company' ? (
+                                        <>
+                                            <Folders size={48} className='mb-4 text-muted-foreground opacity-50' />
+                                            <h2 className='text-xl font-semibold'>No company screens</h2>
+                                            <p className='text-muted-foreground max-w-xs mx-auto text-sm mt-2'>
+                                                Share your screens with "Company" visibility to see them here.
+                                            </p>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <IconCopy size={48} className='mb-4 text-muted-foreground opacity-50' />
+                                            <h2 className='text-xl font-semibold'>No global screens</h2>
+                                            <p className='text-muted-foreground max-w-xs mx-auto text-sm mt-2'>
+                                                Screens shared publicly by the community will appear here.
+                                            </p>
+                                        </>
+                                    )}
                                 </div>
                             )}
                         </TabsContent>
@@ -679,6 +752,26 @@ export default function Screens() {
                     </div>
                 )}
             </Layout.Body>
+            {sharingScreen && (
+                <ShareDialog
+                    isOpen={isShareDialogOpen}
+                    onClose={() => {
+                        setIsShareDialogOpen(false)
+                        setSharingScreen(null)
+                    }}
+                    initialVisibility={sharingScreen.visibility}
+                    title={`Share ${sharingScreen.name}`}
+                    onShare={async (newVisibility) => {
+                        try {
+                            await screenService.updateScreen(sharingScreen.id, { visibility: newVisibility })
+                            queryClient.invalidateQueries({ queryKey: ['screens'] })
+                            toast({ title: 'Visibility updated' })
+                        } catch (error) {
+                            toast({ title: 'Failed to update visibility', variant: 'destructive' })
+                        }
+                    }}
+                />
+            )}
         </Layout>
     )
 }

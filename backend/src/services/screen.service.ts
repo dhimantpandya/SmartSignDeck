@@ -1,296 +1,62 @@
-import mongoose from "mongoose";
-import httpStatus from "http-status";
-import logger from "../config/logger";
-import Screen from "../models/screen.model";
-import Template from "../models/template.model";
-import Playlist from "../models/playlist.model";
-import User from "../models/user.model";
-import ApiError from "../utils/ApiError";
-import crypto from "crypto";
-import { type CustomPaginateOptions } from "../models/plugins/paginate.plugin";
-import { type IUser } from "../models/user.model";
+import httpStatus from 'http-status';
+import Screen from '../models/screen.model';
+import ApiError from '../utils/ApiError';
+import mongoose from 'mongoose';
 
 /**
  * Create a screen
- * @param {Object} screenBody
- * @param {IUser} user
- * @returns {Promise<Screen>}
  */
-const createScreen = async (screenBody: any, user: IUser) => {
-  if (!user.companyId && user.role !== "super_admin") {
-    throw new ApiError(httpStatus.BAD_REQUEST, "User must belong to a company to create screens");
-  }
-
-  // Check if template exists and is accessible
-  const template = await Template.findById(screenBody.templateId);
-  if (!template) {
-    throw new ApiError(httpStatus.NOT_FOUND, "Template not found");
-  }
-
-  if (user.role !== "super_admin" && !template.isPublic && template.companyId?.toString() !== user.companyId?.toString()) {
-    throw new ApiError(httpStatus.FORBIDDEN, "Specified template is not accessible");
-  }
-
-  const payload = {
+const createScreen = async (screenBody: any, user: any) => {
+  const finalBody = {
     ...screenBody,
-    companyId: user.companyId,
-    createdBy: user._id,
-    secretKey: crypto.randomBytes(16).toString("hex"),
+    createdBy: user._id || user.id,
+    companyId: user.companyId
   };
-
-  return await Screen.create(payload);
+  return Screen.create(finalBody);
 };
 
 /**
  * Query for screens
- * @param {Object} filter - Mongo filter
- * @param {Object} options - Query options
- * @param {IUser} user
- * @returns {Promise<QueryResult>}
  */
-const queryScreens = async (filter: any, options: CustomPaginateOptions, user: IUser) => {
-  // 1. Clean up filter
-  const finalFilter: any = { ...filter };
-
-  // Handle soft-delete filtering
-  if (finalFilter.trashed === true) {
-    finalFilter.deletedAt = { $ne: null };
-  } else if (finalFilter.trashed === false || finalFilter.deletedAt === undefined) {
-    finalFilter.deletedAt = null;
+const queryScreens = async (filter: any, options: any, user?: any) => {
+  const finalFilter = { ...filter };
+  if (user && !user.roles?.includes('super_admin')) {
+    finalFilter.companyId = user.companyId;
   }
-  delete finalFilter.trashed;
-
-  Object.keys(finalFilter).forEach(key => {
-    if (finalFilter[key] === undefined || finalFilter[key] === null || finalFilter[key] === '' || finalFilter[key] === 'undefined' || finalFilter[key] === 'null') {
-      if (key !== 'deletedAt') delete finalFilter[key];
-    }
-  });
-
-  // 2. Apply security/tenant filtering
-  if (user.role !== "super_admin") {
-    // 🔒 Robust ID Check
-    // 🔒 Strict Privacy: Only show own content
-    const userIdStr = (user._id || (user as any).id || "").toString();
-    const companyIdStr = (user.companyId || "").toString();
-    const requestedCreatedBy = (filter.createdBy || "").toString();
-
-    const isQueryingOwn = requestedCreatedBy && userIdStr && requestedCreatedBy === userIdStr;
-    const isRecycleBinQuery = finalFilter.deletedAt !== null;
-    const isQueryingPublic = finalFilter.isPublic === true;
-
-    if (isRecycleBinQuery) {
-      // 🗑️ Recycle Bin: Strictly same user ONLY (No admin override)
-      finalFilter.createdBy = new mongoose.Types.ObjectId(userIdStr);
-    } else if (isQueryingPublic) {
-      // 🌍 Global Library: Choice between "My Company" and "Global"
-      const visibilityFilter = (filter as any).visibility;
-
-      if (visibilityFilter === 'company') {
-        finalFilter.$or = [
-          { visibility: 'company', companyId: new mongoose.Types.ObjectId(companyIdStr) },
-          { visibility: 'public', companyId: new mongoose.Types.ObjectId(companyIdStr) },
-          { isPublic: true, companyId: new mongoose.Types.ObjectId(companyIdStr) }
-        ];
-      } else {
-        finalFilter.$or = [
-          { visibility: 'public' },
-          { isPublic: true }
-        ];
-
-        if (user.role === 'advertiser') {
-          if (companyIdStr) {
-            finalFilter.companyId = new mongoose.Types.ObjectId(companyIdStr);
-          } else {
-            finalFilter.companyId = new mongoose.Types.ObjectId();
-          }
-        }
-      }
-      delete finalFilter.visibility;
-    } else {
-      // 🔒 Default Isolation: Allow own content or public content (restricted for advertisers)
-      const securityConditions: any[] = [
-        { createdBy: new mongoose.Types.ObjectId(userIdStr) }
-      ];
-
-      if (user.role === 'advertiser') {
-        if (companyIdStr) {
-          securityConditions.push({ 
-            $or: [{ visibility: 'public' }, { isPublic: true }], 
-            companyId: new mongoose.Types.ObjectId(companyIdStr) 
-          });
-        }
-      } else {
-        securityConditions.push({ $or: [{ visibility: 'public' }, { isPublic: true }] });
-      }
-
-      // 🤝 Company Shared Screens
-      if (companyIdStr) {
-        securityConditions.push({ visibility: 'company', companyId: new mongoose.Types.ObjectId(companyIdStr) });
-      }
-
-      finalFilter.$or = securityConditions;
-    }
-  }
-
-  const screens = await Screen.paginate(finalFilter, {
-    ...options,
-    populate: [
-      { path: "templateId" },
-      { path: "createdBy", select: "id _id first_name last_name email avatar" }
-    ],
-  });
-
-  // 🕒 DYNAMIC STATUS CALCULATION
-  // A screen is 'online' ONLY if it has pinged within the last 1 minute
-  const ONE_MINUTE_AGO = new Date(Date.now() - 1 * 60 * 1000);
-
-  if (screens.results) {
-    screens.results = screens.results.map((screen: any) => {
-      // Use toJSON() to ensure plugin transforms (like id) are applied
-      const screenObj = screen.toJSON ? screen.toJSON() : screen;
-      const lastPing = screenObj.lastPing ? new Date(screenObj.lastPing) : null;
-
-      if (lastPing && lastPing > ONE_MINUTE_AGO) {
-        screenObj.status = "online";
-      } else {
-        screenObj.status = "offline";
-      }
-
-      return screenObj;
-    });
-  }
-
+  const screens = await (Screen as any).paginate(finalFilter, options);
   return screens;
 };
 
 /**
  * Get screen by id
- * @param {ObjectId} id
- * @param {IUser} user
- * @param {string} key - Optional secret key for playback
- * @returns {Promise<Screen>}
  */
-const getScreenById = async (id: string, user?: IUser, key?: string) => {
-  const screen = await Screen.findById(id).populate("templateId") as any;
-
-  if (!screen) return null;
-
-  // 🛡️ PERMISSION CHECK
-  // Allow if: Super Admin OR Owner OR Public OR Secret Key matches
-  console.log('[DEBUG_AUTH] ID:', id, 'Key provided:', key, 'Stored Key:', screen.secretKey);
-  let isAuthorized = false;
-
-  if (user) {
-    if (user.role === "super_admin") isAuthorized = true;
-    else if (screen.companyId?.toString() === user.companyId?.toString()) isAuthorized = true;
+const getScreenById = async (id: string, user?: any, secretKey?: string) => {
+  const filter: any = { _id: id };
+  if (secretKey) {
+    filter.secretKey = secretKey;
   }
-
-  if (screen.isPublic) isAuthorized = true;
-  if (key && screen.secretKey === key) isAuthorized = true;
-
-  if (!isAuthorized) {
-    throw new ApiError(httpStatus.FORBIDDEN, `Forbidden: Access denied. Expected: '${screen.secretKey}', Received: '${key}'`);
+  const screen = await Screen.findOne(filter).populate('templateId');
+  
+  if (screen && user && !user.roles?.includes('super_admin') && screen.companyId?.toString() !== user.companyId?.toString()) {
+     // If not public and not same company, return null or throw?
+     // For now, if we have a secretKey, we allow it (player mode)
+     if (!secretKey && screen.visibility !== 'public') return null;
   }
-
-  if (screen) {
-    // 🕒 DYNAMIC STATUS CALCULATION
-    const ONE_MINUTE_AGO = new Date(Date.now() - 1 * 60 * 1000);
-    const screenObj = screen.toObject ? screen.toObject() : screen;
-    const lastPing = screenObj.lastPing ? new Date(screenObj.lastPing) : null;
-
-    if (lastPing && lastPing > ONE_MINUTE_AGO) {
-      screenObj.status = "online";
-    } else {
-      screenObj.status = "offline";
-    }
-
-    // Hydrate Shared Playlists
-    const playlistIds = new Set<string>();
-
-    // 1. Collect IDs from defaultContent
-    if (screen.defaultContent) {
-      Object.values(screen.defaultContent).forEach((content: any) => {
-        if (content.sourceType === 'playlist' && content.playlistId) {
-          playlistIds.add(content.playlistId.toString());
-        }
-      });
-    }
-
-    // 2. Collect IDs from schedules
-    if (screen.schedules) {
-      screen.schedules.forEach((schedule: any) => {
-        if (schedule.content) {
-          Object.values(schedule.content).forEach((content: any) => {
-            if (content.sourceType === 'playlist' && content.playlistId) {
-              playlistIds.add(content.playlistId.toString());
-            }
-          });
-        }
-      });
-    }
-
-    if (playlistIds.size > 0) {
-      const playlists = await Playlist.find({
-        _id: { $in: Array.from(playlistIds) },
-        companyId: screen.companyId // 🛡️ Strict Isolation: Only allow playlists from the SAME company
-      });
-      const playlistMap = new Map(playlists.map(p => [p.id, p]));
-
-      // Helper to hydration
-      const hydrateContent = (contentObj: any) => {
-        Object.keys(contentObj).forEach(key => {
-          const content = contentObj[key];
-          if (content.sourceType === 'playlist' && content.playlistId) {
-            const playlist = playlistMap.get(content.playlistId.toString());
-            if (playlist) {
-              // Inject items into the playlist array for the player/frontend to use directly
-              content.playlist = playlist.items;
-            }
-          }
-        });
-      };
-
-      const screenObj = screen.toObject();
-      if (screenObj.defaultContent) hydrateContent(screenObj.defaultContent);
-      if (screenObj.schedules) {
-        screenObj.schedules.forEach((s: any) => {
-          if (s.content) hydrateContent(s.content);
-        });
-      }
-      return screenObj;
-    }
-  }
-
+  
   return screen;
 };
 
 /**
  * Update screen by id
- * @param {ObjectId} screenId
- * @param {Object} updateBody
- * @param {IUser} user
- * @returns {Promise<Screen>}
  */
-const updateScreenById = async (screenId: string, updateBody: any, user: IUser) => {
+const updateScreenById = async (screenId: string, updateBody: any, user?: any) => {
   const screen = await Screen.findById(screenId);
   if (!screen) {
-    throw new ApiError(httpStatus.NOT_FOUND, "Screen not found");
+    throw new ApiError(httpStatus.NOT_FOUND, 'Screen not found');
   }
-
-  // Permission check
-  if (user.role !== "super_admin" && screen.companyId?.toString() !== user.companyId?.toString()) {
-    throw new ApiError(httpStatus.FORBIDDEN, "You do not have permission to update this screen");
-  }
-
-  if (updateBody.templateId) {
-    const template = await Template.findById(updateBody.templateId);
-    if (!template) {
-      throw new ApiError(httpStatus.NOT_FOUND, "Template not found");
-    }
-    // Check if new template is accessible
-    if (user.role !== "super_admin" && !template.isPublic && template.companyId?.toString() !== user.companyId?.toString()) {
-      throw new ApiError(httpStatus.FORBIDDEN, "Specified template is not accessible");
-    }
+  
+  if (user && !user.roles?.includes('super_admin') && screen.companyId?.toString() !== user.companyId?.toString()) {
+    throw new ApiError(httpStatus.FORBIDDEN, 'Forbidden');
   }
 
   Object.assign(screen, updateBody);
@@ -299,58 +65,16 @@ const updateScreenById = async (screenId: string, updateBody: any, user: IUser) 
 };
 
 /**
- * Delete multiple screens by ids
- * @param {string[]} ids
- * @param {IUser} user
- * @returns {Promise<Object>}
- */
-const deleteScreensByIds = async (ids: string[], user: IUser) => {
-  const validIdsToDelete: string[] = [];
-  const errors: string[] = [];
-
-  for (const screenId of ids) {
-    const screen = await Screen.findById(screenId);
-    if (!screen) continue;
-
-    // Permission check
-    if (user.role !== "super_admin" && screen.companyId?.toString() !== user.companyId?.toString()) {
-      errors.push(`Screen ${screen.name}: Permission denied`);
-      continue;
-    }
-
-    validIdsToDelete.push(screenId);
-  }
-
-  if (validIdsToDelete.length === 0 && errors.length > 0) {
-    throw new ApiError(httpStatus.BAD_REQUEST, `Cannot delete selected screens: ${errors.join(", ")}`);
-  }
-
-  const result = await Screen.updateMany(
-    { _id: { $in: validIdsToDelete } },
-    { $set: { deletedAt: new Date() } }
-  );
-
-  return {
-    deletedCount: result.modifiedCount,
-    errors: errors.length > 0 ? errors : undefined
-  };
-};
-
-/**
  * Delete screen by id
- * @param {ObjectId} screenId
- * @param {IUser} user
- * @returns {Promise<Screen>}
  */
-const deleteScreenById = async (screenId: string, user: IUser) => {
+const deleteScreenById = async (screenId: string, user?: any) => {
   const screen = await Screen.findById(screenId);
   if (!screen) {
-    throw new ApiError(httpStatus.NOT_FOUND, "Screen not found");
+    throw new ApiError(httpStatus.NOT_FOUND, 'Screen not found');
   }
 
-  // Permission check
-  if (user.role !== "super_admin" && screen.companyId?.toString() !== user.companyId?.toString()) {
-    throw new ApiError(httpStatus.FORBIDDEN, "You do not have permission to delete this screen");
+  if (user && !user.roles?.includes('super_admin') && screen.companyId?.toString() !== user.companyId?.toString()) {
+    throw new ApiError(httpStatus.FORBIDDEN, 'Forbidden');
   }
 
   screen.deletedAt = new Date();
@@ -360,41 +84,33 @@ const deleteScreenById = async (screenId: string, user: IUser) => {
 
 /**
  * Restore screen by id
- * @param {ObjectId} screenId
- * @param {IUser} user
- * @returns {Promise<Screen>}
  */
-const restoreScreenById = async (screenId: string, user: IUser) => {
-  const screen = await Screen.findById(screenId);
+const restoreScreenById = async (screenId: string, user?: any) => {
+  const screen = await Screen.findOne({ _id: screenId });
   if (!screen) {
-    throw new ApiError(httpStatus.NOT_FOUND, "Screen not found");
+    throw new ApiError(httpStatus.NOT_FOUND, 'Screen not found');
   }
 
-  // Permission check
-  if (user.role !== "super_admin" && screen.companyId?.toString() !== user.companyId?.toString()) {
-    throw new ApiError(httpStatus.FORBIDDEN, "You do not have permission to restore this screen");
+  if (user && !user.roles?.includes('super_admin') && screen.companyId?.toString() !== user.companyId?.toString()) {
+    throw new ApiError(httpStatus.FORBIDDEN, 'Forbidden');
   }
 
-  screen.deletedAt = null;
+  screen.deletedAt = undefined as any;
   await screen.save();
   return screen;
 };
 
 /**
- * Permanently delete screen by id
- * @param {ObjectId} screenId
- * @param {IUser} user
- * @returns {Promise<Screen>}
+ * Permanent delete screen by id
  */
-const permanentDeleteScreenById = async (screenId: string, user: IUser) => {
-  const screen = await Screen.findById(screenId);
+const permanentDeleteScreenById = async (screenId: string, user?: any) => {
+  const screen = await Screen.findOne({ _id: screenId });
   if (!screen) {
-    throw new ApiError(httpStatus.NOT_FOUND, "Screen not found");
+    throw new ApiError(httpStatus.NOT_FOUND, 'Screen not found');
   }
 
-  // Permission check
-  if (user.role !== "super_admin" && screen.companyId?.toString() !== user.companyId?.toString()) {
-    throw new ApiError(httpStatus.FORBIDDEN, "You do not have permission to permanently delete this screen");
+  if (user && !user.roles?.includes('super_admin') && screen.companyId?.toString() !== user.companyId?.toString()) {
+    throw new ApiError(httpStatus.FORBIDDEN, 'Forbidden');
   }
 
   await screen.deleteOne();
@@ -402,65 +118,60 @@ const permanentDeleteScreenById = async (screenId: string, user: IUser) => {
 };
 
 /**
- * Get screens by template id
- * @param {ObjectId} templateId
- * @returns {Promise<Screen[]>}
+ * Delete screens by ids (bulk)
  */
-const getScreensByTemplateId = async (templateId: string) => {
-  return await Screen.find({ templateId });
+const deleteScreensByIds = async (ids: string[], user: any) => {
+  const filter: any = { _id: { $in: ids } };
+  if (!user.roles?.includes('super_admin')) {
+    filter.companyId = user.companyId;
+  }
+  return Screen.updateMany(filter, { deletedAt: new Date() });
 };
 
-import templateService from "./template.service";
+/**
+ * Get screens by template id
+ */
+const getScreensByTemplateId = async (templateId: string) => {
+    return Screen.find({ templateId });
+};
 
 /**
- * Clone a screen for the current user
- * @param {ObjectId} screenId
- * @param {IUser} user
- * @returns {Promise<Screen>}
+ * Clone a screen
  */
-const cloneScreen = async (screenId: string, user: IUser) => {
-  // 1. Ensure the cloning user has a company workspace ready
-  await templateService.ensureUserCompany(user);
-
-  const originalScreen = await getScreenById(screenId, user);
-  if (!originalScreen) {
-    throw new ApiError(httpStatus.NOT_FOUND, "Original screen not found");
+const cloneScreen = async (screenId: string, user: any) => {
+  const screen = await Screen.findById(screenId);
+  if (!screen) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Screen not found');
   }
 
-  let targetTemplateId = originalScreen.templateId?._id || originalScreen.templateId;
-  const originalTemplate = originalScreen.templateId as any;
-
-  // Check if we need to clone the template too
-  // If the template belongs to another company, clone it so the user can edit it
-  const originalTemplateIdStr = (originalTemplate._id || originalTemplate).toString();
-  if (originalTemplate.companyId?.toString() !== user.companyId?.toString()) {
-    const clonedTemplate = await templateService.cloneTemplate(originalTemplateIdStr, user);
-    targetTemplateId = clonedTemplate._id;
-  }
-
-  // Strip subdocument _id fields from schedules to avoid "Duplicate ID" or BSON errors during create
-  const sanitizedSchedules = originalScreen.schedules?.map((s: any) => {
-    const schedule = s.toObject ? s.toObject() : { ...s };
-    delete schedule._id;
-    if (schedule.id) delete schedule.id;
-    return schedule;
+  const clonedScreen = await Screen.create({
+    name: `${screen.name} (Copy)`,
+    location: (screen as any).location,
+    templateId: (screen as any).templateId,
+    defaultContent: (screen as any).defaultContent,
+    schedules: (screen as any).schedules,
+    createdBy: user._id || user.id,
+    companyId: user.companyId,
+    visibility: (screen as any).visibility || 'private',
+    previewUrl: (screen as any).previewUrl,
+    previewType: (screen as any).previewType || 'image',
+    status: 'offline' as const,
+    lastPing: new Date()
   });
 
-  const payload = {
-    name: `Copy of ${originalScreen.name}`,
-    location: originalScreen.location,
-    templateId: targetTemplateId,
-    defaultContent: originalScreen.defaultContent,
-    schedules: sanitizedSchedules,
-    companyId: user.companyId,
-    createdBy: user._id || (user as any).id,
-    isPublic: false,
-    secretKey: crypto.randomBytes(16).toString("hex"), // Generate new unique key
-    lastPing: null, // Ensure it starts as offline
-    status: "offline",
-  };
+  return clonedScreen;
+};
 
-  return await Screen.create(payload);
+/**
+ * Update screen ping
+ */
+const updateScreenPing = async (secretKey: string) => {
+  const screen = await Screen.findOne({ secretKey });
+  if (!screen) return null;
+  screen.lastPing = new Date();
+  screen.status = 'online';
+  await screen.save();
+  return screen;
 };
 
 export default {
@@ -469,9 +180,10 @@ export default {
   getScreenById,
   updateScreenById,
   deleteScreenById,
-  deleteScreensByIds,
+  cloneScreen,
+  updateScreenPing,
   restoreScreenById,
   permanentDeleteScreenById,
-  getScreensByTemplateId,
-  cloneScreen,
+  deleteScreensByIds,
+  getScreensByTemplateId
 };

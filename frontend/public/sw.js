@@ -45,12 +45,17 @@ self.addEventListener('fetch', (event) => {
         event.respondWith(
             caches.open(MEDIA_CACHE_NAME).then((cache) => {
                 return cache.match(request).then((response) => {
-                    return response || fetch(request).then((networkResponse) => {
-                        if (networkResponse.status !== 206) {
-                            cache.put(request, networkResponse.clone());
-                        }
-                        return networkResponse;
-                    });
+                    return response || fetch(request)
+                        .then((networkResponse) => {
+                            if (networkResponse.status !== 206) {
+                                cache.put(request, networkResponse.clone());
+                            }
+                            return networkResponse;
+                        })
+                        .catch((err) => {
+                            console.warn('[SW] Media fetch failed:', err);
+                            return new Response('Media unavailable', { status: 404 });
+                        });
                 });
             })
         );
@@ -73,7 +78,7 @@ self.addEventListener('fetch', (event) => {
             })
             .catch(() => {
                 return caches.match(request).then(response => {
-                    return response || new Response('Network error occurred', {
+                    return response || new Response('Network error occurred. If you are in development, ensure your Vite dev server is running on port 5173.', {
                         status: 503,
                         statusText: 'Service Unavailable',
                         headers: new Headers({ 'Content-Type': 'text/plain' })

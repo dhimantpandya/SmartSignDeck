@@ -14,7 +14,7 @@ import { toast } from '@/components/ui/use-toast'
 import Loader from '@/components/loader'
 import { useAuth } from '@/hooks/use-auth'
 import { Badge } from '@/components/ui/badge'
-import { Globe, Lock, User, Eye, FolderPlus, Folder, Users } from 'lucide-react'
+import { Globe, Lock, User, Eye, FolderPlus, Folder, Users, Share2 } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useSearchParams } from 'react-router-dom'
 import { PreviewModal } from '@/components/preview-modal'
@@ -27,6 +27,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Checkbox } from '@/components/ui/checkbox'
 import { CollaborateDialog } from './components/collaborate-dialog'
 import { useNotifications } from '@/components/nav-notification-provider'
+import { ShareDialog } from '@/components/custom/share-dialog'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 
 
@@ -47,6 +48,9 @@ export default function Templates() {
     const [confirmBulkDelete, setConfirmBulkDelete] = useState(false)
     const [isCollaborateOpen, setIsCollaborateOpen] = useState(false)
     const [selectedTemplateForCollab, setSelectedTemplateForCollab] = useState<any>(null)
+    const [libraryFilter, setLibraryFilter] = useState<'company' | 'public'>('company')
+    const [isShareDialogOpen, setIsShareDialogOpen] = useState(false)
+    const [sharingTemplate, setSharingTemplate] = useState<any>(null)
     const queryClient = useQueryClient()
     const { socket } = useNotifications()
 
@@ -105,11 +109,17 @@ export default function Templates() {
         }
     }, [searchParams, setSearchParams])
 
-    // Query for user's own templates (All personal work, public or private)
     const { data: myTemplatesData, isLoading: isLoadingMy } = useQuery({
         queryKey: ['templates', 'my', user?.id],
         queryFn: () => templateService.getTemplates({ createdBy: user?.id, sortBy: 'created_at:desc' }),
         enabled: !!user?.id,
+    })
+
+    // Query for Company templates (visible to everyone in the company)
+    const { data: companyTemplatesData, isLoading: isLoadingCompany } = useQuery({
+        queryKey: ['templates', 'company', user?.companyId],
+        queryFn: () => templateService.getTemplates({ visibility: 'company', sortBy: 'created_at:desc' }),
+        enabled: !!user?.companyId,
     })
 
     // Query for template groups
@@ -122,7 +132,7 @@ export default function Templates() {
     // Query for global public templates
     const { data: globalTemplatesData, isLoading: isLoadingGlobal } = useQuery({
         queryKey: ['templates', 'global'],
-        queryFn: () => templateService.getTemplates({ isPublic: true, sortBy: 'created_at:desc' }),
+        queryFn: () => templateService.getTemplates({ visibility: 'public', sortBy: 'created_at:desc' }),
         enabled: true,
     })
 
@@ -441,7 +451,19 @@ export default function Templates() {
                             />
                             <CardTitle className="text-lg">{template.name}</CardTitle>
                         </div>
-                        {template.isPublic ? <Badge variant="secondary" className="gap-1"><Globe size={10} /> Global</Badge> : <Badge variant="outline" className="gap-1"><Lock size={10} /> Private</Badge>}
+                        {template.visibility === 'public' ? (
+                            <Badge variant="secondary" className="gap-1 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-blue-200">
+                                <Globe size={10} /> Global
+                            </Badge>
+                        ) : template.visibility === 'company' ? (
+                            <Badge variant="secondary" className="gap-1 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-amber-200">
+                                <Users size={10} /> Company
+                            </Badge>
+                        ) : (
+                            <Badge variant="outline" className="gap-1">
+                                <Lock size={10} /> Private
+                            </Badge>
+                        )}
                     </div>
                 </CardHeader>
                 <CardContent className="pt-4 flex-grow">
@@ -510,6 +532,28 @@ export default function Templates() {
                                     </TooltipTrigger>
                                     <TooltipContent>
                                         <p>Add to Collection</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                        )}
+                        {isOwner && !inGroupView && (
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-8 w-8 p-0 text-primary"
+                                            onClick={() => {
+                                                setSharingTemplate(template)
+                                                setIsShareDialogOpen(true)
+                                            }}
+                                        >
+                                            <Share2 size={16} />
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>Share & Visibility</p>
                                     </TooltipContent>
                                 </Tooltip>
                             </TooltipProvider>
@@ -905,33 +949,74 @@ export default function Templates() {
 
 
                         <TabsContent value="global" className="mt-6">
-                            {isLoadingGlobal ? (
+                            <div className="flex items-center justify-between mb-6">
+                                <div className="space-y-1">
+                                    <h2 className="text-xl font-bold tracking-tight">Content Library</h2>
+                                    <p className="text-sm text-muted-foreground">
+                                        Browse templates shared within your company or the global community.
+                                    </p>
+                                </div>
+                                <div className="flex items-center gap-1 bg-secondary/30 p-1 rounded-lg border border-primary/5">
+                                    <Button 
+                                        variant={libraryFilter === 'company' ? 'default' : 'ghost'} 
+                                        size="sm" 
+                                        className="h-8 text-xs font-bold"
+                                        onClick={() => setLibraryFilter('company')}
+                                    >
+                                        <Users size={14} className="mr-1.5" /> My Company
+                                    </Button>
+                                    <Button 
+                                        variant={libraryFilter === 'public' ? 'default' : 'ghost'} 
+                                        size="sm" 
+                                        className="h-8 text-xs font-bold"
+                                        onClick={() => setLibraryFilter('public')}
+                                    >
+                                        <Globe size={14} className="mr-1.5" /> Global
+                                    </Button>
+                                </div>
+                            </div>
+
+                            {(libraryFilter === 'company' ? isLoadingCompany : isLoadingGlobal) ? (
                                 <div className="flex h-64 items-center justify-center">
                                     <Loader />
                                 </div>
-                            ) : globalTemplates.length > 0 ? (
+                            ) : (libraryFilter === 'company' ? (companyTemplatesData?.results || []) : globalTemplates).length > 0 ? (
                                 <>
                                     <div className="flex items-center gap-2 mb-4 px-2 py-2 bg-muted/30 rounded-lg border">
                                         <Checkbox
-                                            id="select-all-global"
-                                            checked={isAllSelected(globalTemplates)}
-                                            onCheckedChange={() => handleSelectAll(globalTemplates)}
+                                            id="select-all-library"
+                                            checked={isAllSelected(libraryFilter === 'company' ? (companyTemplatesData?.results || []) : globalTemplates)}
+                                            onCheckedChange={() => handleSelectAll(libraryFilter === 'company' ? (companyTemplatesData?.results || []) : globalTemplates)}
                                         />
-                                        <label htmlFor="select-all-global" className="text-sm font-medium cursor-pointer flex-1">
-                                            Select All Templates ({globalTemplates.length})
+                                        <label htmlFor="select-all-library" className="text-sm font-medium cursor-pointer flex-1">
+                                            Select All Templates ({(libraryFilter === 'company' ? (companyTemplatesData?.results || []) : globalTemplates).length})
                                         </label>
                                     </div>
                                     <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
-                                        {globalTemplates.map((template: any) => renderTemplateCard(template, checkIsOwner(template), false, true))}
+                                        {(libraryFilter === 'company' ? (companyTemplatesData?.results || []) : globalTemplates).map((template: any) => 
+                                            renderTemplateCard(template, checkIsOwner(template), false, libraryFilter === 'public')
+                                        )}
                                     </div>
                                 </>
                             ) : (
                                 <div className='flex flex-col items-center justify-center rounded-lg border border-dashed p-20 text-center'>
-                                    <Globe size={48} className='mb-4 text-muted-foreground' />
-                                    <h2 className='text-xl font-semibold'>No global templates available</h2>
-                                    <p className='text-muted-foreground'>
-                                        Public templates from other users will appear here.
-                                    </p>
+                                    {libraryFilter === 'company' ? (
+                                        <>
+                                            <Users size={48} className='mb-4 text-muted-foreground opacity-50' />
+                                            <h2 className='text-xl font-semibold'>No company templates</h2>
+                                            <p className='text-muted-foreground max-w-xs mx-auto text-sm mt-2'>
+                                                Share your designs with "Company" visibility to see them here and collaborate with your team.
+                                            </p>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Globe size={48} className='mb-4 text-muted-foreground opacity-50' />
+                                            <h2 className='text-xl font-semibold'>No global templates</h2>
+                                            <p className='text-muted-foreground max-w-xs mx-auto text-sm mt-2'>
+                                                Templates shared publicly by the community will appear here.
+                                            </p>
+                                        </>
+                                    )}
                                 </div>
                             )}
                         </TabsContent>
@@ -1039,6 +1124,26 @@ export default function Templates() {
                     />
                 )}
             </Layout.Body>
+            {sharingTemplate && (
+                <ShareDialog
+                    isOpen={isShareDialogOpen}
+                    onClose={() => {
+                        setIsShareDialogOpen(false)
+                        setSharingTemplate(null)
+                    }}
+                    initialVisibility={sharingTemplate.visibility}
+                    title={`Share ${sharingTemplate.name}`}
+                    onShare={async (newVisibility) => {
+                        try {
+                            await templateService.updateTemplate(sharingTemplate.id, { visibility: newVisibility })
+                            queryClient.invalidateQueries({ queryKey: ['templates'] })
+                            toast({ title: 'Visibility updated' })
+                        } catch (error) {
+                            toast({ title: 'Failed to update visibility', variant: 'destructive' })
+                        }
+                    }}
+                />
+            )}
         </Layout>
     )
 }

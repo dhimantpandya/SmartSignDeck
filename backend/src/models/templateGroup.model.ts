@@ -8,9 +8,9 @@ import {
 export interface ITemplateGroup extends Document {
     name: string;
     description?: string;
-    companyId: mongoose.Schema.Types.ObjectId;
-    createdBy: mongoose.Schema.Types.ObjectId;
-    templates: mongoose.Schema.Types.ObjectId[];
+    companyId: mongoose.Types.ObjectId;
+    createdBy: mongoose.Types.ObjectId;
+    templates: mongoose.Types.ObjectId[];
     created_at: Date;
     updated_at: Date;
     deletedAt?: Date | null;

@@ -7,8 +7,8 @@ export interface SignageStats {
     offlineScreens: number
 }
 
-const getStats = async () => {
-    return apiService.get<SignageStats>('/v1/signage/stats')
+const getStats = async (scope: 'personal' | 'company' = 'personal') => {
+    return apiService.get<SignageStats>(`/v1/signage/stats?scope=${scope}`)
 }
 
 const getActiveContent = async () => {

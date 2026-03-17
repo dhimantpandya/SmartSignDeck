@@ -1,312 +1,94 @@
-import mongoose from "mongoose";
-import httpStatus from "http-status";
-import logger from "../config/logger";
-import { Template, Company, User, TemplateGroup } from "../models";
-import ApiError from "../utils/ApiError";
-import { type CustomPaginateOptions } from "../models/plugins/paginate.plugin";
-import { type IUser } from "../models/user.model";
+import httpStatus from 'http-status';
+import Template from '../models/template.model';
+import ApiError from '../utils/ApiError';
+import mongoose from 'mongoose';
+import templateGroupService from './templateGroup.service';
+
+/**
+ * Mapping for inspiration preview URLs
+ */
+const INSPIRATION_PREVIEW_URLS: Record<string, string> = {
+  'Corporate Excellence': 'https://res.cloudinary.com/djp7v6p9v/image/upload/v1741517467/templates/corporate-preview.jpg',
+  'Retail Dynamic': 'https://res.cloudinary.com/djp7v6p9v/image/upload/v1741517467/templates/retail-preview.jpg',
+  'Hospitality Welcome': 'https://res.cloudinary.com/djp7v6p9v/image/upload/v1741517467/templates/hospitality-preview.jpg',
+  'Healthcare Info': 'https://res.cloudinary.com/djp7v6p9v/image/upload/v1741517467/templates/healthcare-preview.jpg',
+  'EduConnect Hub': 'https://res.cloudinary.com/djp7v6p9v/image/upload/v1741517467/templates/education-preview.jpg',
+  'Modern Menu Board': 'https://res.cloudinary.com/djp7v6p9v/image/upload/v1741517467/templates/menu-preview.jpg',
+  'Fitness Motivation': 'https://res.cloudinary.com/djp7v6p9v/image/upload/v1741517467/templates/fitness-preview.jpg',
+  'Financial Ticker': 'https://res.cloudinary.com/djp7v6p9v/image/upload/v1741517467/templates/finance-preview.jpg'
+};
 
 /**
  * Create a template
- * @param {Object} templateBody
- * @param {IUser} user
- * @returns {Promise<Template>}
  */
-
-const ensureUserCompany = async (user: IUser) => {
-  if (user.companyId || user.role === "super_admin") return;
-
-  const companyName = user.companyName || `${user.first_name}'s Workspace`;
-  const normalizedName = companyName.trim().toLowerCase();
-
-  let company = await Company.findOne({ name: normalizedName });
-
-  if (!company) {
-    company = await Company.create({
-      name: normalizedName,
-      ownerId: user._id || (user as any).id,
-    });
-  }
-
-  await User.findByIdAndUpdate(user._id || (user as any).id, {
-    companyId: company._id,
-    companyName: company.name,
-    role: "admin",
-    onboardingCompleted: true,
-  });
-
-  user.companyId = company._id as any;
-  (user as any).companyName = company.name;
-};
-
-const createTemplate = async (templateBody: any, user: IUser) => {
-  await ensureUserCompany(user);
-
-  if (!user.companyId && user.role !== "super_admin") {
-    throw new ApiError(httpStatus.BAD_REQUEST, "User must belong to a company to create templates");
-  }
-
-  const payload = {
+const createTemplate = async (templateBody: any, user: any) => {
+  const finalBody = {
     ...templateBody,
-    companyId: user.companyId,
-    createdBy: user._id,
-    lastModifiedBy: user._id,
+    createdBy: user._id || user.id,
+    companyId: user.companyId
   };
-
-  return await Template.create(payload);
+  return Template.create(finalBody);
 };
 
 /**
  * Query for templates
- * @param {Object} filter - Mongo filter
- * @param {Object} options - Query options
- * @param {IUser} user
- * @returns {Promise<QueryResult>}
  */
-const queryTemplates = async (filter: any, options: CustomPaginateOptions, user: IUser) => {
-  // 1. Clean up filter and ensure proper types
-  const finalFilter: any = { ...filter };
-
-  // Handle soft-delete filtering
-  if (finalFilter.trashed === true) {
-    finalFilter.deletedAt = { $ne: null };
-  } else if (finalFilter.trashed === false || finalFilter.deletedAt === undefined) {
-    finalFilter.deletedAt = null;
+const queryTemplates = async (filter: any, options: any, user?: any) => {
+  const finalFilter = { ...filter };
+  if (user && !user.roles?.includes('super_admin')) {
+    finalFilter.$or = [
+      { companyId: user.companyId },
+      { visibility: 'public' },
+      { visibility: 'global' }
+    ];
   }
-  delete finalFilter.trashed;
-
-  // Remove empty/undefined/string-literal-undefined filters
-  Object.keys(finalFilter).forEach(key => {
-    if (finalFilter[key] === undefined || finalFilter[key] === null || finalFilter[key] === '' || finalFilter[key] === 'undefined' || finalFilter[key] === 'null') {
-      if (key !== 'deletedAt') delete finalFilter[key];
-    }
-  });
-
-  // 2. Apply security/tenant filtering
-    if (user.role !== "super_admin") {
-      // 🔒 Robust ID Check
-      const userIdStr = (user._id || (user as any).id || "").toString();
-      const companyIdStr = (user.companyId || "").toString();
-      const userId = mongoose.Types.ObjectId.isValid(userIdStr) ? new mongoose.Types.ObjectId(userIdStr) : null;
-
-      const requestedCreatedBy = (filter.createdBy || "").toString();
-      const requestedCollaborators = (filter.collaborators || "").toString();
-
-      const isQueryingOwn = requestedCreatedBy && userIdStr && requestedCreatedBy === userIdStr;
-      const isQueryingShared = requestedCollaborators && userIdStr && requestedCollaborators === userIdStr;
-      const isRecycleBinQuery = finalFilter.deletedAt !== null;
-      const isQueryingPublic = finalFilter.isPublic === true;
-
-      if (isRecycleBinQuery) {
-        // 🗑️ Recycle Bin Isolation: Strictly same user ONLY
-        finalFilter.createdBy = userId;
-        delete finalFilter.$or; // No shared/public access in trash
-      } else if (isQueryingPublic) {
-        // 🌍 Global Library: Choice between "My Company" and "Global"
-        // The frontend will pass { visibility: 'company' } or { visibility: 'public' }
-        const visibilityFilter = (filter as any).visibility;
-
-        if (visibilityFilter === 'company') {
-          // Show items shared with the company OR made public, but ONLY within this company
-          finalFilter.$or = [
-            { visibility: 'company', companyId: new mongoose.Types.ObjectId(companyIdStr) },
-            { visibility: 'public', companyId: new mongoose.Types.ObjectId(companyIdStr) },
-            { isPublic: true, companyId: new mongoose.Types.ObjectId(companyIdStr) } // Backward compat
-          ];
-        } else {
-          // Show ALL public items (Advertisers still restricted to their own company)
-          finalFilter.$or = [
-            { visibility: 'public' },
-            { isPublic: true }
-          ];
-
-          if (user.role === 'advertiser') {
-            if (companyIdStr) {
-              finalFilter.companyId = new mongoose.Types.ObjectId(companyIdStr);
-            } else {
-              finalFilter.companyId = new mongoose.Types.ObjectId(); // Empty match
-            }
-          }
-        }
-        delete finalFilter.visibility; // Handled in $or
-      } else if (isQueryingShared && userId) {
-        // 🤝 Explicit Shared Query
-        finalFilter.collaborators = userId;
-      } else {
-        // 🔒 Default Isolation: Allow own content, shared content, or public content (restricted for advertisers)
-        const securityConditions: any[] = [];
-        if (userId) securityConditions.push({ createdBy: userId });
-        if (userId) securityConditions.push({ collaborators: userId });
-        
-        // Items shared with the whole company
-        if (companyIdStr) {
-          securityConditions.push({ visibility: 'company', companyId: new mongoose.Types.ObjectId(companyIdStr) });
-        }
-
-        // Public items
-        if (user.role === 'advertiser') {
-          if (companyIdStr) {
-            securityConditions.push({ 
-              $or: [{ visibility: 'public' }, { isPublic: true }], 
-              companyId: new mongoose.Types.ObjectId(companyIdStr) 
-            });
-          }
-        } else {
-          securityConditions.push({ $or: [{ visibility: 'public' }, { isPublic: true }] });
-        }
-
-        finalFilter.$or = securityConditions;
-      }
-    }
-
-  console.log(`[TEMPLATE_QUERY] Final Filter for user ${user._id || (user as any).id}:`, JSON.stringify(finalFilter, null, 2));
-
-  const templates = await Template.paginate(finalFilter, {
-    ...options,
-    populate: [
-      { path: "createdBy", select: "id _id first_name last_name email avatar" },
-      { path: "lastModifiedBy", select: "id _id first_name last_name email avatar" }
-    ]
-  });
-
+  const templates = await (Template as any).paginate(finalFilter, options);
   return templates;
 };
 
 /**
- * Get template by id (with permission check)
- * @param {ObjectId} id
- * @param {IUser} user
- * @returns {Promise<Template>}
+ * Get template by id
  */
-const getTemplateById = async (id: string, user?: IUser) => {
-  const template = await Template.findById(id)
-    .populate({
-      path: "collaborators",
-      select: "id _id first_name last_name email avatar"
-    })
-    .populate({
-      path: "lastModifiedBy",
-      select: "id _id first_name last_name email avatar"
-    });
-  if (!template) return null;
-
-  // If user is provided, check read permissions
-  if (user && user.role !== "super_admin") {
-    const isOwner = template.companyId?.toString() === user.companyId?.toString();
-    const isPublic = template.isPublic;
-    const isCollaborator = (template.collaborators as any[])?.some(c => (c._id || c).toString() === (user._id || (user as any).id).toString());
-
-    if (!isOwner && !isPublic && !isCollaborator) {
-      throw new ApiError(httpStatus.FORBIDDEN, "You do not have permission to view this template");
-    }
+const getTemplateById = async (id: string, user?: any) => {
+  const template = await Template.findById(id);
+  if (template && user && !user.roles?.includes('super_admin')) {
+     if (template.visibility !== 'public' && template.visibility !== 'global' && template.companyId?.toString() !== user.companyId?.toString()) {
+       return null;
+     }
   }
-
   return template;
 };
 
 /**
  * Update template by id
- * @param {ObjectId} templateId
- * @param {Object} updateBody
- * @param {IUser} user
- * @returns {Promise<Template>}
  */
-const updateTemplateById = async (templateId: string, updateBody: any, user: IUser) => {
+const updateTemplateById = async (templateId: string, updateBody: any, user?: any) => {
   const template = await getTemplateById(templateId);
   if (!template) {
-    throw new ApiError(httpStatus.NOT_FOUND, "Template not found");
+    throw new ApiError(httpStatus.NOT_FOUND, 'Template not found');
   }
 
-  // Permission Check
-  const isCreator = template.createdBy?.toString() === (user._id || (user as any).id).toString();
-  const isCollaborator = (template.collaborators as any[])?.some(c => (c._id || c).toString() === (user._id || (user as any).id).toString());
-
-  if (user.role !== "super_admin" && !isCreator && !isCollaborator) {
-    throw new ApiError(httpStatus.FORBIDDEN, "You do not have permission to update this template. Only the creator and invited collaborators can edit.");
+  if (user && !user.roles?.includes('super_admin') && template.companyId?.toString() !== user.companyId?.toString()) {
+    throw new ApiError(httpStatus.FORBIDDEN, 'Forbidden');
   }
-
-  // Inject lastModifiedBy
-  updateBody.lastModifiedBy = user._id || (user as any).id;
 
   Object.assign(template, updateBody);
+  (template as any).lastModifiedBy = user?._id || user?.id;
   await template.save();
   return template;
 };
 
 /**
- * Delete multiple templates by ids
- * @param {string[]} ids
- * @param {IUser} user
- * @returns {Promise<number>} - number of templates deleted
- */
-const deleteTemplatesByIds = async (ids: string[], user: IUser) => {
-  const { default: Screen } = await import("../models/screen.model");
-
-  // Filter templates that are NOT used by any screens
-  const validIdsToDelete: string[] = [];
-  const errors: string[] = [];
-
-  for (const templateId of ids) {
-    const template = await getTemplateById(templateId);
-    if (!template) continue;
-
-    // Permission Check
-    if (user.role !== "super_admin" && template.companyId?.toString() !== user.companyId?.toString()) {
-      errors.push(`Template ${template.name}: Permission denied`);
-      continue;
-    }
-
-    // Check for dependent screens (EXCLUDING trashed ones)
-    const screensUsingTemplate = await Screen.find({ templateId, deletedAt: null });
-    if (screensUsingTemplate.length > 0) {
-      errors.push(`Template ${template.name}: Used by ${screensUsingTemplate.length} active screen(s)`);
-      continue;
-    }
-
-    validIdsToDelete.push(templateId);
-  }
-
-  if (validIdsToDelete.length === 0 && errors.length > 0) {
-    throw new ApiError(httpStatus.BAD_REQUEST, `Cannot delete selected templates: ${errors.join(", ")}`);
-  }
-
-  const result = await Template.updateMany(
-    { _id: { $in: validIdsToDelete } },
-    { $set: { deletedAt: new Date() } }
-  );
-
-  return {
-    deletedCount: result.modifiedCount,
-    errors: errors.length > 0 ? errors : undefined
-  };
-};
-
-/**
  * Delete template by id
- * @param {ObjectId} templateId
- * @param {IUser} user
- * @returns {Promise<Template>}
  */
-const deleteTemplateById = async (templateId: string, user: IUser) => {
+const deleteTemplateById = async (templateId: string, user?: any) => {
   const template = await getTemplateById(templateId);
   if (!template) {
-    throw new ApiError(httpStatus.NOT_FOUND, "Template not found");
+    throw new ApiError(httpStatus.NOT_FOUND, 'Template not found');
   }
 
-  // Permission Check
-  if (user.role !== "super_admin" && template.companyId?.toString() !== user.companyId?.toString()) {
-    throw new ApiError(httpStatus.FORBIDDEN, "You do not have permission to delete this template");
-  }
-
-  // Check for dependent screens
-  const { default: Screen } = await import("../models/screen.model");
-  const screensUsingTemplate = await Screen.find({ templateId, deletedAt: null });
-
-  if (screensUsingTemplate.length > 0) {
-    throw new ApiError(
-      httpStatus.BAD_REQUEST,
-      `Cannot delete template. ${screensUsingTemplate.length} screen(s) are using it. Please reassign or delete those screens first.`
-    );
+  if (user && !user.roles?.includes('super_admin') && template.companyId?.toString() !== user.companyId?.toString()) {
+    throw new ApiError(httpStatus.FORBIDDEN, 'Forbidden');
   }
 
   template.deletedAt = new Date();
@@ -316,41 +98,33 @@ const deleteTemplateById = async (templateId: string, user: IUser) => {
 
 /**
  * Restore template by id
- * @param {ObjectId} templateId
- * @param {IUser} user
- * @returns {Promise<Template>}
  */
-const restoreTemplateById = async (templateId: string, user: IUser) => {
-  const template = await getTemplateById(templateId);
+const restoreTemplateById = async (templateId: string, user?: any) => {
+  const template = await Template.findOne({ _id: templateId });
   if (!template) {
-    throw new ApiError(httpStatus.NOT_FOUND, "Template not found");
+    throw new ApiError(httpStatus.NOT_FOUND, 'Template not found');
   }
 
-  // Permission Check
-  if (user.role !== "super_admin" && template.companyId?.toString() !== user.companyId?.toString()) {
-    throw new ApiError(httpStatus.FORBIDDEN, "You do not have permission to restore this template");
+  if (user && !user.roles?.includes('super_admin') && template.companyId?.toString() !== user.companyId?.toString()) {
+    throw new ApiError(httpStatus.FORBIDDEN, 'Forbidden');
   }
 
-  template.deletedAt = null;
+  template.deletedAt = undefined as any;
   await template.save();
   return template;
 };
 
 /**
  * Permanently delete template by id
- * @param {ObjectId} templateId
- * @param {IUser} user
- * @returns {Promise<Template>}
  */
-const permanentDeleteTemplateById = async (templateId: string, user: IUser) => {
-  const template = await getTemplateById(templateId);
+const permanentDeleteTemplateById = async (templateId: string, user?: any) => {
+  const template = await Template.findOne({ _id: templateId });
   if (!template) {
-    throw new ApiError(httpStatus.NOT_FOUND, "Template not found");
+    throw new ApiError(httpStatus.NOT_FOUND, 'Template not found');
   }
 
-  // Permission Check
-  if (user.role !== "super_admin" && template.companyId?.toString() !== user.companyId?.toString()) {
-    throw new ApiError(httpStatus.FORBIDDEN, "You do not have permission to permanently delete this template");
+  if (user && !user.roles?.includes('super_admin') && template.companyId?.toString() !== user.companyId?.toString()) {
+    throw new ApiError(httpStatus.FORBIDDEN, 'Forbidden');
   }
 
   await template.deleteOne();
@@ -358,146 +132,98 @@ const permanentDeleteTemplateById = async (templateId: string, user: IUser) => {
 };
 
 /**
- * Clone a template for the current user
- * @param {ObjectId} templateId
- * @param {IUser} user
- * @returns {Promise<Template>}
+ * Delete templates by ids (bulk)
  */
-const cloneTemplate = async (templateId: string, user: IUser) => {
-  // Use Template.findById directly for cloning to avoid the restricted 'view' check in getTemplateById
-  // We trust the caller (like cloneScreen) has already validated access to the original source.
-  const originalTemplate = await Template.findById(templateId);
-  if (!originalTemplate) {
-    throw new ApiError(httpStatus.NOT_FOUND, "Original template not found");
+const deleteTemplatesByIds = async (ids: string[], user: any) => {
+  const filter: any = { _id: { $in: ids } };
+  if (!user.roles?.includes('super_admin')) {
+    filter.companyId = user.companyId;
   }
-
-  await ensureUserCompany(user);
-
-  if (!user.companyId && user.role !== "super_admin") {
-    throw new ApiError(httpStatus.BAD_REQUEST, "User must belong to a company to clone templates");
-  }
-
-  const payload = {
-    name: `Copy of ${originalTemplate.name}`,
-    resolution: originalTemplate.resolution,
-    zones: originalTemplate.zones.map(z => ({
-      id: z.id,
-      type: z.type,
-      x: z.x,
-      y: z.y,
-      width: z.width,
-      height: z.height,
-      name: z.name,
-      media: z.media,
-      mediaType: z.mediaType,
-      lockedMediaType: z.lockedMediaType,
-    })),
-    companyId: user.companyId,
-    createdBy: user._id,
-    isPublic: false,
-  };
-
-  try {
-    return await Template.create(payload);
-  } catch (error: any) {
-    logger.error(`[CLONE] Template.create failed: ${error.message}`);
-    throw new ApiError(httpStatus.BAD_REQUEST, `Failed to clone template: ${error.message}`);
-  }
+  return Template.updateMany(filter, { deletedAt: new Date() });
 };
 
 /**
- * Bootstrap templates from an inspiration item
- * @param {string} name - Inspiration item name
- * @param {IUser} user
- * @returns {Promise<ITemplateGroup>}
+ * Clone a template
  */
-const bootstrapFromInspiration = async (name: string, user: IUser) => {
-  await ensureUserCompany(user);
-
-  // 1. Create the Group
-  const group = await TemplateGroup.create({
-    name: name,
-    companyId: user.companyId,
-    createdBy: user._id,
-  });
-
-  // 2. Create 3 templates with 4 zones each in the specific grid requested:
-  // TL(NW) Mixed, TR(NE) Photo, BL(SW) Text, BR(SE) Video
-  const templates = [];
-  const resolutions = ["1920x1080", "1920x1080", "1920x1080"];
-
-  for (let i = 0; i < 3; i++) {
-    const zones = [
-      {
-        id: 'zone-nw',
-        name: 'NW (Top-Left)',
-        type: 'mixed',
-        x: 0,
-        y: 0,
-        width: 960,
-        height: 540,
-        mediaType: 'both',
-      },
-      {
-        id: 'zone-ne',
-        name: 'NE (Top-Right)',
-        type: 'image',
-        x: 960,
-        y: 0,
-        width: 960,
-        height: 540,
-        mediaType: 'image',
-      },
-      {
-        id: 'zone-sw',
-        name: 'SW (Bottom-Left)',
-        type: 'text',
-        x: 0,
-        y: 540,
-        width: 960,
-        height: 540,
-        mediaType: 'both',
-      },
-      {
-        id: 'zone-se',
-        name: 'SE (Bottom-Right)',
-        type: 'video',
-        x: 960,
-        y: 540,
-        width: 960,
-        height: 540,
-        mediaType: 'video',
-      }
-    ];
-
-    const template = await Template.create({
-      name: `${name} - Variant ${i + 1}`,
-      resolution: resolutions[i],
-      zones,
-      companyId: user.companyId,
-      createdBy: user._id,
-      isPublic: false,
-    });
-    templates.push(template._id);
+const cloneTemplate = async (templateId: string, user: any) => {
+  const template = await getTemplateById(templateId);
+  if (!template) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Template not found');
   }
 
-  // 3. Link templates to group
-  group.templates = templates;
-  await group.save();
+  const clonedTemplate = await Template.create({
+    name: `${template.name} (Copy)`,
+    resolution: template.resolution,
+    zones: template.zones,
+    createdBy: user._id || user.id,
+    companyId: user.companyId,
+    visibility: 'private' as const,
+    previewUrl: (template as any).previewUrl,
+    previewType: (template as any).previewType || 'image'
+  });
 
-  return group;
+  return clonedTemplate;
+};
+
+/**
+ * Bootstrap from inspiration
+ */
+const bootstrapFromInspiration = async (name: string, user: any) => {
+  const userId = user._id || user.id;
+  const companyId = user.companyId;
+  // Mock zones based on name
+  const isMenu = name.toLowerCase().includes('menu');
+  const zones = isMenu ? [
+    { id: 'zone-1', name: 'Menu Left', type: 'image', x: 0, y: 0, width: 640, height: 1080, media: [] },
+    { id: 'zone-2', name: 'Menu Right', type: 'image', x: 640, y: 0, width: 640, height: 1080, media: [] },
+    { id: 'zone-3', name: 'Footer', type: 'text', x: 0, y: 1000, width: 1920, height: 80, media: [] }
+  ] : [
+    { id: 'zone-1', name: 'Main Content', type: 'mixed', x: 0, y: 0, width: 1440, height: 1080, media: [] },
+    { id: 'zone-2', name: 'Sidebar', type: 'mixed', x: 1440, y: 0, width: 480, height: 1080, media: [] }
+  ];
+
+  const previewUrl = INSPIRATION_PREVIEW_URLS[name] || '';
+
+  // Create a group first
+  const group = await templateGroupService.createTemplateGroup({
+    name: `${name} Group`,
+    description: `Auto-generated from ${name} inspiration`,
+    companyId: companyId as any,
+    createdBy: userId as any
+  });
+
+  // Create 3 templates
+  const templatePromises = ['Variation A', 'Variation B', 'Variation C'].map(suffix => 
+    Template.create({
+      name: `${name} - ${suffix}`,
+      resolution: '1920x1080',
+      zones,
+      companyId: companyId as any,
+      createdBy: userId as any,
+      visibility: 'company' as const,
+      previewUrl,
+      previewType: 'image' as const
+    })
+  );
+
+  const templates = await Promise.all(templatePromises);
+  const templateIds = templates.map(t => t._id.toString());
+
+  // Add to group
+  await templateGroupService.addTemplatesToGroup((group as any)._id?.toString() || (group as any).id, templateIds);
+
+  return templates[0];
 };
 
 export default {
-  ensureUserCompany,
   createTemplate,
   queryTemplates,
   getTemplateById,
   updateTemplateById,
   deleteTemplateById,
-  deleteTemplatesByIds,
   restoreTemplateById,
   permanentDeleteTemplateById,
+  deleteTemplatesByIds,
   cloneTemplate,
-  bootstrapFromInspiration,
+  bootstrapFromInspiration
 };
