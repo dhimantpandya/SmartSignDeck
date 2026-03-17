@@ -1,28 +1,13 @@
-import { useRef, useState, useEffect, useCallback, useMemo } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import * as fabric from 'fabric'
 import { Button } from '@/components/custom/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card } from '@/components/ui/card'
-import {
-    IconSquare,
-    IconVideo,
-    IconLetterT,
-    IconDeviceTv,
-    IconTrash,
-    IconDeviceFloppy,
-    IconMenu2,
-    IconX,
-    IconAlertTriangle
-} from '@tabler/icons-react'
+import { PreviewModal } from '@/components/preview-modal'
 import { toast } from '@/components/ui/use-toast'
 import { templateService } from '@/api/template.service'
-import { templateGroupService } from '@/api/template-group.service'
 import { useQueryClient } from '@tanstack/react-query'
-import { Switch } from '@/components/ui/switch'
-import { Globe, Lock, Eye } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { PreviewModal } from '@/components/preview-modal'
 import {
     Select,
     SelectContent,
@@ -30,12 +15,9 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select'
-import { Badge } from '@/components/ui/badge'
 import { GLOBAL_SCALE } from '@/utilities/fabric-utils'
 import { useNotifications } from '@/components/nav-notification-provider'
-import { CollaborateDialog } from './collaborate-dialog'
 import { useAuth } from '@/hooks/use-auth'
-import { Users } from 'lucide-react'
 
 interface Zone {
     id: string
@@ -60,36 +42,19 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
     const canvasRef = useRef<fabric.Canvas | null>(null)
     const { socket } = useNotifications()
     const { user } = useAuth()
+    const queryClient = useQueryClient()
 
     // State
     const [zones, setZones] = useState<Zone[]>(initialData?.zones || [])
     const [templateName, setTemplateName] = useState(initialData?.name || 'New Template')
     const [visibility, setVisibility] = useState<'private' | 'company' | 'public'>(initialData?.visibility || 'private')
-    const [collaborators, setCollaborators] = useState<any[]>(initialData?.collaborators || [])
-    const [selectedZoneId, setSelectedZoneId] = useState<string | null>(null)
-    const [clipboard, setClipboard] = useState<Zone | null>(null)
     const [isSaving, setIsSaving] = useState(false)
     const [resolution, setResolution] = useState(initialData?.resolution || '1920x1080')
     const [isPreviewOpen, setIsPreviewOpen] = useState(false)
-    const [isCollaborateOpen, setIsCollaborateOpen] = useState(false)
-    const [showSidebar, setShowSidebar] = useState(false) // For mobile
     const [currentTemplateId, setCurrentTemplateId] = useState<string | null>(initialData?.id || initialData?._id || null)
     const [remoteSelections, setRemoteSelections] = useState<Record<string, { userId: string, userName: string, color: string, avatar?: string }>>({})
 
-    const checkIsOwner = (template: any) => {
-        if (!template || !user) return false;
-        let createdById = null;
-        if (typeof template.createdBy === 'string') {
-            createdById = template.createdBy;
-        } else if (template.createdBy && typeof template.createdBy === 'object') {
-            createdById = template.createdBy.id || template.createdBy._id;
-        }
-        const currentUserId = user.id || (user as any)._id;
-        if (!createdById || !currentUserId) return false;
-        return createdById.toString() === currentUserId.toString();
-    }
 
-    const isOwner = checkIsOwner(initialData)
 
     const zonesRef = useRef<Zone[]>(zones)
     const socketRef = useRef(socket)
@@ -98,8 +63,6 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
     const lastBroadcastRef = useRef<number>(0)
     const transformingIdRef = useRef<string | null>(null)
     const THROTTLE_MS = 16 // ~60fps sync for hyper-smooth movement
-
-    const queryClient = useQueryClient()
 
     useEffect(() => {
         zonesRef.current = zones
@@ -134,7 +97,6 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                     setTemplateName(latest.name)
                     if ((latest as any).resolution) setResolution((latest as any).resolution)
                     if (latest.visibility) setVisibility(latest.visibility)
-                    if ((latest as any).collaborators) setCollaborators((latest as any).collaborators)
 
                     // 2. CRITICAL: Update the canvas objects directly
                     const canvas = canvasRef.current
@@ -236,7 +198,6 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                 }
             }
             if (data.name !== undefined) setTemplateName(data.name)
-            if (data.visibility !== undefined) setVisibility(data.visibility)
         }
 
         const handleCollabUpdate = async () => {
@@ -244,14 +205,13 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
             if (!tid) return
             try {
                 const updated = await templateService.getTemplate(tid)
-                if (updated && updated.collaborators) setCollaborators(updated.collaborators)
+                if (!updated) return
             } catch (err) {
                 console.error('Failed to refresh collaborators:', err)
             }
         }
 
         const handleZoneLocked = (data: any) => {
-            if (data.userId === (user?.id || (user as any)?._id)) return
             setRemoteSelections(prev => ({
                 ...prev,
                 [data.zoneId]: { userId: data.userId, userName: data.userName, color: data.color || '#4f46e5' }
@@ -320,7 +280,6 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
     const CANVAS_HEIGHT = screenHeight * GLOBAL_SCALE
     const GRID_SIZE = 20 * GLOBAL_SCALE
 
-    const selectedZone = zones.find(z => z.id === selectedZoneId)
 
     const getZoneColor = (type: string, alpha: string = '40') => {
         const opacity = alpha === '40' ? 0.4 : 0.8
@@ -351,11 +310,13 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
 
         const group = new fabric.Group([rect, text], {
             left: zone.x * GLOBAL_SCALE, top: zone.y * GLOBAL_SCALE,
-            originX: 'left', originY: 'top', id: zone.id, lockRotation: true,
-            hasRotatingPoint: false, transparentCorners: false, cornerColor: '#ffffff',
+            originX: 'left', originY: 'top', lockRotation: true,
+            transparentCorners: false, cornerColor: '#ffffff',
             cornerStrokeColor: borderColor, cornerSize: 10, cornerStyle: 'circle',
             borderColor, objectCaching: false
         })
+        // @ts-ignore
+        group.id = zone.id
 
         group.setControlsVisibility({ mt: true, mb: true, ml: true, mr: true, tl: true, tr: true, bl: true, br: true, mtr: false })
         canvas.add(group)
@@ -430,26 +391,10 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
         if (canvasRef.current) {
             const rect = addZoneToCanvas(canvasRef.current, newZone)
             canvasRef.current.setActiveObject(rect)
-            setSelectedZoneId(newZone.id)
             canvasRef.current.requestRenderAll()
         }
     }
 
-    const deleteSelected = useCallback(() => {
-        if (!canvasRef.current) return
-        const active = canvasRef.current.getActiveObjects()
-        if (active.length > 0) {
-            const ids = new Set(active.map((o: any) => o.id))
-            canvasRef.current.discardActiveObject()
-            canvasRef.current.remove(...active)
-            setZones(prev => {
-                const next = prev.filter(z => !ids.has(z.id))
-                broadcastUpdate({ zones: next })
-                return next
-            })
-            setSelectedZoneId(null)
-        }
-    }, [zones])
 
     const saveTemplate = async (isCollabAuto = false) => {
         if (zones.length === 0) return toast({ title: 'Add a zone' })
@@ -491,12 +436,12 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
         canvas.on('object:modified', (e) => handleObjectModified(e.target))
         canvas.on('selection:created', (e) => {
             const obj = e.selected?.[0] as any
-            if (obj?.id) { setSelectedZoneId(obj.id); emitLock(obj.id) }
+            if (obj?.id) { emitLock(obj.id) }
         })
         canvas.on('selection:cleared', (e) => {
             const d = (e as any).deselected?.[0]
             if (d?.id) emitUnlock(d.id)
-            setSelectedZoneId(null); transformingIdRef.current = null
+            transformingIdRef.current = null
         })
         return () => { canvas.dispose(); canvasRef.current = null }
     }, [resolution])

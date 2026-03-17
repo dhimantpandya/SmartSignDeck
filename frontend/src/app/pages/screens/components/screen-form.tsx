@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/select'
 import ScheduleManager from './schedule-manager'
 import { GLOBAL_SCALE } from '@/utilities/fabric-utils'
+import { Folders, User } from 'lucide-react'
 import { IconCopy } from '@tabler/icons-react'
 
 interface ScreenFormProps {

@@ -37,6 +37,10 @@ const cloneScreen = async (id: string) => {
     return apiService.post<Screen>(`/v1/screens/${id}/clone`, {})
 }
 
+const updateScreen = async (id: string, body: any) => {
+    return apiService.patch(`/v1/screens/${id}`, body)
+}
+
 const bulkDeleteScreens = async (ids: string[]) => {
     return apiService.post('/v1/screens/bulk-delete', { ids })
 }
@@ -44,6 +48,7 @@ const bulkDeleteScreens = async (ids: string[]) => {
 export const screenService = {
     getScreens,
     getScreen,
+    updateScreen,
     deleteScreen,
     restoreScreen,
     permanentDeleteScreen,
