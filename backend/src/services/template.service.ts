@@ -37,15 +37,22 @@ const queryTemplates = async (filter: any, options: any, user?: any) => {
   const finalFilter: any = { ...filter };
   
   // Standardize deletedAt check
-  if (finalFilter.trashed === true) {
+  const isRecycleBinQuery = finalFilter.trashed === true;
+  if (isRecycleBinQuery) {
     finalFilter.deletedAt = { $ne: null };
   } else {
     finalFilter.$or = [{ deletedAt: null }, { deletedAt: { $exists: false } }];
   }
   delete finalFilter.trashed;
 
+  // STRICT ISOLATION: For Recycle Bin, ONLY show items created BY the current user
+  // No exceptions for roles (Super Admin, etc.)
+  if (isRecycleBinQuery && user) {
+    finalFilter.createdBy = user._id || user.id;
+  }
+
   // Security & Visibility Logic
-  if (user && user.role !== 'super_admin') {
+  if (!isRecycleBinQuery && user && user.role !== 'super_admin') {
     const visibilityFilter = {
       $or: [
         { companyId: user.companyId },

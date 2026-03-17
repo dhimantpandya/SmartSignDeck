@@ -22,15 +22,22 @@ const queryScreens = async (filter: any, options: any, user?: any) => {
   const finalFilter: any = { ...filter };
   
   // Standardize deletedAt check (robust to missing fields)
-  if (finalFilter.trashed === true) {
+  const isRecycleBinQuery = finalFilter.trashed === true;
+  if (isRecycleBinQuery) {
     finalFilter.deletedAt = { $ne: null };
   } else {
     finalFilter.$or = [{ deletedAt: null }, { deletedAt: { $exists: false } }];
   }
   delete finalFilter.trashed;
 
-  // Security: If not super_admin, restrict to company OR public content
-  if (user && user.role !== 'super_admin') {
+  // STRICT ISOLATION: For Recycle Bin, ONLY show items created BY the current user
+  // No exceptions for roles (Super Admin, etc.)
+  if (isRecycleBinQuery && user) {
+    finalFilter.createdBy = user._id || user.id;
+  }
+
+  // Security: If not super_admin and NOT a recycle bin query, restrict to company OR public content
+  if (!isRecycleBinQuery && user && user.role !== 'super_admin') {
     const securityFilter = {
       $or: [
         { companyId: user.companyId },
