@@ -74,6 +74,7 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
 
     const scrollRef = useRef<HTMLDivElement>(null)
     const selectedFriendRef = useRef<any>(null)
+    const fetchingHistoryForRef = useRef<string | null>(null)
     const [replyTo, setReplyTo] = useState<any>(null)
 
     const formatChatDate = (date: string | Date) => {
@@ -321,6 +322,69 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
         }
     }, [selectedFriend, socket])
 
+    // 🕵️ Polling Fallback: If socket is disconnected, poll active chat history for real-time appearance
+    useEffect(() => {
+        let chatInterval: NodeJS.Timeout | null = null;
+        const fId = extractId(selectedFriend);
+
+        if (isOpen && activeTab === 'private' && fId && (!socket || !socket.connected)) {
+            console.log(`[ChatSidebar] 🔄 Polling history for "${fId}" (Socket disconnected) every 4s`);
+            chatInterval = setInterval(() => {
+                fetchChatHistory(fId);
+                
+                // Also occasionally refresh the friend's "last seen" status
+                // We do this every 4th poll (~16s) to keep header status updated
+                if (Math.random() > 0.75) {
+                    refreshSelectedFriendStatus(fId);
+                }
+            }, 4000); 
+        }
+
+        return () => {
+            if (chatInterval) clearInterval(chatInterval);
+        };
+    }, [isOpen, activeTab, selectedFriend, socket?.connected]);
+
+    // 🏆 Polling Fallback: Company Board
+    useEffect(() => {
+        let boardInterval: NodeJS.Timeout | null = null;
+
+        if (isOpen && activeTab === 'company' && (!socket || !socket.connected)) {
+            console.log(`[ChatSidebar] 🔄 Polling company board (Socket disconnected) every 10s`);
+            boardInterval = setInterval(() => {
+                loadCompanyBoard();
+            }, 10000); 
+        }
+
+        return () => {
+            if (boardInterval) clearInterval(boardInterval);
+        };
+    }, [isOpen, activeTab, socket?.connected]);
+
+    const isOnline = (f: any) => {
+        if (!f) return false;
+        const fId = extractId(f);
+        // 1. Socket presence (Fast/Real-time)
+        if (onlineUsers.has(fId)) return true;
+        // 2. Heartbeat presence (Fallback for Vercel/Serverless)
+        if (f.lastSeen) {
+            const diffInSeconds = (new Date().getTime() - new Date(f.lastSeen).getTime()) / 1000;
+            return diffInSeconds < 120; // 2 minute window for 60s heartbeats
+        }
+        return false;
+    };
+
+    const refreshSelectedFriendStatus = async (fId: string) => {
+        try {
+            const res = await userService.getUser(fId);
+            if (res && fetchingHistoryForRef.current === fId) {
+                setSelectedFriend(res);
+            }
+        } catch (err) {
+            // Silently fail status refresh
+        }
+    };
+
     const fetchBoardData = async () => {
         if (!user?.companyId) return
         try {
@@ -407,6 +471,7 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
     }
 
     const fetchChatHistory = async (friendId: string) => {
+        fetchingHistoryForRef.current = friendId
         try {
             const res = await socialService.getChatHistory(friendId)
             if (fetchingHistoryForRef.current !== friendId) return
@@ -895,7 +960,7 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
                                                             <AvatarImage src={friend.avatar} />
                                                             <AvatarFallback className="bg-primary/5 text-primary text-xs font-bold">{friend.first_name?.[0]}{friend.last_name?.[0]}</AvatarFallback>
                                                         </Avatar>
-                                                        {onlineUsers.has(friendId) && (
+                                                        {isOnline(friend) && (
                                                             <div className="absolute bottom-0 right-0 h-3 w-3 bg-green-500 border-2 border-background rounded-full" />
                                                         )}
                                                     </div>
@@ -926,9 +991,9 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
                                         </Avatar>
                                         <div className="flex flex-col flex-1 overflow-hidden">
                                             <span className="text-xs font-bold truncate">{selectedFriend.first_name} {selectedFriend.last_name}</span>
-                                            {onlineUsers.has(extractId(selectedFriend)) ? (
+                                            {isOnline(selectedFriend) ? (
                                                 <span className="text-[10px] text-green-500 flex items-center gap-1">
-                                                    <span className="h-1.5 w-1.5 bg-green-500 rounded-full" /> Online
+                                                    <span className="h-1.5 w-1.5 bg-green-500 rounded-full animate-pulse" /> Online
                                                 </span>
                                             ) : (
                                                 <span className="text-[10px] text-muted-foreground flex items-center gap-1">

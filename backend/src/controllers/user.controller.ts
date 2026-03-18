@@ -393,4 +393,14 @@ const fixCompanyMismatch = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-export { createUser, deleteUser, getUser, getUsers, updateUser, fixCompanyMismatch };
+const heartbeat = catchAsync(async (req: Request, res: Response) => {
+  const user = await User.findById(req.user?._id);
+  if (!user) throw new ApiError(httpStatus.NOT_FOUND, "User not found");
+
+  user.lastSeen = new Date();
+  await user.save();
+
+  successResponse(res, "Heartbeat received", httpStatus.OK, { lastSeen: user.lastSeen });
+});
+
+export { createUser, deleteUser, getUser, getUsers, updateUser, fixCompanyMismatch, heartbeat };

@@ -39,9 +39,9 @@ router
   );
 
 router.post(
-  "/fix-company-mismatch",
+  "/heartbeat",
   auth(),
-  userController.fixCompanyMismatch
+  userController.heartbeat
 );
 
 export default router;

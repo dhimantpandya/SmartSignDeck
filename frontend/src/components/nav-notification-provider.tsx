@@ -221,6 +221,30 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
         };
     }, [user, socket?.connected]);
 
+    // 1.6. Presence Heartbeat (Critical for Vercel/Serverless where Socket.IO disconnects)
+    useEffect(() => {
+        let heartbeatInterval: NodeJS.Timeout | null = null;
+
+        const sendHeartbeat = async () => {
+            if (!user) return;
+            try {
+                // Hits the new REST heartbeat endpoint to update lastSeen in DB
+                await apiService.post('/v1/users/heartbeat', {});
+            } catch (err) {
+                console.warn('[HEARTBEAT] ❌ Failed to send presence update');
+            }
+        };
+
+        if (user) {
+            sendHeartbeat(); // Initial
+            heartbeatInterval = setInterval(sendHeartbeat, 60000); // Pulse every 60 seconds
+        }
+
+        return () => {
+            if (heartbeatInterval) clearInterval(heartbeatInterval);
+        };
+    }, [user]);
+
     // 2. Listen for Events
     useEffect(() => {
         if (!socket || !user) return
