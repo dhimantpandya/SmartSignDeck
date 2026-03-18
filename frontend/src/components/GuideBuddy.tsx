@@ -5,6 +5,7 @@ import { Button } from '@/components/custom/button'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/use-auth'
+import { useNotifications } from './nav-notification-provider'
 
 interface Message {
     id: string;
@@ -23,6 +24,7 @@ export const GuideBuddy = () => {
     const [currentTopic, setCurrentTopic] = useState<string | null>(null)
     const chatEndRef = useRef<HTMLDivElement>(null)
     const { user } = useAuth()
+    const { isChatOpen } = useNotifications()
 
     const scrollToBottom = () => {
         chatEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -283,7 +285,10 @@ export const GuideBuddy = () => {
     if (!isVisible) return null
 
     return (
-        <div className="fixed bottom-8 right-8 z-[100] flex flex-col items-end gap-4 pointer-events-none">
+        <div className={cn(
+            "fixed bottom-8 right-8 flex flex-col items-end gap-4 pointer-events-none transition-all",
+            isChatOpen ? "z-[40]" : "z-[100]" // Lower z-index so it sits behind the ChatSidebar (which is z-50+)
+        )}>
             <AnimatePresence>
                 {showBubble && (
                     <motion.div

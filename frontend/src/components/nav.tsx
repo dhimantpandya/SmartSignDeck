@@ -197,11 +197,16 @@ function NavLinkIcon({ title, icon, label, href, onCommand, closeNav }: NavLinkP
               variant: checkActiveNav(href) ? 'secondary' : 'ghost',
               size: 'icon',
             }),
-            'h-12 w-12',
+            'h-12 w-12 relative', // Added relative for badge positioning
             checkActiveNav(href) && 'border border-foreground '
           )}
         >
           {icon}
+          {label && (
+            <div className='absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground shadow-sm'>
+              {label}
+            </div>
+          )}
           <span className='sr-only'>{title}</span>
         </Link>
       </TooltipTrigger>
@@ -230,9 +235,14 @@ function NavLinkIconDropdown({ title, icon, label, sub }: NavLinkProps) {
             <Button
               variant={isChildActive ? 'secondary' : 'ghost'}
               size='icon'
-              className='h-12 w-12'
+              className='h-12 w-12 relative' // Added relative for badge
             >
               {icon}
+              {label && (
+                <div className='absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground shadow-sm'>
+                  {label}
+                </div>
+              )}
             </Button>
           </DropdownMenuTrigger>
         </TooltipTrigger>

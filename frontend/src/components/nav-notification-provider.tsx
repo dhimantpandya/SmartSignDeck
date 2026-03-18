@@ -187,20 +187,40 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
                 console.log('[POLLING] 🔄 Fetching notification updates (Socket disconnected/unsupported)');
                 try {
                     const data = await apiService.get<{ notifications: Notification[], unreadCount: number }>('/v1/notifications');
+                    
+                    // Comparison for breadcrumb/toast triggering
+                    setUnreadChatCounts(prev => {
+                        const nextMap: Record<string, number> = {};
+                        data.notifications.filter(n => !n.isRead && n.type === 'new_chat').forEach(n => {
+                            const sId = extractId(n.senderId);
+                            if (sId) {
+                                nextMap[sId] = (nextMap[sId] || 0) + 1;
+                                
+                                // 🥖 TOAST TRIGGER: If this sender has MORE unread messages than before, show a toast
+                                if ((nextMap[sId] || 0) > (prev[sId] || 0)) {
+                                    const senderName = n.senderId?.first_name 
+                                        ? `${n.senderId.first_name} ${n.senderId.last_name || ''}`
+                                        : 'Someone';
+                                        
+                                    // Only toast if not actively chatting with them
+                                    if (!(activeChatInfo.type === 'private' && activeChatInfo.id === sId)) {
+                                        toast({
+                                            title: "New Chat Message",
+                                            description: `${senderName} sent you a message`,
+                                            duration: 4000,
+                                        });
+                                    }
+                                }
+                            }
+                        });
+                        return nextMap;
+                    });
+
                     setNotifications(data.notifications);
 
                     // Re-calculate badges from polled data
                     const bellUnread = data.notifications.filter(n => !n.isRead && n.type !== 'new_chat').length;
                     setUnreadCount(bellUnread);
-
-                    const chatMap: Record<string, number> = {};
-                    data.notifications.filter(n => !n.isRead && n.type === 'new_chat').forEach(n => {
-                        const sId = extractId(n.senderId);
-                        if (sId) {
-                            chatMap[sId] = (chatMap[sId] || 0) + 1;
-                        }
-                    });
-                    setUnreadChatCounts(chatMap);
 
                     const requestCount = data.notifications.filter(n => !n.isRead && n.type === 'friend_request').length;
                     setUnreadRequestCount(requestCount);
@@ -302,9 +322,9 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
 
                 // Only show toast if not actively looking at the board
                 toast({
-                    title: "New Company Board Message",
-                    description: `${data.senderName || 'Someone'} posted in the company board`,
-                    duration: 3000,
+                    title: "New Company Message",
+                    description: `${data.senderName || 'A teammate'} posted in the company board`,
+                    duration: 4000,
                 })
             } else if (data.type === 'private' || data.recipientId) {
                 // Skip if actively viewing this specific private chat
@@ -331,9 +351,9 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
 
                 // Show toast with professional wording
                 toast({
-                    title: "New Message",
+                    title: "New Chat Message",
                     description: `${data.senderName || 'Someone'} sent you a private message`,
-                    duration: 3000,
+                    duration: 4000,
                 })
             }
         }

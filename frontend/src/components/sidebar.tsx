@@ -31,8 +31,6 @@ export default function Sidebar({
     unreadRequestCount,
     unreadCount, // Added for dependency tracking
     clearRequestBadges,
-    suppressedChatSections,
-    isChatOpen,
     unreadNotifications, // Added to check for specific notif types
     clearNotificationsByType,
   } = useNotifications()
@@ -75,12 +73,10 @@ export default function Sidebar({
       return link;
     }
 
-    if (link.title === 'Chat' && !isChatOpen) {
-      const privateUnread = !suppressedChatSections.has('private') ? Object.keys(unreadChatCounts).length : 0;
-      const companyUnread = !suppressedChatSections.has('company') && unreadCompanyChatCount > 0 ? 1 : 0;
+    if (link.title === 'Chat') {
+      const privateUnread = Object.keys(unreadChatCounts).length;
+      const companyUnread = unreadCompanyChatCount > 0 ? 1 : 0;
       const totalUnread = privateUnread + companyUnread;
-
-      console.log('[Sidebar] Chat badge check:', { privateUnread, companyUnread, totalUnread, suppressed: Array.from(suppressedChatSections) });
 
       if (totalUnread > 0) {
         return { ...link, label: totalUnread.toString() }
