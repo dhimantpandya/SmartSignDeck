@@ -294,8 +294,6 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
     }, [user, socket]) // Stable dependencies, no selectedFriend here
 
     // Fetch private history when friend changes
-    const fetchingHistoryForRef = useRef<string | null>(null)
-
     useEffect(() => {
         if (selectedFriend) {
             const fId = extractId(selectedFriend)
@@ -377,8 +375,8 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
     const refreshSelectedFriendStatus = async (fId: string) => {
         try {
             const res = await userService.getUser(fId);
-            if (res && fetchingHistoryForRef.current === fId) {
-                setSelectedFriend(res);
+            if (res?.data && fetchingHistoryForRef.current === fId) {
+                setSelectedFriend(res.data);
             }
         } catch (err) {
             // Silently fail status refresh

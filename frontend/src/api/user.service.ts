@@ -19,6 +19,10 @@ class UserService {
     this.api = apiService
   }
 
+  async getUser(id: string | number) {
+    return this.api.get<any>(`${this.controller}/${id}`)
+  }
+
   async getAllUsers(body: UserListRequest) {
     const { pageIndex, pageSize } = body.pagination
     const search = body.filter?.search
