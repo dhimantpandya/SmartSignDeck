@@ -159,6 +159,9 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
 
             newSocket.on('connect_error', (err) => {
                 console.error('[SOCKET] ❌ CONNECTION ERROR:', err.message)
+                if (err.message.includes('Unexpected response code: 200')) {
+                    console.warn('[SOCKET] ⚠️ Handshake failed with 200. This is common on Vercel/Serverless and usually means Socket.IO is not supported on this endpoint. Real-time features will be limited.');
+                }
             })
 
             newSocket.on('disconnect', (reason) => {
@@ -171,6 +174,52 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
             }
         }
     }, [user])
+
+    // 1.5. Polling Fallback (Critical for Vercel/Serverless where Socket.IO fails)
+    useEffect(() => {
+        let interval: NodeJS.Timeout | null = null;
+        
+        const fetchUpdates = async () => {
+            if (!user || !!tokenStore.getRefreshToken() === false) return;
+            
+            // Only poll if NOT connected via socket (to avoid redundant traffic)
+            if (!socket || !socket.connected) {
+                console.log('[POLLING] 🔄 Fetching notification updates (Socket disconnected/unsupported)');
+                try {
+                    const data = await apiService.get<{ notifications: Notification[], unreadCount: number }>('/v1/notifications');
+                    setNotifications(data.notifications);
+
+                    // Re-calculate badges from polled data
+                    const bellUnread = data.notifications.filter(n => !n.isRead && n.type !== 'new_chat').length;
+                    setUnreadCount(bellUnread);
+
+                    const chatMap: Record<string, number> = {};
+                    data.notifications.filter(n => !n.isRead && n.type === 'new_chat').forEach(n => {
+                        const sId = extractId(n.senderId);
+                        if (sId) {
+                            chatMap[sId] = (chatMap[sId] || 0) + 1;
+                        }
+                    });
+                    setUnreadChatCounts(chatMap);
+
+                    const requestCount = data.notifications.filter(n => !n.isRead && n.type === 'friend_request').length;
+                    setUnreadRequestCount(requestCount);
+                } catch (err) {
+                    console.error('[POLLING] ❌ Failed to fetch updates:', err);
+                }
+            }
+        };
+
+        if (user) {
+            // Initial check + set interval
+            fetchUpdates();
+            interval = setInterval(fetchUpdates, 15000); // Poll every 15 seconds
+        }
+
+        return () => {
+            if (interval) clearInterval(interval);
+        };
+    }, [user, socket?.connected]);
 
     // 2. Listen for Events
     useEffect(() => {

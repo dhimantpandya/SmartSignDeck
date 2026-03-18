@@ -44,7 +44,13 @@ export default function Collaboration() {
     const [activeTab, setActiveTab] = useState('friends')
     const [selectedProfileUser, setSelectedProfileUser] = useState<any>(null)
     const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false)
-    const { socket, setActiveChat, decrementRequestCount, openChatWithFriend } = useNotifications()
+    const { 
+        socket, 
+        setActiveChat, 
+        decrementRequestCount, 
+        openChatWithFriend,
+        unreadChatCounts // 🔥 Added to show badges on friend cards
+    } = useNotifications()
 
     const queryClient = useQueryClient()
 
@@ -440,9 +446,17 @@ export default function Collaboration() {
                                                     </div>
                                                 </div>
                                                 <div className="mt-6 flex gap-2">
-                                                    <Button variant="outline" size="sm" className="flex-1 gap-2 border-primary/20 hover:bg-primary/5" onClick={() => handleDM(friend)}>
+                                                    <Button variant="outline" size="sm" className="flex-1 gap-2 border-primary/20 hover:bg-primary/5 relative" onClick={() => handleDM(friend)}>
                                                         <MessageSquare size={14} />
                                                         Message
+                                                        {unreadChatCounts[extractId(friend)] > 0 && (
+                                                            <Badge 
+                                                                variant="destructive" 
+                                                                className="absolute -top-2 -right-2 px-1 py-0 min-w-[1.25rem] h-5 justify-center text-[10px]"
+                                                            >
+                                                                {unreadChatCounts[extractId(friend)]}
+                                                            </Badge>
+                                                        )}
                                                     </Button>
                                                     <Button
                                                         variant="outline"

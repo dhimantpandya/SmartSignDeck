@@ -301,6 +301,10 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
             console.log('[ChatSidebar] Friend changed, fetching history for:', fId)
             fetchingHistoryForRef.current = fId
 
+            // 🛡️ SECURITY: Clear previous friend's messages immediately 
+            // to prevent them from showing while the new history is loading.
+            setPrivateMessages([])
+
             // 🛡️ Track active chat for NotificationProvider suppression
             setActiveChat({ type: 'private', id: fId })
 
@@ -310,6 +314,10 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
             clearChatNotifications('private', fId)
 
             if (socket) socket.emit('join_user', extractId(user))
+        } else {
+            // Also clear if deselected
+            setPrivateMessages([])
+            setActiveChat({ type: null, id: null })
         }
     }, [selectedFriend, socket])
 
@@ -530,6 +538,9 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
         const text = inputText.trim()
         setInputText('')
 
+        // Generate a temporary ID for tracking the optimistic message
+        const tempId = `temp-${Date.now()}`
+
         try {
             const recipientId = activeTab === 'private' ? extractId(selectedFriend) : undefined
             const companyId = activeTab === 'company' ? extractId(user.companyId) : undefined
@@ -538,13 +549,15 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
 
             // Optimistic update
             const optimisticMsg = {
+                id: tempId, // Set temporary ID
+                _id: tempId,
                 text,
                 senderId: user.id,
                 senderName: `${user.first_name} ${user.last_name}`,
                 avatar: user.avatar,
                 replyTo: replyTo ? { text: replyTo.text } : undefined,
                 created_at: new Date().toISOString(),
-                isOptimistic: true // Mark for tracing
+                isOptimistic: true // Mark for tracing (shows clock icon)
             }
 
             if (activeTab === 'company') {
@@ -554,15 +567,39 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
             }
 
             // API Call
-            await socialService.sendMessage({
+            const response = await socialService.sendMessage({
                 text,
                 recipientId,
                 companyId,
                 replyTo: replyTo?._id || replyTo?.id
             })
+
+            // 🛡️ API Fallback: If API succeeds, proactively mark the optimistic message as confirmed
+            // This prevents the "permanent clock" if WebSockets are down on Vercel.
+            const updater = (prev: any[]) => prev.map(m => 
+                (m.id === tempId || m._id === tempId) 
+                    ? { ...response, isOptimistic: false } 
+                    : m
+            )
+            
+            if (activeTab === 'company') {
+                setBoardMessages(updater)
+            } else {
+                setPrivateMessages(updater)
+            }
+
             if (replyTo) setReplyTo(null)
         } catch (error) {
             console.error('[ChatSidebar] Failed to send message:', error)
+            
+            // Remove the stuck optimistic message on failure
+            const filterOut = (prev: any[]) => prev.filter(m => m.id !== tempId && m._id !== tempId)
+            if (activeTab === 'company') {
+                setBoardMessages(filterOut)
+            } else {
+                setPrivateMessages(filterOut)
+            }
+
             toast({
                 title: "Error",
                 description: "Failed to send message. Please try again.",

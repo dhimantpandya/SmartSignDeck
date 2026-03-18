@@ -1,39 +1,36 @@
 import mongoose from "mongoose";
 import config from "../src/config/config";
-import User from "../src/models/user.model";
 import { FriendRequest } from "../src/models/social.model";
 
-const OLD_EMAIL = "smartsigndeck@gmail.com";
-
-const removeOldFriend = async () => {
+const sweepGhostFriends = async () => {
     try {
         await mongoose.connect(config.mongoose.url);
-        console.log("Connected to MongoDB");
+        console.log("Connected to MongoDB for Ghost Sweep");
 
-        const oldAdmin = await User.findOne({ email: OLD_EMAIL });
-        if (!oldAdmin) {
-            console.log(`User ${OLD_EMAIL} not found. Exiting.`);
-            process.exit(0);
+        // Find all friend requests
+        const allRequests = await FriendRequest.find().populate('fromId').populate('toId');
+        let ghostIds = [];
+
+        for (const req of allRequests) {
+            // If either fromId or toId failed to populate (user deleted)
+            if (!req.fromId || !req.toId) {
+                ghostIds.push(req._id);
+            }
         }
 
-        console.log(`Found old admin: ${OLD_EMAIL} (ID: ${oldAdmin._id})`);
-
-        // Delete all friendship connections where the old admin is involved
-        const deleteResult = await FriendRequest.deleteMany({
-            $or: [
-                { fromId: oldAdmin._id },
-                { toId: oldAdmin._id }
-            ]
-        });
-
-        console.log(`Successfully removed ${deleteResult.deletedCount} friend connections associated with ${OLD_EMAIL}!`);
+        if (ghostIds.length > 0) {
+            const deleteResult = await FriendRequest.deleteMany({ _id: { $in: ghostIds } });
+            console.log(`Successfully swept ${deleteResult.deletedCount} ghost friend connections from deleted users (including the old admin)!`);
+        } else {
+            console.log("No ghost friend connections found. The database is clean!");
+        }
 
     } catch (error) {
-        console.error("Migration failed:", error);
+        console.error("Ghost sweep failed:", error);
     } finally {
         await mongoose.disconnect();
         console.log("Disconnected from MongoDB");
     }
 };
 
-removeOldFriend();
+sweepGhostFriends();
