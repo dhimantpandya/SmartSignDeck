@@ -11,7 +11,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/componen
 import { toast } from '@/components/ui/use-toast'
 import Loader from '@/components/loader'
 import { Checkbox } from '@/components/ui/checkbox'
-import { apiService, screenService, templateGroupService } from '@/api'
+import { screenService, templateGroupService } from '@/api'
 import ScreenForm from './components/screen-form'
 import { Badge } from '@/components/ui/badge'
 import { useAuth } from '@/hooks/use-auth'
