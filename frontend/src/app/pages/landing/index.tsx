@@ -164,7 +164,7 @@ export default function LandingPage() {
                         {['Features', 'Solutions', 'Contact'].map((item) => (
                             <motion.a
                                 key={item}
-                                href={item === 'Solutions' ? '#features' : `#${item.toLowerCase()}`}
+                                href={`#${item.toLowerCase()}`}
                                 whileHover={{ scale: 1.1, color: 'hsl(var(--primary))' }}
                                 className='text-sm font-black uppercase tracking-widest text-primary/80 hover:text-primary transition-all duration-300'
                             >

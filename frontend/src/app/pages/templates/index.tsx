@@ -485,7 +485,7 @@ export default function Templates() {
                         {lastModifiedBlock}
                     </div>
                 </CardContent>
-                <CardFooter className="flex justify-between border-t bg-muted/20 px-4 py-2 shrink-0">
+                <CardFooter className="flex flex-wrap items-center justify-between gap-2 border-t bg-muted/20 px-4 py-2 shrink-0">
                     <div className="flex gap-1">
                         {inGroupView ? (
                             <TooltipProvider>
@@ -563,7 +563,7 @@ export default function Templates() {
                             </TooltipProvider>
                         )}
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap justify-end gap-2 mt-2 sm:mt-0">
                         <Button variant="ghost" size="sm" onClick={() => setPreviewTemplate(template)}>
                             <Eye size={16} className="mr-1" /> Preview
                         </Button>

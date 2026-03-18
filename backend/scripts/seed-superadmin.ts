@@ -7,7 +7,7 @@ const seedSuperAdmin = async () => {
   await mongoose.connect(config.mongoose.url, { dbName: config.mongoose.dbName });
   console.log("Connected to MongoDB");
 
-  const email = "smartsigndeck@gmail.com";
+  const email = "smartsigndeckk@gmail.com";
   const password = "SmartSignDeck@2025";
   const companyName = "SmartSignDeck";
 

@@ -9,8 +9,8 @@ import logger from "../config/logger";
  */
 const setupDefaultAdmin = async () => {
     try {
-        const email = "smartsigndeck@gmail.com";
-        let user = await User.findOne({ email });
+        const adminEmail = "smartsigndeckk@gmail.com";
+        let user = await User.findOne({ email: adminEmail });
 
         if (user) {
             logger.info("Super admin user check: user already exists. Updating check...");
@@ -24,7 +24,7 @@ const setupDefaultAdmin = async () => {
         } else {
             logger.info("Super admin user check: creating super admin user...");
             user = await User.create({
-                email,
+                email: adminEmail,
                 password: "Password123!", // Default password
                 first_name: "Smart",
                 last_name: "SignDeck",

@@ -243,12 +243,13 @@ export function ForgotForm({ className, ...props }: ForgotFormProps) {
                 name='email'
                 render={({ field }) => (
                   <FormItem className='space-y-1'>
-                    <FormLabel className='text-xs font-semibold text-white'>Email</FormLabel>
+                    <FormLabel className='text-xs font-semibold !text-blue-950'>Email</FormLabel>
                     <FormControl>
                       <Input
                         placeholder='name@example.com'
                         {...field}
-                        className='h-12 rounded-xl border-white/20 bg-white/5 text-[#1a1a2e] placeholder:text-[#1a1a2e]/60 focus-visible:ring-primary/50'
+                        className='h-12 rounded-xl border-black/20 bg-white/20 !text-blue-950 font-semibold focus-visible:ring-primary/50 placeholder:text-blue-950/60'
+                        style={{ color: '#172554', WebkitTextFillColor: '#172554' }}
                       />
                     </FormControl>
                     <FormMessage />
@@ -268,9 +269,9 @@ export function ForgotForm({ className, ...props }: ForgotFormProps) {
         <Form {...otpForm}>
           <form onSubmit={otpForm.handleSubmit(onOtpSubmit)}>
             <div className='grid gap-4'>
-              <div className="flex flex-col space-y-2 text-center mb-4 w-full">
-                <h1 className="text-[10px] md:text-xs font-bold uppercase tracking-[0.1em] md:tracking-[0.2em] text-white/60 break-words whitespace-normal w-full px-2">
-                  Enter the 6-digit code sent to <br className="hidden md:block" /> <span className="text-white font-black break-all">{email}</span>
+              <div className="flex flex-col space-y-2 text-center mb-8 w-full">
+                <h1 className="text-[10px] md:text-xs font-bold uppercase tracking-[0.1em] md:tracking-[0.2em] !text-blue-950 break-words whitespace-normal w-full px-2">
+                  Enter the 6-digit code sent to <br className="hidden md:block" /> <span className="bg-gradient-to-r from-blue-600 via-indigo-800 to-blue-950 bg-clip-text !text-transparent font-black break-all">{email}</span>
                 </h1>
               </div>
 
@@ -283,7 +284,7 @@ export function ForgotForm({ className, ...props }: ForgotFormProps) {
                     <FormControl>
                       <PinInput
                         {...field}
-                        className="flex h-12 justify-center gap-2 md:gap-3"
+                        className="flex h-12 justify-center gap-2 md:gap-3 mb-12"
                         onComplete={() => setDisabledOtpBtn(false)}
                         onIncomplete={() => setDisabledOtpBtn(true)}
                       >
@@ -291,16 +292,17 @@ export function ForgotForm({ className, ...props }: ForgotFormProps) {
                           <PinInputField
                             key={i}
                             component="input"
-                            className="otp-digit-input w-10 h-10 md:w-14 md:h-14 text-center text-lg md:text-xl font-black rounded-xl md:rounded-2xl border-white/20 bg-white/5 focus:ring-primary/50"
+                            className="otp-digit-input w-10 h-10 md:w-14 md:h-14 text-center text-lg md:text-xl font-black rounded-xl md:rounded-2xl border-white/20 bg-white/5 focus:ring-primary/50 !text-blue-950"
+                            style={{ color: '#172554', WebkitTextFillColor: '#172554' }}
                           />
                         ))}
                       </PinInput>
                     </FormControl>
-                    <FormMessage />
-                    <div className="text-center mt-4">
+                    {otpForm.formState.isSubmitted && otpForm.getValues('otp')?.length > 0 && otpForm.getValues('otp')?.length < 6 && <FormMessage className="text-center font-bold" />}
+                    <div className="text-center mt-16 pt-8">
                       {timeLeft > 0 ? (
-                        <span className="text-xs font-bold uppercase tracking-widest text-white/60">
-                          Code expires in <span className="text-white font-black">{formatTime(timeLeft)}</span>
+                        <span className="text-xs font-bold uppercase tracking-widest !text-blue-950">
+                          Code expires in <span className="!text-blue-950 font-black">{formatTime(timeLeft)}</span>
                         </span>
                       ) : (
                         <span className="text-xs font-black uppercase tracking-widest text-destructive">OTP expired</span>
@@ -315,7 +317,7 @@ export function ForgotForm({ className, ...props }: ForgotFormProps) {
               <Button
                 type="button"
                 variant="ghost"
-                className="mt-2 text-[10px] font-black uppercase tracking-widest text-white/70 hover:text-white transition-colors h-auto whitespace-normal break-words"
+                className="mt-2 text-[10px] font-black uppercase tracking-widest text-blue-950 hover:text-blue-900 transition-colors h-auto whitespace-normal break-words"
                 onClick={handleResendOtp}
                 disabled={!canResend || resendCooldown > 0 || isLoading}
               >
@@ -343,7 +345,8 @@ export function ForgotForm({ className, ...props }: ForgotFormProps) {
                       <PasswordInput
                         placeholder="********"
                         {...field}
-                        className='h-12 rounded-xl border-white/20 bg-white/5 text-[#1a1a2e] placeholder:text-[#1a1a2e]/60 focus-visible:ring-primary/50'
+                        className='h-12 rounded-xl border-black/20 bg-white/20 text-blue-950 font-semibold focus-visible:ring-primary/50 placeholder:text-blue-950/60'
+                        style={{ color: '#172554', WebkitTextFillColor: '#172554' }}
                       />
                     </FormControl>
                     <PasswordStrengthIndicator password={field.value} className="mt-2" />
@@ -361,7 +364,8 @@ export function ForgotForm({ className, ...props }: ForgotFormProps) {
                       <PasswordInput
                         placeholder="********"
                         {...field}
-                        className='h-12 rounded-xl border-white/20 bg-white/5 text-[#1a1a2e] placeholder:text-[#1a1a2e]/60 focus-visible:ring-primary/50'
+                        className='h-12 rounded-xl border-black/20 bg-white/20 text-blue-950 font-semibold focus-visible:ring-primary/50 placeholder:text-blue-950/60'
+                        style={{ color: '#172554', WebkitTextFillColor: '#172554' }}
                       />
                     </FormControl>
                     <FormMessage />

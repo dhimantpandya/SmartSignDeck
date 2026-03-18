@@ -238,7 +238,10 @@ export const UsersList = () => {
   })
 
   const tableProps = useReactTable({
-    data: data?.data?.users || [],
+    data: (data?.data?.users || []).filter((u: User) => 
+      !u.email.toLowerCase().includes('smartsigndeck@gmail.com') && 
+      !u.email.toLowerCase().includes('smartsigndeck_old')
+    ),
     columns,
     rowCount: data?.data?.count ?? 0,
     state: {

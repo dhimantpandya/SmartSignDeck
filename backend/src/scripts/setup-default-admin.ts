@@ -11,7 +11,7 @@ const setupDefaultAdmin = async () => {
         await mongoose.connect(config.mongoose.url, { dbName: config.mongoose.dbName });
         logger.info("Connected to MongoDB for seeding");
 
-        const email = "smartsigndeck@gmail.com";
+        const email = "smartsigndeckk@gmail.com";
         let user = await User.findOne({ email });
 
         if (user) {

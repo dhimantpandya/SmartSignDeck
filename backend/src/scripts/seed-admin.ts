@@ -9,7 +9,7 @@ const seedAdmin = async () => {
         await mongoose.connect(config.mongoose.url, { dbName: config.mongoose.dbName });
         logger.info("Connected to MongoDB for seeding");
 
-        const email = "smartsigndeck@gmail.com";
+        const email = "smartsigndeckk@gmail.com";
         const existingUser = await User.findOne({ email });
 
         if (existingUser) {
@@ -22,7 +22,7 @@ const seedAdmin = async () => {
         } else {
             logger.info("Creating super admin...");
             await User.create({
-                email: "smartsigndeck@gmail.com",
+                email: "smartsigndeckk@gmail.com",
                 password: "Password123!", // Initial default password
                 first_name: "Smart",
                 last_name: "SignDeck",

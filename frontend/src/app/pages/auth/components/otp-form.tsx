@@ -198,7 +198,7 @@ export default function OtpForm({ className, ...props }: OtpFormProps) {
                 <FormControl>
                   <PinInput
                     {...field}
-                    className="flex h-12 justify-center gap-2 md:gap-3"
+                    className="flex flex-wrap h-14 justify-center gap-2 md:gap-3 mb-8 md:mb-12 mt-4"
                     onComplete={() => setDisabledBtn(false)}
                     onIncomplete={() => setDisabledBtn(true)}
                   >
@@ -206,15 +206,16 @@ export default function OtpForm({ className, ...props }: OtpFormProps) {
                       <PinInputField
                         key={i}
                         component="input"
-                        className="otp-digit-input w-10 h-10 md:w-14 md:h-14 text-center text-lg md:text-xl font-black rounded-xl md:rounded-2xl border-white/20 bg-white/5 focus:ring-primary/50 text-[#1a1a2e]"
+                        className="otp-digit-input w-10 h-10 md:w-14 md:h-14 text-center text-lg md:text-xl font-black rounded-xl md:rounded-2xl border-white/20 bg-white/5 focus:ring-primary/50 !text-blue-950"
                       />
                     ))}
                   </PinInput>
                 </FormControl>
-                <FormDescription className="text-center mt-4">
+                {form.formState.isSubmitted && form.getValues('otp')?.length > 0 && form.getValues('otp')?.length < 6 && <FormMessage className="text-center font-bold" />}
+                <FormDescription className="text-center mt-16 pt-8 mb-4">
                   {timeLeft > 0 ? (
-                    <span className="text-xs font-bold uppercase tracking-widest text-[#1a1a2e]/90 md:text-muted-foreground/60">
-                      Code expires in <span className="text-[#1a1a2e] md:text-foreground font-black">{formatTime(timeLeft)}</span>
+                    <span className="text-xs font-bold uppercase tracking-widest !text-blue-950">
+                      Code expires in <span className="!text-blue-950 font-black">{formatTime(timeLeft)}</span>
                     </span>
                   ) : !isLoading ? (
                     <span className="text-xs font-black uppercase tracking-widest text-amber-500">Timer ended — try submitting or resend OTP</span>
@@ -234,7 +235,7 @@ export default function OtpForm({ className, ...props }: OtpFormProps) {
               variant="ghost"
               disabled={!canResend || resendCooldown > 0 || isResending}
               onClick={handleResendOtp}
-              className="mt-2 text-[10px] font-black uppercase tracking-widest text-[#1a1a2e]/80 md:text-muted-foreground hover:text-[#1a1a2e] md:hover:text-primary transition-colors h-auto whitespace-normal break-words"
+              className="mt-2 text-[10px] font-black uppercase tracking-widest text-blue-950 hover:text-blue-900 transition-colors h-auto whitespace-normal break-words"
               loading={isResending}
             >
               {resendCooldown > 0

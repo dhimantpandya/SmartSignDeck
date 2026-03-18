@@ -49,13 +49,13 @@ const queryScreens = async (filter: any, options: any, user?: any) => {
     const combinedFilter = { $and: [finalFilter, securityFilter] };
     return (Screen as any).paginate(combinedFilter, {
       ...options,
-      populate: 'createdBy'
+      populate: 'createdBy templateId'
     });
   }
 
   const screens = await (Screen as any).paginate(finalFilter, {
     ...options,
-    populate: 'createdBy'
+    populate: 'createdBy templateId'
   });
   return screens;
 };

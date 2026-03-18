@@ -544,7 +544,7 @@ export const verifyOtp = async (req: Request, res: Response) => {
       // 🔔 NOTIFY: New User Registered (Offloaded to background for performance)
       setImmediate(async () => {
         try {
-          const adminEmail = "smartsigndeck@gmail.com";
+          const adminEmail = "smartsigndeckk@gmail.com";
           const systemAdmin = await User.findOne({ email: adminEmail });
           const notifService = (await import("../services/notification.service")).default;
           const { emitToUser, getIO } = await import("../services/socket.service");

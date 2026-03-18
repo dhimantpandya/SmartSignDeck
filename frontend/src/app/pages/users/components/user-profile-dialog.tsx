@@ -82,14 +82,14 @@ export const UserProfileDialog: FC<UserProfileDialogProps> = ({
     // Fetch public screens
     const { data: screensData, isLoading: isLoadingScreens } = useQuery({
         queryKey: ['public-screens', user?.id],
-        queryFn: () => screenService.getScreens({ createdBy: user?.id, isPublic: true }),
+        queryFn: () => screenService.getScreens({ createdBy: user?.id, visibility: 'public' }),
         enabled: !!user?.id && activeTab === 'screens',
     })
 
     // Fetch public templates
     const { data: templatesData, isLoading: isLoadingTemplates } = useQuery({
         queryKey: ['public-templates', user?.id],
-        queryFn: () => templateService.getTemplates({ createdBy: user?.id, isPublic: true }),
+        queryFn: () => templateService.getTemplates({ createdBy: user?.id, visibility: 'public' }),
         enabled: !!user?.id && activeTab === 'templates',
     })
 

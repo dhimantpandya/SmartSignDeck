@@ -757,8 +757,8 @@ export default function TemplateEditor({ initialData, onCancel }: TemplateEditor
                     </div>
                 </div>
 
-                <div className='flex-1 overflow-auto bg-zinc-950 rounded-2xl flex items-center justify-center p-8'>
-                    <div style={{ transform: `scale(${zoom})`, transformOrigin: 'center' }} className="shadow-2xl">
+                <div className='flex-1 overflow-auto bg-zinc-900 border-2 border-zinc-800 rounded-2xl flex items-center justify-center p-8'>
+                    <div style={{ transform: `scale(${zoom})`, transformOrigin: 'center' }} className="shadow-2xl ring-1 ring-white/10">
                         <div ref={canvasContainerRef} style={{ width: CANVAS_WIDTH, height: CANVAS_HEIGHT, background: '#000' }} />
                     </div>
                 </div>

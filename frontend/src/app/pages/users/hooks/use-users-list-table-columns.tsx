@@ -55,7 +55,16 @@ const useUserListTableColumns = ({
       },
       {
         accessorKey: 'role',
-        cell: (info) => info.getValue(),
+        cell: (info) => {
+          const roleMap: Record<string, string> = {
+            'super_admin': 'Super Admin',
+            'admin': 'Admin',
+            'user': 'User',
+            'advertiser': 'Advertiser'
+          };
+          const rawRole = info.getValue() as string;
+          return roleMap[rawRole] || rawRole;
+        },
         header: 'Role',
         enableSorting: true,
       },

@@ -94,7 +94,7 @@ const getUsers = catchAsync(async (req: Request, res: Response) => {
   }
 
   // Multi-tenancy isolation logic refinement
-  const PREDEFINED_EMAIL = "smartsigndeck@gmail.com";
+  const PREDEFINED_EMAIL = "smartsigndeckk@gmail.com";
 
   if (filter.companyId) {
     const companyId = filter.companyId;

@@ -331,7 +331,7 @@ export default function Screens() {
             </CardHeader>
             <CardContent className="pt-4">
                 <div className="flex flex-col gap-1 text-sm text-muted-foreground">
-                    <span>Template: {screen.templateId?.name || 'Unknown'}</span>
+                    {screen.templateId?.name && <span>Template: {screen.templateId.name}</span>}
                     <span>Default Zones: {Object.keys(screen.defaultContent || {}).length}</span>
                     <span>Time Slots: {screen.schedules?.length || 0}</span>
                     {screen.createdBy && (
@@ -380,9 +380,6 @@ export default function Screens() {
                 {/* Owner controls (non-advertiser) */}
                 {isOwner && !isAdvertiser && (
                     <>
-                        <Button variant="ghost" size="sm" onClick={() => handleForceRefresh(screen.id)}>
-                            <IconRefresh size={16} className="mr-1" /> Refresh
-                        </Button>
                         <Button variant="ghost" size="sm" onClick={() => handleEdit(screen)}>
                             <IconEdit size={16} className="mr-1" /> Edit
                         </Button>
