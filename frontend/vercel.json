@@ -1,7 +1,11 @@
 {
     "rewrites": [
         {
-            "source": "/((?!assets|images|favicon|sw.js|manifest.json).*)",
+            "source": "/v1/:match*",
+            "destination": "https://smartsigndeck-production-22.up.railway.app/v1/:match*"
+        },
+        {
+            "source": "/((?!assets|images|favicon|sw.js|manifest.json|v1).*).*",
             "destination": "/index.html"
         }
     ]
