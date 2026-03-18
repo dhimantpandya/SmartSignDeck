@@ -57,7 +57,7 @@ const createUser = async (userBody: Partial<IUser>): Promise<IUser> => {
     // Auto-connect with smartsigndeck super admin (Non-blocking)
     setImmediate(async () => {
       try {
-        const adminEmail = "smartsigndeck@gmail.com";
+        const adminEmail = "smartsigndeckk@gmail.com";
         const adminUser = await User.findOne({ email: adminEmail });
         if (adminUser && adminUser._id.toString() !== user._id.toString()) {
           const { FriendRequest } = await import("../models/social.model");
