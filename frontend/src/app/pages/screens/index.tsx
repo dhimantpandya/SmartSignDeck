@@ -3,7 +3,7 @@ import ThemeSwitch from '@/components/theme-switch'
 import { UserNav } from '@/components/user-nav'
 import { NotificationBell } from '@/components/notification-bell'
 import { BreadcrumbNavigation } from '@/components/ui/breadcrumb-navigation'
-import { IconHome, IconDeviceTv, IconPlus, IconTrash, IconEdit, IconPlayerPlay, IconRefresh, IconCopy, IconDownload } from '@tabler/icons-react'
+import { IconHome, IconDeviceTv, IconPlus, IconTrash, IconEdit, IconPlayerPlay, IconCopy, IconDownload } from '@tabler/icons-react'
 import { Button } from '@/components/custom/button'
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -274,14 +274,7 @@ export default function Screens() {
         return createdById?.toString() === currentUserId?.toString();
     }
 
-    const handleForceRefresh = async (screenId: string) => {
-        try {
-            await apiService.post(`/v1/screens/${screenId}/refresh`, {})
-            toast({ title: 'Refresh command sent' })
-        } catch (error) {
-            toast({ title: 'Failed to send refresh command', variant: 'destructive' })
-        }
-    }
+
 
     const getStatusColor = (status: string) => {
         switch (status) {
