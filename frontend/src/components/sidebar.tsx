@@ -97,12 +97,12 @@ export default function Sidebar({
     if (currentPath?.includes('/collaboration')) {
       if (unreadRequestCount > 0) clearRequestBadges()
       // Also clear template/invite notifications
-      clearNotificationsByType(['company_invite', 'collaboration_request'])
+      clearNotificationsByType(['company_invite', 'collaboration_request', 'friend_request'])
     }
     if (currentPath?.includes('/admin/requests')) {
       if (adminRequestCount > 0) setAdminRequestCount(0)
     }
-  }, [currentPath, adminRequestCount])
+  }, [currentPath, adminRequestCount, unreadRequestCount, unreadNotifications.length])
 
   return (
     <aside

@@ -44,12 +44,13 @@ export default function Collaboration() {
     const [activeTab, setActiveTab] = useState('friends')
     const [selectedProfileUser, setSelectedProfileUser] = useState<any>(null)
     const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false)
-    const { 
+    const {
         socket, 
         setActiveChat, 
         decrementRequestCount, 
         openChatWithFriend,
-        unreadChatCounts // 🔥 Added to show badges on friend cards
+        unreadChatCounts,
+        clearNotificationsByType
     } = useNotifications()
 
     const queryClient = useQueryClient()
@@ -225,6 +226,8 @@ export default function Collaboration() {
 
     useEffect(() => {
         loadData()
+        // Clear collaboration badges on mount
+        clearNotificationsByType(['company_invite', 'collaboration_request', 'friend_request'])
     }, [user])
 
 

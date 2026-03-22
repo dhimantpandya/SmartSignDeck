@@ -1,5 +1,6 @@
 import httpStatus from 'http-status';
 import Screen from '../models/screen.model';
+import Playlist from '../models/playlist.model';
 import ApiError from '../utils/ApiError';
 import mongoose from 'mongoose';
 
@@ -12,7 +13,8 @@ const createScreen = async (screenBody: any, user: any) => {
     createdBy: user._id || user.id,
     companyId: user.companyId
   };
-  return Screen.create(finalBody);
+  const screen = await Screen.create(finalBody);
+  return expandScreenPlaylists(screen);
 };
 
 /**
@@ -57,6 +59,14 @@ const queryScreens = async (filter: any, options: any, user?: any) => {
     ...options,
     populate: 'createdBy templateId'
   });
+
+  // Expand playlists for results
+  if (screens.results && Array.isArray(screens.results)) {
+    screens.results = await Promise.all(
+      screens.results.map((screen: any) => expandScreenPlaylists(screen))
+    );
+  }
+
   return screens;
 };
 
@@ -74,6 +84,10 @@ const getScreenById = async (id: string, user?: any, secretKey?: string) => {
      // If not public and not same company, return null or throw?
      // For now, if we have a secretKey, we allow it (player mode)
      if (!secretKey && screen.visibility !== 'public') return null;
+  }
+  
+  if (screen) {
+    return expandScreenPlaylists(screen);
   }
   
   return screen;
@@ -94,7 +108,7 @@ const updateScreenById = async (screenId: string, updateBody: any, user?: any) =
 
   Object.assign(screen, updateBody);
   await screen.save();
-  return screen;
+  return expandScreenPlaylists(screen);
 };
 
 /**
@@ -204,7 +218,51 @@ const updateScreenPing = async (secretKey: string) => {
   screen.lastPing = new Date();
   screen.status = 'online';
   await screen.save();
-  return screen;
+  return expandScreenPlaylists(screen);
+};
+
+/**
+ * Helper to expand linked playlists in screen content
+ */
+const expandScreenPlaylists = async (screen: any) => {
+  if (!screen) return screen;
+
+  // Since Mongoose objects are sometimes tricky with assignments, 
+  // we work on a lean object if it's a Mongoose document
+  const screenObj = typeof screen.toObject === 'function' ? screen.toObject() : screen;
+
+  const expandContent = async (content: any) => {
+    if (!content) return;
+    for (const zoneId in content) {
+      const zoneContent = content[zoneId];
+      if (zoneContent?.sourceType === 'playlist' && zoneContent?.playlistId) {
+        try {
+          const playlist = await Playlist.findById(zoneContent.playlistId);
+          if (playlist && playlist.items) {
+            zoneContent.playlist = playlist.items;
+          }
+        } catch (err) {
+          console.error(`Failed to expand playlist ${zoneContent.playlistId}`, err);
+        }
+      }
+    }
+  };
+
+  // Expand default content
+  if (screenObj.defaultContent) {
+    await expandContent(screenObj.defaultContent);
+  }
+
+  // Expand schedules
+  if (screenObj.schedules && Array.isArray(screenObj.schedules)) {
+    for (const schedule of screenObj.schedules) {
+      if (schedule.content) {
+        await expandContent(schedule.content);
+      }
+    }
+  }
+
+  return screenObj;
 };
 
 export default {
