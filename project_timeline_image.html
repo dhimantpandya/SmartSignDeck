@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartSignDeck - Timeline Chart</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Times+New+Roman&display=swap');
+
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            background: #d0d0d0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 40px;
+            box-sizing: border-box;
+        }
+
+        .page-wrapper {
+            background: #ffffff;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+            width: 1200px;
+            max-width: 98vw;
+        }
+
+        /* Title box matching reference */
+        .title-box {
+            border: 2px solid #000;
+            text-align: center;
+            padding: 8px 20px;
+            margin-bottom: 30px;
+        }
+
+        .title-box h1 {
+            margin: 0;
+            font-size: 26px;
+            letter-spacing: 6px;
+            font-weight: bold;
+            font-family: Arial, sans-serif;
+        }
+
+        /* Main table wrapper */
+        .chart-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+
+        /* Left info columns */
+        .chart-table th, .chart-table td {
+            border: 1px solid #888;
+            padding: 5px 7px;
+            text-align: center;
+            white-space: nowrap;
+            vertical-align: middle;
+        }
+
+        /* Header rows */
+        .header-label {
+            background: #e8e8c8; /* beige-ish */
+            font-weight: bold;
+            font-style: italic;
+            font-size: 12px;
+        }
+
+        /* Data rows */
+        .data-row td {
+            background: #f5f5e8;
+        }
+
+        .data-row:nth-child(even) td {
+            background: #eaeaca;
+        }
+
+        /* ID column */
+        .col-id { width: 30px; }
+        .col-task { width: 170px; text-align: left !important; }
+        .col-date { width: 80px; }
+        .col-dur  { width: 60px; }
+
+        /* Gantt cell */
+        .gantt-cell {
+            padding: 0 !important;
+            position: relative;
+            height: 28px;
+        }
+
+        /* Month group header */
+        .month-header {
+            background: #d4d4b0;
+            font-weight: bold;
+            font-style: italic;
+            text-align: center;
+            font-size: 12px;
+            border: 1px solid #888;
+        }
+
+        /* Week sub-header */
+        .week-header {
+            background: #e8e8c8;
+            font-weight: bold;
+            font-style: italic;
+            font-size: 11px;
+            border: 1px solid #888;
+            text-align: center;
+            min-width: 38px;
+        }
+
+        /* Gantt bar container — spans across week cells */
+        .bar-wrapper {
+            display: flex;
+            height: 100%;
+            width: 100%;
+        }
+
+        .week-slot {
+            flex: 1;
+            height: 100%;
+            border-right: 1px solid #ccc;
+            box-sizing: border-box;
+            position: relative;
+        }
+
+        .week-slot:last-child {
+            border-right: none;
+        }
+
+        /* The blue bar fill */
+        .gantt-bar {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            height: 16px;
+            background: #0000cc;
+            box-sizing: border-box;
+            z-index: 2;
+        }
+
+        /* Instructions overlay */
+        .instructions {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.75);
+            color: white;
+            padding: 12px 18px;
+            border-radius: 8px;
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="page-wrapper">
+    <div class="title-box">
+        <h1>TIMELINE CHART</h1>
+    </div>
+
+    <!--
+        Timeline: Dec 1, 2025 → Mar 23, 2026
+        We define 16 weekly slots (each ~7 days), starting Dec 1.
+        Weeks:
+          W1:  Dec 1–7     W2:  Dec 8–14    W3:  Dec 15–21   W4:  Dec 22–28
+          W5:  Dec 29–Jan4 W6:  Jan 5–11    W7:  Jan 12–18   W8:  Jan 19–25
+          W9:  Jan 26–Feb1 W10: Feb 2–8     W11: Feb 9–15    W12: Feb 16–22
+          W13: Feb 23–Mar1 W14: Mar 2–8     W15: Mar 9–15    W16: Mar 16–23
+    -->
+
+    <table class="chart-table" id="timeline">
+        <thead>
+            <!-- Row 1: month groups -->
+            <tr>
+                <th class="header-label col-id" rowspan="2">ID</th>
+                <th class="header-label col-task" rowspan="2">Task Name</th>
+                <th class="header-label col-date" rowspan="2">Start</th>
+                <th class="header-label col-date" rowspan="2">Finish</th>
+                <th class="header-label col-dur"  rowspan="2">Duration</th>
+                <th class="month-header" colspan="4">Dec 2025</th>
+                <th class="month-header" colspan="4">Jan 2026</th>
+                <th class="month-header" colspan="4">Feb 2026</th>
+                <th class="month-header" colspan="4">Mar 2026</th>
+            </tr>
+            <!-- Row 2: week labels -->
+            <tr>
+                <th class="week-header">1-7</th>
+                <th class="week-header">8-14</th>
+                <th class="week-header">15-21</th>
+                <th class="week-header">22-28</th>
+
+                <th class="week-header">29-4</th>
+                <th class="week-header">5-11</th>
+                <th class="week-header">12-18</th>
+                <th class="week-header">19-25</th>
+
+                <th class="week-header">26-1</th>
+                <th class="week-header">2-8</th>
+                <th class="week-header">9-15</th>
+                <th class="week-header">16-22</th>
+
+                <th class="week-header">23-1</th>
+                <th class="week-header">2-8</th>
+                <th class="week-header">9-15</th>
+                <th class="week-header">16-23</th>
+            </tr>
+        </thead>
+        <tbody id="task-body">
+            <!-- Filled by JS -->
+        </tbody>
+    </table>
+</div>
+
+<div class="instructions">
+    💡 Use <b>Win + Shift + S</b> to capture this chart for your thesis.
+</div>
+
+<script>
+    // Timeline origin: Dec 1, 2025 = day 0
+    const ORIGIN = new Date('2025-12-01');
+    const TOTAL_DAYS = 113; // Dec 1 to Mar 23
+
+    // 16 weekly slots, each 7 days (last partial week included)
+    const NUM_WEEKS = 16;
+
+    function dayOffset(dateStr) {
+        const d = new Date(dateStr);
+        return Math.round((d - ORIGIN) / (1000 * 60 * 60 * 24));
+    }
+
+    const tasks = [
+        { id: 1, name: 'Requirement Gathering', start: '2025-12-01', finish: '2025-12-12', dur: '12d' },
+        { id: 2, name: 'Analysis',               start: '2025-12-13', finish: '2025-12-28', dur: '16d' },
+        { id: 3, name: 'Design',                 start: '2025-12-29', finish: '2026-01-17', dur: '20d' },
+        { id: 4, name: 'Coding',                 start: '2026-01-18', finish: '2026-03-03', dur: '45d' },
+        { id: 5, name: 'Testing',                start: '2026-03-04', finish: '2026-03-14', dur: '11d' },
+        { id: 6, name: 'Implementation',         start: '2026-03-15', finish: '2026-03-23', dur: '9d'  },
+        { id: 7, name: 'Documentation',          start: '2025-12-01', finish: '2026-03-23', dur: '113d'},
+    ];
+
+    const tbody = document.getElementById('task-body');
+
+    tasks.forEach(task => {
+        const tr = document.createElement('tr');
+        tr.className = 'data-row';
+
+        const startDay = dayOffset(task.start);
+        const finishDay = dayOffset(task.finish) + 1; // inclusive
+
+        // Left info cells
+        tr.innerHTML = `
+            <td class="col-id">${task.id}</td>
+            <td class="col-task">${task.name}</td>
+            <td class="col-date">${task.start.split('T')[0].replace('2025-', '').replace('2026-', '')}</td>
+            <td class="col-date">${task.finish.split('T')[0].replace('2025-', '').replace('2026-', '')}</td>
+            <td class="col-dur">${task.dur}</td>
+        `;
+
+        // 16 week gantt cells
+        for (let w = 0; w < NUM_WEEKS; w++) {
+            const weekStart = w * 7;
+            const weekEnd   = weekStart + 7;
+
+            const td = document.createElement('td');
+            td.className = 'gantt-cell';
+
+            // Overlap of [startDay, finishDay) with [weekStart, weekEnd)
+            const overlapStart = Math.max(startDay, weekStart);
+            const overlapEnd   = Math.min(finishDay, weekEnd);
+
+            if (overlapEnd > overlapStart) {
+                const leftPct  = ((overlapStart - weekStart) / 7) * 100;
+                const widthPct = ((overlapEnd   - overlapStart) / 7) * 100;
+
+                const bar = document.createElement('div');
+                bar.className = 'gantt-bar';
+                bar.style.left  = leftPct  + '%';
+                bar.style.width = widthPct + '%';
+                td.appendChild(bar);
+            }
+
+            tr.appendChild(td);
+        }
+
+        tbody.appendChild(tr);
+    });
+</script>
+</body>
+</html>

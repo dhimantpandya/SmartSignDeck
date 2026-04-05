@@ -4,5 +4,10 @@
     "scripts": {
         "build": "npm install --prefix backend --legacy-peer-deps && npm run build --prefix backend",
         "start": "npm start --prefix backend"
+    },
+    "dependencies": {
+        "officeparser": "^6.0.7",
+        "pdf-parse": "^2.4.5",
+        "pptxgenjs": "^4.0.1"
     }
 }

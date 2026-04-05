@@ -1,0 +1,195 @@
+/* Thesis Presentation Style - Large & Readable */
+:root {
+    --bg-color: #ffffff;
+    --paper-color: #ffffff;
+    --text-color: #1a1a1a;
+    --accent-color: #2563eb;
+    --border-color: #e2e8f0;
+    --font-size-base: 16px; /* Adjusted to 16px per user request and reference image */
+}
+
+body {
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    line-height: 1.6;
+    margin: 0;
+    padding: 40px 20px;
+    display: flex;
+    justify-content: center;
+}
+
+#container {
+    width: 100%;
+    max-width: 900px;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    margin: 0 auto;
+    padding: 0;
+    background: transparent;
+}
+
+.a4-page {
+    background-color: transparent;
+    width: 100%;
+    max-width: 100%;
+    padding: 0;
+    box-sizing: border-box;
+    position: relative;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    color: var(--accent-color);
+    margin-top: 2em;
+    margin-bottom: 0.5em;
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 0.3em;
+}
+
+h1 { font-size: 2.5em; text-align: center; border-bottom: none; margin-bottom: 1em; }
+h2 { font-size: 2em; }
+h3 { font-size: 1.5em; }
+
+p, li {
+    font-size: var(--font-size-base);
+    margin-bottom: 1.2em;
+    text-align: justify;
+}
+
+ul, ol {
+    margin-left: 1.5em;
+    margin-bottom: 1.5em;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 2em 0;
+    font-size: 0.9em;
+}
+
+th, td {
+    border: none;
+    padding: 12px 15px;
+    text-align: left;
+}
+
+th {
+    background-color: var(--border-color);
+    font-weight: bold;
+}
+
+tr:nth-child(even) {
+    background-color: #f9fafb;
+}
+
+blockquote {
+    border-left: 5px solid var(--accent-color);
+    background-color: #f0f7ff;
+    padding: 20px;
+    margin: 20px 0;
+    font-style: italic;
+    font-size: 1.1em;
+}
+
+code {
+    font-family: 'Fira Code', 'Courier New', Courier, monospace;
+    background-color: #f1f5f9;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+
+pre {
+    background-color: #1e293b;
+    color: #f8fafc;
+    padding: 20px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 20px 0;
+}
+
+pre code {
+    background-color: transparent;
+    color: inherit;
+    padding: 0;
+}
+
+/* Image styling */
+img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 40px auto;
+    border-radius: 4px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* Mermaid responsiveness */
+.mermaid {
+    display: flex;
+    justify-content: center;
+    margin: 40px 0;
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+}
+
+/* Page break utility */
+.page-break {
+    page-break-before: always;
+    margin-top: 100px;
+    border-top: 1px dashed #ccc;
+    padding-top: 50px;
+}
+
+/* Live updated indicator */
+#status-bar {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: rgba(37, 99, 235, 0.9);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: bold;
+    z-index: 1000;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+    transition: opacity 0.5s;
+}
+
+#status-bar.updating {
+    opacity: 0.5;
+}
+
+/* 
+ * PRINT STYLES
+ * High-quality printed document configuration 
+ * Hides all developer decorations (red lines, scissors, status bar) 
+ */
+@media print {
+    body {
+        background-color: transparent;
+        padding: 0;
+        margin: 0;
+    }
+    
+    #container {
+        background-image: none !important; /* Removes the red page tracking lines */
+        box-shadow: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+    }
+
+    #container::before {
+        display: none !important; /* Removes the exact text and scissors icon */
+    }
+    
+    #status-bar {
+        display: none !important; /* Hides 'Live Preview Active' */
+    }
+}

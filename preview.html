@@ -1,0 +1,94 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartSignDeck Thesis Preview</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: true });
+        window.mermaid = mermaid;
+    </script>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <div id="status-bar">Live Preview Active</div>
+    <div id="container">
+        <div id="content">Loading thesis content...</div>
+        <div id="last-updated"></div>
+    </div>
+
+    <script>
+        console.log("Thesis Previewer Initializing...");
+        
+        let currentMd = "";
+        let currentTimestamp = 1774809111181;
+
+        async function fetchContent() {
+            try {
+                const response = await fetch('/content');
+                const text = await response.text();
+                if (text !== currentMd) {
+                    currentMd = text;
+                    render();
+                }
+            } catch (e) {
+                console.error("Fetch error:", e);
+                document.getElementById('content').innerHTML = "Fetch error: " + e.message;
+            }
+        }
+
+        async function render() {
+            const contentDiv = document.getElementById('content');
+            const lastUpdatedDiv = document.getElementById('last-updated');
+            
+            try {
+                if (typeof marked === 'undefined') {
+                    console.log("Waiting for marked...");
+                    setTimeout(render, 100);
+                    return;
+                }
+                
+                // Rewrite file URLs for browser compatibility
+                const processedMd = currentMd.split("file:///").join("/file/");
+                
+                // Split into physical pages for the preview
+                const mdPages = processedMd.split(/?
+?<div class="page-break"></div>?
+?/i);
+                const paginatedHtml = mdPages.map(md => `<div class="a4-page">${marked.parse(md)}</div>`).join('');
+                
+                contentDiv.innerHTML = paginatedHtml;
+                
+                if (window.mermaid) {
+                    await window.mermaid.run();
+                }
+                
+                lastUpdatedDiv.innerText = 'Last updated: ' + new Date().toLocaleTimeString();
+                console.log("Render successful");
+            } catch (e) {
+                console.error("Render error:", e);
+                contentDiv.innerHTML = "<p style='color:red'>Render Error: " + e.message + "</p>" + contentDiv.innerHTML;
+            }
+        }
+
+        // Initial fetch
+        fetchContent();
+
+        // Live reload polling
+        setInterval(async () => {
+            try {
+                const response = await fetch('/status');
+                const data = await response.json();
+                if (data.timestamp > currentTimestamp) {
+                    console.log("Change detected, updating...");
+                    currentTimestamp = data.timestamp;
+                    await fetchContent();
+                }
+            } catch (e) { }
+        }, 1500);
+    </script>
+</body>
+</html>
