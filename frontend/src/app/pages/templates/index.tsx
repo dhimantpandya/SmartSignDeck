@@ -1127,6 +1127,8 @@ export default function Templates() {
                         }}
                         templateId={selectedTemplateForCollab.id}
                         currentCollaborators={selectedTemplateForCollab.collaborators || []}
+                        isOwner={checkIsOwner(selectedTemplateForCollab)}
+                        creator={selectedTemplateForCollab.createdBy}
                     />
                 )}
             </Layout.Body>
