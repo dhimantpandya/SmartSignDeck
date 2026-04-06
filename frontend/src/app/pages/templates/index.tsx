@@ -579,6 +579,19 @@ export default function Templates() {
                             </Button>
                         ) : (isOwner || inGroupView) && !isGlobalView ? (
                             <>
+                                {isOwner && !inGroupView && (
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-8 gap-1.5 border-primary/20 hover:bg-primary/5 text-primary"
+                                        onClick={() => {
+                                            setSelectedTemplateForCollab(template)
+                                            setIsCollaborateOpen(true)
+                                        }}
+                                    >
+                                        <Users size={14} /> Collaborate
+                                    </Button>
+                                )}
                                 <Button variant="ghost" size="sm" onClick={() => handleEdit(template)}>
                                     <IconEdit size={16} className="mr-1" /> Edit
                                 </Button>
@@ -599,19 +612,6 @@ export default function Templates() {
                             </Button>
                         ) : (
                             <div className="flex gap-2">
-                                {isOwner && !inGroupView && (
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="h-8 gap-1.5 border-primary/20 hover:bg-primary/5 text-primary"
-                                        onClick={() => {
-                                            setSelectedTemplateForCollab(template)
-                                            setIsCollaborateOpen(true)
-                                        }}
-                                    >
-                                        <Users size={14} /> Collaborate
-                                    </Button>
-                                )}
                                 <Button
                                     variant="default"
                                     size="sm"
